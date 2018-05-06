@@ -7,7 +7,7 @@ import copyreg
 from . import util
 
 __all__ = (
-    "CASE", "IGNORECASE", "STRING_ESCAPES", "ESCAPE_CHARS", "NO_EXTRA", "FLAG_MASK",
+    "CASE", "IGNORECASE", "RAW_STRING_ESCAPES", "ESCAPE_CHARS", "NO_EXTRA", "FLAG_MASK",
     "Parser", "WcMatch"
 )
 
@@ -26,6 +26,21 @@ ESCAPE_CHARS = 0x0008
 NO_EXTRA = 0x0010
 
 FLAG_MASK = 0x1F
+_CASE_FLAGS = CASE | IGNORECASE
+
+
+def _get_case(flags):
+    """Parse flags for case sensitivity settings."""
+
+    if not bool(flags & _CASE_FLAGS):
+        case_sensitive = _CASE_FS
+    elif flags & CASE and flags & IGNORECASE:
+        raise ValueError("Cannot use CASE and IGNORECASE flags together!")
+    elif flags & CASE:
+        case_sensitive = True
+    else:
+        case_sensitive = False
+    return case_sensitive
 
 
 class Parser(object):
@@ -42,6 +57,7 @@ class Parser(object):
         self.string_escapes = flags & RAW_STRING_ESCAPES
         self.escape_chars = flags & ESCAPE_CHARS
         self.extra = not (flags & NO_EXTRA)
+        self.case_sensitive = _get_case(flags)
 
     def _sequence(self, i):
         """Handle fnmatch character group."""
@@ -222,12 +238,13 @@ class Parser(object):
                 current.append(re.escape(c))
         if not result:
             result.append('.*')
+        case_flag = 'i' if not self.case_sensitive else ''
         if util.PY36:
-            pattern = r'(?s:%s)\Z' % ''.join(result)
-            exclude_pattern = r'(?s:%s)\Z' % ''.join(exclude_result)
+            pattern = r'(?s%s:%s)\Z' % (case_flag, ''.join(result))
+            exclude_pattern = r'(?s%s:%s)\Z' % (case_flag, ''.join(exclude_result))
         else:
-            pattern = r'(?ms)(?:%s)\Z' % ''.join(result)
-            exclude_pattern = r'(?ms)(?:%s)\Z' % ''.join(exclude_result)
+            pattern = r'(?ms%s)(?:%s)\Z' % (case_flag, ''.join(result))
+            exclude_pattern = r'(?ms%s)(?:%s)\Z' % (case_flag, ''.join(exclude_result))
 
         if self.is_bytes:
             if pattern is not None:
@@ -243,7 +260,7 @@ class WcMatch(util.Immutable):
 
     __slots__ = ("_include", "_exclude", "_hash")
 
-    def __init__(self, include, exclude):
+    def __init__(self, include, exclude=None):
         """Initialization."""
 
         super(WcMatch, self).__init__(

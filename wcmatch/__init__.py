@@ -44,37 +44,17 @@ RAW_STRING_ESCAPES = _wcparse.RAW_STRING_ESCAPES
 ESCAPE_CHARS = _wcparse.ESCAPE_CHARS
 NO_EXTRA = _wcparse.NO_EXTRA
 
-_CASE_FLAGS = CASE | IGNORECASE
-
-
-def _get_case(flags):
-    """Parse flags for case sensitivity settings."""
-
-    if not bool(flags & _CASE_FLAGS):
-        case_sensitive = _wcparse._CASE_FS
-    elif flags & CASE and flags & IGNORECASE:
-        raise ValueError("Cannot use CASE and IGNORECASE flags together!")
-    elif flags & CASE:
-        case_sensitive = True
-    else:
-        case_sensitive = False
-    return case_sensitive
-
 
 @_functools.lru_cache(maxsize=256, typed=True)
 def _compile(pattern, flags):  # noqa A001
     """Compile patterns."""
 
-    case_sensitive = _get_case(flags)
     p1, p2 = translate(pattern, flags)
 
-    flags = 0
-    if not case_sensitive:
-        flags |= _re.I
     if p1 is not None:
-        p1 = _re.compile(p1, flags)
+        p1 = _re.compile(p1)
     if p2 is not None:
-        p2 = _re.compile(p2, flags)
+        p2 = _re.compile(p2)
     return WcMatch(p1, p2)
 
 
@@ -119,18 +99,15 @@ class FnCrawl(object):
         self._abort = False
         self.directory = args.pop(0)
         self.file_pattern = args.pop(0) if args else kwargs.pop('file_pattern', None)
-        self.folder_exclude_pattern = args.pop(0) if args else kwargs.pop('folder_exclude_pattern', None)
+        self.exclude_pattern = args.pop(0) if args else kwargs.pop('exclude_pattern', None)
         self.recursive = args.pop(0) if args else kwargs.pop('recursive', False)
         self.show_hidden = args.pop(0) if args else kwargs.pop('show_hidden', True)
         self.flags = args.pop(0) if args else kwargs.pop('flags', 0)
-        self.file_regex_match = args.pop(0) if args else kwargs.pop('file_regex_match', False)
-        self.folder_regex_exclude_match = args.pop(0) if args else kwargs.pop('folder_regex_exclude_match', False)
-        self.case_sensitive = _get_case(self.flags)
 
         self.on_init(*args, **kwargs)
-        self.file_check, self.folder_exclude_check = self.on_compile(self.file_pattern, self.folder_exclude_pattern)
+        self.file_check, self.folder_exclude_check = self._compile(self.file_pattern, self.exclude_pattern)
 
-    def compile_wildcard(self, string, force_default=False):
+    def _compile_wildcard(self, string, force_default=False):
         r"""Compile or format the wildcard inclusion\exclusion pattern."""
 
         pattern = None
@@ -138,33 +115,15 @@ class FnCrawl(object):
             string = '*'
         return _compile(string, self.flags) if string else pattern
 
-    def compile_regexp(self, string, force_default=False):
-        r"""Compile or format the regular expression inclusion\exclusion pattern."""
-
-        pattern = None
-        if not string and force_default:
-            string = r'.*'
-        if string:
-            flags = _re.IGNORECASE if not self.case_sensitive else 0
-            pattern = _re.compile(string, flags | _re.ASCII)
-
-        return WcMatch(pattern, None)
-
-    def on_compile(self, file_pattern, folder_exclude_pattern):
+    def _compile(self, file_pattern, folder_exclude_pattern):
         """Compile patterns."""
 
         if not isinstance(file_pattern, WcMatch):
-            if self.file_regex_match:
-                file_check = self.compile_regexp(file_pattern, force_default=True)
-            else:
-                file_check = self.compile_wildcard(file_pattern, force_default=True)
+            file_pattern = self._compile_wildcard(file_pattern, force_default=True)
 
         if not isinstance(folder_exclude_pattern, WcMatch):
-            if self.folder_regex_exclude_match:
-                folder_exclude_check = self.compile_regexp(folder_exclude_pattern)
-            else:
-                folder_exclude_check = self.compile_wildcard(folder_exclude_pattern)
-        return file_check, folder_exclude_check
+            folder_exclude_pattern = self._compile_wildcard(folder_exclude_pattern)
+        return file_pattern, folder_exclude_pattern
 
     def _is_hidden(self, path):
         """Check if file is hidden."""
@@ -194,7 +153,7 @@ class FnCrawl(object):
             valid = not self.folder_exclude_check.match(name)
         return self.on_validate_directory(base, name) if valid else valid
 
-    def on_init(self, **kwargs):
+    def on_init(self, *args, **kwargs):
         """Handle custom init."""
 
     def on_validate_directory(self, base, name):
@@ -276,8 +235,13 @@ class FnCrawl(object):
             if self._abort:
                 break
 
-    def run(self):
+    def match(self):
         """Run the directory walker."""
+
+        return list(self.imatch())
+
+    def imatch(self):
+        """Run the directory walker as iterator."""
 
         self._skipped = 0
         for f in self.walk():
