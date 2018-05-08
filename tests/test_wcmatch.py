@@ -102,12 +102,15 @@ class TestWildcard(unittest.TestCase):
             )
         )
 
-    def test_wildcard_parsing(self):
+    @mock.patch('wcmatch.wcparse._is_case_sensitive')
+    def test_wildcard_parsing(self, mock__iscase_sensitive):
         """Test wildcard parsing."""
+
+        mock__iscase_sensitive.return_value = True
 
         wcm._compile.cache_clear()
 
-        p1, p2 = wcm.translate('*test[a-z]?|*test2[a-z]?|-test[!a-z]|-test[!-|a-z]', wcm.F)
+        p1, p2 = wcm.translate(wcm.split('*test[a-z]?|*test2[a-z]?|-test[!a-z]|-test[!-|a-z]'))
         if util.PY36:
             self.assertEqual(p1, r'(?s:.*test[a-z].|.*test2[a-z].)\Z')
             self.assertEqual(p2, r'(?s:test[^a-z]|test[^\-\|a-z])\Z')
@@ -115,15 +118,15 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:.*test[a-z].|.*test2[a-z].)\Z')
             self.assertEqual(p2, r'(?ms)(?:test[^a-z]|test[^\-\|a-z])\Z')
 
-        p1, p2 = wcm.translate('test[]][!][][]', wcm.F)
+        p1, p2 = wcm.translate(wcm.split('test[]][!][][]', wcm.F), wcm.F)
         if util.PY36:
-            self.assertEqual(p1, r'(?s:test[]][^][]\[\])\Z')
+            self.assertEqual(p1, r'(?s:test[\]][^\]\[][\])\Z')
             self.assertEqual(p2, r'(?s:)\Z')
         else:
-            self.assertEqual(p1, r'(?ms)(?:test[]][^][]\[\])\Z')
+            self.assertEqual(p1, r'(?ms)(?:test[\]][^\][]\[\])\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate('test[!]', wcm.F)
+        p1, p2 = wcm.translate(wcm.split('test[!]'))
         if util.PY36:
             self.assertEqual(p1, r'(?s:test\[\!\])\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -131,7 +134,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:test\[\!\])\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate('|test|', wcm.F)
+        p1, p2 = wcm.translate(wcm.split('|test|'))
         if util.PY36:
             self.assertEqual(p1, r'(?s:|test|)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -139,7 +142,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:|test|)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate('-|-test|-', wcm.F)
+        p1, p2 = wcm.translate(wcm.split('-|-test|-'))
         if util.PY36:
             self.assertEqual(p1, r'(?s:.*)\Z')
             self.assertEqual(p2, r'(?s:|test|)\Z')
@@ -147,7 +150,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:.*)\Z')
             self.assertEqual(p2, r'(?ms)(?:|test|)\Z')
 
-        p1, p2 = wcm.translate('test[^chars]', wcm.F)
+        p1, p2 = wcm.translate(wcm.split('test[^chars]'))
         if util.PY36:
             self.assertEqual(p1, r'(?s:test[\^chars])\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -155,26 +158,26 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:test[\^chars])\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1 = wcm.translate(r'test[^\-\&]', wcm.F)[0]
+        p1 = wcm.translate(wcm.split(r'test[^\-\&]'))[0]
         if util.PY36:
             self.assertEqual(p1, r'(?s:test[\^\\-\\\&])\Z')
         else:
             self.assertEqual(p1, r'(?ms)(?:test[\^\\-\\\&])\Z')
 
-        p1 = wcm.translate(r'\*\?\|\[\]', wcm.F)[0]
+        p1 = wcm.translate(wcm.split(r'\*\?\|\[\]'))[0]
         if util.PY36:
             self.assertEqual(p1, r'(?s:\\.*\\.\\|\\[\\])\Z')
         else:
             self.assertEqual(p1, r'(?ms)(?:\\.*\\.\\|\\[\\])\Z')
 
-        p1 = wcm.translate(r'\\u0300', wcm.F | wcm.R)[0]
+        p1 = wcm.translate(wcm.split(r'\\u0300', wcm.R), wcm.R)[0]
         if util.PY36:
             self.assertEqual(p1, r'(?s:\\u0300)\Z')
         else:
             self.assertEqual(p1, r'(?ms)(?:\\u0300)\Z')
 
         self.assertTrue(
-            wcm.filter(['test\\m', 'test\\3', 'test\\a'], r'test\m', wcm.I),
+            wcm.filter(['test\\m', 'test\\3', 'test\\a'], wcm.split(r'test\m')),
             ['test\\m', 'test\\a']
         )
 
@@ -193,12 +196,15 @@ class TestWildcard(unittest.TestCase):
         self.assertTrue(wcm.fnmatch(',', '[a-z+--A-Z]'))
         self.assertTrue(wcm.fnmatch('.', '[a-z--/A-Z]'))
 
-    def test_byte_wildcard_parsing(self):
+    @mock.patch('wcmatch.wcparse._is_case_sensitive')
+    def test_byte_wildcard_parsing(self, mock__iscase_sensitive):
         """Test byte_wildcard parsing."""
+
+        mock__iscase_sensitive.return_value = True
 
         wcm._compile.cache_clear()
 
-        p1, p2 = wcm.translate(b'*test[a-z]?|*test2[a-z]?|-test[!a-z]|-test[!-|a-z]', wcm.F)
+        p1, p2 = wcm.translate(wcm.split(b'*test[a-z]?|*test2[a-z]?|-test[!a-z]|-test[!-|a-z]'))
         if util.PY36:
             self.assertEqual(p1, br'(?s:.*test[a-z].|.*test2[a-z].)\Z')
             self.assertEqual(p2, br'(?s:test[^a-z]|test[^\-\|a-z])\Z')
@@ -206,15 +212,15 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, br'(?ms)(?:.*test[a-z].|.*test2[a-z].)\Z')
             self.assertEqual(p2, br'(?ms)(?:test[^a-z]|test[^\-\|a-z])\Z')
 
-        p1, p2 = wcm.translate(b'test[]][!][][]', wcm.F)
+        p1, p2 = wcm.translate(wcm.split(b'test[]][!][][]'))
         if util.PY36:
-            self.assertEqual(p1, br'(?s:test[]][^][]\[\])\Z')
+            self.assertEqual(p1, br'(?s:test[\]][^\][]\[\])\Z')
             self.assertEqual(p2, br'(?s:)\Z')
         else:
-            self.assertEqual(p1, br'(?ms)(?:test[]][^][]\[\])\Z')
+            self.assertEqual(p1, br'(?ms)(?:test[\]][^\][]\[\])\Z')
             self.assertEqual(p2, br'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate(b'test[!]', wcm.F)
+        p1, p2 = wcm.translate(wcm.split(b'test[!]'))
         if util.PY36:
             self.assertEqual(p1, br'(?s:test\[\!\])\Z')
             self.assertEqual(p2, br'(?s:)\Z')
@@ -222,7 +228,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, br'(?ms)(?:test\[\!\])\Z')
             self.assertEqual(p2, br'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate(b'|test|', wcm.F)
+        p1, p2 = wcm.translate(wcm.split(b'|test|'))
         if util.PY36:
             self.assertEqual(p1, br'(?s:|test|)\Z')
             self.assertEqual(p2, br'(?s:)\Z')
@@ -230,7 +236,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, br'(?ms)(?:|test|)\Z')
             self.assertEqual(p2, br'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate(b'-|-test|-', wcm.F)
+        p1, p2 = wcm.translate(wcm.split(b'-|-test|-'))
         if util.PY36:
             self.assertEqual(p1, br'(?s:.*)\Z')
             self.assertEqual(p2, br'(?s:|test|)\Z')
@@ -238,7 +244,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, br'(?ms)(?:.*)\Z')
             self.assertEqual(p2, br'(?ms)(?:|test|)\Z')
 
-        p1, p2 = wcm.translate(b'test[^chars]', wcm.F)
+        p1, p2 = wcm.translate(wcm.split(b'test[^chars]'))
         if util.PY36:
             self.assertEqual(p1, br'(?s:test[\^chars])\Z')
             self.assertEqual(p2, br'(?s:)\Z')
@@ -246,26 +252,26 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, br'(?ms)(?:test[\^chars])\Z')
             self.assertEqual(p2, br'(?ms)(?:)\Z')
 
-        p1 = wcm.translate(br'test[^\-\&]', wcm.F)[0]
+        p1 = wcm.translate(wcm.split(br'test[^\-\&]'))[0]
         if util.PY36:
             self.assertEqual(p1, br'(?s:test[\^\\-\\\&])\Z')
         else:
             self.assertEqual(p1, br'(?ms)(?:test[\^\\-\\\&])\Z')
 
-        p1 = wcm.translate(br'\*\?\|\[\]', wcm.F)[0]
+        p1 = wcm.translate(wcm.split(br'\*\?\|\[\]'))[0]
         if util.PY36:
             self.assertEqual(p1, br'(?s:\\.*\\.\\|\\[\\])\Z')
         else:
             self.assertEqual(p1, br'(?ms)(?:\\.*\\.\\|\\[\\])\Z')
 
-        p1 = wcm.translate(br'\\u0300', wcm.F | wcm.R)[0]
+        p1 = wcm.translate(wcm.split(br'\\u0300'), wcm.R)[0]
         if util.PY36:
             self.assertEqual(p1, br'(?s:\\u0300)\Z')
         else:
             self.assertEqual(p1, br'(?ms)(?:\\u0300)\Z')
 
         self.assertTrue(
-            wcm.filter([b'test\\m', b'test\\3', b'test\\a'], br'test\m'),
+            wcm.filter([b'test\\m', b'test\\3', b'test\\a'], wcm.split(br'test\m')),
             [b'test\\m', b'test\\a']
         )
 
@@ -284,12 +290,15 @@ class TestWildcard(unittest.TestCase):
         self.assertTrue(wcm.fnmatch(b',', b'[a-z+--A-Z]'))
         self.assertTrue(wcm.fnmatch(b'.', b'[a-z--/A-Z]'))
 
-    def test_wildcard_character_notation(self):
+    @mock.patch('wcmatch.wcparse._is_case_sensitive')
+    def test_wildcard_character_notation(self, mock__iscase_sensitive):
         """Test wildcard character notations."""
+
+        mock__iscase_sensitive.return_value = True
 
         wcm._compile.cache_clear()
 
-        p1, p2 = wcm.translate(r'test\x70\u0070\U00000070\160\N{LATIN SMALL LETTER P}', wcm.F | wcm.R)
+        p1, p2 = wcm.translate(r'test\x70\u0070\U00000070\160\N{LATIN SMALL LETTER P}', wcm.R)
         if util.PY36:
             self.assertEqual(p1, r'(?s:test\160\160\160\160\160)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -297,7 +306,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:test\160\160\160\160\160)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate(r'test[\x70][\u0070][\U00000070][\160][\N{LATIN SMALL LETTER P}]', wcm.F | wcm.R)
+        p1, p2 = wcm.translate(r'test[\x70][\u0070][\U00000070][\160][\N{LATIN SMALL LETTER P}]', wcm.R)
         if util.PY36:
             self.assertEqual(p1, r'(?s:test[\160][\160][\160][\160][\160])\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -305,7 +314,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:test[\160][\160][\160][\160][\160])\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate(r'test\t\m', wcm.F | wcm.R)
+        p1, p2 = wcm.translate(r'test\t\m', wcm.R)
         if util.PY36:
             self.assertEqual(p1, r'(?s:test\t\\m)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -313,7 +322,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:test\t\\m)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate(r'test[\]test', wcm.F | wcm.R)
+        p1, p2 = wcm.translate(r'test[\]test', wcm.R)
         if util.PY36:
             self.assertEqual(p1, r'(?s:test[\\]test)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -321,7 +330,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:test[\\]test)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate('test[\\', wcm.F)
+        p1, p2 = wcm.translate('test[\\')
         if util.PY36:
             self.assertEqual(p1, r'(?s:test\[\\)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -329,7 +338,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:test\[\\)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate(r'test\33test', wcm.F | wcm.R)
+        p1, p2 = wcm.translate(r'test\33test', wcm.R)
         if util.PY36:
             self.assertEqual(p1, r'(?s:test\033test)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -337,7 +346,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:test\033test)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate(r'test\33', wcm.F | wcm.R)
+        p1, p2 = wcm.translate(r'test\33', wcm.R)
         if util.PY36:
             self.assertEqual(p1, r'(?s:test\033)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -345,7 +354,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:test\033)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate(r'test\400', wcm.F | wcm.R)
+        p1, p2 = wcm.translate(r'test\400', wcm.R)
         if util.PY36:
             self.assertEqual(p1, r'(?s:testĀ)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -401,7 +410,7 @@ class TestDirWalker(unittest.TestCase):
 
         walker = wcm.FnCrawl(
             'tests/dir_walker',
-            '*.*|-*.file', None,
+            wcm.split('*.*|-*.file', self.default_flags), None,
             False, False, self.default_flags
         )
 

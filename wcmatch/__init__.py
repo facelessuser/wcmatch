@@ -63,6 +63,12 @@ def _norm_slash(name):
         return name.replace(b'/', b"\\") if not _wcparse._is_case_sensitive() else name
 
 
+def split(pattern, flags=0):
+    """Split pattern by '|'."""
+
+    return _wcparse.Splitter(pattern, flags).parse()
+
+
 @_functools.lru_cache(maxsize=256, typed=True)
 def _compile(pattern, flags):  # noqa A001
     """Compile patterns."""
@@ -79,7 +85,7 @@ def _compile(pattern, flags):  # noqa A001
 def translate(pattern, flags=0):
     """Translate fnmatch pattern counting `|` as a separator and `-` as a negative pattern."""
 
-    return _wcparse.Parser(pattern, flags).parse()
+    return _wcparse.Parser(tuple(pattern) if isinstance(pattern, (list, set, tuple)) else (pattern,), flags).parse()
 
 
 def fnmatch(filename, pattern, flags=0):
@@ -90,7 +96,15 @@ def fnmatch(filename, pattern, flags=0):
     but if `case_sensitive` is set, respect that instead.
     """
 
-    return _compile(pattern, flags & _wcparse.FLAG_MASK).match(_norm_slash(filename))
+    obj = _compile(
+        tuple(pattern) if isinstance(pattern, (list, set, tuple)) else (pattern,),
+        flags & _wcparse.FLAG_MASK
+    )
+
+    print(obj._include)
+    print(obj._exclude)
+    print(_norm_slash(filename))
+    return obj.match(_norm_slash(filename))
 
 
 def filter(filenames, pattern, flags=0):  # noqa A001
@@ -98,7 +112,10 @@ def filter(filenames, pattern, flags=0):  # noqa A001
 
     matches = []
 
-    obj = _compile(pattern, flags & _wcparse.FLAG_MASK)
+    obj = _compile(
+        tuple(pattern) if isinstance(pattern, (list, set, tuple)) else (pattern,),
+        flags & _wcparse.FLAG_MASK
+    )
 
     for filename in filenames:
         filename = _norm_slash(filename)
@@ -133,11 +150,13 @@ class FnCrawl(object):
 
         pattern = None
         if not string and force_default:
-            string = '*'
+            string = ('*',)
         flags = self.flags
         if pathname:
             flags |= PATHNAME
-        return _compile(string, self.flags) if string else pattern
+        return _compile(
+            tuple(string) if isinstance(string, (list, set, tuple)) else (string,), self.flags
+        ) if string else pattern
 
     def _compile(self, file_pattern, folder_exclude_pattern):
         """Compile patterns."""

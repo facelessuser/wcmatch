@@ -55,6 +55,122 @@ def _get_case(flags):
     return case_sensitive
 
 
+class Splitter(object):
+
+    def __init__(self, pattern, flags):
+        """Initialize."""
+
+        self.pattern = pattern
+        if isinstance(pattern, bytes):
+            self.is_bytes = True
+        else:
+            self.is_bytes = False
+        self.string_escapes = flags & RAWSTRING
+        self.escape_chars = flags & ESCAPES
+        self.pathname = flags & PATHNAME
+        if util.platform() == "windows":
+            self.bslash_abort = self.pathname
+        else:
+            self.bslash_abort = False
+
+    def _sequence(self, i):
+        """Handle fnmatch character group."""
+
+        c = next(i)
+        if c == '!':
+            c = next(i)
+        if c in ('^', '-', '['):
+            c = next(i)
+
+        while c != ']':
+            if c == '\\':
+                # Handle escapes
+                subindex = i.index
+                try:
+                    self._references(i, True)
+                    if not self.escape_chars and i.previous() == ']':
+                        break
+                except PathNameException:
+                    raise StopIteration
+                except StopIteration:
+                    i.rewind(i.index - subindex)
+            elif c == '/':
+                if self.pathname:
+                    raise StopIteration
+            c = next(i)
+
+    def _references(self, i, sequence=False):
+        """Handle references."""
+
+        c = next(i)
+        if c == '\\':
+            # \\
+            if sequence and self.bslash_abort:
+                raise PathNameException
+            if not self.string_escapes and not self.escape_chars:
+                i.rewind(1)
+        elif c == '/':
+            # \/
+            if sequence and self.pathname:
+                raise PathNameException
+            elif self.pathname:
+                i.rewind(1)
+        elif self.escape_chars:
+            # \a, \b, \c, etc.
+            pass
+        elif c in _SET_OPERATORS or c in _WILDCARD_CHARS:
+            # \?, \&, \[, etc
+            if sequence and self.bslash_abort:
+                raise PathNameException
+            i.rewind(1)
+        else:
+            # Anything else
+            if sequence and self.bslash_abort:
+                raise PathNameException
+
+    def parse(self):
+        """Start parsing the pattern."""
+
+        split_index = []
+        parts = []
+
+        pattern = self.pattern.decode('latin-1') if self.is_bytes else self.pattern
+
+        i = util.StringIter(pattern)
+        iter(i)
+        for c in i:
+            if c == '|':
+                split_index.append(i.index - 1)
+            elif c == '\\':
+                index = i.index
+                try:
+                    self._references(i)
+                except StopIteration:
+                    i.rewind(i.index - index)
+            elif c == '[':
+                index = i.index
+                try:
+                    self._sequence(i)
+                except StopIteration:
+                    i.rewind(i.index - index)
+
+        start = -1
+        for split in split_index:
+            if self.is_bytes:
+                parts.append(pattern[start + 1:split].encode('latin-1'))
+            else:
+                parts.append(pattern[start + 1:split])
+            start = split
+
+        if start < len(pattern):
+            if self.is_bytes:
+                parts.append(pattern[start + 1:].encode('latin-1'))
+            else:
+                parts.append(pattern[start + 1:])
+
+        return tuple(parts)
+
+
 class Parser(object):
     """Parse the wildcard pattern."""
 
@@ -62,7 +178,7 @@ class Parser(object):
         """Initialize."""
 
         self.pattern = pattern
-        if isinstance(pattern, bytes):
+        if isinstance(pattern[0], bytes):
             self.is_bytes = True
         else:
             self.is_bytes = False
@@ -94,17 +210,8 @@ class Parser(object):
             # Handle negate char
             result.append('^')
             c = next(i)
-        if c == '^':
-            # Escape regular expression negate character
-            result.append('\\' + c)
-            c = next(i)
-        if c in ('-', '['):
-            # Escape opening bracket or hyphen
-            result.append('\\' + c)
-            c = next(i)
-        elif c == ']':
-            # Handle closing as first character
-            result.append(c)
+        if c in ('^', '-', '[', ']'):
+            result.append(re.escape(c))
             c = next(i)
 
         end_stored = False
@@ -307,51 +414,6 @@ class Parser(object):
             value = r'\\' + c
         return value
 
-    # def _handle_tilde(self, i, directory_start=False):
-    #     """Directory start."""
-
-    #     value = '~'
-    #     if directory_start and self.pathname:
-    #         try:
-    #             index = i.index
-    #             c = next(i)
-    #             if c == '\\' and (self.bslash_abort or self.escape_chars):
-    #                 try:
-    #                     self._references(i, True)
-    #                     # Was not what we expected
-    #                     # Backout and assume not a home directory
-    #                 except PathNameException:
-    #                     # Looks like escape was a valid slash
-    #                     # Store pattern accordingly
-    #                     if self.is_bytes:
-    #                         value = os.path.expanduser(b'~').encode('latin-1')
-    #                     else:
-    #                         value = os.path.expanduser('~')
-    #                 except StopIteration:
-    #                     # Ran out of characters so assume backslash
-    #                     # count as a double star
-    #                     if self.slash == '\\':
-    #                         if self.is_bytes:
-    #                             value = os.path.expanduser(b'~').encode('latin-1')
-    #                         else:
-    #                             value = os.path.expanduser('~')
-    #             elif c == '/':
-    #                 # Found slash
-    #                 if self.is_bytes:
-    #                     value = os.path.expanduser(b'~').encode('latin-1')
-    #                 else:
-    #                     value = os.path.expanduser('~')
-    #             # Backout and hanlde slashes later
-    #             i.rewind(i.index - index)
-    #         except StopIteration:
-    #             # Could not acquire directory slash due to no more characters
-    #             # Use double star
-    #             if self.is_bytes:
-    #                 value = os.path.expanduser(b'~').encode('latin-1')
-    #             else:
-    #                 value = os.path.expanduser('~')
-    #     return value
-
     def _handle_star(self, i, directory_start=False):
         """Handle star."""
 
@@ -402,21 +464,8 @@ class Parser(object):
 
         return value
 
-    def parse(self):
+    def root(self, pattern, current):
         """Start parsing the pattern."""
-
-        result = []
-        exclude_result = []
-
-        pattern = self.pattern.decode('latin-1') if self.is_bytes else self.pattern
-
-        if self.extra and pattern[0:1] == '-':
-            current = exclude_result
-            pattern = pattern[1:]
-            current.append('')
-        else:
-            current = result
-            current.append('')
 
         first = True
         i = util.StringIter(pattern)
@@ -424,29 +473,8 @@ class Parser(object):
         for c in i:
             if c == '*':
                 current.append(self._handle_star(i, first))
-            # elif c == '~' and first:
-            #     current.append(self._handle_tilde(i, first))
             elif c == '?':
                 current.append('.')
-            elif self.extra and c == '|':
-                try:
-                    c = next(i)
-                    if c == '-':
-                        current = exclude_result
-                    else:
-                        current = result
-                        i.rewind(1)
-                except StopIteration:
-                    # No need to append | as we are at the end.
-                    current = result
-                # Only append if we've already started the pattern
-                # This is to avoid adding a leading | to something
-                # like the exclude pattern on transition from normal
-                # to exclude pattern.
-                if current:
-                    current.append('|')
-                first = True
-                continue
             elif c == '/':
                 current.append(re.escape(self.norm_slash))
             elif c == '\\':
@@ -466,7 +494,33 @@ class Parser(object):
             else:
                 current.append(re.escape(c))
             first = False
-        if not result:
+
+    def parse(self):
+        """Parse pattern list."""
+
+        result = []
+        exclude_result = []
+        empty_include = True
+        empty_exclude = True
+
+        for p in self.pattern:
+            p = p.decode('latin-1') if self.is_bytes else p
+            if self.extra and p[0:1] == '-':
+                current = exclude_result
+                p = p[1:]
+                current.append('|' if not empty_exclude else '')
+            else:
+                current = result
+                current.append('|' if not empty_include else '')
+
+            if current is result:
+                empty_include = False
+            else:
+                empty_exclude = False
+
+            self.root(p, current)
+
+        if exclude_result and not result:
             result.append('.*')
         case_flag = 'i' if not self.case_sensitive else ''
         if util.PY36:
@@ -481,7 +535,6 @@ class Parser(object):
                 pattern = pattern.encode('latin-1')
             if exclude_pattern is not None:
                 exclude_pattern = exclude_pattern.encode('latin-1')
-
         return pattern, exclude_pattern
 
 
