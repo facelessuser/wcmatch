@@ -2,9 +2,6 @@
 # -*- coding: utf-8 -*-
 """Setup package."""
 from setuptools import setup, find_packages
-from setuptools.command.sdist import sdist
-from setuptools.command.build_py import build_py
-import sys
 import os
 import imp
 import traceback

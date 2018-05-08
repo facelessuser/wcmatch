@@ -30,7 +30,8 @@ from .file_hidden import is_hidden as _is_hidden
 from . import __version__
 
 __all__ = (
-    "CASE", "IGNORECASE", "RAW_STRING_ESCAPES", "ESCAPE_CHARS", "NO_EXTRA"
+    "FORCECASE", "IGNORECASE", "RAWSTRING", "ESCAPES", "NOEXTRA", "PATHNAME",
+    "F", "I", "R", "E", "N", "P",
     "translate", "fnmatch", "filter", "FnCrawl", "WcMatch",
     "version", "version_info"
 )
@@ -38,11 +39,28 @@ __all__ = (
 version = __version__.version
 version_info = __version__.version_info
 
-CASE = _wcparse.CASE
+FORCECASE = _wcparse.FORCECASE
 IGNORECASE = _wcparse.IGNORECASE
-RAW_STRING_ESCAPES = _wcparse.RAW_STRING_ESCAPES
-ESCAPE_CHARS = _wcparse.ESCAPE_CHARS
-NO_EXTRA = _wcparse.NO_EXTRA
+RAWSTRING = _wcparse.RAWSTRING
+ESCAPES = _wcparse.ESCAPES
+NOEXTRA = _wcparse.NOEXTRA
+PATHNAME = _wcparse.PATHNAME
+
+F = FORCECASE
+I = IGNORECASE
+R = RAWSTRING
+E = ESCAPES
+N = NOEXTRA
+P = PATHNAME
+
+
+def _norm_slash(name):
+    """Normalize path slashes."""
+
+    if isinstance(name, str):
+        return name.replace('/', "\\") if not _wcparse._is_case_sensitive() else name
+    else:
+        return name.replace(b'/', b"\\") if not _wcparse._is_case_sensitive() else name
 
 
 @_functools.lru_cache(maxsize=256, typed=True)
@@ -72,7 +90,7 @@ def fnmatch(filename, pattern, flags=0):
     but if `case_sensitive` is set, respect that instead.
     """
 
-    return _compile(pattern, flags & _wcparse.FLAG_MASK).match(filename)
+    return _compile(pattern, flags & _wcparse.FLAG_MASK).match(_norm_slash(filename))
 
 
 def filter(filenames, pattern, flags=0):  # noqa A001
@@ -83,6 +101,7 @@ def filter(filenames, pattern, flags=0):  # noqa A001
     obj = _compile(pattern, flags & _wcparse.FLAG_MASK)
 
     for filename in filenames:
+        filename = _norm_slash(filename)
         if obj.match(filename):
             matches.append(filename)
     return matches
@@ -97,22 +116,27 @@ class FnCrawl(object):
         args = list(args)
         self._skipped = 0
         self._abort = False
-        self.directory = args.pop(0)
+        self.directory = _norm_slash(args.pop(0))
         self.file_pattern = args.pop(0) if args else kwargs.pop('file_pattern', None)
         self.exclude_pattern = args.pop(0) if args else kwargs.pop('exclude_pattern', None)
         self.recursive = args.pop(0) if args else kwargs.pop('recursive', False)
         self.show_hidden = args.pop(0) if args else kwargs.pop('show_hidden', True)
         self.flags = args.pop(0) if args else kwargs.pop('flags', 0)
+        self.pathname = self.flags & PATHNAME
+        self.flags ^= PATHNAME
 
         self.on_init(*args, **kwargs)
         self.file_check, self.folder_exclude_check = self._compile(self.file_pattern, self.exclude_pattern)
 
-    def _compile_wildcard(self, string, force_default=False):
+    def _compile_wildcard(self, string, force_default=False, pathname=False):
         r"""Compile or format the wildcard inclusion\exclusion pattern."""
 
         pattern = None
         if not string and force_default:
             string = '*'
+        flags = self.flags
+        if pathname:
+            flags |= PATHNAME
         return _compile(string, self.flags) if string else pattern
 
     def _compile(self, file_pattern, folder_exclude_pattern):
@@ -122,7 +146,7 @@ class FnCrawl(object):
             file_pattern = self._compile_wildcard(file_pattern, force_default=True)
 
         if not isinstance(folder_exclude_pattern, WcMatch):
-            folder_exclude_pattern = self._compile_wildcard(folder_exclude_pattern)
+            folder_exclude_pattern = self._compile_wildcard(folder_exclude_pattern, pathname=self.pathname)
         return file_pattern, folder_exclude_pattern
 
     def _is_hidden(self, path):
@@ -147,10 +171,11 @@ class FnCrawl(object):
         """Return whether a folder can be searched."""
 
         valid = True
-        if not self.recursive or self._is_hidden(_os.path.join(base, name)):
+        fullpath = _os.path.join(base, name)
+        if not self.recursive or self._is_hidden(fullpath):
             valid = False
         elif self.folder_exclude_check is not None:
-            valid = not self.folder_exclude_check.match(name)
+            valid = not self.folder_exclude_check.match(fullpath if self.pathname else name)
         return self.on_validate_directory(base, name) if valid else valid
 
     def on_init(self, *args, **kwargs):
