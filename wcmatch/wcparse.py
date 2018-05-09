@@ -65,11 +65,11 @@ class Splitter(object):
 
         self.pattern = pattern
         self.is_bytes = isinstance(pattern, bytes)
-        self.string_escapes = flags & (RAWCHARS | RAWSTRING)
-        self.char_escapes = flags & RAWCHARS
-        self.bslash_escape = flags & (RAWCHARS | RAWSTRING | ESCAPES)
-        self.escape_chars = flags & ESCAPES
-        self.pathname = flags & PATHNAME
+        self.string_escapes = bool(flags & (RAWCHARS | RAWSTRING))
+        self.char_escapes = bool(flags & RAWCHARS)
+        self.bslash_escape = bool(flags & (RAWCHARS | RAWSTRING | ESCAPES))
+        self.escape_chars = bool(flags & ESCAPES)
+        self.pathname = bool(flags & PATHNAME)
         self.bslash_abort = self.pathname if util.platform() == "windows" else False
 
     def _sequence(self, i):
