@@ -89,7 +89,10 @@ def _compile(pattern, flags):  # noqa A001
 def translate(pattern, flags=0):
     """Translate fnmatch pattern counting `|` as a separator and `-` as a negative pattern."""
 
-    return _wcparse.Parser(tuple(pattern) if isinstance(pattern, (list, set, tuple)) else (pattern,), flags).parse()
+    return _wcparse.Parser(
+        tuple(pattern) if not isinstance(pattern, (str, bytes)) else (pattern,),
+        flags
+    ).parse()
 
 
 def fnmatch(filename, pattern, flags=0):
@@ -101,7 +104,7 @@ def fnmatch(filename, pattern, flags=0):
     """
 
     return _compile(
-        tuple(pattern) if isinstance(pattern, (list, set, tuple)) else (pattern,),
+        tuple(pattern) if not isinstance(pattern, (str, bytes)) else (pattern,),
         flags & _wcparse.FLAG_MASK
     ).match(_norm_slash(filename))
 
@@ -112,7 +115,7 @@ def filter(filenames, pattern, flags=0):  # noqa A001
     matches = []
 
     obj = _compile(
-        tuple(pattern) if isinstance(pattern, (list, set, tuple)) else (pattern,),
+        tuple(pattern) if not isinstance(pattern, (str, bytes)) else (pattern,),
         flags & _wcparse.FLAG_MASK
     )
 
@@ -133,38 +136,55 @@ class FnCrawl(object):
         self._skipped = 0
         self._abort = False
         self.directory = _norm_slash(args.pop(0))
-        self.file_pattern = args.pop(0) if args else kwargs.pop('file_pattern', None)
-        self.exclude_pattern = args.pop(0) if args else kwargs.pop('exclude_pattern', None)
+        self.file_pattern = args.pop(0) if args else kwargs.pop('file_pattern', '')
+        self.exclude_pattern = args.pop(0) if args else kwargs.pop('exclude_pattern', '')
         self.recursive = args.pop(0) if args else kwargs.pop('recursive', False)
         self.show_hidden = args.pop(0) if args else kwargs.pop('show_hidden', True)
         self.flags = args.pop(0) if args else kwargs.pop('flags', 0)
-        self.pathname = self.flags & PATHNAME
+        self.pathname = bool(self.flags & PATHNAME)
         self.flags ^= PATHNAME
 
         self.on_init(*args, **kwargs)
         self.file_check, self.folder_exclude_check = self._compile(self.file_pattern, self.exclude_pattern)
 
-    def _compile_wildcard(self, string, force_default=False, pathname=False):
-        r"""Compile or format the wildcard inclusion\exclusion pattern."""
+    def _compile_wildcard(self, patterns, force_default=False, pathname=False):
+        """Compile or format the wildcard inclusion/exclusion pattern."""
 
         pattern = None
-        if not string and force_default:
-            string = ('*',)
         flags = self.flags
-        if pathname:
+        if self.pathname:
             flags |= PATHNAME
-        return _compile(
-            tuple(string) if isinstance(string, (list, set, tuple)) else (string,), self.flags
-        ) if string else pattern
+        return _compile(tuple(patterns), self.flags) if patterns else pattern
 
     def _compile(self, file_pattern, folder_exclude_pattern):
         """Compile patterns."""
 
         if not isinstance(file_pattern, WcMatch):
-            file_pattern = self._compile_wildcard(file_pattern, force_default=True)
+            # Ensure file pattern is not empty
+            if (
+                file_pattern is None or
+                (isinstance(file_pattern, (str, bytes)) and not file_pattern)
+            ):
+                file_pattern = ('*',)
+
+            # Ensure if pattern is a string that it is wrapped in something iterable
+            if isinstance(file_pattern, (str, bytes)):
+                file_pattern = (file_pattern,)
+
+            # If it is an array of empty strings, assign a good default.
+            if not any(file_pattern):
+                file_pattern = ('*',)
+
+            file_pattern = self._compile_wildcard(file_pattern)
 
         if not isinstance(folder_exclude_pattern, WcMatch):
-            folder_exclude_pattern = self._compile_wildcard(folder_exclude_pattern, pathname=self.pathname)
+
+            # Ensure if pattern is a string that it is wrapped in something iterable
+            if folder_exclude_pattern and isinstance(folder_exclude_pattern, (str, bytes)):
+                folder_exclude_pattern = (folder_exclude_pattern,)
+
+            folder_exclude_pattern = self._compile_wildcard(folder_exclude_pattern)
+
         return file_pattern, folder_exclude_pattern
 
     def _is_hidden(self, path):
