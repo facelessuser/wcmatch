@@ -30,8 +30,8 @@ from .file_hidden import is_hidden as _is_hidden
 from . import __version__
 
 __all__ = (
-    "FORCECASE", "IGNORECASE", "RAWSTRING", "RAWCHARS", "ESCAPES", "NOEXTRA", "PATHNAME",
-    "F", "I", "R", "C", "E", "N", "P",
+    "EXTEND", "FORCECASE", "IGNORECASE", "RAWCHARS", "NONEGATE", "PATHNAME",
+    "E", "I", "C", "N", "P",
     "translate", "fnmatch", "filter", "split", "FnCrawl", "WcMatch",
     "version", "version_info"
 )
@@ -39,21 +39,19 @@ __all__ = (
 version = __version__.version
 version_info = __version__.version_info
 
+EXTEND = _wcparse.EXTEND
 FORCECASE = _wcparse.FORCECASE
 IGNORECASE = _wcparse.IGNORECASE
-RAWSTRING = _wcparse.RAWSTRING
 RAWCHARS = _wcparse.RAWCHARS
-ESCAPES = _wcparse.ESCAPES
-NOEXTRA = _wcparse.NOEXTRA
+NONEGATE = _wcparse.NONEGATE
 PATHNAME = _wcparse.PATHNAME
 DOT = _wcparse.DOT
 
+E = EXTEND
 F = FORCECASE
 I = IGNORECASE
-R = RAWSTRING
 C = RAWCHARS
-E = ESCAPES
-N = NOEXTRA
+N = NONEGATE
 P = PATHNAME
 D = DOT
 
