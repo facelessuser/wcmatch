@@ -7,8 +7,8 @@ import copyreg
 from . import util
 
 __all__ = (
-    "FORCECASE", "IGNORECASE", "RAWSTRING", "ESCAPES", "NOEXTRA", "PATHNAME", "FLAG_MASK",
-    "Parser", "WcMatch"
+    "FORCECASE", "IGNORECASE", "RAWSTRING", "RAWCHARS", "ESCAPES", "NOEXTRA", "PATHNAME", "FLAG_MASK",
+    "Parser", "Splitter", "WcMatch"
 )
 
 _OCTAL = frozenset(('0', '1', '2', '3', '4', '5', '6', '7'))
@@ -23,11 +23,13 @@ _CASE_FS = os.path.normcase('A') != os.path.normcase('a')
 FORCECASE = 0x0001
 IGNORECASE = 0x0002
 RAWSTRING = 0x0004
-ESCAPES = 0x0008
-NOEXTRA = 0x0010
-PATHNAME = 0x0020
+RAWCHARS = 0x0008
+ESCAPES = 0x0010
+NOEXTRA = 0x0020
+PATHNAME = 0x0040
+DOT = 0x0080
 
-FLAG_MASK = 0x3F
+FLAG_MASK = 0xFF
 _CASE_FLAGS = FORCECASE | IGNORECASE
 
 
@@ -56,22 +58,19 @@ def _get_case(flags):
 
 
 class Splitter(object):
+    """Split patterns on |."""
 
     def __init__(self, pattern, flags):
         """Initialize."""
 
         self.pattern = pattern
-        if isinstance(pattern, bytes):
-            self.is_bytes = True
-        else:
-            self.is_bytes = False
-        self.string_escapes = flags & RAWSTRING
+        self.is_bytes = isinstance(pattern, bytes)
+        self.string_escapes = flags & (RAWCHARS | RAWSTRING)
+        self.char_escapes = flags & RAWCHARS
+        self.bslash_escape = flags & (RAWCHARS | RAWSTRING | ESCAPES)
         self.escape_chars = flags & ESCAPES
         self.pathname = flags & PATHNAME
-        if util.platform() == "windows":
-            self.bslash_abort = self.pathname
-        else:
-            self.bslash_abort = False
+        self.bslash_abort = self.pathname if util.platform() == "windows" else False
 
     def _sequence(self, i):
         """Handle fnmatch character group."""
@@ -107,7 +106,7 @@ class Splitter(object):
             # \\
             if sequence and self.bslash_abort:
                 raise PathNameException
-            if not self.string_escapes and not self.escape_chars:
+            if not self.bslash_escape:
                 i.rewind(1)
         elif c == '/':
             # \/
@@ -178,97 +177,67 @@ class Parser(object):
         """Initialize."""
 
         self.pattern = pattern
-        if isinstance(pattern[0], bytes):
-            self.is_bytes = True
-        else:
-            self.is_bytes = False
-        self.string_escapes = flags & RAWSTRING
-        self.escape_chars = flags & ESCAPES
-        self.extra = not (flags & NOEXTRA)
-        self.pathname = flags & PATHNAME
+        self.is_bytes = isinstance(pattern[0], bytes)
+        self.string_escapes = bool(flags & (RAWCHARS | RAWSTRING))
+        self.char_escapes = bool(flags & RAWCHARS)
+        self.bslash_escape = bool(flags & (RAWCHARS | RAWSTRING | ESCAPES))
+        self.escape_chars = bool(flags & ESCAPES)
+        self.extra = not bool(flags & NOEXTRA)
+        self.pathname = bool(flags & PATHNAME)
+        self.dot = bool(flags & DOT)
         self.case_sensitive = _get_case(flags)
+        self.seq_dot = r'(?<![.])'
         if util.platform() == "windows":
-            self.slash_val = (ord('\\'), ord('/'))
+            self.char_avoid = (ord('\\'), ord('/'), ord('.'))
             self.star = r'[^\\]*'
-            self.seq_path = r'(?<![\\])'
+            self.star_dot = r'(?:[^.][^\\]*)?'
+            self.seq_path = r'(?<![\\%s])'
             self.bslash_abort = self.pathname
             self.norm_slash = '\\'
         else:
-            self.slash_val = (ord('/'),)
+            self.char_avoid = (ord('/'), ord('.'))
             self.star = r'[^\/]*'
-            self.seq_path = r'(?<![\/])'
+            self.star_dot = r'(?:[^.][^\/]*)?'
+            self.seq_path = r'(?<![\/%s])'
             self.bslash_abort = False
             self.norm_slash = '/'
 
-    def _sequence(self, i):
-        """Handle fnmatch character group."""
+    def set_after_start(self):
+        """Set tracker for character after the start of a directory."""
 
-        result = ['[']
+        self.after_start = True
+        self.dir_start = False
 
-        c = next(i)
-        if c == '!':
-            # Handle negate char
-            result.append('^')
-            c = next(i)
-        if c in ('^', '-', '[', ']'):
-            result.append(re.escape(c))
-            c = next(i)
+    def set_start_dir(self):
+        """Set directory start."""
 
-        end_stored = False
-        escape_hypen = -1
-        while c != ']':
-            if c == '-':
-                if i.index - 1 > escape_hypen:
-                    # Found a range delimiter.
-                    # Mark the next two characters as needing to be escaped if hypens.
-                    # The next character would be the end char range (s-e),
-                    # and the one after that would be the potential start char range
-                    # of a new range (s-es-e), so neither can be legitimate range delimiters.
-                    result.append(c)
-                    escape_hypen = i.index + 1
-                else:
-                    result.append('\\' + c)
-            elif c == '\\':
-                # Handle escapes
-                subindex = i.index
-                try:
-                    result.append(self._references(i, True))
-                    if not self.escape_chars and i.previous() == ']':
-                        if self.pathname:
-                            result.append(self.seq_path)
-                        end_stored = True
-                        break
-                except PathNameException:
-                    raise StopIteration
-                except StopIteration:
-                    i.rewind(i.index - subindex)
-                    result.append(r'\\')
-            elif c == '/':
-                if self.pathname:
-                    raise StopIteration
-                result.append(re.escape(self.norm_slash))
-            elif c in _SET_OPERATORS:
-                # Escape &, |, and ~ to avoid &&, ||, and ~~
-                result.append('\\' + c)
-            else:
-                # Anything else
-                result.append(c)
-            c = next(i)
+        self.dir_start = True
+        self.after_start = False
 
-        if not end_stored:
-            result.append(']')
-            if self.pathname:
-                result.append(self.seq_path)
+    def reset_dir_track(self):
+        """Reset dir tracker."""
 
-        return ''.join(result)
+        self.dir_start = False
+        self.after_start = False
+
+    def _restrict_sequence(self):
+        """Restrict sequence."""
+
+        if self.pathname:
+            value = self.seq_path % ('.' if self.after_start and self.dot else '')
+        else:
+            value = self.seq_dot
+        self.reset_dir_track()
+
+        return value
 
     def _convert_value(self, value, sequence=True):
         """Convert char value."""
 
-        if sequence or not self.pathname or value not in self.slash_val:
+        if sequence or not (self.pathname or (self.after_start and self.dot)) or value not in self.char_avoid:
             return '\\%03o' % value if value <= 0xFF else chr(value)
         else:
-            return ('[%s]' % re.escape(chr(value))) + self.seq_path
+            return ('[%s]' % re.escape(chr(value))) + self._restrict_sequence()
 
     def _get_unicode_name(self, index, i):
         """Get Unicode name."""
@@ -360,42 +329,107 @@ class Parser(object):
             raise ValueError("octal escape value outside of range 0-0o377!")
         return value
 
+    def _sequence(self, i):
+        """Handle fnmatch character group."""
+
+        result = ['[']
+
+        c = next(i)
+        if c == '!':
+            # Handle negate char
+            result.append('^')
+            c = next(i)
+        if c in ('^', '-', '[', ']'):
+            result.append(re.escape(c))
+            c = next(i)
+
+        end_stored = False
+        escape_hypen = -1
+        while c != ']':
+            if c == '-':
+                if i.index - 1 > escape_hypen:
+                    # Found a range delimiter.
+                    # Mark the next two characters as needing to be escaped if hypens.
+                    # The next character would be the end char range (s-e),
+                    # and the one after that would be the potential start char range
+                    # of a new range (s-es-e), so neither can be legitimate range delimiters.
+                    result.append(c)
+                    escape_hypen = i.index + 1
+                else:
+                    result.append('\\' + c)
+            elif c == '\\':
+                # Handle escapes
+                subindex = i.index
+                try:
+                    result.append(self._references(i, True))
+                    if not self.escape_chars and i.previous() == ']':
+                        if self.pathname or (self.after_start and self.dot):
+                            result.append(self._restrict_sequence())
+                        end_stored = True
+                        break
+                except PathNameException:
+                    raise StopIteration
+                except StopIteration:
+                    i.rewind(i.index - subindex)
+                    result.append(r'\\')
+            elif c == '/':
+                if self.pathname:
+                    raise StopIteration
+                result.append(re.escape(self.norm_slash))
+            elif c in _SET_OPERATORS:
+                # Escape &, |, and ~ to avoid &&, ||, and ~~
+                result.append('\\' + c)
+            else:
+                # Anything else
+                result.append(c)
+            c = next(i)
+
+        if not end_stored:
+            result.append(']')
+            if self.pathname or (self.after_start and self.dot):
+                result.append(self._restrict_sequence())
+
+        return ''.join(result)
+
     def _references(self, i, sequence=False):
         """Handle references."""
 
         index = i.index
         value = ''
         c = next(i)
-        if not self.is_bytes and self.string_escapes and c in 'N':
+        if not self.is_bytes and self.char_escapes and c in 'N':
             # \N{Name}
             value = self._convert_value(self._get_unicode_name(index, i), sequence)
-        elif self.string_escapes and c in _OCTAL:
+        elif self.char_escapes and c in _OCTAL:
             # \000
             value = self._convert_value(self._get_octal(c, i), sequence)
-        elif not self.is_bytes and self.string_escapes and c in _UCHAR_ESCAPES:
+        elif not self.is_bytes and self.char_escapes and c in _UCHAR_ESCAPES:
             # \u, \U,
             value = self._convert_value(self._get_unicode(i, c == "U"), sequence)
-        elif self.string_escapes and c in _CHAR_ESCAPES:
+        elif self.char_escapes and c in _CHAR_ESCAPES:
             # \x
             value = self._convert_value(self._get_byte(i), sequence)
-        elif self.string_escapes and c in _STANDARD_ESCAPES:
+        elif self.char_escapes and c in _STANDARD_ESCAPES:
             # \n, \v, etc. and \x.
             value = '\\' + c
         elif c == '\\':
             # \\
             if sequence and self.bslash_abort:
                 raise PathNameException
+            if self.bslash_abort:
+                self.set_start_dir()
             value = r'\\'
-            if not self.string_escapes and not self.escape_chars:
+            if not self.bslash_escape:
                 i.rewind(1)
         elif c == '/':
             # \/
             if sequence and self.pathname:
                 raise PathNameException
-            elif self.pathname:
+            if self.pathname:
+                self.set_start_dir()
                 value = r'\\'
                 i.rewind(1)
-            elif self.escape_chars or self.string_escapes:
+            elif self.bslash_escape:
                 c = self.norm_slash
                 value = re.escape(c)
         elif self.escape_chars:
@@ -405,20 +439,26 @@ class Parser(object):
             # \?, \&, \[, etc
             if sequence and self.bslash_abort:
                 raise PathNameException
+            if self.bslash_abort:
+                self.set_start_dir()
             value = r'\\'
             i.rewind(1)
         else:
             # Anything else
             if sequence and self.bslash_abort:
                 raise PathNameException
+            # No special need for dot hear as it would be okay
+            # if we were in a start dir scenario.
             value = r'\\' + c
         return value
 
-    def _handle_star(self, i, directory_start=False):
+    def _handle_star(self, i):
         """Handle star."""
 
-        value = '.*' if not self.pathname else self.star
-        if directory_start and self.pathname:
+        star = self.star_dot if self.after_start and self.dot else self.star
+        dstar = r'(?:[^.].*)?' if self.after_start and self.dot else '.*'
+        value = dstar if not self.pathname else star
+        if self.after_start and self.pathname:
             try:
                 c = next(i)
                 if c != '*':
@@ -436,7 +476,7 @@ class Parser(object):
                         self._references(i, True)
                         # Was not what we expected
                         # Assume two single stars
-                        value += value
+                        value += self.star
                     except PathNameException:
                         # Looks like escape was a valid slash
                         # Store pattern accordingly
@@ -445,38 +485,45 @@ class Parser(object):
                         # Ran out of characters so assume backslash
                         # count as a double star
                         if self.slash == '\\':
-                            value = r'.*'
+                            value = dstar
                         else:
-                            value += value
+                            value += self.star
                 elif c == '/':
                     # Found slash
-                    value = r'.*'
+                    value = dstar
                 else:
                     # There was no start of next directory
                     # Assume two single stars
-                    value += value
+                    value += self.star
                 # Backout and handle slashes later
                 i.rewind(i.index - index)
             except StopIteration:
                 # Could not acquire directory slash due to no more characters
                 # Use double star
-                value = '.*'
+                value = dstar
+        self.reset_dir_track()
 
         return value
 
     def root(self, pattern, current):
         """Start parsing the pattern."""
 
-        first = True
+        self.set_after_start()
         i = util.StringIter(pattern)
         iter(i)
         for c in i:
             if c == '*':
-                current.append(self._handle_star(i, first))
+                current.append(self._handle_star(i))
             elif c == '?':
-                current.append('.')
+                if self.pathname:
+                    current.append('.' + self._restrict_sequence())
+                else:
+                    current.append('[^.]' if self.after_start and self.dot else '.')
+                    self.reset_dir_track()
             elif c == '/':
                 current.append(re.escape(self.norm_slash))
+                if self.pathname:
+                    self.set_start_dir()
             elif c == '\\':
                 index = i.index
                 try:
@@ -493,7 +540,12 @@ class Parser(object):
                     current.append(r'\[')
             else:
                 current.append(re.escape(c))
-            first = False
+
+            # Track when next char needs special dot logic
+            if self.dir_start and not self.after_start:
+                self.set_after_start()
+            elif not self.dir_start and self.after_start:
+                self.reset_dir_track()
 
     def parse(self):
         """Parse pattern list."""

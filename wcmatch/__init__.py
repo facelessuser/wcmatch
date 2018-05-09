@@ -30,9 +30,9 @@ from .file_hidden import is_hidden as _is_hidden
 from . import __version__
 
 __all__ = (
-    "FORCECASE", "IGNORECASE", "RAWSTRING", "ESCAPES", "NOEXTRA", "PATHNAME",
-    "F", "I", "R", "E", "N", "P",
-    "translate", "fnmatch", "filter", "FnCrawl", "WcMatch",
+    "FORCECASE", "IGNORECASE", "RAWSTRING", "RAWCHARS", "ESCAPES", "NOEXTRA", "PATHNAME",
+    "F", "I", "R", "C", "E", "N", "P",
+    "translate", "fnmatch", "filter", "split", "FnCrawl", "WcMatch",
     "version", "version_info"
 )
 
@@ -42,16 +42,20 @@ version_info = __version__.version_info
 FORCECASE = _wcparse.FORCECASE
 IGNORECASE = _wcparse.IGNORECASE
 RAWSTRING = _wcparse.RAWSTRING
+RAWCHARS = _wcparse.RAWCHARS
 ESCAPES = _wcparse.ESCAPES
 NOEXTRA = _wcparse.NOEXTRA
 PATHNAME = _wcparse.PATHNAME
+DOT = _wcparse.DOT
 
 F = FORCECASE
 I = IGNORECASE
 R = RAWSTRING
+C = RAWCHARS
 E = ESCAPES
 N = NOEXTRA
 P = PATHNAME
+D = DOT
 
 
 def _norm_slash(name):
@@ -96,15 +100,10 @@ def fnmatch(filename, pattern, flags=0):
     but if `case_sensitive` is set, respect that instead.
     """
 
-    obj = _compile(
+    return _compile(
         tuple(pattern) if isinstance(pattern, (list, set, tuple)) else (pattern,),
         flags & _wcparse.FLAG_MASK
-    )
-
-    print(obj._include)
-    print(obj._exclude)
-    print(_norm_slash(filename))
-    return obj.match(_norm_slash(filename))
+    ).match(_norm_slash(filename))
 
 
 def filter(filenames, pattern, flags=0):  # noqa A001

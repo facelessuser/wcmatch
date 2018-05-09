@@ -38,32 +38,32 @@ class TestWildcard(unittest.TestCase):
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some/name/with/na[\\]med/file/test.py', r'**/na[\]med/file/*.py', wcm.P | wcm.R
+                'some/name/with/na[\\]med/file/test.py', r'**/na[\]med/file/*.py', wcm.P | wcm.C
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some\\name\\with\\na[\\]med\\file\\test.py', r'**/na[\]med/file/*.py', wcm.P | wcm.R
+                'some\\name\\with\\na[\\]med\\file\\test.py', r'**/na[\]med/file/*.py', wcm.P | wcm.C
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some\\name\\with\\na[\\]med\\file\\test.py', r'**\\na[\]med\\file\*.py', wcm.P | wcm.R
+                'some\\name\\with\\na[\\]med\\file\\test.py', r'**\\na[\]med\\file\*.py', wcm.P | wcm.C
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some\\name\\with\\na[\\]med\\file\\test.py', r'**\\na[\\]m\ed\\file\\*.py', wcm.P | wcm.R | wcm.E
+                'some\\name\\with\\na[\\]med\\file\\test.py', r'**\\na[\\]m\ed\\file\\*.py', wcm.P | wcm.C | wcm.E
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some\\name\\with\\na[\\]med\\\\file\\test.py', r'**\\na[\\]m\ed\\/file\\*.py', wcm.P | wcm.R | wcm.E
+                'some\\name\\with\\na[\\]med\\\\file\\test.py', r'**\\na[\\]m\ed\\/file\\*.py', wcm.P | wcm.C | wcm.E
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some\\name\\with\\na[\\\\]med\\\\file\\test.py', r'**\\na[\/]m\ed\/file\\*.py', wcm.P | wcm.R | wcm.E
+                'some\\name\\with\\na[\\\\]med\\\\file\\test.py', r'**\\na[\/]m\ed\/file\\*.py', wcm.P | wcm.C | wcm.E
             )
         )
 
@@ -93,12 +93,12 @@ class TestWildcard(unittest.TestCase):
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some/name/with/na\\med/file/test.py', r'**/na[\]med/file/*.py', wcm.P | wcm.R
+                'some/name/with/na\\med/file/test.py', r'**/na[\]med/file/*.py', wcm.P | wcm.C
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some/name/with/na[\\/]med\\/file/test.py', r'**/na[\/]med\/file/*.py', wcm.P | wcm.R
+                'some/name/with/na[\\/]med\\/file/test.py', r'**/na[\/]med\/file/*.py', wcm.P | wcm.C
             )
         )
 
@@ -120,7 +120,7 @@ class TestWildcard(unittest.TestCase):
 
         p1, p2 = wcm.translate(wcm.split('test[]][!][][]', wcm.F), wcm.F)
         if util.PY36:
-            self.assertEqual(p1, r'(?s:test[\]][^\]\[][\])\Z')
+            self.assertEqual(p1, r'(?s:test[\]][^\][]\[\])\Z')
             self.assertEqual(p2, r'(?s:)\Z')
         else:
             self.assertEqual(p1, r'(?ms)(?:test[\]][^\][]\[\])\Z')
@@ -170,7 +170,7 @@ class TestWildcard(unittest.TestCase):
         else:
             self.assertEqual(p1, r'(?ms)(?:\\.*\\.\\|\\[\\])\Z')
 
-        p1 = wcm.translate(wcm.split(r'\\u0300', wcm.R), wcm.R)[0]
+        p1 = wcm.translate(wcm.split(r'\\u0300', wcm.C), wcm.C)[0]
         if util.PY36:
             self.assertEqual(p1, r'(?s:\\u0300)\Z')
         else:
@@ -181,13 +181,13 @@ class TestWildcard(unittest.TestCase):
             ['test\\m', 'test\\a']
         )
 
-        self.assertTrue(wcm.fnmatch('test\test', r'test\test', wcm.R))
+        self.assertTrue(wcm.fnmatch('test\test', r'test\test', wcm.C))
         self.assertTrue(wcm.fnmatch('test\\test', r'test\test'))
-        self.assertTrue(wcm.fnmatch('test\\test', r'test\\test', wcm.R))
+        self.assertTrue(wcm.fnmatch('test\\test', r'test\\test', wcm.C))
         self.assertTrue(wcm.fnmatch('test\\\\test', r'test\\test'))
         self.assertTrue(wcm.fnmatch('test\\m', r'test\m'))
         self.assertTrue(wcm.fnmatch('test\\b', r'test\[a-z]'))
-        self.assertTrue(wcm.fnmatch('test\\b', r'test\\[a-z]', wcm.R))
+        self.assertTrue(wcm.fnmatch('test\\b', r'test\\[a-z]', wcm.C))
         self.assertTrue(wcm.fnmatch('test\\\\b', r'test\\[a-z]'))
         self.assertTrue(wcm.fnmatch('[', '[[]'))
         self.assertTrue(wcm.fnmatch('&', '[a&&b]'))
@@ -264,7 +264,7 @@ class TestWildcard(unittest.TestCase):
         else:
             self.assertEqual(p1, br'(?ms)(?:\\.*\\.\\|\\[\\])\Z')
 
-        p1 = wcm.translate(wcm.split(br'\\u0300'), wcm.R)[0]
+        p1 = wcm.translate(wcm.split(br'\\u0300'), wcm.C)[0]
         if util.PY36:
             self.assertEqual(p1, br'(?s:\\u0300)\Z')
         else:
@@ -275,13 +275,13 @@ class TestWildcard(unittest.TestCase):
             [b'test\\m', b'test\\a']
         )
 
-        self.assertTrue(wcm.fnmatch(b'test\test', br'test\test', wcm.R))
+        self.assertTrue(wcm.fnmatch(b'test\test', br'test\test', wcm.C))
         self.assertTrue(wcm.fnmatch(b'test\\test', br'test\test'))
-        self.assertTrue(wcm.fnmatch(b'test\\test', br'test\\test', wcm.R))
+        self.assertTrue(wcm.fnmatch(b'test\\test', br'test\\test', wcm.C))
         self.assertTrue(wcm.fnmatch(b'test\\\\test', br'test\\test'))
         self.assertTrue(wcm.fnmatch(b'test\\m', br'test\m'))
         self.assertTrue(wcm.fnmatch(b'test\\b', br'test\[a-z]'))
-        self.assertTrue(wcm.fnmatch(b'test\\b', br'test\\[a-z]', wcm.R))
+        self.assertTrue(wcm.fnmatch(b'test\\b', br'test\\[a-z]', wcm.C))
         self.assertTrue(wcm.fnmatch(b'test\\\\b', br'test\\[a-z]'))
         self.assertTrue(wcm.fnmatch(b'[', b'[[]'))
         self.assertTrue(wcm.fnmatch(b'&', b'[a&&b]'))
@@ -298,7 +298,7 @@ class TestWildcard(unittest.TestCase):
 
         wcm._compile.cache_clear()
 
-        p1, p2 = wcm.translate(r'test\x70\u0070\U00000070\160\N{LATIN SMALL LETTER P}', wcm.R)
+        p1, p2 = wcm.translate(r'test\x70\u0070\U00000070\160\N{LATIN SMALL LETTER P}', wcm.C)
         if util.PY36:
             self.assertEqual(p1, r'(?s:test\160\160\160\160\160)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -306,7 +306,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:test\160\160\160\160\160)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate(r'test[\x70][\u0070][\U00000070][\160][\N{LATIN SMALL LETTER P}]', wcm.R)
+        p1, p2 = wcm.translate(r'test[\x70][\u0070][\U00000070][\160][\N{LATIN SMALL LETTER P}]', wcm.C)
         if util.PY36:
             self.assertEqual(p1, r'(?s:test[\160][\160][\160][\160][\160])\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -314,7 +314,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:test[\160][\160][\160][\160][\160])\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate(r'test\t\m', wcm.R)
+        p1, p2 = wcm.translate(r'test\t\m', wcm.C)
         if util.PY36:
             self.assertEqual(p1, r'(?s:test\t\\m)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -322,7 +322,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:test\t\\m)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate(r'test[\]test', wcm.R)
+        p1, p2 = wcm.translate(r'test[\]test', wcm.C)
         if util.PY36:
             self.assertEqual(p1, r'(?s:test[\\]test)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -338,7 +338,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:test\[\\)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate(r'test\33test', wcm.R)
+        p1, p2 = wcm.translate(r'test\33test', wcm.C)
         if util.PY36:
             self.assertEqual(p1, r'(?s:test\033test)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -346,7 +346,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:test\033test)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate(r'test\33', wcm.R)
+        p1, p2 = wcm.translate(r'test\33', wcm.C)
         if util.PY36:
             self.assertEqual(p1, r'(?s:test\033)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -354,7 +354,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:test\033)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate(r'test\400', wcm.R)
+        p1, p2 = wcm.translate(r'test\400', wcm.C)
         if util.PY36:
             self.assertEqual(p1, r'(?s:testĀ)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
@@ -363,13 +363,13 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
         with pytest.raises(SyntaxError):
-            wcm.translate(r'test\N', wcm.R)
+            wcm.translate(r'test\N', wcm.C)
 
         with pytest.raises(SyntaxError):
-            wcm.translate(r'test\Nx', wcm.R)
+            wcm.translate(r'test\Nx', wcm.C)
 
         with pytest.raises(SyntaxError):
-            wcm.translate(r'test\N{', wcm.R)
+            wcm.translate(r'test\N{', wcm.C)
 
 
 class TestDirWalker(unittest.TestCase):
@@ -378,7 +378,7 @@ class TestDirWalker(unittest.TestCase):
     def setUp(self):
         """Setup the tests."""
 
-        self.default_flags = wcm.R | wcm.I
+        self.default_flags = wcm.C | wcm.I
         self.errors = []
         self.skipped = 0
         self.files = []
