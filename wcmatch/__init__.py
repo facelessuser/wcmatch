@@ -4,7 +4,7 @@ Wild Card Match.
 A custom implementation of fnmatch.
 
 Licensed under MIT
-Copyright (c) 2013 - 2018 Isaac Muse <isaacmuse@gmail.com>
+Copyright (c) 2018 Isaac Muse <isaacmuse@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -30,9 +30,9 @@ from .file_hidden import is_hidden as _is_hidden
 from . import __version__
 
 __all__ = (
-    "EXTEND", "FORCECASE", "IGNORECASE", "RAWCHARS", "NONEGATE", "PATHNAME",
-    "E", "I", "C", "N", "P",
-    "translate", "fnmatch", "filter", "split", "FnCrawl", "WcMatch",
+    "EXTEND", "FORCECASE", "IGNORECASE", "RAWCHARS", "NONEGATE", "PATHNAME", "DOT", "GLOBSTAR",
+    "E", "I", "C", "N", "P", "D", "G",
+    "translate", "fnmatch", "filter", "split", "globsplit", "FnCrawl", "WcMatch",
     "version", "version_info"
 )
 
@@ -46,6 +46,7 @@ RAWCHARS = _wcparse.RAWCHARS
 NONEGATE = _wcparse.NONEGATE
 PATHNAME = _wcparse.PATHNAME
 DOT = _wcparse.DOT
+GLOBSTAR = _wcparse.GLOBSTAR
 
 E = EXTEND
 F = FORCECASE
@@ -54,6 +55,7 @@ C = RAWCHARS
 N = NONEGATE
 P = PATHNAME
 D = DOT
+G = GLOBSTAR
 
 
 def _norm_slash(name):
@@ -68,7 +70,13 @@ def _norm_slash(name):
 def split(pattern, flags=0):
     """Split pattern by '|'."""
 
-    return _wcparse.Splitter(pattern, flags).parse()
+    return _wcparse.Split(pattern, flags).parse()
+
+
+def globsplit(pattern, flags=0):
+    """Split the glob pattern into sub patterns for each directory/file."""
+
+    return _wcparse.GlobSplit(pattern, flags).parse()
 
 
 @_functools.lru_cache(maxsize=256, typed=True)

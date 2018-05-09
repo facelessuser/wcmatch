@@ -23,47 +23,47 @@ class TestWildcard(unittest.TestCase):
 
         self.assertTrue(
             wcm.fnmatch(
-                'some/name/with/named/file/test.py', '**/named/file/*.py', wcm.P
+                'some/name/with/named/file/test.py', '**/named/file/*.py', wcm.P | wcm.G
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some/name/with/na[/]med/file/test.py', '**/na[/]med/file/*.py', wcm.P
+                'some/name/with/na[/]med/file/test.py', '**/na[/]med/file/*.py', wcm.P | wcm.G
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some/name/with/na[/]med\\/file/test.py', '**/na[/]med\\/file/*.py', wcm.P
+                'some/name/with/na[/]med\\/file/test.py', '**/na[/]med\\/file/*.py', wcm.P | wcm.G
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some/name/with/na[\\]med/file/test.py', r'**/na[\\]med/file/*.py', wcm.P | wcm.C
+                'some/name/with/na[\\]med/file/test.py', r'**/na[\\]med/file/*.py', wcm.P | wcm.C | wcm.G
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some\\name\\with\\na[\\]med\\file\\test.py', r'**/na[\\]med/file/*.py', wcm.P | wcm.C
+                'some\\name\\with\\na[\\]med\\file\\test.py', r'**/na[\\]med/file/*.py', wcm.P | wcm.C | wcm.G
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some\\name\\with\\na[\\]med\\file*.py', r'**\\na[\\]med\\file\*.py', wcm.P | wcm.C
+                'some\\name\\with\\na[\\]med\\file*.py', r'**\\na[\\]med\\file\*.py', wcm.P | wcm.C | wcm.G
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some\\name\\with\\na[\\]med\\file\\test.py', r'**\\na[\\]m\ed\\file\\*.py', wcm.P | wcm.C
+                'some\\name\\with\\na[\\]med\\file\\test.py', r'**\\na[\\]m\ed\\file\\*.py', wcm.P | wcm.C | wcm.G
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some\\name\\with\\na[\\]med\\\\file\\test.py', r'**\\na[\\]m\ed\\/file\\*.py', wcm.P | wcm.C
+                'some\\name\\with\\na[\\]med\\\\file\\test.py', r'**\\na[\\]m\ed\\/file\\*.py', wcm.P | wcm.C | wcm.G
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some\\name\\with\\na[\\\\]med\\\\file\\test.py', r'**\\na[\/]m\ed\/file\\*.py', wcm.P | wcm.C
+                'some\\name\\with\\na[\\\\]med\\\\file\\test.py', r'**\\na[\/]m\ed\/file\\*.py', wcm.P | wcm.C | wcm.G
             )
         )
 
@@ -78,27 +78,27 @@ class TestWildcard(unittest.TestCase):
 
         self.assertTrue(
             wcm.fnmatch(
-                'some/name/with/named/file/test.py', '**/named/file/*.py', wcm.P
+                'some/name/with/named/file/test.py', '**/named/file/*.py', wcm.P | wcm.G
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some/name/with/na[/]med/file/test.py', '**/na[/]med/file/*.py', wcm.P
+                'some/name/with/na[/]med/file/test.py', '**/na[/]med/file/*.py', wcm.P | wcm.G
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some/name/with/na[/]med\\/file/test.py', '**/na[/]med\\/file/*.py', wcm.P
+                'some/name/with/na[/]med\\/file/test.py', '**/na[/]med\\/file/*.py', wcm.P | wcm.G
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some/name/with/na\\med/file/test.py', r'**/na[\\]med/file/*.py', wcm.P | wcm.C
+                'some/name/with/na\\med/file/test.py', r'**/na[\\]med/file/*.py', wcm.P | wcm.C | wcm.G
             )
         )
         self.assertTrue(
             wcm.fnmatch(
-                'some/name/with/na[\\/]med\\/file/test.py', r'**/na[\/]med\/file/*.py', wcm.P | wcm.C
+                'some/name/with/na[\\/]med\\/file/test.py', r'**/na[\/]med\/file/*.py', wcm.P | wcm.C | wcm.G
             )
         )
 

@@ -1,4 +1,25 @@
-"""Wildcard parsing."""
+"""
+Wild Card Match.
+
+A custom implementation of fnmatch.
+
+Licensed under MIT
+Copyright (c) 2018 Isaac Muse <isaacmuse@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+"""
 from __future__ import unicode_literals
 import os
 import re
@@ -7,8 +28,8 @@ import copyreg
 from . import util
 
 __all__ = (
-    "EXTEND", "FORCECASE", "IGNORECASE", "RAWCHARS", "NONEGATE", "PATHNAME", "FLAG_MASK",
-    "Parser", "Splitter", "WcMatch"
+    "EXTEND", "FORCECASE", "IGNORECASE", "RAWCHARS", "NONEGATE", "PATHNAME", "DOT", "GLOBSTAR",
+    "FLAG_MASK", "Parser", "Split", "GlobSplit", "WcMatch"
 )
 
 _OCTAL = frozenset(('0', '1', '2', '3', '4', '5', '6', '7'))
@@ -27,8 +48,9 @@ NONEGATE = 0x0008
 PATHNAME = 0x0010
 DOT = 0x0020
 EXTEND = 0x0040
+GLOBSTAR = 0x80
 
-FLAG_MASK = 0x7F
+FLAG_MASK = 0xFF
 _CASE_FLAGS = FORCECASE | IGNORECASE
 
 
@@ -56,7 +78,7 @@ def _get_case(flags):
     return case_sensitive
 
 
-class Splitter(object):
+class GlobSplit(object):
     """Split patterns on |."""
 
     def __init__(self, pattern, flags):
@@ -65,6 +87,150 @@ class Splitter(object):
         self.pattern = pattern
         self.is_bytes = isinstance(pattern, bytes)
         self.char_escapes = bool(flags & RAWCHARS)
+        self.pathname = True
+        self.extend = bool(flags & EXTEND)
+        self.bslash_abort = self.pathname if util.platform() == "windows" else False
+
+    def _sequence(self, i):
+        """Handle fnmatch character group."""
+
+        c = next(i)
+        if c == '!':
+            c = next(i)
+        if c in ('^', '-', '['):
+            c = next(i)
+
+        while c != ']':
+            if c == '\\':
+                # Handle escapes
+                subindex = i.index
+                try:
+                    self._references(i, True)
+                except PathNameException:
+                    raise StopIteration
+                except StopIteration:
+                    i.rewind(i.index - subindex)
+            elif c == '/':
+                raise StopIteration
+            c = next(i)
+
+    def _references(self, i, sequence=False):
+        """Handle references."""
+
+        value = ''
+
+        c = next(i)
+        if c == '\\':
+            # \\
+            if sequence and self.bslash_abort:
+                raise PathNameException
+            value = c
+        elif c == '/':
+            # \/
+            if sequence and self.pathname:
+                raise PathNameException
+            i.rewind(1)
+        else:
+            # \a, \b, \c, etc.
+            pass
+        return value
+
+    def parse_extend(self, c, i):
+        """Parse extended pattern lists."""
+
+        # Start list parsing
+        success = True
+        index = i.index
+        list_type = c
+        try:
+            c = next(i)
+            if c != '(':
+                raise StopIteration
+            while c != ')':
+                c = next(i)
+
+                if self.extend and self.parse_extend(c, i):
+                    continue
+
+                if c == '\\':
+                    index = i.index
+                    try:
+                        self._references(i)
+                    except StopIteration:
+                        i.rewind(i.index - index)
+                elif c == '[':
+                    index = i.index
+                    try:
+                        self._sequence(i)
+                    except StopIteration:
+                        i.rewind(i.index - index)
+
+        except StopIteration:
+            success = False
+            c = list_type
+            i.rewind(i.index - index)
+
+        return success
+
+    def parse(self):
+        """Start parsing the pattern."""
+
+        split_index = []
+        parts = []
+
+        pattern = self.pattern.decode('latin-1') if self.is_bytes else self.pattern
+
+        i = util.StringIter(pattern)
+        iter(i)
+        for c in i:
+            if self.extend and self.parse_extend(c, i):
+                continue
+
+            if c == '\\':
+                index = i.index
+                value = ''
+                try:
+                    value = self._references(i)
+                    if self.bslash_abort and value == '\\':
+                        split_index.append((i.index - 2, 1))
+                except StopIteration:
+                    i.rewind(i.index - index)
+                    if self.bslash_abort and value == '\\':
+                        split_index.append((i.index - 1, 0))
+            elif c == '/':
+                split_index.append((i.index - 1, 0))
+            elif c == '[':
+                index = i.index
+                try:
+                    self._sequence(i)
+                except StopIteration:
+                    i.rewind(i.index - index)
+
+        start = -1
+        for split, offset in split_index:
+            if self.is_bytes:
+                parts.append(pattern[start + 1:split].encode('latin-1'))
+            else:
+                parts.append(pattern[start + 1:split])
+            start = split + offset
+
+        if start < len(pattern):
+            if self.is_bytes:
+                parts.append(pattern[start + 1:].encode('latin-1'))
+            else:
+                parts.append(pattern[start + 1:])
+
+        return tuple(parts)
+
+
+class Split(object):
+    """Split patterns on |."""
+
+    def __init__(self, pattern, flags):
+        """Initialize."""
+
+        self.pattern = pattern
+        self.is_bytes = isinstance(pattern, bytes)
         self.pathname = bool(flags & PATHNAME)
         self.extend = bool(flags & EXTEND)
         self.bslash_abort = self.pathname if util.platform() == "windows" else False
@@ -205,6 +371,7 @@ class Parser(object):
         self.char_escapes = bool(flags & RAWCHARS)
         self.negate = not bool(flags & NONEGATE)
         self.pathname = bool(flags & PATHNAME)
+        self.globstar = self.pathname and bool(flags & GLOBSTAR)
         self.dot = bool(flags & DOT)
         self.extend = bool(flags & EXTEND)
         self.case_sensitive = _get_case(flags)
@@ -462,8 +629,9 @@ class Parser(object):
 
         star = self.star_dot if self.after_start and self.dot else self.star
         dstar = r'(?:[^.].*?)?' if self.after_start and self.dot else r'.*?'
-        value = dstar if not self.pathname and not self.in_list else star
-        if self.after_start and self.pathname:
+        value = dstar if not self.globstar and not self.in_list else star
+
+        if self.after_start and self.globstar:
             try:
                 c = next(i)
                 if c != '*':
