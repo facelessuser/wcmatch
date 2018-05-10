@@ -53,6 +53,10 @@ GLOBSTAR = 0x80
 FLAG_MASK = 0xFF
 _CASE_FLAGS = FORCECASE | IGNORECASE
 
+_RE_MAGIC = re.compile(r'([*?+@([])')
+_RE_UMAGIC = re.compile(r'([*?+@([])|(?<!\\)(?:(?:[\\\\]{2})*)\\[abfnrtvNUux0-7]')
+_RE_BMAGIC = re.compile(r'([*?+@([])|(?<!\\)(?:(?:[\\\\]{2})*)\\[abfnrtvx0-7]')
+
 
 class PathNameException(Exception):
     """Path name exception."""
@@ -90,6 +94,20 @@ class GlobSplit(object):
         self.pathname = True
         self.extend = bool(flags & EXTEND)
         self.bslash_abort = self.pathname if util.platform() == "windows" else False
+        self.sep = r'\\' if util.platform() == "windows" else '/'
+        self.magic = False
+        if self.char_escapes:
+            if self.is_bytes:
+                self.re_magic = _RE_BMAGIC
+            else:
+                self.re_magic = _RE_UMAGIC
+        else:
+            self.re_magic = _RE_MAGIC
+
+    def is_magic(self, name):
+        """Check if name contains magic characters."""
+
+        return self.re_magic.search(name)
 
     def _sequence(self, i):
         """Handle fnmatch character group."""
@@ -172,6 +190,22 @@ class GlobSplit(object):
 
         return success
 
+    def group_by_magic(self, value, l, directory):
+        """Group patterns by literals and potential magic patterns."""
+
+        sep = self.sep if directory else ''
+        if self.is_magic(value):
+            l.append([value, True, directory])
+            self.magic = True
+        elif self.magic:
+            self.magic = False
+            l.append([value + sep, False, directory])
+        elif l:
+            l[-1][0] += value + sep
+            l[-1][2] = directory
+        else:
+            l.append([value + sep, False, directory])
+
     def parse(self):
         """Start parsing the pattern."""
 
@@ -209,16 +243,19 @@ class GlobSplit(object):
         start = -1
         for split, offset in split_index:
             if self.is_bytes:
-                parts.append(pattern[start + 1:split].encode('latin-1'))
+                value = pattern[start + 1:split].encode('latin-1')
             else:
-                parts.append(pattern[start + 1:split])
+                value = pattern[start + 1:split]
+            self.group_by_magic(value, parts, True)
             start = split + offset
 
         if start < len(pattern):
             if self.is_bytes:
-                parts.append(pattern[start + 1:].encode('latin-1'))
+                value = pattern[start + 1:].encode('latin-1')
             else:
-                parts.append(pattern[start + 1:])
+                value = pattern[start + 1:]
+            if value:
+                self.group_by_magic(value, parts, False)
 
         return tuple(parts)
 

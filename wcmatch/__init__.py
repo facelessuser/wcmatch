@@ -32,7 +32,7 @@ from . import __version__
 __all__ = (
     "EXTEND", "FORCECASE", "IGNORECASE", "RAWCHARS", "NONEGATE", "PATHNAME", "DOT", "GLOBSTAR",
     "E", "I", "C", "N", "P", "D", "G",
-    "translate", "fnmatch", "filter", "split", "globsplit", "FnCrawl", "WcMatch",
+    "translate", "fnmatch", "filter", "split", "FnCrawl", "WcMatch",
     "version", "version_info"
 )
 
@@ -71,12 +71,6 @@ def split(pattern, flags=0):
     """Split pattern by '|'."""
 
     return _wcparse.Split(pattern, flags).parse()
-
-
-def globsplit(pattern, flags=0):
-    """Split the glob pattern into sub patterns for each directory/file."""
-
-    return _wcparse.GlobSplit(pattern, flags).parse()
 
 
 @_functools.lru_cache(maxsize=256, typed=True)
