@@ -1,8 +1,51 @@
 """Compatibility module."""
 from __future__ import unicode_literals
 import sys
+import os
+import re
+import unicodedata
 
 PY36 = (3, 6) <= sys.version_info
+
+CASE_FS = os.path.normcase('A') != os.path.normcase('a')
+
+RE_NORM = re.compile(
+    r'''(?x)
+    (/|\\/)|
+    (\\[abfnrtv\\])|
+    (\\(?:U[\da-fA-F]{8}|u[\da-fA-F]{4}|x[\da-fA-F]{2}|([0-7]{1,3})))|
+    (\\N\{[^}]*?\})|
+    (\\[NUux])
+    '''
+)
+
+RE_BNORM = re.compile(
+    br'''(?x)
+    (/|\\/)|
+    (\\[abfnrtv\\])|
+    (\\(?:x[\da-fA-F]{2}|([0-7]{1,3})))|
+    (\\[x])
+    '''
+)
+
+BACK_SLASH_TRANSLATION = {
+    r"\a": '\a',
+    r"\b": '\b',
+    r"\f": '\f',
+    r"\r": '\r',
+    r"\t": '\t',
+    r"\n": '\n',
+    r"\v": '\v',
+    r"\\": r'\\',
+    br"\a": b'\a',
+    br"\b": b'\b',
+    br"\f": b'\f',
+    br"\r": b'\r',
+    br"\t": b'\t',
+    br"\n": b'\n',
+    br"\v": b'\v',
+    br"\\": br'\\'
+}
 
 if sys.platform.startswith('win'):
     _PLATFORM = "windows"
@@ -16,6 +59,68 @@ def platform():
     """Get Platform."""
 
     return _PLATFORM
+
+
+def is_case_sensitive():
+    """Check if case sensitive."""
+
+    return CASE_FS
+
+
+def norm_slash(name):
+    """Normalize path slashes."""
+
+    if isinstance(name, str):
+        return name.replace('/', "\\") if not is_case_sensitive() else name
+    else:
+        return name.replace(b'/', b"\\") if not is_case_sensitive() else name
+
+
+def norm_pattern(pattern, is_pathname, is_raw_chars):
+    r"""
+    Normalize pattern.
+
+    - For windows systems we want to normalize slashes to \.
+    - If raw string chars is enabled, we want to also convert
+      encoded string chars to literal characters.
+    - If pathname is enabled, take care to convert \/ to \\\\.
+    """
+
+    is_bytes = isinstance(pattern, bytes)
+    is_case = is_case_sensitive()
+
+    if is_case and not is_raw_chars:
+        return pattern
+
+    def norm_char(token):
+        """Normalize slash."""
+
+        if not is_case and token in ('/', b'/'):
+            token = br'\\' if is_bytes else r'\\'
+        return token
+
+    def norm(m):
+        """Normalize the pattern."""
+
+        if m.group(1):
+            char = m.group(1)
+            if not is_case:
+                char = br'\\\\' if is_bytes else r'\\\\' if len(char) > 1 and is_pathname else norm_char(char)
+        elif m.group(2):
+            char = norm_char(BACK_SLASH_TRANSLATION[m.group(2)] if is_raw_chars else m.group(2))
+        elif is_raw_chars and m.group(4):
+            char = norm_char(bytes([int(m.group(4), 8) & 0xFF]) if is_bytes else chr(int(m.group(4), 8)))
+        elif is_raw_chars and m.group(3):
+            char = norm_char(chr(int(m.group(3)[2:], 16)))
+        elif is_raw_chars and not is_bytes and m.group(5):
+            char = norm_char(unicodedata.lookup(m.group(5)[3:-1]))
+        else:
+            value = m.group(5) if is_bytes else m.group(6)
+            pos = m.start(5) if is_bytes else m.start(6)
+            raise SyntaxError("Could not convert character value %s at position %d" % (value, pos))
+        return char
+
+    return (RE_BNORM if is_bytes else RE_NORM).sub(norm, pattern)
 
 
 class StringIter(object):

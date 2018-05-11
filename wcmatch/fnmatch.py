@@ -20,152 +20,69 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABI
 CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
 """
-from __future__ import unicode_literals
-import os
 import re
-import unicodedata
 import copyreg
+import functools
 from . import util
 
 __all__ = (
-    "EXTEND", "FORCECASE", "IGNORECASE", "RAWCHARS", "NONEGATE", "PATHNAME", "DOT", "GLOBSTAR",
-    "FLAG_MASK", "Parser", "Split", "GlobSplit", "WcMatch"
+    "EXTEND", "FORCECASE", "IGNORECASE", "RAWCHARS", "NONEGATE",
+    "PATHNAME", "DOT", "GLOBSTAR", "MINUSNEGATE",
+    "F", "I", "R", "N", "P", "D", "E", "G", "M",
+    "translate", "fnmatch", "filter", "fnsplit", "escape", "WcMatch"
 )
 
-_OCTAL = frozenset(('0', '1', '2', '3', '4', '5', '6', '7'))
-_STANDARD_ESCAPES = frozenset(('a', 'b', 'f', 'n', 'r', 't', 'v'))
-_CHAR_ESCAPES = frozenset(('x',))
-_UCHAR_ESCAPES = frozenset(('u', 'U'))
-_SET_OPERATORS = frozenset(('&', '~', '|'))
-_HEX = frozenset(('a', 'b', 'c', 'd', 'e', 'f', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'))
-_EXTEND = frozenset(('?', '*', '+', '@', '!'))
+SET_OPERATORS = frozenset(('&', '~', '|'))
 
-_CASE_FS = os.path.normcase('A') != os.path.normcase('a')
-FORCECASE = 0x0001
-IGNORECASE = 0x0002
-RAWCHARS = 0x0004
-NONEGATE = 0x0008
-PATHNAME = 0x0010
-DOT = 0x0020
-EXTEND = 0x0040
-GLOBSTAR = 0x80
+F = FORCECASE = 0x0001
+I = IGNORECASE = 0x0002
+R = RAWCHARS = 0x0004
+N = NONEGATE = 0x0008
+P = PATHNAME = 0x0010
+D = DOT = 0x0020
+E = EXTEND = 0x0040
+G = GLOBSTAR = 0x0080
+M = MINUSNEGATE = 0x0100
 
-FLAG_MASK = 0xFF
-_CASE_FLAGS = FORCECASE | IGNORECASE
-
-_RE_MAGIC = re.compile(r'([*?(\[])')
-_RE_BMAGIC = re.compile(r'([*?(\[])')
-
-RE_NORM = re.compile(
-    r'''(?x)
-    (/|\\/)|
-    (\\[abfnrtv\\])|
-    (\\(?:U[\da-fA-F]{8}|u[\da-fA-F]{4}|x[\da-fA-F]{2}|([0-7]{1,3})))|
-    (\\N\{[^}]*?\})|
-    (\\[NUux])
-    '''
+FLAG_MASK = (
+    FORCECASE |
+    IGNORECASE |
+    RAWCHARS |
+    NONEGATE |
+    PATHNAME |
+    DOT |
+    EXTEND |
+    GLOBSTAR |
+    MINUSNEGATE
 )
+CASE_FLAGS = FORCECASE | IGNORECASE
 
-RE_BNORM = re.compile(
-    br'''(?x)
-    (/|\\/)|
-    (\\[abfnrtv\\])|
-    (\\(?:x[\da-fA-F]{2}|([0-7]{1,3})))|
-    (\\[x])
-    '''
-)
-
-BACK_SLASH_TRANSLATION = {
-    r"\a": '\a',
-    r"\b": '\b',
-    r"\f": '\f',
-    r"\r": '\r',
-    r"\t": '\t',
-    r"\n": '\n',
-    r"\v": '\v',
-    r"\\": r'\\',
-    br"\a": b'\a',
-    br"\b": b'\b',
-    br"\f": b'\f',
-    br"\r": b'\r',
-    br"\t": b'\t',
-    br"\n": b'\n',
-    br"\v": b'\v',
-    br"\\": br'\\'
-}
+RE_MAGIC = re.compile(r'(^[-!]|[*?(\[|])')
+RE_BMAGIC = re.compile(r'(^[-!]|[*?(\[|])')
 
 
 class PathNameException(Exception):
     """Path name exception."""
 
 
-def _norm_slash(name):
-    """Normalize path slashes."""
+@functools.lru_cache(maxsize=256, typed=True)
+def _compile(pattern, flags):  # noqa A001
+    """Compile patterns."""
 
-    if isinstance(name, str):
-        return name.replace('/', "\\") if not _is_case_sensitive() else name
-    else:
-        return name.replace(b'/', b"\\") if not _is_case_sensitive() else name
+    p1, p2 = translate(pattern, flags)
 
-
-def _norm_pattern(pattern, is_pathname, is_raw_chars):
-    r"""
-    Normalize pattern.
-
-    - For windows systems we want to normalize slashes to \.
-    - If raw string chars is enabled, we want to also convert
-      encoded string chars to literal characters.
-    - If pathname is enabled, take care to convert \/ to \\\\.
-    """
-
-    is_bytes = isinstance(pattern, bytes)
-    is_case_sensitive = _is_case_sensitive()
-
-    if is_case_sensitive and not is_raw_chars:
-        return pattern
-
-    def norm_char(token):
-        """Normalize slash."""
-
-        if not is_case_sensitive and token in ('/', b'/'):
-            token = br'\\' if is_bytes else r'\\'
-        return token
-
-    def norm(m):
-        """Normalize the pattern."""
-
-        if m.group(1):
-            char = m.group(1)
-            if not is_case_sensitive:
-                char = br'\\\\' if is_bytes else r'\\\\' if len(char) > 1 and is_pathname else norm_char(char)
-        elif m.group(2):
-            char = norm_char(BACK_SLASH_TRANSLATION[m.group(2)] if is_raw_chars else m.group(2))
-        elif is_raw_chars and m.group(4):
-            char = norm_char(bytes([int(m.group(4), 8) & 0xFF]) if is_bytes else chr(int(m.group(4), 8)))
-        elif is_raw_chars and m.group(3):
-            char = norm_char(chr(int(m.group(3)[2:], 16)))
-        elif is_raw_chars and not is_bytes and m.group(5):
-            char = norm_char(unicodedata.lookup(m.group(5)[3:-1]))
-        else:
-            value = m.group(5) if is_bytes else m.group(6)
-            pos = m.start(5) if is_bytes else m.start(6)
-            raise SyntaxError("Could not convert character value %s at position %d" % (value, pos))
-        return char
-
-    return (RE_BNORM if is_bytes else RE_NORM).sub(norm, pattern)
+    if p1 is not None:
+        p1 = re.compile(p1)
+    if p2 is not None:
+        p2 = re.compile(p2)
+    return WcMatch(p1, p2)
 
 
-def _is_case_sensitive():
-    """Check if case sensitive."""
-
-    return _CASE_FS
-
-
-def _get_case(flags):
+def get_case(flags):
     """Parse flags for case sensitivity settings."""
 
-    if not bool(flags & _CASE_FLAGS):
-        case_sensitive = _is_case_sensitive()
+    if not bool(flags & CASE_FLAGS):
+        case_sensitive = util.is_case_sensitive()
     elif flags & FORCECASE and flags & IGNORECASE:
         raise ValueError("Cannot use FORCECASE and IGNORECASE flags together!")
     elif flags & FORCECASE:
@@ -173,177 +90,6 @@ def _get_case(flags):
     else:
         case_sensitive = False
     return case_sensitive
-
-
-class GlobSplit(object):
-    """Split patterns on |."""
-
-    def __init__(self, pattern, flags):
-        """Initialize."""
-
-        self.pattern = _norm_pattern(pattern, True, flags & RAWCHARS)
-        self.is_bytes = isinstance(pattern, bytes)
-        self.pathname = True
-        self.extend = bool(flags & EXTEND)
-        self.bslash_abort = self.pathname if util.platform() == "windows" else False
-        self.sep = '\\' if util.platform() == "windows" else '/'
-        self.magic = False
-        self.re_magic = _RE_MAGIC if not self.is_bytes else _RE_BMAGIC
-
-    def is_magic(self, name):
-        """Check if name contains magic characters."""
-
-        return self.re_magic.search(name)
-
-    def _sequence(self, i):
-        """Handle fnmatch character group."""
-
-        c = next(i)
-        if c == '!':
-            c = next(i)
-        if c in ('^', '-', '['):
-            c = next(i)
-
-        while c != ']':
-            if c == '\\':
-                # Handle escapes
-                subindex = i.index
-                try:
-                    self._references(i, True)
-                except PathNameException:
-                    raise StopIteration
-                except StopIteration:
-                    i.rewind(i.index - subindex)
-            elif c == '/':
-                raise StopIteration
-            c = next(i)
-
-    def _references(self, i, sequence=False):
-        """Handle references."""
-
-        value = ''
-
-        c = next(i)
-        if c == '\\':
-            # \\
-            if sequence and self.bslash_abort:
-                raise PathNameException
-            value = c
-        elif c == '/':
-            # \/
-            if sequence and self.pathname:
-                raise PathNameException
-            i.rewind(1)
-        else:
-            # \a, \b, \c, etc.
-            pass
-        return value
-
-    def parse_extend(self, c, i):
-        """Parse extended pattern lists."""
-
-        # Start list parsing
-        success = True
-        index = i.index
-        list_type = c
-        try:
-            c = next(i)
-            if c != '(':
-                raise StopIteration
-            while c != ')':
-                c = next(i)
-
-                if self.extend and self.parse_extend(c, i):
-                    continue
-
-                if c == '\\':
-                    index = i.index
-                    try:
-                        self._references(i)
-                    except StopIteration:
-                        i.rewind(i.index - index)
-                elif c == '[':
-                    index = i.index
-                    try:
-                        self._sequence(i)
-                    except StopIteration:
-                        i.rewind(i.index - index)
-
-        except StopIteration:
-            success = False
-            c = list_type
-            i.rewind(i.index - index)
-
-        return success
-
-    def group_by_magic(self, value, l, directory):
-        """Group patterns by literals and potential magic patterns."""
-
-        sep = self.sep if directory else ''
-        if self.is_magic(value):
-            l.append([value, True, directory])
-            self.magic = True
-        elif self.magic:
-            self.magic = False
-            l.append([value + sep, False, directory])
-        elif l:
-            l[-1][0] += value + sep
-            l[-1][2] = directory
-        else:
-            l.append([value + sep, False, directory])
-
-    def parse(self):
-        """Start parsing the pattern."""
-
-        split_index = []
-        parts = []
-
-        pattern = self.pattern.decode('latin-1') if self.is_bytes else self.pattern
-
-        i = util.StringIter(pattern)
-        iter(i)
-        for c in i:
-            if self.extend and self.parse_extend(c, i):
-                continue
-
-            if c == '\\':
-                index = i.index
-                value = ''
-                try:
-                    value = self._references(i)
-                    if self.bslash_abort and value == '\\':
-                        split_index.append((i.index - 2, 1))
-                except StopIteration:
-                    i.rewind(i.index - index)
-                    if self.bslash_abort and value == '\\':
-                        split_index.append((i.index - 1, 0))
-            elif c == '/':
-                split_index.append((i.index - 1, 0))
-            elif c == '[':
-                index = i.index
-                try:
-                    self._sequence(i)
-                except StopIteration:
-                    i.rewind(i.index - index)
-
-        start = -1
-        for split, offset in split_index:
-            if self.is_bytes:
-                value = pattern[start + 1:split].encode('latin-1')
-            else:
-                value = pattern[start + 1:split]
-            self.group_by_magic(value, parts, True)
-            start = split + offset
-
-        if start < len(pattern):
-            if self.is_bytes:
-                value = pattern[start + 1:].encode('latin-1')
-            else:
-                value = pattern[start + 1:]
-            if value:
-                self.group_by_magic(value, parts, False)
-
-        return parts
 
 
 class Split(object):
@@ -483,13 +229,14 @@ class Split(object):
         return tuple(parts)
 
 
-class Parser(object):
+class FnMatch(object):
     """Parse the wildcard pattern."""
 
-    def __init__(self, pattern, flags):
+    def __init__(self, pattern, flags=0):
         """Initialize."""
 
         self.pattern = pattern
+        self.negate_symbol = '-' if bool(flags & MINUSNEGATE) else '!'
         self.is_bytes = isinstance(pattern[0], bytes)
         self.negate = not bool(flags & NONEGATE)
         self.pathname = bool(flags & PATHNAME)
@@ -497,7 +244,7 @@ class Parser(object):
         self.globstar = self.pathname and bool(flags & GLOBSTAR)
         self.dot = bool(flags & DOT)
         self.extend = bool(flags & EXTEND)
-        self.case_sensitive = _get_case(flags)
+        self.case_sensitive = get_case(flags)
         self.seq_dot = r'(?<![.])'
         self.in_list = False
         self.flags = flags
@@ -584,7 +331,7 @@ class Parser(object):
                 if self.pathname:
                     raise StopIteration
                 result.append(c)
-            elif c in _SET_OPERATORS:
+            elif c in SET_OPERATORS:
                 # Escape &, |, and ~ to avoid &&, ||, and ~~
                 result.append('\\' + c)
             else:
@@ -843,9 +590,9 @@ class Parser(object):
         empty_exclude = True
 
         for p in self.pattern:
-            p = _norm_pattern(p, self.pathname, self.raw_chars)
+            p = util.norm_pattern(p, self.pathname, self.raw_chars)
             p = p.decode('latin-1') if self.is_bytes else p
-            if self.negate and p[0:1] == '-':
+            if self.negate and p[0:1] == self.negate_symbol:
                 current = exclude_result
                 p = p[1:]
                 current.append('|' if not empty_exclude else '')
@@ -929,3 +676,62 @@ def _pickle(p):
 
 
 copyreg.pickle(WcMatch, _pickle)
+
+
+def fnsplit(pattern, flags=0):
+    """Split pattern by '|'."""
+
+    return Split(pattern, flags).parse()
+
+
+def translate(pattern, flags=0):
+    """Translate fnmatch pattern counting `|` as a separator and `-` as a negative pattern."""
+
+    return FnMatch(
+        tuple(pattern) if not isinstance(pattern, (str, bytes)) else (pattern,),
+        flags
+    ).parse()
+
+
+def fnmatch(filename, pattern, flags=0):
+    """
+    Check if filename matches pattern.
+
+    By default case sensitivity is determined by the filesystem,
+    but if `case_sensitive` is set, respect that instead.
+    """
+
+    return _compile(
+        tuple(pattern) if not isinstance(pattern, (str, bytes)) else (pattern,),
+        flags & FLAG_MASK
+    ).match(util.norm_slash(filename))
+
+
+def filter(filenames, pattern, flags=0):  # noqa A001
+    """Filter names using pattern."""
+
+    matches = []
+
+    obj = _compile(
+        tuple(pattern) if not isinstance(pattern, (str, bytes)) else (pattern,),
+        flags & FLAG_MASK
+    )
+
+    for filename in filenames:
+        filename = util.norm_slash(filename)
+        if obj.match(filename):
+            matches.append(filename)
+    return matches
+
+
+def escape(pattern):
+    """Escape."""
+
+    is_bytes = isinstance(pattern, bytes)
+
+    def replace(m):
+        """Replace."""
+
+        return '[\\%s]' % m.group(0)
+
+    return (RE_BMAGIC if is_bytes else RE_MAGIC).sub(replace, pattern)
