@@ -101,3 +101,5 @@ ENV/
 # pytest
 .pytest_cache/
 
+# patch
+*.patch

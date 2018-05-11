@@ -27,6 +27,7 @@ import functools as _functools
 from .wcparse import WcMatch
 from . import wcparse as _wcparse
 from .file_hidden import is_hidden as _is_hidden
+from . import util as _util
 from . import __version__
 
 __all__ = (
@@ -56,15 +57,6 @@ N = NONEGATE
 P = PATHNAME
 D = DOT
 G = GLOBSTAR
-
-
-def _norm_slash(name):
-    """Normalize path slashes."""
-
-    if isinstance(name, str):
-        return name.replace('/', "\\") if not _wcparse._is_case_sensitive() else name
-    else:
-        return name.replace(b'/', b"\\") if not _wcparse._is_case_sensitive() else name
 
 
 def split(pattern, flags=0):
@@ -106,7 +98,7 @@ def fnmatch(filename, pattern, flags=0):
     return _compile(
         tuple(pattern) if not isinstance(pattern, (str, bytes)) else (pattern,),
         flags & _wcparse.FLAG_MASK
-    ).match(_norm_slash(filename))
+    ).match(_wcparse._norm_slash(filename))
 
 
 def filter(filenames, pattern, flags=0):  # noqa A001
@@ -120,10 +112,159 @@ def filter(filenames, pattern, flags=0):  # noqa A001
     )
 
     for filename in filenames:
-        filename = _norm_slash(filename)
+        filename = _wcparse._norm_slash(filename)
         if obj.match(filename):
             matches.append(filename)
     return matches
+
+
+def iglob(pattern, flags):
+    """Glob."""
+
+    yield from Glob(pattern, flags).glob()
+
+
+def glob(pattern, flags):
+    """Glob."""
+
+    return list(Glob(pattern, flags).glob())
+
+
+class Glob(object):
+    """Glob patterns."""
+
+    def __init__(self, pattern, flags=0):
+        """Init the directory walker object."""
+
+        self.flags = flags | PATHNAME
+        if self.flags & NONEGATE:
+            self.flags ^= NONEGATE
+        self.globstar = bool(self.flags & GLOBSTAR)
+        self.is_bytes = isinstance(pattern, bytes)
+        self.pattern = _wcparse.GlobSplit(pattern, flags).parse()
+
+    def _is_globstar(self, name):
+        """Check if rescursive globstar."""
+
+        return self.globstar and name in (b'**', '**')
+
+    def _glob_shallow(self, curdir, dir_only=False):
+        """Non recursive directory glob."""
+
+        try:
+            if _util.PY36:
+                with _os.scandir(curdir) as scan:
+                    for f in scan:
+                        try:
+                            if not dir_only or f.is_dir():
+                                yield f.name
+                        except OSError:
+                            pass
+            else:
+                for f in _os.listdir(curdir):
+                    is_dir = _os.path.isdir(_os.path.join(curdir, f))
+                    if not dir_only or is_dir:
+                        yield f
+        except OSError:
+            pass
+
+    def _glob_deep(self, curdir, dir_only=False):
+        """Recursive directory glob."""
+
+        try:
+            if _util.PY36:
+                with _os.scandir(curdir) as scan:
+                    for f in scan:
+                        try:
+                            if not dir_only or f.is_dir():
+                                yield curdir, f.name
+                            if f.is_dir():
+                                yield from self._glob_deep(_os.path.join(curdir, f.name), dir_only)
+                        except OSError:
+                            pass
+            else:
+                for f in _os.listdir(curdir):
+                    path = _os.path.join(curdir, f)
+                    is_dir = _os.path.isdir(path)
+                    if not dir_only or is_dir:
+                        yield curdir, f
+                    if is_dir:
+                        yield from self._glob_deep(path, dir_only)
+        except OSError:
+            pass
+
+    def _glob(self, curdir, this, rest):
+        """Handle glob flow."""
+
+        is_magic = this[1]
+        is_dir = this[2]
+        target = this[0]
+
+        if not is_dir:
+            if is_magic:
+                if self._is_globstar(target):
+                    for dirname, base in self._glob_deep(curdir):
+                        yield _os.path.join(dirname, base)
+                else:
+                    targets = tuple(self._glob_shallow(curdir))
+                    for f in filter(targets, target, self.flags):
+                        yield _os.path.join(curdir, f)
+            else:
+                path = _os.path.join(curdir, target)
+                if _os.path.lexists(path):
+                    yield path
+        else:
+            this = rest.pop(0) if rest else None
+            if is_magic:
+                if self._is_globstar(target):
+                    for dirname, base in self._glob_deep(curdir, True):
+                        path = _os.path.join(dirname, base)
+                        if this:
+                            yield from self._glob(path, this, rest[:])
+                        else:
+                            yield path
+                else:
+                    targets = list(self._glob_shallow(curdir, True))
+                    for f in filter(targets, target, self.flags):
+                        path = _os.path.join(curdir, f)
+                        if this:
+                            yield from self._glob(path, this, rest)
+                        else:
+                            yield path
+            else:
+                path = _os.path.join(curdir, target)
+                if _os.path.isdir(path):
+                    if this:
+                        yield from self._glob(path, this, rest)
+                    else:
+                        yield path
+
+    def glob(self):
+        """Starts off the glob iterator."""
+        if self.is_bytes:
+            curdir = bytes(_os.curdir, 'ASCII')
+        else:
+            curdir = _os.curdir
+
+        if self.pattern:
+            if not self.pattern[0][1]:
+                # Is Directory
+                this = self.pattern[0]
+                curdir = this[0]
+                if this[2]:
+                    # Glob this directory if it exists
+                    if _os.path.isdir(curdir):
+                        rest = self.pattern[1:]
+                        this = rest.pop(0)
+                        yield from self._glob(curdir, this, rest)
+                else:
+                    # Return file if exits and finish.
+                    if _os.path.lexists(curdir):
+                        yield curdir
+            else:
+                rest = self.pattern[:]
+                this = rest.pop(0)
+                yield from self._glob(curdir, this, rest)
 
 
 class FnCrawl(object):
@@ -135,14 +276,15 @@ class FnCrawl(object):
         args = list(args)
         self._skipped = 0
         self._abort = False
-        self.directory = _norm_slash(args.pop(0))
+        self.directory = _wcparse._norm_slash(args.pop(0))
         self.file_pattern = args.pop(0) if args else kwargs.pop('file_pattern', '')
         self.exclude_pattern = args.pop(0) if args else kwargs.pop('exclude_pattern', '')
         self.recursive = args.pop(0) if args else kwargs.pop('recursive', False)
         self.show_hidden = args.pop(0) if args else kwargs.pop('show_hidden', True)
         self.flags = args.pop(0) if args else kwargs.pop('flags', 0)
         self.pathname = bool(self.flags & PATHNAME)
-        self.flags ^= PATHNAME
+        if self.pathname:
+            self.flags ^= PATHNAME
 
         self.on_init(*args, **kwargs)
         self.file_check, self.folder_exclude_check = self._compile(self.file_pattern, self.exclude_pattern)

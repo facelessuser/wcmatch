@@ -302,26 +302,26 @@ class TestWildcard(unittest.TestCase):
 
         p1, p2 = wcm.translate(r'test\x70\u0070\U00000070\160\N{LATIN SMALL LETTER P}', wcm.C)
         if util.PY36:
-            self.assertEqual(p1, r'(?s:test\160\160\160\160\160)\Z')
+            self.assertEqual(p1, r'(?s:testppppp)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
         else:
-            self.assertEqual(p1, r'(?ms)(?:test\160\160\160\160\160)\Z')
+            self.assertEqual(p1, r'(?ms)(?:testppppp)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
         p1, p2 = wcm.translate(r'test[\x70][\u0070][\U00000070][\160][\N{LATIN SMALL LETTER P}]', wcm.C)
         if util.PY36:
-            self.assertEqual(p1, r'(?s:test[\160][\160][\160][\160][\160])\Z')
+            self.assertEqual(p1, r'(?s:test[p][p][p][p][p])\Z')
             self.assertEqual(p2, r'(?s:)\Z')
         else:
-            self.assertEqual(p1, r'(?ms)(?:test[\160][\160][\160][\160][\160])\Z')
+            self.assertEqual(p1, r'(?ms)(?:test[p][p][p][p][p])\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
         p1, p2 = wcm.translate(r'test\t\m', wcm.C)
         if util.PY36:
-            self.assertEqual(p1, r'(?s:test\tm)\Z')
+            self.assertEqual(p1, r'(?s:test\	m)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
         else:
-            self.assertEqual(p1, r'(?ms)(?:test\tm)\Z')
+            self.assertEqual(p1, r'(?ms)(?:test\	m)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
         p1, p2 = wcm.translate(r'test[\\]test', wcm.C)
@@ -340,28 +340,28 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)(?:test\[\\)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate(r'test\33test', wcm.C)
+        p1, p2 = wcm.translate(r'test\44test', wcm.C)
         if util.PY36:
-            self.assertEqual(p1, r'(?s:test\033test)\Z')
+            self.assertEqual(p1, r'(?s:test\$test)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
         else:
-            self.assertEqual(p1, r'(?ms)(?:test\033test)\Z')
+            self.assertEqual(p1, r'(?ms)(?:test\$test)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
-        p1, p2 = wcm.translate(r'test\33', wcm.C)
+        p1, p2 = wcm.translate(r'test\44', wcm.C)
         if util.PY36:
-            self.assertEqual(p1, r'(?s:test\033)\Z')
+            self.assertEqual(p1, r'(?s:test\$)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
         else:
-            self.assertEqual(p1, r'(?ms)(?:test\033)\Z')
+            self.assertEqual(p1, r'(?ms)(?:test\$)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
         p1, p2 = wcm.translate(r'test\400', wcm.C)
         if util.PY36:
-            self.assertEqual(p1, r'(?s:testĀ)\Z')
+            self.assertEqual(p1, r'(?s:test\Ā)\Z')
             self.assertEqual(p2, r'(?s:)\Z')
         else:
-            self.assertEqual(p1, r'(?ms)(?:testĀ)\Z')
+            self.assertEqual(p1, r'(?ms)(?:test\Ā)\Z')
             self.assertEqual(p2, r'(?ms)(?:)\Z')
 
         with pytest.raises(SyntaxError):

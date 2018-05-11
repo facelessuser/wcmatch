@@ -53,13 +53,106 @@ GLOBSTAR = 0x80
 FLAG_MASK = 0xFF
 _CASE_FLAGS = FORCECASE | IGNORECASE
 
-_RE_MAGIC = re.compile(r'([*?+@([])')
-_RE_UMAGIC = re.compile(r'([*?+@([])|(?<!\\)(?:(?:[\\\\]{2})*)\\[abfnrtvNUux0-7]')
-_RE_BMAGIC = re.compile(r'([*?+@([])|(?<!\\)(?:(?:[\\\\]{2})*)\\[abfnrtvx0-7]')
+_RE_MAGIC = re.compile(r'([*?(\[])')
+_RE_BMAGIC = re.compile(r'([*?(\[])')
+
+RE_NORM = re.compile(
+    r'''(?x)
+    (/|\\/)|
+    (\\[abfnrtv\\])|
+    (\\(?:U[\da-fA-F]{8}|u[\da-fA-F]{4}|x[\da-fA-F]{2}|([0-7]{1,3})))|
+    (\\N\{[^}]*?\})|
+    (\\[NUux])
+    '''
+)
+
+RE_BNORM = re.compile(
+    br'''(?x)
+    (/|\\/)|
+    (\\[abfnrtv\\])|
+    (\\(?:x[\da-fA-F]{2}|([0-7]{1,3})))|
+    (\\[x])
+    '''
+)
+
+BACK_SLASH_TRANSLATION = {
+    r"\a": '\a',
+    r"\b": '\b',
+    r"\f": '\f',
+    r"\r": '\r',
+    r"\t": '\t',
+    r"\n": '\n',
+    r"\v": '\v',
+    r"\\": r'\\',
+    br"\a": b'\a',
+    br"\b": b'\b',
+    br"\f": b'\f',
+    br"\r": b'\r',
+    br"\t": b'\t',
+    br"\n": b'\n',
+    br"\v": b'\v',
+    br"\\": br'\\'
+}
 
 
 class PathNameException(Exception):
     """Path name exception."""
+
+
+def _norm_slash(name):
+    """Normalize path slashes."""
+
+    if isinstance(name, str):
+        return name.replace('/', "\\") if not _is_case_sensitive() else name
+    else:
+        return name.replace(b'/', b"\\") if not _is_case_sensitive() else name
+
+
+def _norm_pattern(pattern, is_pathname, is_raw_chars):
+    r"""
+    Normalize pattern.
+
+    - For windows systems we want to normalize slashes to \.
+    - If raw string chars is enabled, we want to also convert
+      encoded string chars to literal characters.
+    - If pathname is enabled, take care to convert \/ to \\\\.
+    """
+
+    is_bytes = isinstance(pattern, bytes)
+    is_case_sensitive = _is_case_sensitive()
+
+    if is_case_sensitive and not is_raw_chars:
+        return pattern
+
+    def norm_char(token):
+        """Normalize slash."""
+
+        if not is_case_sensitive and token in ('/', b'/'):
+            token = br'\\' if is_bytes else r'\\'
+        return token
+
+    def norm(m):
+        """Normalize the pattern."""
+
+        if m.group(1):
+            char = m.group(1)
+            if not is_case_sensitive:
+                char = br'\\\\' if is_bytes else r'\\\\' if len(char) > 1 and is_pathname else norm_char(char)
+        elif m.group(2):
+            char = norm_char(BACK_SLASH_TRANSLATION[m.group(2)] if is_raw_chars else m.group(2))
+        elif is_raw_chars and m.group(4):
+            char = norm_char(bytes([int(m.group(4), 8) & 0xFF]) if is_bytes else chr(int(m.group(4), 8)))
+        elif is_raw_chars and m.group(3):
+            char = norm_char(chr(int(m.group(3)[2:], 16)))
+        elif is_raw_chars and not is_bytes and m.group(5):
+            char = norm_char(unicodedata.lookup(m.group(5)[3:-1]))
+        else:
+            value = m.group(5) if is_bytes else m.group(6)
+            pos = m.start(5) if is_bytes else m.start(6)
+            raise SyntaxError("Could not convert character value %s at position %d" % (value, pos))
+        return char
+
+    return (RE_BNORM if is_bytes else RE_NORM).sub(norm, pattern)
 
 
 def _is_case_sensitive():
@@ -88,21 +181,14 @@ class GlobSplit(object):
     def __init__(self, pattern, flags):
         """Initialize."""
 
-        self.pattern = pattern
+        self.pattern = _norm_pattern(pattern, True, flags & RAWCHARS)
         self.is_bytes = isinstance(pattern, bytes)
-        self.char_escapes = bool(flags & RAWCHARS)
         self.pathname = True
         self.extend = bool(flags & EXTEND)
         self.bslash_abort = self.pathname if util.platform() == "windows" else False
-        self.sep = r'\\' if util.platform() == "windows" else '/'
+        self.sep = '\\' if util.platform() == "windows" else '/'
         self.magic = False
-        if self.char_escapes:
-            if self.is_bytes:
-                self.re_magic = _RE_BMAGIC
-            else:
-                self.re_magic = _RE_UMAGIC
-        else:
-            self.re_magic = _RE_MAGIC
+        self.re_magic = _RE_MAGIC if not self.is_bytes else _RE_BMAGIC
 
     def is_magic(self, name):
         """Check if name contains magic characters."""
@@ -257,11 +343,11 @@ class GlobSplit(object):
             if value:
                 self.group_by_magic(value, parts, False)
 
-        return tuple(parts)
+        return parts
 
 
 class Split(object):
-    """Split patterns on |."""
+    """Class that splits patterns on |."""
 
     def __init__(self, pattern, flags):
         """Initialize."""
@@ -405,29 +491,28 @@ class Parser(object):
 
         self.pattern = pattern
         self.is_bytes = isinstance(pattern[0], bytes)
-        self.char_escapes = bool(flags & RAWCHARS)
         self.negate = not bool(flags & NONEGATE)
         self.pathname = bool(flags & PATHNAME)
+        self.raw_chars = bool(flags & RAWCHARS)
         self.globstar = self.pathname and bool(flags & GLOBSTAR)
         self.dot = bool(flags & DOT)
         self.extend = bool(flags & EXTEND)
         self.case_sensitive = _get_case(flags)
         self.seq_dot = r'(?<![.])'
         self.in_list = False
+        self.flags = flags
         if util.platform() == "windows":
             self.char_avoid = (ord('\\'), ord('/'), ord('.'))
             self.star = r'[^\\]*?'
             self.star_dot = r'(?:[^.][^\\]*?)?'
-            self.seq_path = r'(?<![\\%s])'
+            self.seq_path = r'(?<![\\/%s])'
             self.bslash_abort = self.pathname
-            self.norm_slash = '\\'
         else:
             self.char_avoid = (ord('/'), ord('.'))
             self.star = r'[^\/]*?'
             self.star_dot = r'(?:[^.][^\/]*?)?'
             self.seq_path = r'(?<![\/%s])'
             self.bslash_abort = False
-            self.norm_slash = '/'
 
     def set_after_start(self):
         """Set tracker for character after the start of a directory."""
@@ -456,104 +541,6 @@ class Parser(object):
             value = self.seq_dot
         self.reset_dir_track()
 
-        return value
-
-    def _convert_value(self, value, sequence=True):
-        """Convert char value."""
-
-        if sequence or not (self.pathname or (self.after_start and self.dot)) or value not in self.char_avoid:
-            return '\\%03o' % value if value <= 0xFF else chr(value)
-        else:
-            return ('[%s]' % re.escape(chr(value))) + self._restrict_sequence()
-
-    def _get_unicode_name(self, index, i):
-        """Get Unicode name."""
-
-        try:
-            c = next(i)
-            if c != '{':
-                raise SyntaxError("Missing '{' in named Unicode character format at position %d!" % (i.index - 1))
-            name = []
-            c = next(i)
-            while c != '}':
-                name.append(c)
-                c = next(i)
-        except StopIteration:
-            raise SyntaxError('Incomplete named Unicode character at position %d!' % (index - 1))
-        nval = ord(unicodedata.lookup(''.join(name)))
-        return nval
-
-    def _get_wide_unicode(self, i):
-        """Get narrow Unicode."""
-
-        value = []
-        for x in range(3):
-            c = next(i)
-            if c == '0':
-                value.append(c)
-            else:  # pragma: no cover
-                raise SyntaxError('Invalid wide Unicode character at %d!' % (i.index - 1))
-
-        c = next(i)
-        if c in ('0', '1'):
-            value.append(c)
-        else:  # pragma: no cover
-            raise SyntaxError('Invalid wide Unicode character at %d!' % (i.index - 1))
-
-        for x in range(4):
-            c = next(i)
-            if c.lower() in _HEX:
-                value.append(c)
-            else:  # pragma: no cover
-                raise SyntaxError('Invalid wide Unicode character at %d!' % (i.index - 1))
-        return int(''.join(value), 16)
-
-    def _get_narrow_unicode(self, i):
-        """Get narrow Unicode."""
-
-        value = []
-        for x in range(4):
-            c = next(i)
-            if c.lower() in _HEX:
-                value.append(c)
-            else:  # pragma: no cover
-                raise SyntaxError('Invalid Unicode character at %d!' % (i.index - 1))
-        return int(''.join(value), 16)
-
-    def _get_unicode(self, i, wide=False):
-        """Parse Unicode."""
-
-        return self._get_wide_unicode(i) if wide else self._get_narrow_unicode(i)
-
-    def _get_byte(self, i):
-        """Get byte."""
-
-        value = []
-        for x in range(2):
-            c = next(i)
-            if c.lower() in _HEX:
-                value.append(c)
-            else:  # pragma: no cover
-                raise SyntaxError('Invalid byte character at %d!' % (i.index - 1))
-        return int(''.join(value), 16)
-
-    def _get_octal(self, c, i):
-        """Get octal value."""
-
-        digit = [c]
-        try:
-            for x in range(2):
-                c = next(i)
-                if c in _OCTAL:
-                    digit.append(c)
-                else:
-                    i.rewind(1)
-                    break
-        except StopIteration:
-            pass
-        value = int(''.join(digit), 8)
-        if value > 0xFF and self.is_bytes:
-            raise ValueError("octal escape value outside of range 0-0o377!")
         return value
 
     def _sequence(self, i):
@@ -596,7 +583,7 @@ class Parser(object):
             elif c == '/':
                 if self.pathname:
                     raise StopIteration
-                result.append(re.escape(self.norm_slash))
+                result.append(c)
             elif c in _SET_OPERATORS:
                 # Escape &, |, and ~ to avoid &&, ||, and ~~
                 result.append('\\' + c)
@@ -614,25 +601,9 @@ class Parser(object):
     def _references(self, i, sequence=False):
         """Handle references."""
 
-        index = i.index
         value = ''
         c = next(i)
-        if not self.is_bytes and self.char_escapes and c in 'N':
-            # \N{Name}
-            value = self._convert_value(self._get_unicode_name(index, i), sequence)
-        elif self.char_escapes and c in _OCTAL:
-            # \000
-            value = self._convert_value(self._get_octal(c, i), sequence)
-        elif not self.is_bytes and self.char_escapes and c in _UCHAR_ESCAPES:
-            # \u, \U,
-            value = self._convert_value(self._get_unicode(i, c == "U"), sequence)
-        elif self.char_escapes and c in _CHAR_ESCAPES:
-            # \x
-            value = self._convert_value(self._get_byte(i), sequence)
-        elif self.char_escapes and c in _STANDARD_ESCAPES:
-            # \n, \v, etc. and \x.
-            value = '\\' + c
-        elif c == '\\':
+        if c == '\\':
             # \\
             if sequence and self.bslash_abort:
                 raise PathNameException
@@ -648,13 +619,10 @@ class Parser(object):
                 raise PathNameException
             if self.pathname:
                 value = r'\\'
-                if self.bslash_abort and not self.in_list:
-                    self.set_start_dir()
                 if self.in_list:
                     value += self._restrict_sequence()
                 i.rewind(1)
             else:
-                c = self.norm_slash
                 value = re.escape(c)
         else:
             # \a, \b, \c, etc.
@@ -753,7 +721,7 @@ class Parser(object):
                         extended.append('[^.]' if self.after_start and self.dot else '.')
                         self.reset_dir_track()
                 elif c == '/':
-                    extended.append(re.escape(self.norm_slash))
+                    extended.append(c)
                     if self.pathname:
                         extended.append(self._restrict_sequence())
                 elif c == "|":
@@ -840,7 +808,7 @@ class Parser(object):
                     current.append('[^.]' if self.after_start and self.dot else '.')
                     self.reset_dir_track()
             elif c == '/':
-                current.append(re.escape(self.norm_slash))
+                current.append(c)
                 if self.pathname:
                     self.set_start_dir()
             elif c == '\\':
@@ -875,6 +843,7 @@ class Parser(object):
         empty_exclude = True
 
         for p in self.pattern:
+            p = _norm_pattern(p, self.pathname, self.raw_chars)
             p = p.decode('latin-1') if self.is_bytes else p
             if self.negate and p[0:1] == '-':
                 current = exclude_result
