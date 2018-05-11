@@ -21,6 +21,7 @@ CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFT
 IN THE SOFTWARE.
 """
 import os
+import sys
 from . import fnmatch
 from . import util
 
@@ -30,6 +31,10 @@ __all__ = (
     "F", "I", "R", "D", "E", "G", "N", "M",
     "iglob", "glob", "globsplit", "globmatch", "globfilter", "escape"
 )
+
+# We don't use util.platform only because we mock it in tests,
+# and scandir will not work with bytes on the wrong system.
+SCANDIR_WORKAROUND = util.PY36 or (util.PY35 and not sys.platform.startswith('win'))
 
 F = FORCECASE = fnmatch.FORCECASE
 I = IGNORECASE = fnmatch.IGNORECASE
@@ -271,6 +276,7 @@ class Glob(object):
         self.globstar = bool(self.flags & GLOBSTAR)
         self.is_bytes = isinstance(pattern, bytes)
         self.pattern = Split(pattern, flags).parse()
+        self.scandir = util.PY36 or (util.PY35 and util.platform() != "windows")
 
     def _is_globstar(self, name):
         """Check if rescursive globstar."""
@@ -281,23 +287,23 @@ class Glob(object):
 
         return self.dot and name[0:1] in (b'.', '.')
 
-    def _glob_shallow(self, curdir, dir_only=False):
+    def _glob_shallow(self, curdir, matcher, dir_only=False):
         """Non recursive directory glob."""
 
         try:
-            if util.PY36:
+            if SCANDIR_WORKAROUND:
                 with os.scandir(curdir) as scan:
                     for f in scan:
                         try:
-                            if not dir_only or f.is_dir():
-                                yield f.name
+                            if (not dir_only or f.is_dir()) and matcher.match(f.name):
+                                yield os.path.join(curdir, f.name)
                         except OSError:
                             pass
             else:
                 for f in os.listdir(curdir):
                     is_dir = os.path.isdir(os.path.join(curdir, f))
-                    if not dir_only or is_dir:
-                        yield f
+                    if (not dir_only or is_dir) and matcher.match(f):
+                        yield os.path.join(curdir, f)
         except OSError:
             pass
 
@@ -305,7 +311,7 @@ class Glob(object):
         """Recursive directory glob."""
 
         try:
-            if util.PY36:
+            if SCANDIR_WORKAROUND:
                 with os.scandir(curdir) as scan:
                     for f in scan:
                         try:
@@ -345,9 +351,8 @@ class Glob(object):
                     for dirname, base in self._glob_deep(curdir):
                         yield os.path.join(dirname, base)
                 else:
-                    targets = tuple(self._glob_shallow(curdir))
-                    for f in fnmatch.filter(targets, target, self.flags):
-                        yield os.path.join(curdir, f)
+                    matcher = fnmatch._compile(target, self.flags)
+                    yield from self._glob_shallow(curdir, matcher)
             else:
                 path = os.path.join(curdir, target)
                 if os.path.lexists(path):
@@ -363,9 +368,8 @@ class Glob(object):
                         else:
                             yield path
                 else:
-                    targets = list(self._glob_shallow(curdir, True))
-                    for f in fnmatch.filter(targets, target, self.flags):
-                        path = os.path.join(curdir, f)
+                    matcher = fnmatch._compile(target, self.flags)
+                    for path in self._glob_shallow(curdir, matcher, True):
                         if this:
                             yield from self._glob(path, this, rest)
                         else:

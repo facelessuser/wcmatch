@@ -6,6 +6,7 @@ import re
 import unicodedata
 
 PY36 = (3, 6) <= sys.version_info
+PY35 = (3, 5) <= sys.version_info
 
 CASE_FS = os.path.normcase('A') != os.path.normcase('a')
 
