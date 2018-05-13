@@ -68,6 +68,12 @@ def is_case_sensitive():
     return CASE_FS
 
 
+def to_tuple(*values):
+    """Combine values."""
+
+    return tuple(values)
+
+
 def norm_slash(name):
     """Normalize path slashes."""
 
@@ -153,6 +159,11 @@ class StringIter(object):
         """Get previous char."""
 
         return self._string[self._index - 1]
+
+    def advance(self, count):
+        """Advanced the index."""
+
+        self._index += count
 
     def rewind(self, count):
         """Rewind index."""

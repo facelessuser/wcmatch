@@ -29,7 +29,7 @@ __all__ = (
     "EXTEND", "FORCECASE", "IGNORECASE", "RAWCHARS", "NONEGATE",
     "PATHNAME", "DOT", "GLOBSTAR", "MINUSNEGATE",
     "F", "I", "R", "N", "P", "D", "E", "G", "M",
-    "translate", "fnmatch", "filter", "fnsplit", "escape", "WcMatch"
+    "translate", "fnmatch", "filter", "fnsplit", "FnMatch"
 )
 
 SET_OPERATORS = frozenset(('&', '~', '|'))
@@ -57,8 +57,7 @@ FLAG_MASK = (
 )
 CASE_FLAGS = FORCECASE | IGNORECASE
 
-RE_MAGIC = re.compile(r'(^[-!]|[*?(\[|])')
-RE_BMAGIC = re.compile(r'(^[-!]|[*?(\[|])')
+RE_WIN_PATH = re.compile(r'(\\{4}[^\\]+\\{2}[^\\]+|[a-z]:)(\\{2}|\\$)?')
 
 
 class PathNameException(Exception):
@@ -66,16 +65,16 @@ class PathNameException(Exception):
 
 
 @functools.lru_cache(maxsize=256, typed=True)
-def _compile(pattern, flags):  # noqa A001
+def _compile(patterns, flags):  # noqa A001
     """Compile patterns."""
 
-    p1, p2 = translate(pattern, flags)
+    p1, p2 = FnParse(patterns, flags & FLAG_MASK).parse()
 
     if p1 is not None:
         p1 = re.compile(p1)
     if p2 is not None:
         p2 = re.compile(p2)
-    return WcMatch(p1, p2)
+    return FnMatch(p1, p2)
 
 
 def get_case(flags):
@@ -92,7 +91,7 @@ def get_case(flags):
     return case_sensitive
 
 
-class Split(object):
+class FnSplit(object):
     """Class that splits patterns on |."""
 
     def __init__(self, pattern, flags):
@@ -183,7 +182,7 @@ class Split(object):
 
         return success
 
-    def parse(self):
+    def split(self):
         """Start parsing the pattern."""
 
         split_index = []
@@ -229,7 +228,7 @@ class Split(object):
         return tuple(parts)
 
 
-class FnMatch(object):
+class FnParse(object):
     """Parse the wildcard pattern."""
 
     def __init__(self, pattern, flags=0):
@@ -248,18 +247,29 @@ class FnMatch(object):
         self.seq_dot = r'(?<![.])'
         self.in_list = False
         self.flags = flags
+        self.inv_ext = 0
         if util.platform() == "windows":
+            self.win_drive_detect = self.pathname
             self.char_avoid = (ord('\\'), ord('/'), ord('.'))
-            self.star = r'[^\\]*?'
-            self.star_dot = r'(?:[^.][^\\]*?)?'
-            self.seq_path = r'(?<![\\/%s])'
+            self.path_star = r'[^\\]*?'
+            self.path_star_dot1 = r'(?!(?:\.{1,2})(?:$|\\))' + self.path_star
+            self.path_star_dot2 = r'(?!(?:\.{1,2})(?:$|\\))' + r'(?:(?!\.)[^\\]*?)?'
+            self.path_gstar_dot1 = r'(?:(?!(?:\\|^)(?:\.{1,2})($|\\)).)*?'
+            self.path_gstar_dot2 = r'(?:(?!(?:\\|^)\.).)*?'
+            self.seq_path = r'(?![\\/%s])'
             self.bslash_abort = self.pathname
+            self.sep = '\\'
         else:
+            self.win_drive_detect = False
             self.char_avoid = (ord('/'), ord('.'))
-            self.star = r'[^\/]*?'
-            self.star_dot = r'(?:[^.][^\/]*?)?'
-            self.seq_path = r'(?<![\/%s])'
+            self.path_star = r'[^\/]*?'
+            self.path_star_dot1 = r'(?!(?:\.{1,2})(?:$|\/))' + self.path_star
+            self.path_star_dot2 = r'(?!(?:\.{1,2})(?:$|\/))' + r'(?:(?!\.)[^\/]*?)?'
+            self.path_gstar_dot1 = r'(?:(?!(?:\/|^)(?:\.{1,2})($|\/)).)*?'
+            self.path_gstar_dot2 = r'(?:(?!(?:\/|^)\.).)*?'
+            self.seq_path = r'(?![\/%s])'
             self.bslash_abort = False
+            self.sep = '/'
 
     def set_after_start(self):
         """Set tracker for character after the start of a directory."""
@@ -290,20 +300,33 @@ class FnMatch(object):
 
         return value
 
+    def _sequence_range_check(self, result, last):
+        """Swap range if backwards in sequence."""
+
+        first = result[-2]
+        v1 = ord(first[1:2] if len(first) > 1 else first)
+        v2 = ord(last[1:2] if len(last) > 1 else last)
+        if v2 < v1:
+            result[-2] = '\\' + last
+            result.append(first)
+        else:
+            result.append(last)
+
     def _sequence(self, i):
         """Handle fnmatch character group."""
 
         result = ['[']
 
         c = next(i)
-        if c == '!':
+        if c in ('!', '^'):
             # Handle negate char
             result.append('^')
             c = next(i)
-        if c in ('^', '-', '[', ']'):
+        if c in ('-', '[', ']'):
             result.append(re.escape(c))
             c = next(i)
 
+        end_range = 0
         escape_hypen = -1
         while c != ']':
             if c == '-':
@@ -315,33 +338,47 @@ class FnMatch(object):
                     # of a new range (s-es-e), so neither can be legitimate range delimiters.
                     result.append(c)
                     escape_hypen = i.index + 1
+                    end_range = i.index
+                elif end_range and i.index - 1 >= end_range:
+                    self._sequence_range_check(result, '\\' + c)
+                    end_range = 0
                 else:
                     result.append('\\' + c)
-            elif c == '\\':
+                c = next(i)
+                continue
+
+            if c == '\\':
                 # Handle escapes
                 subindex = i.index
                 try:
-                    result.append(self._references(i, True))
+                    value = self._references(i, True)
                 except PathNameException:
                     raise StopIteration
                 except StopIteration:
                     i.rewind(i.index - subindex)
-                    result.append(r'\\')
+                    value = r'\\'
             elif c == '/':
                 if self.pathname:
                     raise StopIteration
-                result.append(c)
+                value = c
             elif c in SET_OPERATORS:
                 # Escape &, |, and ~ to avoid &&, ||, and ~~
-                result.append('\\' + c)
+                value = '\\' + c
             else:
                 # Anything else
-                result.append(c)
+                value = c
+
+            if end_range and i.index - 1 >= end_range:
+                self._sequence_range_check(result, value)
+                end_range = 0
+            else:
+                result.append(value)
+
             c = next(i)
 
         result.append(']')
         if self.pathname or (self.after_start and self.dot):
-            result.append(self._restrict_sequence())
+            return self._restrict_sequence() + ''.join(result)
 
         return ''.join(result)
 
@@ -357,9 +394,10 @@ class FnMatch(object):
             value = r'\\'
             if self.bslash_abort:
                 if not self.in_list:
+                    value = self.get_path_sep()
                     self.set_start_dir()
                 else:
-                    value += self._restrict_sequence()
+                    value = self._restrict_sequence() + value
         elif c == '/':
             # \/
             if sequence and self.pathname:
@@ -367,7 +405,7 @@ class FnMatch(object):
             if self.pathname:
                 value = r'\\'
                 if self.in_list:
-                    value += self._restrict_sequence()
+                    value = value + self._restrict_sequence()
                 i.rewind(1)
             else:
                 value = re.escape(c)
@@ -376,14 +414,26 @@ class FnMatch(object):
             value = re.escape(c)
         return value
 
-    def _handle_star(self, i):
+    def _handle_star(self, i, current):
         """Handle star."""
 
-        star = self.star_dot if self.after_start and self.dot else self.star
-        dstar = r'(?:[^.].*?)?' if self.after_start and self.dot else r'.*?'
-        value = dstar if not self.globstar and not self.in_list else star
+        if self.pathname:
+            if self.after_start and self.dot:
+                star = self.path_star_dot2
+                globstar = self.path_gstar_dot2
+            elif self.after_start:
+                star = self.path_star_dot1
+                globstar = self.path_gstar_dot1
+            else:
+                star = self.path_star
+                globstar = self.path_gstar_dot1
+        else:
+            star = '.*?'
+            globstar = ''
+        value = star
 
-        if self.after_start and self.globstar:
+        if self.after_start and self.globstar and not self.in_list:
+            skip = False
             try:
                 c = next(i)
                 if c != '*':
@@ -391,44 +441,82 @@ class FnMatch(object):
                     raise StopIteration
             except StopIteration:
                 # Could not acquire a second star, so assume single star pattern
-                return value
+                skip = True
 
-            try:
-                index = i.index
-                c = next(i)
-                if c == '\\':
-                    try:
-                        self._references(i, True)
-                        # Was not what we expected
-                        # Assume two single stars
-                        value += self.star
-                    except PathNameException:
-                        # Looks like escape was a valid slash
-                        # Store pattern accordingly
-                        value = r'.*?'
-                    except StopIteration:
-                        # Ran out of characters so assume backslash
-                        # count as a double star
-                        if self.slash == '\\':
-                            value = dstar
-                        else:
-                            value += self.star
-                elif c == '/':
-                    # Found slash
-                    value = dstar
-                else:
-                    # There was no start of next directory
-                    # Assume two single stars
-                    value += self.star
-                # Backout and handle slashes later
-                i.rewind(i.index - index)
-            except StopIteration:
-                # Could not acquire directory slash due to no more characters
-                # Use double star
-                value = dstar
+            if not skip:
+                try:
+                    index = i.index
+                    c = next(i)
+                    if c == '\\':
+                        try:
+                            self._references(i, True)
+                            # Was not what we expected
+                            # Assume two single stars
+                        except PathNameException:
+                            # Looks like escape was a valid slash
+                            # Store pattern accordingly
+                            value = globstar
+                        except StopIteration:
+                            # Ran out of characters so assume backslash
+                            # count as a double star
+                            if self.sep == '\\':
+                                value = globstar
+                    elif c == '/' and not self.bslash_abort:
+                        value = globstar
+
+                    if value != globstar:
+                        i.rewind(i.index - index)
+                except StopIteration:
+                    # Could not acquire directory slash due to no more characters
+                    # Use double star
+                    value = globstar
+
+        if self.after_start and value != globstar:
+            value = '(?=.)' + value
+
         self.reset_dir_track()
+        if value == globstar:
+            sep = '(?:^|$|%s)' % self.get_path_sep()
+            if current[-1] == '|':
+                current.append(value)
+            elif current[-1] == '':
+                current[-1] = value
+            else:
+                current[-1] = '(?=.)'
+                current.append(value)
+            current.append(sep)
+            self.set_start_dir()
+        else:
+            current.append(value)
 
-        return value
+    def clean_up_inverse(self, current, default=None):
+        """
+        Clean up current.
+
+        Python doesn't have variable lookbehinds, so we have to do negative lookaheads.
+        !(...) when converted to regular expression is atomic, so once it matches, that's it.
+        So we use the pattern `(?:(?!(?:stuff|to|exclude)<x>))[^/]*?)` where <x> is everything
+        that comes after the negative group. `!(this|that)other` --> `(?:(?!(?:this|that)other))[^/]*?)`.
+
+        We have to update the list before | in nested cases: *(!(...)|stuff). Before we close a parent
+        extglob: `*(!(...))`. And of course on path separators (when path mode is on): `!(...)/stuff`.
+        Lastly we make sure all is accounted for when finishing the pattern at the end.  If there is nothing
+        to store, we store `$`: `(?:(?!(?:this|that)$))[^/]*?)`.
+        """
+
+        if not self.inv_ext:
+            return
+
+        if default is None:
+            default = ''
+
+        index = len(current) - 1
+        while index >= 0:
+            if current[index] is None:
+                content = current[index + 1:]
+                current[index] = (''.join(content) if content else default) + (')[^%s]*?)' % re.escape(self.sep))
+            index -= 1
+        self.inv_ext = 0
 
     def parse_extend(self, c, i, current):
         """Parse extended pattern lists."""
@@ -437,6 +525,7 @@ class FnMatch(object):
         temp_dir_start = self.dir_start
         temp_after_start = self.after_start
         temp_in_list = self.in_list
+        temp_inv_ext = self.inv_ext
         self.in_list = True
 
         # Start list parsing
@@ -460,18 +549,22 @@ class FnMatch(object):
                     continue
 
                 if c == '*':
-                    extended.append(self._handle_star(i))
+                    self._handle_star(i, extended)
                 elif c == '?':
                     if not self.pathname:
-                        extended.append('.' + self._restrict_sequence())
+                        extended.append(self._restrict_sequence() + '.')
                     else:
-                        extended.append('[^.]' if self.after_start and self.dot else '.')
+                        if self.after_start:
+                            extended.append('[^.]' if self.dot else '.')
+                        else:
+                            extended.append('.')
                         self.reset_dir_track()
                 elif c == '/':
-                    extended.append(c)
                     if self.pathname:
                         extended.append(self._restrict_sequence())
+                    extended.append(c)
                 elif c == "|":
+                    self.clean_up_inverse(extended)
                     extended.append(c)
                     if self.pathname and temp_after_start:
                         self.set_start_dir()
@@ -481,9 +574,9 @@ class FnMatch(object):
                         extended.append(self._references(i))
                     except StopIteration:
                         i.rewind(i.index - subindex)
-                        extended.append(r'\\')
                         if self.pathname and self.bslash_abort:
                             extended.append(self._restrict_sequence())
+                        extended.append(r'\\')
                 elif c == '[':
                     subindex = i.index
                     try:
@@ -500,20 +593,24 @@ class FnMatch(object):
                 elif not self.dir_start and self.after_start:
                     self.reset_dir_track()
 
+            self.clean_up_inverse(extended)
             if list_type == '?':
-                current.append('(?:%s)?' % ''.join(extended))
+                current.extend(['(?:'] + extended + [')?'])
             elif list_type == '*':
-                current.append('(?:%s)*?' % ''.join(extended))
+                current.extend(['(?:'] + extended + [')*'])
             elif list_type == '+':
-                current.append('(?:%s)+' % ''.join(extended))
+                current.extend(['(?:'] + extended + [')+'])
             elif list_type == '@':
-                current.append('(?:%s)' % ''.join(extended))
+                current.extend(['(?:'] + extended + [')'])
             elif list_type == '!':
-                star = self.star_dot if temp_after_start and self.dot else self.star
-                current.append('(?:(?!(?:%s))%s)' % (''.join(extended), star))
+                self.inv_ext += 1
+                # If pattern is at the end, anchor the match to the end.
+                current.extend(['(?:(?!(?:'] + extended + [')'])
+                current.append(None)
 
         except StopIteration:
             success = False
+            self.inv_ext = temp_inv_ext
             i.rewind(i.index - index)
             assert i.index == index, "%d | %d" % (i.index, index)
 
@@ -528,12 +625,23 @@ class FnMatch(object):
 
         return success
 
+    def get_path_sep(self):
+        """Get path separator."""
+
+        return re.escape(self.sep)
+
     def root(self, pattern, current):
         """Start parsing the pattern."""
 
         self.set_after_start()
         i = util.StringIter(pattern)
         iter(i)
+        if self.win_drive_detect:
+            m = RE_WIN_PATH.match(pattern)
+            if m:
+                drive = m.group(0).replace('\\\\', '\\')
+                current.append(re.escape(drive))
+                i.advance(m.end(0))
         for c in i:
 
             index = i.index
@@ -547,21 +655,28 @@ class FnMatch(object):
             assert i.index == index, "%d | %d" % (i.index, index)
 
             if c == '*':
-                current.append(self._handle_star(i))
+                self._handle_star(i, current)
             elif c == '?':
                 if self.pathname:
-                    current.append('.' + self._restrict_sequence())
+                    current.append(self._restrict_sequence() + '.')
                 else:
-                    current.append('[^.]' if self.after_start and self.dot else '.')
+                    if self.after_start:
+                        current.append('[^.]' if self.dot else '.')
+                    else:
+                        current.append('.')
                     self.reset_dir_track()
             elif c == '/':
-                current.append(c)
                 if self.pathname:
                     self.set_start_dir()
+                    self.clean_up_inverse(current)
+                current.append(self.get_path_sep())
             elif c == '\\':
                 index = i.index
                 try:
-                    current.append(self._references(i))
+                    value = self._references(i)
+                    if self.dir_start:
+                        self.clean_up_inverse(current)
+                    current.append(value)
                 except StopIteration:
                     i.rewind(i.index - index)
                     current.append(r'\\')
@@ -580,6 +695,9 @@ class FnMatch(object):
                 self.set_after_start()
             elif not self.dir_start and self.after_start:
                 self.reset_dir_track()
+        self.clean_up_inverse(current, default='$')
+        if self.pathname:
+            current.append('[' + re.escape(self.sep) + ']*?')
 
     def parse(self):
         """Parse pattern list."""
@@ -588,6 +706,8 @@ class FnMatch(object):
         exclude_result = []
         empty_include = True
         empty_exclude = True
+        exclude_pattern = None
+        pattern = None
 
         for p in self.pattern:
             p = util.norm_pattern(p, self.pathname, self.raw_chars)
@@ -611,11 +731,13 @@ class FnMatch(object):
             result.append('.*?')
         case_flag = 'i' if not self.case_sensitive else ''
         if util.PY36:
-            pattern = r'(?s%s:%s)\Z' % (case_flag, ''.join(result))
-            exclude_pattern = r'(?s%s:%s)\Z' % (case_flag, ''.join(exclude_result))
+            pattern = r'^(?s%s:%s)$' % (case_flag, ''.join(result))
+            if exclude_result:
+                exclude_pattern = r'^(?s%s:%s)$' % (case_flag, ''.join(exclude_result))
         else:
-            pattern = r'(?ms%s)(?:%s)\Z' % (case_flag, ''.join(result))
-            exclude_pattern = r'(?ms%s)(?:%s)\Z' % (case_flag, ''.join(exclude_result))
+            pattern = r'(?ms%s)^(?:%s)$' % (case_flag, ''.join(result))
+            if exclude_result:
+                exclude_pattern = r'(?ms%s)^(?:%s)$' % (case_flag, ''.join(exclude_result))
 
         if self.is_bytes:
             if pattern is not None:
@@ -625,7 +747,7 @@ class FnMatch(object):
         return pattern, exclude_pattern
 
 
-class WcMatch(util.Immutable):
+class FnMatch(util.Immutable):
     """File name match object."""
 
     __slots__ = ("_include", "_exclude", "_hash")
@@ -633,7 +755,7 @@ class WcMatch(util.Immutable):
     def __init__(self, include, exclude=None):
         """Initialization."""
 
-        super(WcMatch, self).__init__(
+        super(FnMatch, self).__init__(
             _include=include,
             _exclude=exclude,
             _hash=hash((type(self), type(include), include, type(exclude), exclude))
@@ -648,7 +770,7 @@ class WcMatch(util.Immutable):
         """Equal."""
 
         return (
-            isinstance(other, WcMatch) and
+            isinstance(other, FnMatch) and
             self._include == other._include and
             self._exclude == other._exclude
         )
@@ -657,7 +779,7 @@ class WcMatch(util.Immutable):
         """Equal."""
 
         return (
-            not isinstance(other, WcMatch) or
+            not isinstance(other, FnMatch) or
             self._include != other._include or
             self._exclude != other._exclude
         )
@@ -672,28 +794,25 @@ class WcMatch(util.Immutable):
 
 
 def _pickle(p):
-    return WcMatch, (p._include, p._exclude)
+    return FnMatch, (p._include, p._exclude)
 
 
-copyreg.pickle(WcMatch, _pickle)
+copyreg.pickle(FnMatch, _pickle)
 
 
-def fnsplit(pattern, flags=0):
+def fnsplit(pattern, *, flags=0):
     """Split pattern by '|'."""
 
-    return Split(pattern, flags).parse()
+    return FnSplit(pattern, flags).split()
 
 
-def translate(pattern, flags=0):
+def translate(pattern, *patterns, flags=0):
     """Translate fnmatch pattern counting `|` as a separator and `-` as a negative pattern."""
 
-    return FnMatch(
-        tuple(pattern) if not isinstance(pattern, (str, bytes)) else (pattern,),
-        flags
-    ).parse()
+    return FnParse(util.to_tuple(pattern, *patterns), flags & FLAG_MASK).parse()
 
 
-def fnmatch(filename, pattern, flags=0):
+def fnmatch(filename, pattern, *patterns, flags=0):
     """
     Check if filename matches pattern.
 
@@ -701,37 +820,18 @@ def fnmatch(filename, pattern, flags=0):
     but if `case_sensitive` is set, respect that instead.
     """
 
-    return _compile(
-        tuple(pattern) if not isinstance(pattern, (str, bytes)) else (pattern,),
-        flags & FLAG_MASK
-    ).match(util.norm_slash(filename))
+    return _compile(util.to_tuple(pattern, *patterns), flags & FLAG_MASK).match(util.norm_slash(filename))
 
 
-def filter(filenames, pattern, flags=0):  # noqa A001
+def filter(filenames, pattern, *patterns, flags=0):  # noqa A001
     """Filter names using pattern."""
 
     matches = []
 
-    obj = _compile(
-        tuple(pattern) if not isinstance(pattern, (str, bytes)) else (pattern,),
-        flags & FLAG_MASK
-    )
+    obj = _compile(util.to_tuple(pattern, *patterns), flags & FLAG_MASK)
 
     for filename in filenames:
         filename = util.norm_slash(filename)
         if obj.match(filename):
             matches.append(filename)
     return matches
-
-
-def escape(pattern):
-    """Escape."""
-
-    is_bytes = isinstance(pattern, bytes)
-
-    def replace(m):
-        """Replace."""
-
-        return '[\\%s]' % m.group(0)
-
-    return (RE_BMAGIC if is_bytes else RE_MAGIC).sub(replace, pattern)

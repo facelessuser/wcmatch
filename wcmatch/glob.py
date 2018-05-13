@@ -22,6 +22,7 @@ IN THE SOFTWARE.
 """
 import os
 import sys
+import re
 from . import fnmatch
 from . import util
 
@@ -58,18 +59,27 @@ FLAG_MASK = (
 
 FS_FLAG_MASK = FLAG_MASK ^ (NONEGATE | MINUSNEGATE)
 
+RE_MAGIC = re.compile(r'(^[-!]|[*?(\[|^])')
+RE_BMAGIC = re.compile(r'(^[-!]|[*?(\[|^])')
+
 
 def _flag_transform(flags, full=False):
     """Transform flags to glob defaults."""
 
     # Here we force PATHNAME and disable negaton with NONEGATE
-    if full:
-        flags = (flags & FLAG_MASK) | fnmatch.PATHNAME | NONEGATE
+    if not full:
+        flags = (flags & FS_FLAG_MASK) | fnmatch.PATHNAME | NONEGATE
     else:
-        flags = (flags & FS_FLAG_MASK) | fnmatch.PATHNAME
+        flags = (flags & FLAG_MASK) | fnmatch.PATHNAME
     # Enable DOT by default (flipped logic for fnmatch which disables it by default)
     flags ^= NODOT
     return flags
+
+
+def _magicsplit(pattern, flags):
+    """Split on magic sub directory patterns."""
+
+    return Split(pattern, flags).split()
 
 
 class Split(object):
@@ -104,10 +114,16 @@ class Split(object):
         self.pattern = util.norm_pattern(pattern, True, self.flags & RAWCHARS)
         self.is_bytes = isinstance(pattern, bytes)
         self.extend = bool(flags & EXTEND)
-        self.bslash_abort = util.platform() == "windows"
-        self.sep = '\\' if util.platform() == "windows" else '/'
+        if util.platform() == "windows":
+            self.win_drive_detect = True
+            self.bslash_abort = True
+            self.sep = '\\'
+        else:
+            self.win_drive_detect = False
+            self.bslash_abort = False
+            self.sep = '/'
         self.magic = False
-        self.re_magic = fnmatch.RE_MAGIC if not self.is_bytes else fnmatch.RE_BMAGIC
+        self.re_magic = RE_MAGIC if not self.is_bytes else RE_BMAGIC
 
     def is_magic(self, name):
         """Check if name contains magic characters."""
@@ -211,17 +227,26 @@ class Split(object):
         else:
             l.append([value + sep, False, directory])
 
-    def parse(self):
+    def split(self):
         """Start parsing the pattern."""
 
         split_index = []
         parts = []
+        start = -1
 
         pattern = self.pattern.decode('latin-1') if self.is_bytes else self.pattern
 
         i = util.StringIter(pattern)
         iter(i)
+        if self.win_drive_detect:
+            m = fnmatch.RE_WIN_PATH.match(pattern)
+            if m:
+                drive = m.group(0).replace('\\\\', '\\')
+                parts.append([drive, False, drive.endswith('\\')])
+                start = m.end(0) - 1
+                i.advance(start + 1)
         for c in i:
+
             if self.extend and self.parse_extend(c, i):
                 continue
 
@@ -245,7 +270,6 @@ class Split(object):
                 except StopIteration:
                     i.rewind(i.index - index)
 
-        start = -1
         for split, offset in split_index:
             if self.is_bytes:
                 value = pattern[start + 1:split].encode('latin-1')
@@ -275,7 +299,7 @@ class Glob(object):
         self.dot = bool(self.flags & fnmatch.DOT)
         self.globstar = bool(self.flags & GLOBSTAR)
         self.is_bytes = isinstance(pattern, bytes)
-        self.pattern = Split(pattern, flags).parse()
+        self.pattern = _magicsplit(pattern, self.flags)
         self.scandir = util.PY36 or (util.PY35 and util.platform() != "windows")
 
     def _is_globstar(self, name):
@@ -410,25 +434,25 @@ class Glob(object):
                 yield from self._glob(curdir, this, rest)
 
 
-def iglob(pattern, flags):
+def iglob(pattern, *, flags=0):
     """Glob."""
 
     yield from Glob(pattern, flags).glob()
 
 
-def glob(pattern, flags):
+def glob(pattern, *, flags=0):
     """Glob."""
 
     return list(Glob(pattern, flags).glob())
 
 
-def globsplit(pattern, flags=0):
+def globsplit(pattern, *, flags=0):
     """Split pattern by '|'."""
 
-    return fnmatch.fnsplit(pattern, _flag_transform(flags, True))
+    return fnmatch.fnsplit(pattern, flags=_flag_transform(flags, True))
 
 
-def globmatch(filename, pattern, flags=0):
+def globmatch(filename, pattern, *patterns, flags=0):
     """
     Check if filename matches pattern.
 
@@ -436,13 +460,27 @@ def globmatch(filename, pattern, flags=0):
     but if `case_sensitive` is set, respect that instead.
     """
 
-    return fnmatch.fnmatch(filename, pattern, _flag_transform(flags, True))
+    return fnmatch.fnmatch(filename, pattern, *patterns, flags=_flag_transform(flags, True))
 
 
-def globfilter(filenames, pattern, flags=0):
+def globfilter(filenames, pattern, *patterns, flags=0):
     """Filter names using pattern."""
 
-    return fnmatch.filter(filenames, pattern, _flag_transform(flags, True))
+    return fnmatch.filter(filenames, pattern, *patterns, flags=_flag_transform(flags, True))
 
 
-escape = fnmatch.escape
+def escape(pattern):
+    """Escape."""
+
+    is_bytes = isinstance(pattern, bytes)
+    drive = b'' if is_bytes else ''
+
+    if util.platform() == "windows":
+        m = fnmatch.RE_WIN_PATH.match(pattern)
+        if m:
+            drive = m.group(0)
+
+    pattern = pattern[len(drive):]
+    replace = br'[\\\1]' if is_bytes else r'[\\\1]'
+
+    return drive + (RE_BMAGIC if is_bytes else RE_MAGIC).sub(replace, pattern)
