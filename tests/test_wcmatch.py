@@ -7,6 +7,7 @@ import mock
 import wcmatch.glob as glob
 import wcmatch.fnmatch as fnmatch
 import wcmatch.wcmatch as wcmatch
+import wcmatch.braces as braces
 from wcmatch import util
 
 
@@ -23,7 +24,7 @@ class TestGlob(unittest.TestCase):
     # Initial tests gathered from https://github.com/isaacs/minimatch/blob/master/test/patterns
     # One was altered as it appeared to frankly be wrong. Others omitted as we do not support
     # the functionality currently, or have no interest to support it moving forward.
-    patterns = [
+    file_filter = [
         'http://www.bashcookbook.com/bashinfo/source/bash-1.14.7/tests/glob-test',
         ['a*', ['a', 'abc', 'abd', 'abe']],
 
@@ -169,7 +170,7 @@ class TestGlob(unittest.TestCase):
         # bash/bsdglob says this:
         # , ["*(a|{b),c)}", ["*(a|{b),c)}"], {}, ["a", "ab", "ac", "ad"]]
         # but we do this instead:
-        # ['*(a|{b),c)}', ['a', 'ab', 'ac'], {}, ['a', 'ab', 'ac', 'ad']],
+        ['*(a|{b),c)}', ['a', 'ab', 'ac'], 0, ['a', 'ab', 'ac', 'ad']],
 
         # test partial parsing in the presence of comment/negation chars
         ['[!a*', ['[!ab'], 0, ['[!ab', '[ab']],
@@ -195,20 +196,20 @@ class TestGlob(unittest.TestCase):
                 'x(a|b|c)', 'x(a|c)', '(a|b|c)', '(a|c)'
             ]
         ),
-        # ['*(a|{b,c})', ['a', 'b', 'c', 'ab', 'ac']],
-        # ['{a,*(b|c,d)}', ['a', '(b|c', '*(b|c', 'd)']],
+        ['*(a|{b,c})', ['a', 'b', 'c', 'ab', 'ac']],
+        ['{a,*(b|c,d)}', ['a', '(b|c', '*(b|c', 'd)']],
         # a
         # *(b|c)
         # *(b|d)
-        # ['{a,*(b|{c,d})}', ['a', 'b', 'bc', 'cb', 'c', 'd']],
-        # ['*(a|{b|c,c})', ['a', 'b', 'c', 'ab', 'ac', 'bc', 'cb']],
+        ['{a,*(b|{c,d})}', ['a', 'b', 'bc', 'cb', 'c', 'd']],
+        ['*(a|{b|c,c})', ['a', 'b', 'c', 'ab', 'ac', 'bc', 'cb']],
 
         # test various flag settings.
-        # [
-        #   '*(a|{b|c,c})',
-        #   ['x(a|b|c)', 'x(a|c)', '(a|b|c)', '(a|c)'],
-        #   { noext: True }
-        # ],
+        [
+            '*(a|{b|c,c})',
+            ['x(a|b|c)', 'x(a|c)', '(a|b|c)', '(a|c)'],
+            glob.E
+        ],
         # [
         #   'a?b',
         #   ['x/y/acb', 'acb/'],
@@ -369,6 +370,67 @@ class TestGlob(unittest.TestCase):
 
     }
 
+    braces = [
+        [
+            'a{b,c{d,e},{f,g}h}x{y,z}',
+            [
+                'abxy',
+                'abxz',
+                'acdxy',
+                'acdxz',
+                'acexy',
+                'acexz',
+                'afhxy',
+                'afhxz',
+                'aghxy',
+                'aghxz'
+            ]
+        ],
+        [
+            'a{1..5}b',
+            [
+                'a1b',
+                'a2b',
+                'a3b',
+                'a4b',
+                'a5b'
+            ]
+        ],
+        ['a{b}c', ['a{b}c']],
+        [
+            'a{00..05}b',
+            [
+                'a00b',
+                'a01b',
+                'a02b',
+                'a03b',
+                'a04b',
+                'a05b'
+            ]
+        ],
+        ['z{a,b},c}d', ['za,c}d', 'zb,c}d']],
+        ['z{a,b{,c}d', ['z{a,bd', 'z{a,bcd']],
+        ['a{b{c{d,e}f}g}h', ['a{b{cdf}g}h', 'a{b{cef}g}h']],
+        [
+            'a{b{c{d,e}f{x,y}}g}h',
+            [
+                'a{b{cdfx}g}h',
+                'a{b{cdfy}g}h',
+                'a{b{cefx}g}h',
+                'a{b{cefy}g}h'
+            ]
+        ],
+        [
+            'a{b{c{d,e}f{x,y{}g}h',
+            [
+                'a{b{cdfxh',
+                'a{b{cdfy{}gh',
+                'a{b{cefxh',
+                'a{b{cefy{}gh'
+            ]
+        ]
+    ]
+
     def setUp(self):
         """Setup the tests."""
         self.files = self.FILES[:]
@@ -401,14 +463,14 @@ class TestGlob(unittest.TestCase):
 
     @mock.patch('wcmatch.util.platform')
     @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_glob(self, mock__iscase_sensitive, mock_platform):
+    def test_glob_filter(self, mock__iscase_sensitive, mock_platform):
         """Test wildcard parsing."""
 
         mock_platform.return_value = "linux"
         mock__iscase_sensitive.return_value = True
         fnmatch._compile.cache_clear()
 
-        for p in self.patterns:
+        for p in self.file_filter:
             self._filter(p)
 
     def test_ignore_cases(self):
@@ -421,6 +483,43 @@ class TestGlob(unittest.TestCase):
                 print("GOAL: ", goal)
 
                 self.assertTrue(glob.globmatch(filename, pattern, flags=glob.E | glob.N) == goal)
+
+    def test_brace_expand(self):
+        """Test brace expansion."""
+
+        for p in self.braces:
+            print("PATTERN: ", p[0])
+            expanded_pattern = []
+            try:
+                expanded_pattern.extend(
+                    list(braces.iexpand(p[0]))
+                )
+            except Exception as e:
+                expanded_pattern.append(p[0])
+            result = expanded_pattern
+            goal = p[1]
+            print('TEST: ', result, '<==>', goal, '\n')
+            self.assertEqual(result, goal)
+
+    def test_bash_cases(self):
+        """Test bash cases."""
+
+        with open('tests/brace-results2.txt', 'w') as w:
+            with open('tests/brace-cases.txt', 'r') as r:
+                for line in r:
+                    if line.startswith('#') or not line.strip():
+                        continue
+
+                    value = eval("'''%s'''" % line.strip())
+                    results = braces.expand(value, strip_escapes=True)
+                    output = []
+                    for item in results:
+                        if item or len(results) > 1:
+                            output.append('[%s]' % item)
+                    w.write(value + '\n')
+                    if output:
+                        w.write('\n'.join(output))
+                    w.write('><><><><')
 
     def test_unfinished_ext(self):
         """Test unfinished ext."""
@@ -583,7 +682,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, None)
         else:
             self.assertEqual(p1, r'(?ms)^(?:test[\]][^\][]\[\])$')
-            self.assertEqual(p2, r'(?ms)^(?:)$')
+            self.assertEqual(p2, None)
 
         p1, p2 = fnmatch.translate(*fnmatch.fnsplit('test[!]'))
         if util.PY36:
@@ -591,7 +690,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, None)
         else:
             self.assertEqual(p1, r'(?ms)^(?:test\[\!\])$')
-            self.assertEqual(p2, r'(?ms)^(?:)$')
+            self.assertEqual(p2, None)
 
         p1, p2 = fnmatch.translate(*fnmatch.fnsplit('|test|'))
         if util.PY36:
@@ -599,7 +698,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, None)
         else:
             self.assertEqual(p1, r'(?ms)^(?:|test|)$')
-            self.assertEqual(p2, r'(?ms)^(?:)$')
+            self.assertEqual(p2, None)
 
         p1, p2 = fnmatch.translate(*fnmatch.fnsplit('!|!test|!'))
         if util.PY36:
@@ -623,7 +722,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, None)
         else:
             self.assertEqual(p1, r'(?ms)^(?:test[^chars])$')
-            self.assertEqual(p2, r'(?ms)^(?:)$')
+            self.assertEqual(p2, None)
 
         p1 = fnmatch.translate(*fnmatch.fnsplit(r'test[^\\-\\&]'))[0]
         if util.PY36:
@@ -697,7 +796,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, None)
         else:
             self.assertEqual(p1, br'(?ms)^(?:test[\]][^\][]\[\])$')
-            self.assertEqual(p2, br'(?ms)^(?:)$')
+            self.assertEqual(p2, None)
 
         p1, p2 = fnmatch.translate(*fnmatch.fnsplit(b'test[!]'))
         if util.PY36:
@@ -705,7 +804,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, None)
         else:
             self.assertEqual(p1, br'(?ms)^(?:test\[\!\])$')
-            self.assertEqual(p2, br'(?ms)^(?:)$')
+            self.assertEqual(p2, None)
 
         p1, p2 = fnmatch.translate(*fnmatch.fnsplit(b'|test|'))
         if util.PY36:
@@ -713,7 +812,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, None)
         else:
             self.assertEqual(p1, br'(?ms)^(?:|test|)$')
-            self.assertEqual(p2, br'(?ms)^(?:)$')
+            self.assertEqual(p2, None)
 
         p1, p2 = fnmatch.translate(*fnmatch.fnsplit(b'!|!test|!'))
         if util.PY36:
@@ -737,7 +836,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, None)
         else:
             self.assertEqual(p1, br'(?ms)^(?:test[^chars])$')
-            self.assertEqual(p2, br'(?ms)^(?:)$')
+            self.assertEqual(p2, None)
 
         p1 = fnmatch.translate(*fnmatch.fnsplit(br'test[^\\-\\&]'))[0]
         if util.PY36:
@@ -792,7 +891,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, None)
         else:
             self.assertEqual(p1, r'(?ms)^(?:testppppp)$')
-            self.assertEqual(p2, r'(?ms)^(?:)$')
+            self.assertEqual(p2, None)
 
         p1, p2 = fnmatch.translate(r'test[\x70][\u0070][\U00000070][\160][\N{LATIN SMALL LETTER P}]', flags=fnmatch.R)
         if util.PY36:
@@ -800,7 +899,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, None)
         else:
             self.assertEqual(p1, r'(?ms)^(?:test[p][p][p][p][p])$')
-            self.assertEqual(p2, r'(?ms)^(?:)$')
+            self.assertEqual(p2, None)
 
         p1, p2 = fnmatch.translate(r'test\t\m', flags=fnmatch.R)
         if util.PY36:
@@ -808,7 +907,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, None)
         else:
             self.assertEqual(p1, r'(?ms)^(?:test\	m)$')
-            self.assertEqual(p2, r'(?ms)^(?:)$')
+            self.assertEqual(p2, None)
 
         p1, p2 = fnmatch.translate(r'test[\\]test', flags=fnmatch.R)
         if util.PY36:
@@ -816,7 +915,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, None)
         else:
             self.assertEqual(p1, r'(?ms)^(?:test[\\]test)$')
-            self.assertEqual(p2, r'(?ms)^(?:)$')
+            self.assertEqual(p2, None)
 
         p1, p2 = fnmatch.translate('test[\\')
         if util.PY36:
@@ -824,7 +923,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, None)
         else:
             self.assertEqual(p1, r'(?ms)^(?:test\[\\)$')
-            self.assertEqual(p2, r'(?ms)^(?:)$')
+            self.assertEqual(p2, None)
 
         p1, p2 = fnmatch.translate(r'test\44test', flags=fnmatch.R)
         if util.PY36:
@@ -832,7 +931,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, None)
         else:
             self.assertEqual(p1, r'(?ms)^(?:test\$test)$')
-            self.assertEqual(p2, r'(?ms)^(?:)$')
+            self.assertEqual(p2, None)
 
         p1, p2 = fnmatch.translate(r'test\44', flags=fnmatch.R)
         if util.PY36:
@@ -840,7 +939,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, None)
         else:
             self.assertEqual(p1, r'(?ms)^(?:test\$)$')
-            self.assertEqual(p2, r'(?ms)^(?:)$')
+            self.assertEqual(p2, None)
 
         p1, p2 = fnmatch.translate(r'test\400', flags=fnmatch.R)
         if util.PY36:
@@ -848,7 +947,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, None)
         else:
             self.assertEqual(p1, r'(?ms)^(?:test\Ā)$')
-            self.assertEqual(p2, r'(?ms)^(?:)$')
+            self.assertEqual(p2, None)
 
         with pytest.raises(SyntaxError):
             fnmatch.translate(r'test\N', flags=fnmatch.R)

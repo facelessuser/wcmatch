@@ -38,6 +38,7 @@ P = PATHNAME = fnmatch.PATHNAME
 E = EXTEND = fnmatch.EXTEND
 G = GLOBSTAR = fnmatch.GLOBSTAR
 M = MINUSNEGATE = fnmatch.MINUSNEGATE
+B = NOBRACE = fnmatch.NOBRACE
 
 FLAG_MASK = (
     FORCECASE |
@@ -46,7 +47,8 @@ FLAG_MASK = (
     PATHNAME |
     EXTEND |
     GLOBSTAR |
-    MINUSNEGATE
+    MINUSNEGATE |
+    NOBRACE
 )
 
 

@@ -45,6 +45,7 @@ E = EXTEND = fnmatch.EXTEND
 G = GLOBSTAR = fnmatch.GLOBSTAR
 N = NONEGATE = fnmatch.NONEGATE
 M = MINUSNEGATE = fnmatch.MINUSNEGATE
+B = NOBRACE = fnmatch.NOBRACE
 
 FLAG_MASK = (
     FORCECASE |
@@ -54,7 +55,8 @@ FLAG_MASK = (
     EXTEND |
     GLOBSTAR |
     NONEGATE |
-    MINUSNEGATE
+    MINUSNEGATE |
+    NOBRACE
 )
 
 FS_FLAG_MASK = FLAG_MASK ^ (NONEGATE | MINUSNEGATE)
@@ -375,7 +377,7 @@ class Glob(object):
                     for dirname, base in self._glob_deep(curdir):
                         yield os.path.join(dirname, base)
                 else:
-                    matcher = fnmatch._compile(target, self.flags)
+                    matcher = fnmatch._compile((target,), self.flags)
                     yield from self._glob_shallow(curdir, matcher)
             else:
                 path = os.path.join(curdir, target)
@@ -392,7 +394,7 @@ class Glob(object):
                         else:
                             yield path
                 else:
-                    matcher = fnmatch._compile(target, self.flags)
+                    matcher = fnmatch._compile((target,), self.flags)
                     for path in self._glob_shallow(curdir, matcher, True):
                         if this:
                             yield from self._glob(path, this, rest)

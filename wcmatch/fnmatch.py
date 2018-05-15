@@ -23,6 +23,7 @@ IN THE SOFTWARE.
 import re
 import copyreg
 import functools
+from . import braces
 from . import util
 
 __all__ = (
@@ -43,6 +44,7 @@ D = DOT = 0x0020
 E = EXTEND = 0x0040
 G = GLOBSTAR = 0x0080
 M = MINUSNEGATE = 0x0100
+B = NOBRACE = 0x0200
 
 FLAG_MASK = (
     FORCECASE |
@@ -53,7 +55,8 @@ FLAG_MASK = (
     DOT |
     EXTEND |
     GLOBSTAR |
-    MINUSNEGATE
+    MINUSNEGATE |
+    NOBRACE
 )
 CASE_FLAGS = FORCECASE | IGNORECASE
 
@@ -235,6 +238,7 @@ class FnParse(object):
         """Initialize."""
 
         self.pattern = pattern
+        self.braces = not bool(flags & NOBRACE)
         self.negate_symbol = '-' if bool(flags & MINUSNEGATE) else '!'
         self.is_bytes = isinstance(pattern[0], bytes)
         self.negate = not bool(flags & NONEGATE)
@@ -514,7 +518,7 @@ class FnParse(object):
         while index >= 0:
             if current[index] is None:
                 content = current[index + 1:]
-                current[index] = (''.join(content) if content else default) + (')[^%s]*?)' % re.escape(self.sep))
+                current[index] = (''.join(content) if content else default) + (')[^%s]*?)' % self.get_path_sep())
             index -= 1
         self.inv_ext = 0
 
@@ -709,23 +713,30 @@ class FnParse(object):
         exclude_pattern = None
         pattern = None
 
-        for p in self.pattern:
-            p = util.norm_pattern(p, self.pathname, self.raw_chars)
-            p = p.decode('latin-1') if self.is_bytes else p
-            if self.negate and p[0:1] == self.negate_symbol:
-                current = exclude_result
-                p = p[1:]
-                current.append('|' if not empty_exclude else '')
-            else:
-                current = result
-                current.append('|' if not empty_include else '')
+        for pat in self.pattern:
+            pat = util.norm_pattern(pat, self.pathname, self.raw_chars)
 
-            if current is result:
-                empty_include = False
-            else:
-                empty_exclude = False
+            try:
+                expanded = list(braces.iexpand(pat)) if self.braces else [pat]
+            except Exception as e:
+                expanded = [pat]
 
-            self.root(p, current)
+            for p in expanded:
+                p = p.decode('latin-1') if self.is_bytes else p
+                if self.negate and p[0:1] == self.negate_symbol:
+                    current = exclude_result
+                    p = p[1:]
+                    current.append('|' if not empty_exclude else '')
+                else:
+                    current = result
+                    current.append('|' if not empty_include else '')
+
+                if current is result:
+                    empty_include = False
+                else:
+                    empty_exclude = False
+
+                self.root(p, current)
 
         if exclude_result and not result:
             result.append('.*?')

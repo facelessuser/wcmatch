@@ -149,6 +149,14 @@ class StringIter(object):
 
         return self.iternext()
 
+    def match(self, pattern):
+        """Perform regex match at index."""
+
+        m = pattern.match(self._string, self._index)
+        if m:
+            self._index = m.end()
+        return m
+
     @property
     def index(self):
         """Get current index."""
