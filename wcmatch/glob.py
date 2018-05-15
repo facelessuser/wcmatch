@@ -59,7 +59,7 @@ FLAG_MASK = (
     NOBRACE
 )
 
-FS_FLAG_MASK = FLAG_MASK ^ (NONEGATE | MINUSNEGATE)
+FS_FLAG_MASK = FLAG_MASK ^ (NONEGATE | MINUSNEGATE | FORCECASE | IGNORECASE)
 
 RE_MAGIC = re.compile(r'(^[-!]|[*?(\[|^])')
 RE_BMAGIC = re.compile(r'(^[-!]|[*?(\[|^])')
@@ -68,9 +68,9 @@ RE_BMAGIC = re.compile(r'(^[-!]|[*?(\[|^])')
 def _flag_transform(flags, full=False):
     """Transform flags to glob defaults."""
 
-    # Here we force PATHNAME and disable negaton with NONEGATE
+    # Here we force PATHNAME and disable negation with NONEGATE
     if not full:
-        flags = (flags & FS_FLAG_MASK) | fnmatch.PATHNAME | NONEGATE
+        flags = (flags & FS_FLAG_MASK) | fnmatch.PATHNAME | NONEGATE | IGNORECASE
     else:
         flags = (flags & FLAG_MASK) | fnmatch.PATHNAME
     # Enable DOT by default (flipped logic for fnmatch which disables it by default)
