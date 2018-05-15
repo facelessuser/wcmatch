@@ -35,7 +35,8 @@ __all__ = (
 
 # We don't use util.platform only because we mock it in tests,
 # and scandir will not work with bytes on the wrong system.
-SCANDIR_WORKAROUND = util.PY36 or (util.PY35 and not sys.platform.startswith('win'))
+WIN = sys.platform.startswith('win')
+NO_SCANDIR_WORKAROUND = util.PY36 or (util.PY35 and not WIN)
 
 F = FORCECASE = fnmatch.FORCECASE
 I = IGNORECASE = fnmatch.IGNORECASE
@@ -59,7 +60,7 @@ FLAG_MASK = (
     NOBRACE
 )
 
-FS_FLAG_MASK = FLAG_MASK ^ (NONEGATE | MINUSNEGATE | FORCECASE | IGNORECASE)
+FS_FLAG_MASK = FLAG_MASK ^ (NONEGATE | MINUSNEGATE)
 
 RE_MAGIC = re.compile(r'(^[-!]|[*?(\[|^])')
 RE_BMAGIC = re.compile(r'(^[-!]|[*?(\[|^])')
@@ -70,7 +71,7 @@ def _flag_transform(flags, full=False):
 
     # Here we force PATHNAME and disable negation with NONEGATE
     if not full:
-        flags = (flags & FS_FLAG_MASK) | fnmatch.PATHNAME | NONEGATE | IGNORECASE
+        flags = (flags & FS_FLAG_MASK) | fnmatch.PATHNAME | NONEGATE
     else:
         flags = (flags & FLAG_MASK) | fnmatch.PATHNAME
     # Enable DOT by default (flipped logic for fnmatch which disables it by default)
@@ -130,7 +131,7 @@ class Split(object):
     def is_magic(self, name):
         """Check if name contains magic characters."""
 
-        return self.re_magic.search(name)
+        return self.re_magic.search(name) is not None
 
     def _sequence(self, i):
         """Handle fnmatch character group."""
@@ -213,21 +214,12 @@ class Split(object):
 
         return success
 
-    def group_by_magic(self, value, l, directory):
+    def store(self, value, l, directory):
         """Group patterns by literals and potential magic patterns."""
 
-        sep = self.sep if directory else ''
-        if self.is_magic(value):
-            l.append([value, True, directory])
-            self.magic = True
-        elif self.magic:
-            self.magic = False
-            l.append([value + sep, False, directory])
-        elif l:
-            l[-1][0] += value + sep
-            l[-1][2] = directory
-        else:
-            l.append([value + sep, False, directory])
+        relative_dir = value in ('.', '..')
+        magic = self.is_magic(value)
+        l.append([value + (self.sep if directory and not magic and not relative_dir else ''), magic, directory])
 
     def split(self):
         """Start parsing the pattern."""
@@ -277,7 +269,7 @@ class Split(object):
                 value = pattern[start + 1:split].encode('latin-1')
             else:
                 value = pattern[start + 1:split]
-            self.group_by_magic(value, parts, True)
+            self.store(value, parts, True)
             start = split + offset
 
         if start < len(pattern):
@@ -286,7 +278,7 @@ class Split(object):
             else:
                 value = pattern[start + 1:]
             if value:
-                self.group_by_magic(value, parts, False)
+                self.store(value, parts, False)
 
         return parts
 
@@ -300,24 +292,52 @@ class Glob(object):
         self.flags = _flag_transform(flags)
         self.dot = bool(self.flags & fnmatch.DOT)
         self.globstar = bool(self.flags & GLOBSTAR)
+        self.case_sensitive = fnmatch.get_case(self.flags)
         self.is_bytes = isinstance(pattern, bytes)
         self.pattern = _magicsplit(pattern, self.flags)
+        if not self.case_sensitive and WIN:
+            for p in self.pattern:
+                p[0] = p[0].lower()
+        if util.platform() == "windows":
+            self.sep = (b'\\', '\\')
+        else:
+            self.sep = (b'/', '/')
         self.scandir = util.PY36 or (util.PY35 and util.platform() != "windows")
 
     def _is_globstar(self, name):
-        """Check if rescursive globstar."""
+        """Check if name is a rescursive globstar."""
 
         return self.globstar and name in (b'**', '**')
 
     def _is_hidden(self, name):
+        """
+        Check if is file hidden.
+
+        REMOVE: Should just use standard dot convention and remove this.
+        """
 
         return self.dot and name[0:1] in (b'.', '.')
+
+    def _is_this(self, name):
+        """Check if "this" directory `.`."""
+
+        return name in (b'.', '.') or name in self.sep
+
+    def _is_parent(self, name):
+        """Check if `..`."""
+
+        return name in (b'..', '..')
+
+    def match(self, name):
+        """Do a simple match."""
+
+        return ((name.lower().rstrip(os.sep) if not self.case_sensitive else name)) == self._match.rstrip(os.sep)
 
     def _glob_shallow(self, curdir, matcher, dir_only=False):
         """Non recursive directory glob."""
 
         try:
-            if SCANDIR_WORKAROUND:
+            if NO_SCANDIR_WORKAROUND:
                 with os.scandir(curdir) as scan:
                     for f in scan:
                         try:
@@ -337,7 +357,7 @@ class Glob(object):
         """Recursive directory glob."""
 
         try:
-            if SCANDIR_WORKAROUND:
+            if NO_SCANDIR_WORKAROUND:
                 with os.scandir(curdir) as scan:
                     for f in scan:
                         try:
@@ -365,51 +385,110 @@ class Glob(object):
             pass
 
     def _glob(self, curdir, this, rest):
-        """Handle glob flow."""
+        """
+        Handle glob flow.
+
+        There are really only a couple of cases:
+
+        - File name
+        - File name pattern (magic)
+        - Directory
+        - Directory name pattern (magic)
+        - Relative indicators `.` and `..`
+        - Lastyl globstar `**`.
+        """
 
         is_magic = this[1]
         is_dir = this[2]
         target = this[0]
 
+        # Handle relative directories: `\\` (windows), `/`, `.`, and `..`.
+        # We want to append these to the current directory and get the next
+        # file or folder name or pattern we need to check against.
+        while curdir not in self.sep and (self._is_this(target) or self._is_parent(target)):
+            if target in self.sep:
+                curdir += target
+            else:
+                curdir = os.path.join(curdir, target)
+            if not os.path.isdir(curdir):
+                # Can't find this directory.
+                return
+            if rest:
+                # Get the next target.
+                this = rest.pop(0)
+                target, is_magic, is_dir = this
+            elif is_dir:
+                # Nothing left to append, but nothing left to search.
+                yield curdir
+                return
+
         if not is_dir:
+            # Files
             if is_magic:
-                if self._is_globstar(target):
-                    for dirname, base in self._glob_deep(curdir):
-                        yield os.path.join(dirname, base)
-                else:
-                    matcher = fnmatch._compile((target,), self.flags)
-                    yield from self._glob_shallow(curdir, matcher)
+                # File pattern
+                matcher = fnmatch._compile((target,), self.flags)
+
             else:
-                path = os.path.join(curdir, target)
-                if os.path.lexists(path):
-                    yield path
+                # Normal file
+                matcher = self
+                self._match = target
+
+            yield from self._glob_shallow(curdir, matcher)
+
         else:
+            # Directories
             this = rest.pop(0) if rest else None
-            if is_magic:
-                if self._is_globstar(target):
-                    for dirname, base in self._glob_deep(curdir, True):
-                        path = os.path.join(dirname, base)
-                        if this:
-                            yield from self._glob(path, this, rest[:])
-                        else:
-                            yield path
-                else:
-                    matcher = fnmatch._compile((target,), self.flags)
-                    for path in self._glob_shallow(curdir, matcher, True):
-                        if this:
-                            yield from self._glob(path, this, rest)
-                        else:
-                            yield path
-            else:
-                path = os.path.join(curdir, target)
-                if os.path.isdir(path):
+            if is_magic and self._is_globstar(target):
+                # Glob star directory pattern `**`.
+                for dirname, base in self._glob_deep(curdir, True):
+                    path = os.path.join(dirname, base)
                     if this:
-                        yield from self._glob(path, this, rest)
+                        yield from self._glob(path, this, rest[:])
                     else:
                         yield path
 
+            else:
+                if is_magic:
+                    # Normal directory pattern
+                    matcher = fnmatch._compile((target,), self.flags)
+
+                else:
+                    # Normal directory
+                    matcher = self
+                    self._match = target
+
+                for path in self._glob_shallow(curdir, matcher, True):
+                    if this:
+                        yield from self._glob(path, this, rest[:])
+                    else:
+                        yield path
+
+    def get_starting_paths(self, curdir):
+        """
+        Get the starting location.
+
+        For case sensitive paths, we have to "glob" for
+        it first as Python doesn't like for its users to
+        think about case. By scanning for it, we can get
+        the actual casing and then compare.
+        """
+
+        if not self._is_parent(curdir) and not self._is_this(curdir):
+            fullpath = os.path.abspath(curdir)
+            basename = os.path.basename(fullpath)
+            dirname = os.path.dirname(fullpath)
+            if basename:
+                self._match = basename
+                results = [os.path.basename(name) for name in self._glob_shallow(dirname, self)]
+            else:
+                results = [curdir]
+        else:
+            results = [curdir]
+        return results
+
     def glob(self):
         """Starts off the glob iterator."""
+
         if self.is_bytes:
             curdir = bytes(os.curdir, 'ASCII')
         else:
@@ -417,20 +496,37 @@ class Glob(object):
 
         if self.pattern:
             if not self.pattern[0][1]:
-                # Is Directory
+                # Path starts with normal plain text
+                # Lets verify the case of the starting directory (if possible)
                 this = self.pattern[0]
+
                 curdir = this[0]
+
+                if not os.path.isdir(curdir) and not os.lexists(curdir):
+                    return
+
+                # Make sure case matches, but running case insensitive
+                # on a case sensitive file system may return more than
+                # one starting location.
+                results = self.get_starting_paths(curdir)
+                if not results:
+                    # Nothing to do.
+                    return
+
                 if this[2]:
-                    # Glob this directory if it exists
-                    if os.path.isdir(curdir):
-                        rest = self.pattern[1:]
-                        this = rest.pop(0)
-                        yield from self._glob(curdir, this, rest)
+                    # Glob these directories if they exists
+                    rest = self.pattern[1:]
+                    this = rest.pop(0)
+                    for start in results:
+                        if os.path.isdir(start):
+                            yield from self._glob(curdir, this, rest)
                 else:
-                    # Return file if exits and finish.
-                    if os.path.lexists(curdir):
-                        yield curdir
+                    # Return the file(s) and finish.
+                    for start in results:
+                        if os.path.lexists(start):
+                            yield curdir
             else:
+                # Path starts with a magic pattern, let's get globbing
                 rest = self.pattern[:]
                 this = rest.pop(0)
                 yield from self._glob(curdir, this, rest)
