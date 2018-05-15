@@ -513,8 +513,8 @@ class TestGlob(unittest.TestCase):
                     value = eval("'''%s'''" % line.strip())
                     results = braces.expand(value, strip_escapes=True)
                     output = []
-                    for item in results:
-                        if item or len(results) > 1:
+                    if not (len(results) == 1 and results == ''):
+                        for item in results:
                             output.append('[%s]' % item)
                     w.write(value + '\n')
                     if output:

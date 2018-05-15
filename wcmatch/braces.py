@@ -63,7 +63,6 @@ class ExpandBrace(object):
         self.detph = 0
         self.expanding = False
         self.strip_escapes = strip_escapes
-        self.skip_index = []
 
     def set_expanding(self):
         """Set that we are expanding a sequence, and return whether a release is required by the caller."""
@@ -132,7 +131,7 @@ class ExpandBrace(object):
                         # and still didn't find it.
                         i.rewind(i.index - index)
 
-                elif self.is_expanding() and (c == ',' or (c == '}' and i.index not in self.skip_index)):
+                elif self.is_expanding() and c in (',', '}'):
                     # We are Expanding within a group and found a group delimiter
                     # Retrun what we gathered before the group delimiters.
                     i.rewind(1)
@@ -161,8 +160,8 @@ class ExpandBrace(object):
         release = self.set_expanding()
         has_comma = False  # Used to indicate validity of group (`{1..2}` are an exception).
         is_empty = True  # Tracks whether the current slot is empty `{slot,slot,slot}`.
-        index = i.index
 
+        # Detect numberical and alphabetic series: `{1..2}` etc.
         i.rewind(1)
         item = self.get_range(i)
         i.advance(1)
@@ -176,12 +175,8 @@ class ExpandBrace(object):
                 # Bash has some special top level logic. if `}` follows `{` but hasn't matched
                 # a group yet, keep going except when the first 2 bytes are `{}` which gets
                 # completely ignored.
-                if (
-                    c == '}' and
-                    not (i.index == index and not i.index == 2 and self.depth == 1) and
-                    not (self.depth == 1 and not has_comma and not i.index) and
-                    i.index not in self.skip_index
-                ):
+                keep_looking = self.depth == 1 and not has_comma  # and i.index not in self.skip_index
+                if (c == '}' and (not keep_looking or i.index == 2)):
                     # If there is no comma, we know the sequence is bogus.
                     if is_empty:
                         result.append('')
@@ -201,23 +196,22 @@ class ExpandBrace(object):
 
                 else:
                     if c == '}':
-                        # Top level: Aggressively keep searching for a group
-                        value = None
-                        while value is None and i.index not in self.skip_index:
-                            self.skip_index.append(i.index)
-                            i.rewind(i.index - index)
-                            try:
-                                value = self.get_literals(c, i)
-                            except StopIteration:
-                                # Clean up
-                                self.skip_index.clear()
-                                raise
+                        # Top level: If we didn't find a comma, we haven't
+                        # completed the top level group. Request more and
+                        # append to what we already have for the first slot.
+                        if not result:
+                            result.append(c)
+                        else:
+                            result = list(self.squash(result, [c]))
+                        value = self.get_literals(next(i), i)
                         if value is not None:
-                            result.extend(value)
+                            result = list(self.squash(result, value))
                             is_empty = False
                     else:
                         # Lower level: Try to find group, but give up if cannot acquire.
                         value = self.get_literals(c, i)
+                        if value is not None:
+                            value = list(value)
                         if value is not None:
                             result.extend(value)
                             is_empty = False
