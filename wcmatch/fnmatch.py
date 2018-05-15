@@ -60,7 +60,7 @@ FLAG_MASK = (
 )
 CASE_FLAGS = FORCECASE | IGNORECASE
 
-RE_WIN_PATH = re.compile(r'(\\{4}[^\\]+\\{2}[^\\]+|[a-z]:)(\\{2}|\\$)?')
+RE_WIN_PATH = re.compile(r'(\\{4}[^\\]+\\{2}[^\\]+|[a-z]:)(\\{2}|$)')
 
 
 class PathNameException(Exception):
@@ -398,7 +398,7 @@ class FnParse(object):
             value = r'\\'
             if self.bslash_abort:
                 if not self.in_list:
-                    value = self.get_path_sep()
+                    value = self.get_path_sep() + '+'
                     self.set_start_dir()
                 else:
                     value = self._restrict_sequence() + value
@@ -480,7 +480,7 @@ class FnParse(object):
 
         self.reset_dir_track()
         if value == globstar:
-            sep = '(?:^|$|%s)' % self.get_path_sep()
+            sep = '(?:^|$|%s)+' % self.get_path_sep()
             if current[-1] == '|':
                 current.append(value)
             elif current[-1] == '':
@@ -578,7 +578,7 @@ class FnParse(object):
                         extended.append(self._references(i))
                     except StopIteration:
                         i.rewind(i.index - subindex)
-                        if self.pathname and self.bslash_abort:
+                        if self.bslash_abort:
                             extended.append(self._restrict_sequence())
                         extended.append(r'\\')
                 elif c == '[':
@@ -673,7 +673,9 @@ class FnParse(object):
                 if self.pathname:
                     self.set_start_dir()
                     self.clean_up_inverse(current)
-                current.append(self.get_path_sep())
+                    current.append(self.get_path_sep() + '+')
+                else:
+                    current.append(self.get_path_sep())
             elif c == '\\':
                 index = i.index
                 try:
