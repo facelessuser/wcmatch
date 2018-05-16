@@ -14,7 +14,7 @@ dollar = [
 empty = []
 
 
-class TestTrickyBraces(unittest.TestCase):
+class TestBraces(unittest.TestCase):
     """Test globbing."""
 
     def eval_str_esc(self, string):
@@ -80,20 +80,3 @@ class TestTrickyBraces(unittest.TestCase):
                     b = RE_REMOVE.sub('', entry.pop(0))
                     # print('    ', a, '<==>', b)
                     self.assertEqual(a, b)
-
-            # for line in r1:
-            #     if line.startswith('#'):
-            #         continue
-
-            #     line = self.eval_str_esc(line)
-            #     line2 = r2.readline().strip()
-
-            #     results = braces.expand(line)
-            #     output = []
-            #     if not (len(results) == 1 and results == ''):
-            #         for item in results:
-            #             output.append('[%s]' % item)
-            #     w.write(line + '\n')
-            #     if output:
-            #         w.write('\n'.join(output))
-            #     w.write('><><><><')
