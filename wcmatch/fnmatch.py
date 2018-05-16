@@ -85,8 +85,6 @@ def get_case(flags):
 
     if not bool(flags & CASE_FLAGS):
         case_sensitive = util.is_case_sensitive()
-    elif flags & FORCECASE and flags & IGNORECASE:
-        raise ValueError("Cannot use FORCECASE and IGNORECASE flags together!")
     elif flags & FORCECASE:
         case_sensitive = True
     else:
