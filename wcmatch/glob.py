@@ -553,7 +553,7 @@ def globsplit(pattern, *, flags=0):
     return fnmatch.fnsplit(pattern, flags=_flag_transform(flags, True))
 
 
-def globmatch(filename, pattern, *patterns, flags=0):
+def globmatch(filename, patterns, *, flags=0):
     """
     Check if filename matches pattern.
 
@@ -561,13 +561,13 @@ def globmatch(filename, pattern, *patterns, flags=0):
     but if `case_sensitive` is set, respect that instead.
     """
 
-    return fnmatch.fnmatch(filename, pattern, *patterns, flags=_flag_transform(flags, True))
+    return fnmatch.fnmatch(filename, patterns, flags=_flag_transform(flags, True))
 
 
-def globfilter(filenames, pattern, *patterns, flags=0):
+def globfilter(filenames, patterns, *, flags=0):
     """Filter names using pattern."""
 
-    return fnmatch.filter(filenames, pattern, *patterns, flags=_flag_transform(flags, True))
+    return fnmatch.filter(filenames, patterns, flags=_flag_transform(flags, True))
 
 
 def escape(pattern):

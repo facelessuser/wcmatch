@@ -454,7 +454,7 @@ class TestGlob(unittest.TestCase):
             result = sorted(
                 glob.globfilter(
                     files,
-                    *pat,
+                    pat,
                     flags=self.flags ^ flags
                 )
             )
@@ -659,7 +659,7 @@ class TestWildcard(unittest.TestCase):
         fnmatch._compile.cache_clear()
 
         p1, p2 = fnmatch.translate(
-            *fnmatch.fnsplit('*test[a-z]?|*test2[a-z]?|!test[!a-z]|!test[!-|a-z]'), flags=fnmatch.N
+            fnmatch.fnsplit('*test[a-z]?|*test2[a-z]?|!test[!a-z]|!test[!-|a-z]'), flags=fnmatch.N
         )
         if util.PY36:
             self.assertEqual(p1, r'^(?s:(?=.).*?test[a-z].|(?=.).*?test2[a-z].)$')
@@ -669,7 +669,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, r'(?ms)^(?:test[^a-z]|test[^\-\|a-z])$')
 
         p1, p2 = fnmatch.translate(
-            *fnmatch.fnsplit('*test[a-z]?|*test2[a-z]?|-test[!a-z]|-test[!-|a-z]'), flags=fnmatch.M | fnmatch.N
+            fnmatch.fnsplit('*test[a-z]?|*test2[a-z]?|-test[!a-z]|-test[!-|a-z]'), flags=fnmatch.M | fnmatch.N
         )
         if util.PY36:
             self.assertEqual(p1, r'^(?s:(?=.).*?test[a-z].|(?=.).*?test2[a-z].)$')
@@ -678,7 +678,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)^(?:(?=.).*?test[a-z].|(?=.).*?test2[a-z].)$')
             self.assertEqual(p2, r'(?ms)^(?:test[^a-z]|test[^\-\|a-z])$')
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit('test[]][!][][]', flags=fnmatch.F), flags=fnmatch.F)
+        p1, p2 = fnmatch.translate(fnmatch.fnsplit('test[]][!][][]', flags=fnmatch.F), flags=fnmatch.F)
         if util.PY36:
             self.assertEqual(p1, r'^(?s:test[\]][^\][]\[\])$')
             self.assertEqual(p2, None)
@@ -686,7 +686,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)^(?:test[\]][^\][]\[\])$')
             self.assertEqual(p2, None)
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit('test[!]'))
+        p1, p2 = fnmatch.translate(fnmatch.fnsplit('test[!]'))
         if util.PY36:
             self.assertEqual(p1, r'^(?s:test\[\!\])$')
             self.assertEqual(p2, None)
@@ -694,7 +694,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)^(?:test\[\!\])$')
             self.assertEqual(p2, None)
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit('|test|'))
+        p1, p2 = fnmatch.translate(fnmatch.fnsplit('|test|'))
         if util.PY36:
             self.assertEqual(p1, r'^(?s:|test|)$')
             self.assertEqual(p2, None)
@@ -702,7 +702,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)^(?:|test|)$')
             self.assertEqual(p2, None)
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit('!|!test|!'), flags=fnmatch.N)
+        p1, p2 = fnmatch.translate(fnmatch.fnsplit('!|!test|!'), flags=fnmatch.N)
         if util.PY36:
             self.assertEqual(p1, r'^(?s:.*?)$')
             self.assertEqual(p2, r'^(?s:|test|)$')
@@ -710,7 +710,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)^(?:.*?)$')
             self.assertEqual(p2, r'(?ms)^(?:|test|)$')
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit('-|-test|-'), flags=fnmatch.M | fnmatch.N)
+        p1, p2 = fnmatch.translate(fnmatch.fnsplit('-|-test|-'), flags=fnmatch.M | fnmatch.N)
         if util.PY36:
             self.assertEqual(p1, r'^(?s:.*?)$')
             self.assertEqual(p2, r'^(?s:|test|)$')
@@ -718,7 +718,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)^(?:.*?)$')
             self.assertEqual(p2, r'(?ms)^(?:|test|)$')
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit('test[^chars]'))
+        p1, p2 = fnmatch.translate(fnmatch.fnsplit('test[^chars]'))
         if util.PY36:
             self.assertEqual(p1, r'^(?s:test[^chars])$')
             self.assertEqual(p2, None)
@@ -726,27 +726,27 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)^(?:test[^chars])$')
             self.assertEqual(p2, None)
 
-        p1 = fnmatch.translate(*fnmatch.fnsplit(r'test[^\\-\\&]'))[0]
+        p1 = fnmatch.translate(fnmatch.fnsplit(r'test[^\\-\\&]'))[0]
         if util.PY36:
             self.assertEqual(p1, r'^(?s:test[^\\-\\\&])$')
         else:
             self.assertEqual(p1, r'(?ms)^(?:test[^\\-\\\&])$')
 
         # BROKEN
-        p1 = fnmatch.translate(*fnmatch.fnsplit(r'\\*\\?\\|\\[\\]'))[0]
+        p1 = fnmatch.translate(fnmatch.fnsplit(r'\\*\\?\\|\\[\\]'))[0]
         if util.PY36:
             self.assertEqual(p1, r'^(?s:\\.*?\\.\\|\\[\\])$')
         else:
             self.assertEqual(p1, r'(?ms)^(?:\\.*?\\.\\|\\[\\])$')
 
-        p1 = fnmatch.translate(*fnmatch.fnsplit(r'\\u0300', flags=fnmatch.R), flags=fnmatch.R)[0]
+        p1 = fnmatch.translate(fnmatch.fnsplit(r'\\u0300', flags=fnmatch.R), flags=fnmatch.R)[0]
         if util.PY36:
             self.assertEqual(p1, r'^(?s:\\u0300)$')
         else:
             self.assertEqual(p1, r'(?ms)^(?:\\u0300)$')
 
         self.assertEqual(
-            fnmatch.filter(['testm', 'test\\3', 'testa'], *fnmatch.fnsplit(r'te\st[ma]')),
+            fnmatch.filter(['testm', 'test\\3', 'testa'], fnmatch.fnsplit(r'te\st[ma]')),
             ['testm', 'testa']
         )
 
@@ -774,7 +774,7 @@ class TestWildcard(unittest.TestCase):
         fnmatch._compile.cache_clear()
 
         p1, p2 = fnmatch.translate(
-            *fnmatch.fnsplit(b'*test[a-z]?|*test2[a-z]?|!test[!a-z]|!test[!-|a-z]'), flags=fnmatch.N
+            fnmatch.fnsplit(b'*test[a-z]?|*test2[a-z]?|!test[!a-z]|!test[!-|a-z]'), flags=fnmatch.N
         )
         if util.PY36:
             self.assertEqual(p1, br'^(?s:(?=.).*?test[a-z].|(?=.).*?test2[a-z].)$')
@@ -784,7 +784,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, br'(?ms)^(?:test[^a-z]|test[^\-\|a-z])$')
 
         p1, p2 = fnmatch.translate(
-            *fnmatch.fnsplit(b'*test[a-z]?|*test2[a-z]?|-test[!a-z]|-test[!-|a-z]'),
+            fnmatch.fnsplit(b'*test[a-z]?|*test2[a-z]?|-test[!a-z]|-test[!-|a-z]'),
             flags=fnmatch.M | fnmatch.N
         )
         if util.PY36:
@@ -794,7 +794,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, br'(?ms)^(?:(?=.).*?test[a-z].|(?=.).*?test2[a-z].)$')
             self.assertEqual(p2, br'(?ms)^(?:test[^a-z]|test[^\-\|a-z])$')
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit(b'test[]][!][][]'))
+        p1, p2 = fnmatch.translate(fnmatch.fnsplit(b'test[]][!][][]'))
         if util.PY36:
             self.assertEqual(p1, br'^(?s:test[\]][^\][]\[\])$')
             self.assertEqual(p2, None)
@@ -802,7 +802,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, br'(?ms)^(?:test[\]][^\][]\[\])$')
             self.assertEqual(p2, None)
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit(b'test[!]'))
+        p1, p2 = fnmatch.translate(fnmatch.fnsplit(b'test[!]'))
         if util.PY36:
             self.assertEqual(p1, br'^(?s:test\[\!\])$')
             self.assertEqual(p2, None)
@@ -810,7 +810,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, br'(?ms)^(?:test\[\!\])$')
             self.assertEqual(p2, None)
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit(b'|test|'))
+        p1, p2 = fnmatch.translate(fnmatch.fnsplit(b'|test|'))
         if util.PY36:
             self.assertEqual(p1, br'^(?s:|test|)$')
             self.assertEqual(p2, None)
@@ -818,7 +818,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, br'(?ms)^(?:|test|)$')
             self.assertEqual(p2, None)
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit(b'!|!test|!'), flags=fnmatch.N)
+        p1, p2 = fnmatch.translate(fnmatch.fnsplit(b'!|!test|!'), flags=fnmatch.N)
         if util.PY36:
             self.assertEqual(p1, br'^(?s:.*?)$')
             self.assertEqual(p2, br'^(?s:|test|)$')
@@ -826,7 +826,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, br'(?ms)^(?:.*?)$')
             self.assertEqual(p2, br'(?ms)^(?:|test|)$')
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit(b'-|-test|-'), flags=fnmatch.M | fnmatch.N)
+        p1, p2 = fnmatch.translate(fnmatch.fnsplit(b'-|-test|-'), flags=fnmatch.M | fnmatch.N)
         if util.PY36:
             self.assertEqual(p1, br'^(?s:.*?)$')
             self.assertEqual(p2, br'^(?s:|test|)$')
@@ -834,7 +834,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, br'(?ms)^(?:.*?)$')
             self.assertEqual(p2, br'(?ms)^(?:|test|)$')
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit(b'test[^chars]'))
+        p1, p2 = fnmatch.translate(fnmatch.fnsplit(b'test[^chars]'))
         if util.PY36:
             self.assertEqual(p1, br'^(?s:test[^chars])$')
             self.assertEqual(p2, None)
@@ -842,27 +842,27 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, br'(?ms)^(?:test[^chars])$')
             self.assertEqual(p2, None)
 
-        p1 = fnmatch.translate(*fnmatch.fnsplit(br'test[^\\-\\&]'))[0]
+        p1 = fnmatch.translate(fnmatch.fnsplit(br'test[^\\-\\&]'))[0]
         if util.PY36:
             self.assertEqual(p1, br'^(?s:test[^\\-\\\&])$')
         else:
             self.assertEqual(p1, br'(?ms)^(?:test[^\\-\\\&])$')
 
         # BROKEN
-        p1 = fnmatch.translate(*fnmatch.fnsplit(br'\\*\\?\\|\\[\\]'))[0]
+        p1 = fnmatch.translate(fnmatch.fnsplit(br'\\*\\?\\|\\[\\]'))[0]
         if util.PY36:
             self.assertEqual(p1, br'^(?s:\\.*?\\.\\|\\[\\])$')
         else:
             self.assertEqual(p1, br'(?ms)^(?:\\.*?\\.\\|\\[\\])$')
 
-        p1 = fnmatch.translate(*fnmatch.fnsplit(br'\\u0300'), flags=fnmatch.R)[0]
+        p1 = fnmatch.translate(fnmatch.fnsplit(br'\\u0300'), flags=fnmatch.R)[0]
         if util.PY36:
             self.assertEqual(p1, br'^(?s:\\u0300)$')
         else:
             self.assertEqual(p1, br'(?ms)^(?:\\u0300)$')
 
         self.assertEqual(
-            fnmatch.filter([b'testm', b'test\\3', b'testa'], *fnmatch.fnsplit(br'te\st[ma]')),
+            fnmatch.filter([b'testm', b'test\\3', b'testa'], fnmatch.fnsplit(br'te\st[ma]')),
             [b'testm', b'testa']
         )
 

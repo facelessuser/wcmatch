@@ -68,10 +68,10 @@ def is_case_sensitive():
     return CASE_FS
 
 
-def to_tuple(*values):
+def to_tuple(values):
     """Combine values."""
 
-    return tuple(values)
+    return (values,) if isinstance(values, (str, bytes)) else tuple(values)
 
 
 def norm_slash(name):

@@ -817,13 +817,13 @@ def fnsplit(pattern, *, flags=0):
     return FnSplit(pattern, flags).split()
 
 
-def translate(pattern, *patterns, flags=0):
+def translate(patterns, *, flags=0):
     """Translate fnmatch pattern counting `|` as a separator and `-` as a negative pattern."""
 
-    return FnParse(util.to_tuple(pattern, *patterns), flags & FLAG_MASK).parse()
+    return FnParse(util.to_tuple(patterns), flags & FLAG_MASK).parse()
 
 
-def fnmatch(filename, pattern, *patterns, flags=0):
+def fnmatch(filename, patterns, *, flags=0):
     """
     Check if filename matches pattern.
 
@@ -831,15 +831,15 @@ def fnmatch(filename, pattern, *patterns, flags=0):
     but if `case_sensitive` is set, respect that instead.
     """
 
-    return _compile(util.to_tuple(pattern, *patterns), flags & FLAG_MASK).match(util.norm_slash(filename))
+    return _compile(util.to_tuple(patterns), flags & FLAG_MASK).match(util.norm_slash(filename))
 
 
-def filter(filenames, pattern, *patterns, flags=0):  # noqa A001
+def filter(filenames, patterns, *, flags=0):  # noqa A001
     """Filter names using pattern."""
 
     matches = []
 
-    obj = _compile(util.to_tuple(pattern, *patterns), flags & FLAG_MASK)
+    obj = _compile(util.to_tuple(patterns), flags & FLAG_MASK)
 
     for filename in filenames:
         filename = util.norm_slash(filename)
