@@ -27,8 +27,8 @@ from . import braces
 from . import util
 
 __all__ = (
-    "EXTEND", "FORCECASE", "IGNORECASE", "RAWCHARS", "NONEGATE",
-    "PATHNAME", "DOT", "GLOBSTAR", "MINUSNEGATE",
+    "EXTEND", "FORCECASE", "IGNORECASE", "RAWCHARS", "NEGATE",
+    "PATHNAME", "DOT", "GLOBSTAR", "MINUSNEGATE", "BRACE",
     "F", "I", "R", "N", "P", "D", "E", "G", "M",
     "translate", "fnmatch", "filter", "fnsplit", "FnMatch"
 )
@@ -38,25 +38,25 @@ SET_OPERATORS = frozenset(('&', '~', '|'))
 F = FORCECASE = 0x0001
 I = IGNORECASE = 0x0002
 R = RAWCHARS = 0x0004
-N = NONEGATE = 0x0008
+N = NEGATE = 0x0008
 P = PATHNAME = 0x0010
 D = DOT = 0x0020
 E = EXTEND = 0x0040
 G = GLOBSTAR = 0x0080
 M = MINUSNEGATE = 0x0100
-B = NOBRACE = 0x0200
+B = BRACE = 0x0200
 
 FLAG_MASK = (
     FORCECASE |
     IGNORECASE |
     RAWCHARS |
-    NONEGATE |
+    NEGATE |
     PATHNAME |
     DOT |
     EXTEND |
     GLOBSTAR |
     MINUSNEGATE |
-    NOBRACE
+    BRACE
 )
 CASE_FLAGS = FORCECASE | IGNORECASE
 
@@ -236,10 +236,10 @@ class FnParse(object):
         """Initialize."""
 
         self.pattern = pattern
-        self.braces = not bool(flags & NOBRACE)
+        self.braces = bool(flags & BRACE)
         self.negate_symbol = '-' if bool(flags & MINUSNEGATE) else '!'
         self.is_bytes = isinstance(pattern[0], bytes)
-        self.negate = not bool(flags & NONEGATE)
+        self.negate = bool(flags & NEGATE)
         self.pathname = bool(flags & PATHNAME)
         self.raw_chars = bool(flags & RAWCHARS)
         self.globstar = self.pathname and bool(flags & GLOBSTAR)

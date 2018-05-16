@@ -26,7 +26,7 @@ from . import fnmatch
 from . import util
 
 __all__ = (
-    "FORCECASE", "IGNORECASE", "RAWCHARS", "PATHNAME", "EXTEND", "GLOBSTAR", "MINUSNEGATE",
+    "FORCECASE", "IGNORECASE", "RAWCHARS", "PATHNAME", "EXTEND", "GLOBSTAR", "MINUSNEGATE", "BRACE",
     "F", "I", "R", "P", "E", "G", "M",
     "WcMatch"
 )
@@ -38,7 +38,7 @@ P = PATHNAME = fnmatch.PATHNAME
 E = EXTEND = fnmatch.EXTEND
 G = GLOBSTAR = fnmatch.GLOBSTAR
 M = MINUSNEGATE = fnmatch.MINUSNEGATE
-B = NOBRACE = fnmatch.NOBRACE
+B = BRACE = fnmatch.BRACE
 
 FLAG_MASK = (
     FORCECASE |
@@ -48,7 +48,7 @@ FLAG_MASK = (
     EXTEND |
     GLOBSTAR |
     MINUSNEGATE |
-    NOBRACE
+    BRACE
 )
 
 
@@ -67,6 +67,7 @@ class WcMatch(object):
         self.recursive = args.pop(0) if args else kwargs.pop('recursive', False)
         self.show_hidden = args.pop(0) if args else kwargs.pop('show_hidden', True)
         self.flags = (args.pop(0) if args else kwargs.pop('flags', 0)) & FLAG_MASK
+        self.flags |= fnmatch.NEGATE
         self.pathname = bool(self.flags & PATHNAME)
         if self.pathname:
             self.flags ^= PATHNAME

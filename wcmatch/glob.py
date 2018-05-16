@@ -28,7 +28,7 @@ from . import util
 
 __all__ = (
     "FORCECASE", "IGNORECASE", "RAWCHARS", "NODOT",
-    "EXTEND", "GLOBSTAR", "NONEGATE", "MINUSNEGATE",
+    "NOEXTEND", "NOGLOBSTAR", "NEGATE", "MINUSNEGATE", "NOBRACE",
     "F", "I", "R", "D", "E", "G", "N", "M",
     "iglob", "glob", "globsplit", "globmatch", "globfilter", "escape"
 )
@@ -42,40 +42,43 @@ F = FORCECASE = fnmatch.FORCECASE
 I = IGNORECASE = fnmatch.IGNORECASE
 R = RAWCHARS = fnmatch.RAWCHARS
 D = NODOT = fnmatch.DOT
-E = EXTEND = fnmatch.EXTEND
-G = GLOBSTAR = fnmatch.GLOBSTAR
-N = NONEGATE = fnmatch.NONEGATE
+E = NOEXTEND = fnmatch.EXTEND
+G = NOGLOBSTAR = fnmatch.GLOBSTAR
+N = NEGATE = fnmatch.NEGATE
 M = MINUSNEGATE = fnmatch.MINUSNEGATE
-B = NOBRACE = fnmatch.NOBRACE
+B = NOBRACE = fnmatch.BRACE
 
 FLAG_MASK = (
     FORCECASE |
     IGNORECASE |
     RAWCHARS |
-    NODOT |
-    EXTEND |
-    GLOBSTAR |
-    NONEGATE |
+    NODOT |        # Inverse
+    NOEXTEND |     # Inverse
+    NOGLOBSTAR |   # Inverse
+    NEGATE |
     MINUSNEGATE |
-    NOBRACE
+    NOBRACE        # Inverse
 )
 
-FS_FLAG_MASK = FLAG_MASK ^ (NONEGATE | MINUSNEGATE)
+FS_FLAG_MASK = FLAG_MASK ^ (NEGATE | MINUSNEGATE)
 
-RE_MAGIC = re.compile(r'(^[-!]|[*?(\[|^])')
-RE_BMAGIC = re.compile(r'(^[-!]|[*?(\[|^])')
+RE_MAGIC = re.compile(r'([-!*?(\[|^{\\])')
+RE_BMAGIC = re.compile(r'([-!*?(\[|^{\\])')
 
 
 def _flag_transform(flags, full=False):
     """Transform flags to glob defaults."""
 
-    # Here we force PATHNAME and disable negation with NONEGATE
     if not full:
-        flags = (flags & FS_FLAG_MASK) | fnmatch.PATHNAME | NONEGATE
+        # Here we force PATHNAME and disable negation NEGATE
+        flags = (flags & FS_FLAG_MASK) | fnmatch.PATHNAME
     else:
         flags = (flags & FLAG_MASK) | fnmatch.PATHNAME
-    # Enable DOT by default (flipped logic for fnmatch which disables it by default)
+    # Enable by default (flipped logic for fnmatch which disables it by default)
+    flags ^= NOGLOBSTAR
+    flags ^= NOBRACE
     flags ^= NODOT
+    flags ^= NOEXTEND
     return flags
 
 
@@ -116,7 +119,7 @@ class Split(object):
         self.flags = _flag_transform(flags)
         self.pattern = util.norm_pattern(pattern, True, self.flags & RAWCHARS)
         self.is_bytes = isinstance(pattern, bytes)
-        self.extend = bool(flags & EXTEND)
+        self.extend = not bool(flags & NOEXTEND)
         if util.platform() == "windows":
             self.win_drive_detect = True
             self.bslash_abort = True
@@ -290,8 +293,8 @@ class Glob(object):
         """Init the directory walker object."""
 
         self.flags = _flag_transform(flags)
-        self.dot = bool(self.flags & fnmatch.DOT)
-        self.globstar = bool(self.flags & GLOBSTAR)
+        self.dot = not bool(self.flags & NODOT)
+        self.globstar = not bool(self.flags & fnmatch.GLOBSTAR)
         self.case_sensitive = fnmatch.get_case(self.flags)
         self.is_bytes = isinstance(pattern, bytes)
         self.pattern = _magicsplit(pattern, self.flags)
@@ -571,14 +574,18 @@ def escape(pattern):
     """Escape."""
 
     is_bytes = isinstance(pattern, bytes)
-    drive = b'' if is_bytes else ''
+    replace = br'\\\1' if is_bytes else r'\\\1'
+    magic = RE_BMAGIC if is_bytes else RE_MAGIC
 
+    # Handle windows drives special.
+    # Windows drives are handled special internally.
+    # So we shouldn't escape them as we'll just have to
+    # detect and undo it later.
+    drive = b'' if is_bytes else ''
     if util.platform() == "windows":
         m = fnmatch.RE_WIN_PATH.match(pattern)
         if m:
             drive = m.group(0)
-
     pattern = pattern[len(drive):]
-    replace = br'[\\\1]' if is_bytes else r'[\\\1]'
 
-    return drive + (RE_BMAGIC if is_bytes else RE_MAGIC).sub(replace, pattern)
+    return drive + magic.sub(replace, pattern)

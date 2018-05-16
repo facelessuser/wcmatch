@@ -138,7 +138,7 @@ class TestGlob(unittest.TestCase):
         # even when options.dot is set.
         lambda files: files.clear(),
         lambda files: files.extend(['a/./b', 'a/../b', 'a/c/b', 'a/.d/b']),
-        # ['a/*/b', ['a/c/b', 'a/.d/b'], glob.D],
+        ['a/*/b', ['a/c/b', 'a/.d/b'], glob.D],
         ['a/.*/b', ['a/./b', 'a/../b', 'a/.d/b'], glob.D],
         ['a/*/b', ['a/c/b'], 0],
         ['a/.*/b', ['a/./b', 'a/../b', 'a/.d/b'], 0],
@@ -227,7 +227,7 @@ class TestGlob(unittest.TestCase):
         ['!a*', ['\\!a', 'd', 'e', '!ab', '!abc']],
 
         # anything that IS !a* matches.
-        ['!a*', ['!ab', '!abc'], glob.NONEGATE],
+        ['!a*', ['!ab', '!abc'], glob.N],
 
         # # anything that IS a* matches
         # ['!!a*', ['a!b']],
@@ -434,7 +434,8 @@ class TestGlob(unittest.TestCase):
     def setUp(self):
         """Setup the tests."""
         self.files = self.FILES[:]
-        self.flags = glob.G | glob.E
+        # The tests we scraped were written with this assumed.
+        self.flags = fnmatch.NEGATE
 
     def _filter(self, p):
         """Filter with glob pattern."""
@@ -482,7 +483,7 @@ class TestGlob(unittest.TestCase):
                 print("FILE: ", filename)
                 print("GOAL: ", goal)
 
-                self.assertTrue(glob.globmatch(filename, pattern, flags=glob.E | glob.N) == goal)
+                self.assertTrue(glob.globmatch(filename, pattern) == goal)
 
     def test_brace_expand(self):
         """Test brace expansion."""
@@ -525,8 +526,8 @@ class TestGlob(unittest.TestCase):
         """Test unfinished ext."""
 
         for x in ['!', '?', '+', '*', '@']:
-            self.assertTrue(glob.globmatch(x + '(a|B', x + '(a|B', flags=glob.NONEGATE))
-            self.assertFalse(glob.globmatch(x + '(a|B', 'B', flags=glob.NONEGATE))
+            self.assertTrue(glob.globmatch(x + '(a|B', x + '(a|B'))
+            self.assertFalse(glob.globmatch(x + '(a|B', 'B'))
 
 
 class TestWildcard(unittest.TestCase):
@@ -657,7 +658,9 @@ class TestWildcard(unittest.TestCase):
 
         fnmatch._compile.cache_clear()
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit('*test[a-z]?|*test2[a-z]?|!test[!a-z]|!test[!-|a-z]'))
+        p1, p2 = fnmatch.translate(
+            *fnmatch.fnsplit('*test[a-z]?|*test2[a-z]?|!test[!a-z]|!test[!-|a-z]'), flags=fnmatch.N
+        )
         if util.PY36:
             self.assertEqual(p1, r'^(?s:(?=.).*?test[a-z].|(?=.).*?test2[a-z].)$')
             self.assertEqual(p2, r'^(?s:test[^a-z]|test[^\-\|a-z])$')
@@ -666,8 +669,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, r'(?ms)^(?:test[^a-z]|test[^\-\|a-z])$')
 
         p1, p2 = fnmatch.translate(
-            *fnmatch.fnsplit('*test[a-z]?|*test2[a-z]?|-test[!a-z]|-test[!-|a-z]', flags=fnmatch.M),
-            flags=fnmatch.M
+            *fnmatch.fnsplit('*test[a-z]?|*test2[a-z]?|-test[!a-z]|-test[!-|a-z]'), flags=fnmatch.M | fnmatch.N
         )
         if util.PY36:
             self.assertEqual(p1, r'^(?s:(?=.).*?test[a-z].|(?=.).*?test2[a-z].)$')
@@ -700,7 +702,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)^(?:|test|)$')
             self.assertEqual(p2, None)
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit('!|!test|!'))
+        p1, p2 = fnmatch.translate(*fnmatch.fnsplit('!|!test|!'), flags=fnmatch.N)
         if util.PY36:
             self.assertEqual(p1, r'^(?s:.*?)$')
             self.assertEqual(p2, r'^(?s:|test|)$')
@@ -708,7 +710,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)^(?:.*?)$')
             self.assertEqual(p2, r'(?ms)^(?:|test|)$')
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit('-|-test|-'), flags=fnmatch.M)
+        p1, p2 = fnmatch.translate(*fnmatch.fnsplit('-|-test|-'), flags=fnmatch.M | fnmatch.N)
         if util.PY36:
             self.assertEqual(p1, r'^(?s:.*?)$')
             self.assertEqual(p2, r'^(?s:|test|)$')
@@ -771,7 +773,9 @@ class TestWildcard(unittest.TestCase):
 
         fnmatch._compile.cache_clear()
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit(b'*test[a-z]?|*test2[a-z]?|!test[!a-z]|!test[!-|a-z]'))
+        p1, p2 = fnmatch.translate(
+            *fnmatch.fnsplit(b'*test[a-z]?|*test2[a-z]?|!test[!a-z]|!test[!-|a-z]'), flags=fnmatch.N
+        )
         if util.PY36:
             self.assertEqual(p1, br'^(?s:(?=.).*?test[a-z].|(?=.).*?test2[a-z].)$')
             self.assertEqual(p2, br'^(?s:test[^a-z]|test[^\-\|a-z])$')
@@ -780,8 +784,8 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p2, br'(?ms)^(?:test[^a-z]|test[^\-\|a-z])$')
 
         p1, p2 = fnmatch.translate(
-            *fnmatch.fnsplit(b'*test[a-z]?|*test2[a-z]?|-test[!a-z]|-test[!-|a-z]', flags=fnmatch.M),
-            flags=fnmatch.M
+            *fnmatch.fnsplit(b'*test[a-z]?|*test2[a-z]?|-test[!a-z]|-test[!-|a-z]'),
+            flags=fnmatch.M | fnmatch.N
         )
         if util.PY36:
             self.assertEqual(p1, br'^(?s:(?=.).*?test[a-z].|(?=.).*?test2[a-z].)$')
@@ -814,7 +818,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, br'(?ms)^(?:|test|)$')
             self.assertEqual(p2, None)
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit(b'!|!test|!'))
+        p1, p2 = fnmatch.translate(*fnmatch.fnsplit(b'!|!test|!'), flags=fnmatch.N)
         if util.PY36:
             self.assertEqual(p1, br'^(?s:.*?)$')
             self.assertEqual(p2, br'^(?s:|test|)$')
@@ -822,7 +826,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, br'(?ms)^(?:.*?)$')
             self.assertEqual(p2, br'(?ms)^(?:|test|)$')
 
-        p1, p2 = fnmatch.translate(*fnmatch.fnsplit(b'-|-test|-', flags=fnmatch.M), flags=fnmatch.M)
+        p1, p2 = fnmatch.translate(*fnmatch.fnsplit(b'-|-test|-'), flags=fnmatch.M | fnmatch.N)
         if util.PY36:
             self.assertEqual(p1, br'^(?s:.*?)$')
             self.assertEqual(p2, br'^(?s:|test|)$')
