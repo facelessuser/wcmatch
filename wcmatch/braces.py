@@ -31,13 +31,13 @@ RE_INT_ITER = re.compile(r'(-?\d+)\.{2}(-?\d+)(?:\.{2}(-?\d+))?(?=\})')
 RE_CHR_ITER = re.compile(r'([A-Za-z])\.{2}([A-Za-z])(?:\.{2}(-?\d+))?(?=\})')
 
 
-def expand(pattern, strip_escapes=False):
+def expand(pattern, keep_escapes=False):
     """Expand braces."""
 
-    return list(iexpand(pattern, strip_escapes))
+    return list(iexpand(pattern, keep_escapes))
 
 
-def iexpand(pattern, strip_escapes=False):
+def iexpand(pattern, keep_escapes=False):
     """Expand braces and return an iterator."""
 
     if isinstance(pattern, bytes):
@@ -48,21 +48,23 @@ def iexpand(pattern, strip_escapes=False):
         is_bytes = False
 
     if is_bytes:
-        return (entry.encode('latin-1') for entry in ExpandBrace().expand(pattern))
+        return (entry.encode('latin-1') for entry in ExpandBrace(keep_escapes).expand(pattern))
 
     else:
-        return (entry for entry in ExpandBrace(strip_escapes).expand(pattern))
+        return (entry for entry in ExpandBrace(keep_escapes).expand(pattern))
 
 
 class ExpandBrace(object):
     """Expand braces like in Bash."""
 
-    def __init__(self, strip_escapes=False):
+    def __init__(self, keep_escapes=False):
         """Initialize."""
 
         self.detph = 0
         self.expanding = False
-        self.strip_escapes = strip_escapes
+        self.keep_escapes = keep_escapes
+        self.empties = 0
+        self.total = 0
 
     def set_expanding(self):
         """Set that we are expanding a sequence, and return whether a release is required by the caller."""
@@ -90,7 +92,26 @@ class ExpandBrace(object):
             escaped = next(i)
         except StopIteration:
             escaped = ''
-        return c + escaped if not self.strip_escapes else escaped
+        return c + escaped if self.keep_escapes else escaped
+
+    def account(self, value):
+        """Count trailing empty slots so we can exclude them at the end."""
+
+        if self.depth == 0:
+            self.total += 1
+            if not value:
+                self.empties += 1
+            else:
+                self.empties = 0
+        return value
+
+    def finalize(self):
+        """Finalize accounting."""
+
+        if self.depth == 0:
+            self.total -= self.empties
+            if self.total == 0:
+                self.total = 1
 
     def squash(self, a, b):
         """
@@ -101,7 +122,7 @@ class ExpandBrace(object):
         ~~~
         """
 
-        return ((''.join(x) if isinstance(x, tuple) else x) for x in itertools.product(a, b))
+        return [self.account(''.join(x) if isinstance(x, tuple) else x) for x in itertools.product(a, b)]
 
     def get_literals(self, c, i):
         """
@@ -112,14 +133,20 @@ class ExpandBrace(object):
         """
 
         result = ['']
+        is_dollar = False
 
         try:
             while c:
+                ignore_brace = is_dollar
+                is_dollar = False
 
-                if c == '\\':
+                if c == '$':
+                    is_dollar = True
+
+                elif c == '\\':
                     c = [self.get_escape(c, i)]
 
-                elif c == '{':
+                elif not ignore_brace and c == '{':
                     # Try and get the group
                     index = i.index
                     try:
@@ -145,6 +172,7 @@ class ExpandBrace(object):
             if self.is_expanding():
                 return None
 
+        self.finalize()
         return result
 
     def get_sequence(self, c, i):
@@ -233,11 +261,11 @@ class ExpandBrace(object):
         try:
             m = i.match(RE_INT_ITER)
             if m:
-                return list(self.get_int_range(*m.groups()))
+                return self.get_int_range(*m.groups())
 
             m = i.match(RE_CHR_ITER)
             if m:
-                return list(self.get_char_range(*m.groups()))
+                return self.get_char_range(*m.groups())
         except ValueError:
             pass
 
@@ -283,7 +311,7 @@ class ExpandBrace(object):
         else:
             r = range(first, last - 1, increment if increment < 0 else -increment)
 
-        return (self.format_value(value, padding) for value in r)
+        return [self.format_value(value, padding) for value in r]
 
     def get_char_range(self, start, end, increment=None):
         """Get a range of alphabetic characters."""
@@ -312,5 +340,13 @@ class ExpandBrace(object):
 
         self.depth = 0
         self.expanding = False
-        i = iter(util.StringIter(pattern))
-        return self.get_literals(next(i), i)
+        self.total = 0
+        if pattern:
+            i = iter(util.StringIter(pattern))
+            for x in self.get_literals(next(i), i):
+                if not self.total:
+                    break
+                self.total -= 1
+                yield x
+        else:
+            yield ""

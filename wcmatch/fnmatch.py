@@ -717,7 +717,7 @@ class FnParse(object):
             pat = util.norm_pattern(pat, self.pathname, self.raw_chars)
 
             try:
-                expanded = list(braces.iexpand(pat)) if self.braces else [pat]
+                expanded = braces.expand(pat, keep_escapes=True) if self.braces else [pat]
             except Exception as e:
                 expanded = [pat]
 

@@ -7,7 +7,6 @@ import mock
 import wcmatch.glob as glob
 import wcmatch.fnmatch as fnmatch
 import wcmatch.wcmatch as wcmatch
-import wcmatch.braces as braces
 from wcmatch import util
 
 
@@ -370,67 +369,6 @@ class TestGlob(unittest.TestCase):
 
     }
 
-    braces = [
-        [
-            'a{b,c{d,e},{f,g}h}x{y,z}',
-            [
-                'abxy',
-                'abxz',
-                'acdxy',
-                'acdxz',
-                'acexy',
-                'acexz',
-                'afhxy',
-                'afhxz',
-                'aghxy',
-                'aghxz'
-            ]
-        ],
-        [
-            'a{1..5}b',
-            [
-                'a1b',
-                'a2b',
-                'a3b',
-                'a4b',
-                'a5b'
-            ]
-        ],
-        ['a{b}c', ['a{b}c']],
-        [
-            'a{00..05}b',
-            [
-                'a00b',
-                'a01b',
-                'a02b',
-                'a03b',
-                'a04b',
-                'a05b'
-            ]
-        ],
-        ['z{a,b},c}d', ['za,c}d', 'zb,c}d']],
-        ['z{a,b{,c}d', ['z{a,bd', 'z{a,bcd']],
-        ['a{b{c{d,e}f}g}h', ['a{b{cdf}g}h', 'a{b{cef}g}h']],
-        [
-            'a{b{c{d,e}f{x,y}}g}h',
-            [
-                'a{b{cdfx}g}h',
-                'a{b{cdfy}g}h',
-                'a{b{cefx}g}h',
-                'a{b{cefy}g}h'
-            ]
-        ],
-        [
-            'a{b{c{d,e}f{x,y{}g}h',
-            [
-                'a{b{cdfxh',
-                'a{b{cdfy{}gh',
-                'a{b{cefxh',
-                'a{b{cefy{}gh'
-            ]
-        ]
-    ]
-
     def setUp(self):
         """Setup the tests."""
         self.files = self.FILES[:]
@@ -484,43 +422,6 @@ class TestGlob(unittest.TestCase):
                 print("GOAL: ", goal)
 
                 self.assertTrue(glob.globmatch(filename, pattern) == goal)
-
-    def test_brace_expand(self):
-        """Test brace expansion."""
-
-        for p in self.braces:
-            print("PATTERN: ", p[0])
-            expanded_pattern = []
-            try:
-                expanded_pattern.extend(
-                    list(braces.iexpand(p[0]))
-                )
-            except Exception as e:
-                expanded_pattern.append(p[0])
-            result = expanded_pattern
-            goal = p[1]
-            print('TEST: ', result, '<==>', goal, '\n')
-            self.assertEqual(result, goal)
-
-    def test_bash_cases(self):
-        """Test bash cases."""
-
-        with open('tests/brace-results2.txt', 'w') as w:
-            with open('tests/brace-cases.txt', 'r') as r:
-                for line in r:
-                    if line.startswith('#') or not line.strip():
-                        continue
-
-                    value = eval("'''%s'''" % line.strip())
-                    results = braces.expand(value, strip_escapes=True)
-                    output = []
-                    if not (len(results) == 1 and results == ''):
-                        for item in results:
-                            output.append('[%s]' % item)
-                    w.write(value + '\n')
-                    if output:
-                        w.write('\n'.join(output))
-                    w.write('><><><><')
 
     def test_unfinished_ext(self):
         """Test unfinished ext."""
