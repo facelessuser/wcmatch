@@ -298,9 +298,6 @@ class Glob(object):
         self.case_sensitive = fnmatch.get_case(self.flags)
         self.is_bytes = isinstance(pattern, bytes)
         self.pattern = _magicsplit(pattern, self.flags)
-        if not self.case_sensitive and WIN:
-            for p in self.pattern:
-                p[0] = p[0].lower()
         if util.platform() == "windows":
             self.sep = (b'\\', '\\')
         else:
@@ -334,24 +331,44 @@ class Glob(object):
     def match(self, name):
         """Do a simple match."""
 
-        return ((name.lower().rstrip(os.sep) if not self.case_sensitive else name)) == self._match.rstrip(os.sep)
+        if not self.case_sensitive:
+            return name.lower().rstrip(os.sep) == self._match
+        else:
+            return name.rstrip(os.sep) == self._match
 
-    def _glob_shallow(self, curdir, matcher, dir_only=False):
+    def set_match(self, match):
+        """Set the match."""
+
+        if isinstance(match, (str, bytes)):
+            # Plain text match
+            if not self.case_sensitive:
+                self._match = match.lower().rstrip(os.sep)
+            else:
+                self._match = match.rstrip(os.sep)
+            self._matcher = self.match
+        else:
+            # File match pattern
+            self._matcher = match.match
+
+    def _glob_shallow(self, curdir, dir_only=False):
         """Non recursive directory glob."""
 
         try:
             if NO_SCANDIR_WORKAROUND:
-                with os.scandir(curdir) as scan:
+                # Our current directory can be empty if the path starts with magic,
+                # But we don't want to return paths with '.', so just use it to list
+                # files, but use '' when constructing the path.
+                with os.scandir('.' if not curdir else curdir) as scan:
                     for f in scan:
                         try:
-                            if (not dir_only or f.is_dir()) and matcher.match(f.name):
+                            if (not dir_only or f.is_dir()) and self._matcher(f.name):
                                 yield os.path.join(curdir, f.name)
                         except OSError:
                             pass
             else:
-                for f in os.listdir(curdir):
+                for f in os.listdir('.' if not curdir else curdir):
                     is_dir = os.path.isdir(os.path.join(curdir, f))
-                    if (not dir_only or is_dir) and matcher.match(f):
+                    if (not dir_only or is_dir) and self._matcher(f):
                         yield os.path.join(curdir, f)
         except OSError:
             pass
@@ -361,7 +378,10 @@ class Glob(object):
 
         try:
             if NO_SCANDIR_WORKAROUND:
-                with os.scandir(curdir) as scan:
+                # Our current directory can be empty if the path starts with magic,
+                # But we don't want to return paths with '.', so just use it to list
+                # files, but use '' when constructing the path.
+                with os.scandir('.' if not curdir else curdir) as scan:
                     for f in scan:
                         try:
                             # Quicker to just test this way than to run through fnmatch.
@@ -374,7 +394,7 @@ class Glob(object):
                         except OSError:
                             pass
             else:
-                for f in os.listdir(curdir):
+                for f in os.listdir('.' if not curdir else curdir):
                     # Quicker to just test this way than to run through fnmatch.
                     if self._is_hidden(f):
                         continue
@@ -427,16 +447,8 @@ class Glob(object):
 
         if not is_dir:
             # Files
-            if is_magic:
-                # File pattern
-                matcher = fnmatch._compile((target,), self.flags)
-
-            else:
-                # Normal file
-                matcher = self
-                self._match = target
-
-            yield from self._glob_shallow(curdir, matcher)
+            self.set_match(fnmatch._compile((target,), self.flags) if is_magic else target)
+            yield from self._glob_shallow(curdir)
 
         else:
             # Directories
@@ -451,16 +463,9 @@ class Glob(object):
                         yield path
 
             else:
-                if is_magic:
-                    # Normal directory pattern
-                    matcher = fnmatch._compile((target,), self.flags)
-
-                else:
-                    # Normal directory
-                    matcher = self
-                    self._match = target
-
-                for path in self._glob_shallow(curdir, matcher, True):
+                # Normal directory
+                self.set_match(fnmatch._compile((target,), self.flags) if is_magic else target)
+                for path in self._glob_shallow(curdir, True):
                     if this:
                         yield from self._glob(path, this, rest[:])
                     else:
@@ -505,7 +510,7 @@ class Glob(object):
 
                 curdir = this[0]
 
-                if not os.path.isdir(curdir) and not os.lexists(curdir):
+                if not os.path.isdir(curdir) and not os.path.lexists(curdir):
                     return
 
                 # Make sure case matches, but running case insensitive
@@ -532,7 +537,7 @@ class Glob(object):
                 # Path starts with a magic pattern, let's get globbing
                 rest = self.pattern[:]
                 this = rest.pop(0)
-                yield from self._glob(curdir, this, rest)
+                yield from self._glob(curdir if not curdir == '.' else '', this, rest)
 
 
 def iglob(pattern, *, flags=0):
