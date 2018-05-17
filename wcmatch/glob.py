@@ -428,10 +428,8 @@ class Glob(object):
         # Handle relative directories: `\\` (windows), `/`, `.`, and `..`.
         # We want to append these to the current directory and get the next
         # file or folder name or pattern we need to check against.
-        while curdir not in self.sep and (self._is_this(target) or self._is_parent(target)):
-            if target in self.sep:
-                curdir += target
-            else:
+        while (self._is_this(target) or self._is_parent(target)):
+            if target not in self.sep:
                 curdir = os.path.join(curdir, target)
             if not os.path.isdir(curdir):
                 # Can't find this directory.
@@ -523,11 +521,14 @@ class Glob(object):
 
                 if this[2]:
                     # Glob these directories if they exists
-                    rest = self.pattern[1:]
-                    this = rest.pop(0)
                     for start in results:
                         if os.path.isdir(start):
-                            yield from self._glob(curdir, this, rest)
+                            rest = self.pattern[1:]
+                            if rest:
+                                this = rest.pop(0)
+                                yield from self._glob(curdir, this, rest)
+                            else:
+                                yield curdir
                 else:
                     # Return the file(s) and finish.
                     for start in results:
