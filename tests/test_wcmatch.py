@@ -137,9 +137,9 @@ class TestGlob(unittest.TestCase):
         # even when options.dot is set.
         lambda files: files.clear(),
         lambda files: files.extend(['a/./b', 'a/../b', 'a/c/b', 'a/.d/b']),
-        ['a/*/b', ['a/./b', 'a/c/b', 'a/.d/b'], glob.D],
+        ['a/*/b', ['a/c/b', 'a/.d/b'], glob.D],
         ['a/.*/b', ['a/./b', 'a/../b', 'a/.d/b'], glob.D],
-        ['a/*/b', ['a/./b', 'a/c/b'], 0],
+        ['a/*/b', ['a/c/b'], 0],
         ['a/.*/b', ['a/./b', 'a/../b', 'a/.d/b'], 0],
 
         # this also tests that changing the options needs
@@ -444,62 +444,65 @@ class TestWildcard(unittest.TestCase):
         fnmatch._compile.cache_clear()
 
         self.assertTrue(
-            glob.globmatch(
+            fnmatch.fnmatch(
                 'some/name/with/named/file/test.py',
-                '**/named/file/*.py'
+                '**/named/file/*.py',
+                flags=fnmatch.P | fnmatch.G
             )
         )
         self.assertTrue(
-            glob.globmatch(
+            fnmatch.fnmatch(
                 'some/name/with/na[/]med/file/test.py',
-                '**/na[/]med/file/*.py'
+                '**/na[/]med/file/*.py',
+                flags=fnmatch.P | fnmatch.G
             )
         )
         self.assertTrue(
-            glob.globmatch(
+            fnmatch.fnmatch(
                 'some/name/with/na[/]med\\/file/test.py',
-                '**/na[/]med\\/file/*.py'
+                '**/na[/]med\\/file/*.py',
+                flags=fnmatch.P | fnmatch.G
             )
         )
         self.assertTrue(
-            glob.globmatch(
+            fnmatch.fnmatch(
                 'some/name/with/na[\\]med/file/test.py',
-                r'**/na[\\]med/file/*.py', flags=fnmatch.R
+                r'**/na[\\]med/file/*.py', flags=fnmatch.P | fnmatch.R | fnmatch.G
             )
         )
         self.assertTrue(
-            glob.globmatch(
+            fnmatch.fnmatch(
                 'some\\name\\with\\na[\\]med\\file\\test.py',
                 r'**/na[\\]med/file/*.py',
-                flags=fnmatch.R
+                flags=fnmatch.P | fnmatch.R | fnmatch.G
             )
         )
         self.assertTrue(
-            glob.globmatch(
+            fnmatch.fnmatch(
                 'some\\name\\with\\na[\\]med\\file*.py',
                 r'**\\na[\\]med\\file\*.py',
-                flags=fnmatch.R
+                flags=fnmatch.P | fnmatch.R | fnmatch.G
             )
         )
         self.assertTrue(
-            glob.globmatch(
+            fnmatch.fnmatch(
                 'some\\name\\with\\na[\\]med\\file\\test.py',
                 r'**\\na[\\]m\ed\\file\\*.py',
-                flags=fnmatch.R
+                flags=fnmatch.P | fnmatch.R | fnmatch.G
             )
         )
         self.assertTrue(
-            glob.globmatch(
+            fnmatch.fnmatch(
                 'some\\name\\with\\na[\\]med\\\\file\\test.py',
                 r'**\\na[\\]m\ed\\/file\\*.py',
-                flags=fnmatch.R
+                flags=fnmatch.P | fnmatch.R | fnmatch.G
             )
         )
         self.assertTrue(
-            glob.globmatch(
+            fnmatch.fnmatch(
                 'some\\name\\with\\na[\\\\]med\\\\file\\test.py',
                 r'**\\na[\/]m\ed\/file\\*.py',
-                flags=fnmatch.R
+                flags=fnmatch.P | fnmatch.R | fnmatch.G
             )
         )
 
@@ -513,42 +516,38 @@ class TestWildcard(unittest.TestCase):
         fnmatch._compile.cache_clear()
 
         self.assertTrue(
-            glob.globmatch(
-                './some/name/with/named/file/test.py',
-                '**/named/file/*.py'
-            )
-        )
-
-        self.assertTrue(
-            glob.globmatch(
+            fnmatch.fnmatch(
                 'some/name/with/named/file/test.py',
-                '**/named/file/*.py'
+                '**/named/file/*.py',
+                flags=fnmatch.P | fnmatch.G
             )
         )
         self.assertTrue(
-            glob.globmatch(
+            fnmatch.fnmatch(
                 'some/name/with/na[/]med/file/test.py',
-                '**/na[/]med/file/*.py'
+                '**/na[/]med/file/*.py',
+                flags=fnmatch.P | fnmatch.G
             )
         )
         self.assertTrue(
-            glob.globmatch(
+            fnmatch.fnmatch(
                 'some/name/with/na[/]med\\/file/test.py',
-                '**/na[/]med\\/file/*.py'
+                '**/na[/]med\\/file/*.py',
+                flags=fnmatch.P | fnmatch.G
             )
         )
         self.assertTrue(
-            glob.globmatch(
+            fnmatch.fnmatch(
                 'some/name/with/na\\med/file/test.py',
                 r'**/na[\\]med/file/*.py',
-                flags=fnmatch.R
+                flags=fnmatch.P | fnmatch.R | fnmatch.G
             )
         )
         self.assertTrue(
-            glob.globmatch(
+            fnmatch.fnmatch(
                 'some/name/with/na[\\/]med\\/file/test.py',
                 r'**/na[\/]med\/file/*.py',
-                flags=fnmatch.R
+                flags=fnmatch.P | fnmatch.R | fnmatch.G
             )
         )
 
