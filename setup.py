@@ -61,12 +61,10 @@ setup(
     url='https://github.com/facelessuser/wcmatch',
     packages=find_packages(exclude=['tests', 'tools']),
     setup_requires=get_requirements("requirements/setup.txt"),
-    install_requires=get_requirements("requirements/project.txt"),
     zip_safe=False,
     license='MIT License',
     classifiers=[
         'Development Status :: %s' % DEVSTATUS,
-        'Environment :: Console',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',

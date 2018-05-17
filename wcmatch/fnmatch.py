@@ -23,7 +23,7 @@ IN THE SOFTWARE.
 import re
 import copyreg
 import functools
-from . import braces
+import bracex
 from . import util
 
 __all__ = (
@@ -717,7 +717,7 @@ class FnParse(object):
             pat = util.norm_pattern(pat, self.pathname, self.raw_chars)
 
             try:
-                expanded = braces.expand(pat, keep_escapes=True) if self.braces else [pat]
+                expanded = bracex.expand(pat, keep_escapes=True) if self.braces else [pat]
             except Exception as e:
                 expanded = [pat]
 
