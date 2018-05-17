@@ -254,9 +254,9 @@ class FnParse(object):
             self.win_drive_detect = self.pathname
             self.char_avoid = (ord('\\'), ord('/'), ord('.'))
             self.path_star = r'[^\\]*?'
-            self.path_star_dot1 = r'(?!(?:\.{1,2})(?:$|\\))' + self.path_star
-            self.path_star_dot2 = r'(?!(?:\.{1,2})(?:$|\\))' + r'(?:(?!\.)[^\\]*?)?'
-            self.path_gstar_dot1 = r'(?:(?!(?:\\|^)(?:\.{1,2})($|\\)).)*?'
+            self.path_star_dot1 = r'(?!(?:\.{2})(?:$|\\))' + self.path_star
+            self.path_star_dot2 = r'(?!(?:\.{2})(?:$|\\))' + r'(?:(?!\.)[^\\]*?)?'
+            self.path_gstar_dot1 = r'(?:(?!(?:\\|^)(?:\.{2})($|\\)).)*?'
             self.path_gstar_dot2 = r'(?:(?!(?:\\|^)\.).)*?'
             self.seq_path = r'(?![\\/%s])'
             self.bslash_abort = self.pathname
@@ -265,13 +265,14 @@ class FnParse(object):
             self.win_drive_detect = False
             self.char_avoid = (ord('/'), ord('.'))
             self.path_star = r'[^\/]*?'
-            self.path_star_dot1 = r'(?!(?:\.{1,2})(?:$|\/))' + self.path_star
-            self.path_star_dot2 = r'(?!(?:\.{1,2})(?:$|\/))' + r'(?:(?!\.)[^\/]*?)?'
-            self.path_gstar_dot1 = r'(?:(?!(?:\/|^)(?:\.{1,2})($|\/)).)*?'
+            self.path_star_dot1 = r'(?!(?:\.{2})(?:$|\/))' + self.path_star
+            self.path_star_dot2 = r'(?!(?:\.{2})(?:$|\/))' + r'(?:(?!\.)[^\/]*?)?'
+            self.path_gstar_dot1 = r'(?:(?!(?:\/|^)(?:\.{2})($|\/)).)*?'
             self.path_gstar_dot2 = r'(?:(?!(?:\/|^)\.).)*?'
             self.seq_path = r'(?![\/%s])'
             self.bslash_abort = False
             self.sep = '/'
+        self.path_sep = r'(?:%(sep)s\.(?=%(sep)s|$)|%(sep)s)+' % {"sep": re.escape(self.sep)}
 
     def set_after_start(self):
         """Set tracker for character after the start of a directory."""
@@ -396,7 +397,7 @@ class FnParse(object):
             value = r'\\'
             if self.bslash_abort:
                 if not self.in_list:
-                    value = self.get_path_sep() + '+'
+                    value = self.path_sep
                     self.set_start_dir()
                 else:
                     value = self._restrict_sequence() + value
@@ -478,7 +479,7 @@ class FnParse(object):
 
         self.reset_dir_track()
         if value == globstar:
-            sep = '(?:^|$|%s)+' % self.get_path_sep()
+            sep = '(?:^|$|%s)+' % self.path_sep
             if current[-1] == '|':
                 current.append(value)
             elif current[-1] == '':
@@ -516,7 +517,7 @@ class FnParse(object):
         while index >= 0:
             if current[index] is None:
                 content = current[index + 1:]
-                current[index] = (''.join(content) if content else default) + (')[^%s]*?)' % self.get_path_sep())
+                current[index] = (''.join(content) if content else default) + (')[^%s]*?)' % re.escape(self.sep))
             index -= 1
         self.inv_ext = 0
 
@@ -627,10 +628,26 @@ class FnParse(object):
 
         return success
 
-    def get_path_sep(self):
-        """Get path separator."""
+    def is_abs(self, i):
+        """Check if pattern is an absolute path."""
 
-        return re.escape(self.sep)
+        index = i.index
+        possibly_win = False
+        absolute = False
+        try:
+            c = next(i)
+            if c == self.sep and not self.bslash_abort:
+                absolute = True
+            elif c == self.sep and self.bslash_abort:
+                possibly_win = True
+                c = next(i)
+                if c == self.sep:
+                    absolute = True
+        except StopIteration:
+            if possibly_win:
+                absolute = True
+        i.rewind(i.index - index)
+        return absolute
 
     def root(self, pattern, current):
         """Start parsing the pattern."""
@@ -638,12 +655,19 @@ class FnParse(object):
         self.set_after_start()
         i = util.StringIter(pattern)
         iter(i)
+
+        absolute = False
         if self.win_drive_detect:
             m = RE_WIN_PATH.match(pattern)
             if m:
+                absolute = True
                 drive = m.group(0).replace('\\\\', '\\')
                 current.append(re.escape(drive))
                 i.advance(m.end(0))
+
+        if self.pathname and (not absolute and not self.is_abs(i)):
+            current.extend([r'(?:\.(?:/\.(?=/|$)|/)+?)?', ''])
+
         for c in i:
 
             index = i.index
@@ -671,9 +695,9 @@ class FnParse(object):
                 if self.pathname:
                     self.set_start_dir()
                     self.clean_up_inverse(current)
-                    current.append(self.get_path_sep() + '+')
+                    current.append(self.path_sep)
                 else:
-                    current.append(self.get_path_sep())
+                    current.append(re.escape(self.sep))
             elif c == '\\':
                 index = i.index
                 try:
