@@ -293,8 +293,8 @@ class Glob(object):
         """Init the directory walker object."""
 
         self.flags = _flag_transform(flags)
-        self.dot = not bool(self.flags & NODOT)
-        self.globstar = not bool(self.flags & fnmatch.GLOBSTAR)
+        self.dot = bool(self.flags & NODOT)
+        self.globstar = bool(self.flags & fnmatch.GLOBSTAR)
         self.case_sensitive = fnmatch.get_case(self.flags)
         self.is_bytes = isinstance(pattern, bytes)
         self.pattern = _magicsplit(pattern, self.flags)
