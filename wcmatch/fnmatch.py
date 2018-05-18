@@ -480,12 +480,18 @@ class FnParse(object):
         if value == globstar:
             sep = '(?:^|$|%s)+' % self.get_path_sep()
             if current[-1] == '|':
+                # Special case following `|` in a extglob group.
+                # We can't follow a path separator in this scenario,
+                # so we're safe.
                 current.append(value)
             elif current[-1] == '':
+                # At the beginning of the pattern
                 current[-1] = value
             else:
+                # Replace the last path separator
                 current[-1] = '(?=.)'
                 current.append(value)
+            self.consume_path_sep(i)
             current.append(sep)
             self.set_start_dir()
         else:
@@ -632,6 +638,28 @@ class FnParse(object):
 
         return re.escape(self.sep)
 
+    def consume_path_sep(self, i):
+        """Consume any consecutive path separators are they count as one."""
+
+        try:
+            if self.bslash_abort:
+                count = -1
+                c = '\\'
+                while c == '\\':
+                    count += 1
+                    c = next(i)
+                i.rewind(1)
+                # Rewind one more if we have an odd number (escape): \\\*
+                if count > 0 and count % 2:
+                    i.rewind(1)
+            else:
+                c = '/'
+                while c == '/':
+                    c = next(i)
+                i.rewind(1)
+        except StopIteration:
+            pass
+
     def root(self, pattern, current):
         """Start parsing the pattern."""
 
@@ -644,6 +672,8 @@ class FnParse(object):
                 drive = m.group(0).replace('\\\\', '\\')
                 current.append(re.escape(drive))
                 i.advance(m.end(0))
+                self.consume_path_sep(i)
+
         for c in i:
 
             index = i.index
@@ -672,6 +702,7 @@ class FnParse(object):
                     self.set_start_dir()
                     self.clean_up_inverse(current)
                     current.append(self.get_path_sep() + '+')
+                    self.consume_path_sep(i)
                 else:
                     current.append(self.get_path_sep())
             elif c == '\\':
@@ -680,6 +711,7 @@ class FnParse(object):
                     value = self._references(i)
                     if self.dir_start:
                         self.clean_up_inverse(current)
+                        self.consume_path_sep(i)
                     current.append(value)
                 except StopIteration:
                     i.rewind(i.index - index)

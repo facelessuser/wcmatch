@@ -373,7 +373,7 @@ class TestGlob(unittest.TestCase):
         """Setup the tests."""
         self.files = self.FILES[:]
         # The tests we scraped were written with this assumed.
-        self.flags = fnmatch.NEGATE
+        self.flags = glob.NEGATE
 
     def _filter(self, p):
         """Filter with glob pattern."""
@@ -430,13 +430,9 @@ class TestGlob(unittest.TestCase):
             self.assertTrue(glob.globmatch(x + '(a|B', x + '(a|B'))
             self.assertFalse(glob.globmatch(x + '(a|B', 'B'))
 
-
-class TestWildcard(unittest.TestCase):
-    """Test wildcard pattern parsing."""
-
     @mock.patch('wcmatch.util.platform')
     @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_wildcard_path_parsing_windows(self, mock__iscase_sensitive, mock_platform):
+    def test_glob_parsing_windows(self, mock__iscase_sensitive, mock_platform):
         """Test wildcard parsing."""
 
         mock_platform.return_value = "windows"
@@ -444,71 +440,68 @@ class TestWildcard(unittest.TestCase):
         fnmatch._compile.cache_clear()
 
         self.assertTrue(
-            fnmatch.fnmatch(
+            glob.globmatch(
                 'some/name/with/named/file/test.py',
-                '**/named/file/*.py',
-                flags=fnmatch.P | fnmatch.G
+                '**/named/file/*.py'
             )
         )
         self.assertTrue(
-            fnmatch.fnmatch(
+            glob.globmatch(
                 'some/name/with/na[/]med/file/test.py',
-                '**/na[/]med/file/*.py',
-                flags=fnmatch.P | fnmatch.G
+                '**/na[/]med/file/*.py'
             )
         )
         self.assertTrue(
-            fnmatch.fnmatch(
+            glob.globmatch(
                 'some/name/with/na[/]med\\/file/test.py',
-                '**/na[/]med\\/file/*.py',
-                flags=fnmatch.P | fnmatch.G
+                '**/na[/]med\\/file/*.py'
             )
         )
         self.assertTrue(
-            fnmatch.fnmatch(
+            glob.globmatch(
                 'some/name/with/na[\\]med/file/test.py',
-                r'**/na[\\]med/file/*.py', flags=fnmatch.P | fnmatch.R | fnmatch.G
+                r'**/na[\\]med/file/*.py', flags=fnmatch.R
             )
         )
         self.assertTrue(
-            fnmatch.fnmatch(
+            glob.globmatch(
                 'some\\name\\with\\na[\\]med\\file\\test.py',
                 r'**/na[\\]med/file/*.py',
-                flags=fnmatch.P | fnmatch.R | fnmatch.G
+                flags=fnmatch.R
             )
         )
         self.assertTrue(
-            fnmatch.fnmatch(
+            glob.globmatch(
                 'some\\name\\with\\na[\\]med\\file*.py',
                 r'**\\na[\\]med\\file\*.py',
-                flags=fnmatch.P | fnmatch.R | fnmatch.G
+                flags=fnmatch.R
             )
         )
         self.assertTrue(
-            fnmatch.fnmatch(
+            glob.globmatch(
                 'some\\name\\with\\na[\\]med\\file\\test.py',
                 r'**\\na[\\]m\ed\\file\\*.py',
-                flags=fnmatch.P | fnmatch.R | fnmatch.G
+                flags=fnmatch.R
             )
         )
         self.assertTrue(
-            fnmatch.fnmatch(
+            glob.globmatch(
                 'some\\name\\with\\na[\\]med\\\\file\\test.py',
                 r'**\\na[\\]m\ed\\/file\\*.py',
-                flags=fnmatch.P | fnmatch.R | fnmatch.G
+                flags=fnmatch.R
             )
         )
         self.assertTrue(
-            fnmatch.fnmatch(
+            glob.globmatch(
                 'some\\name\\with\\na[\\\\]med\\\\file\\test.py',
                 r'**\\na[\/]m\ed\/file\\*.py',
-                flags=fnmatch.P | fnmatch.R | fnmatch.G
+                flags=fnmatch.R
             )
         )
 
     @mock.patch('wcmatch.util.platform')
     @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_wildcard_path_parsing(self, mock__iscase_sensitive, mock_platform):
+    def test_glob_parsing_nix(self, mock__iscase_sensitive, mock_platform):
         """Test wildcard parsing."""
 
         mock_platform.return_value = "linux"
@@ -516,40 +509,51 @@ class TestWildcard(unittest.TestCase):
         fnmatch._compile.cache_clear()
 
         self.assertTrue(
-            fnmatch.fnmatch(
+            glob.globmatch(
                 'some/name/with/named/file/test.py',
-                '**/named/file/*.py',
-                flags=fnmatch.P | fnmatch.G
+                '**/named/file/*.py'
             )
         )
         self.assertTrue(
-            fnmatch.fnmatch(
+            glob.globmatch(
                 'some/name/with/na[/]med/file/test.py',
-                '**/na[/]med/file/*.py',
-                flags=fnmatch.P | fnmatch.G
+                '**/na[/]med/file/*.py'
             )
         )
         self.assertTrue(
-            fnmatch.fnmatch(
+            glob.globmatch(
                 'some/name/with/na[/]med\\/file/test.py',
-                '**/na[/]med\\/file/*.py',
-                flags=fnmatch.P | fnmatch.G
+                '**/na[/]med\\/file/*.py'
             )
         )
         self.assertTrue(
-            fnmatch.fnmatch(
+            glob.globmatch(
                 'some/name/with/na\\med/file/test.py',
                 r'**/na[\\]med/file/*.py',
-                flags=fnmatch.P | fnmatch.R | fnmatch.G
+                flags=glob.R
             )
         )
         self.assertTrue(
-            fnmatch.fnmatch(
+            glob.globmatch(
                 'some/name/with/na[\\/]med\\/file/test.py',
                 r'**/na[\/]med\/file/*.py',
-                flags=fnmatch.P | fnmatch.R | fnmatch.G
+                flags=glob.R
             )
         )
+
+    def test_glob_integrity(self):
+        """Globmatch must match what glob globs."""
+
+        # Number of slashes is inconsequential
+        # Glob really looks at what is in between. Multiple slashes are the same as one separator.
+        # UNC mounts are special cases and it matters there.
+        self.assertTrue(all([glob.globmatch(x, '**/../*.{md,py}') for x in glob.glob('**/../*.{md,py}')]))
+        self.assertTrue(all([glob.globmatch(x, './**/./../*.py') for x in glob.glob('./**/./../*.py')]))
+        self.assertTrue(all([glob.globmatch(x, './///**///./../*.py') for x in glob.glob('./**/.//////..////*.py')]))
+
+
+class TestWildcard(unittest.TestCase):
+    """Test wildcard pattern parsing."""
 
     @mock.patch('wcmatch.util.is_case_sensitive')
     def test_wildcard_parsing(self, mock__iscase_sensitive):
