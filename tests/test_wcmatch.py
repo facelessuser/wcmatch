@@ -177,7 +177,7 @@ class TestGlob(unittest.TestCase):
         ['[#a*', ['[#ab'], 0, ['[#ab', '[ab']],
 
         # like: {a,b|c\\,d\\\|e} except it's unclosed, so it has to be escaped.
-        # NOTE: I don't know what teh original test was doing because it was matching
+        # NOTE: I don't know what the original test was doing because it was matching
         # something crazy. Multimatch regex expanded to escapes to like a 50.
         # I think ours expands them proper, so the original test has been altered.
         [
@@ -210,6 +210,7 @@ class TestGlob(unittest.TestCase):
             ['x(a|b|c)', 'x(a|c)', '(a|b|c)', '(a|c)'],
             glob.E
         ],
+        # UNSUPPORTED
         # [
         #   'a?b',
         #   ['x/y/acb', 'acb/'],
@@ -229,6 +230,7 @@ class TestGlob(unittest.TestCase):
         # anything that IS !a* matches.
         ['!a*', ['!ab', '!abc'], glob.N],
 
+        # UNSUPPORTED
         # # anything that IS a* matches
         # ['!!a*', ['a!b']],
 

@@ -220,7 +220,7 @@ class Glob(object):
         # Handle relative directories: `\\` (windows), `/`, `.`, and `..`.
         # We want to append these to the current directory and get the next
         # file or folder name or pattern we need to check against.
-        while (self._is_this(target) or self._is_parent(target)):
+        while target is not None and (self._is_this(target) or self._is_parent(target)):
             if target not in self.sep:
                 curdir = os.path.join(curdir, target)
             if not os.path.isdir(curdir):
@@ -242,8 +242,14 @@ class Glob(object):
 
         else:
             # Directories
-            this = rest.pop(0) if rest else None
             if is_magic and self._is_globstar(target):
+
+                # Throw away multiple consecutive globstars
+                this = rest.pop(0) if rest else None
+                while this is not None and (self._is_globstar(this[0]) or this[0] in self.sep):
+                    is_dir = this[2]
+                    this = rest.pop(0) if rest else None
+
                 # Glob star directory pattern `**`.
                 for dirname, base in self._glob_deep(curdir, True):
                     path = os.path.join(dirname, base)
@@ -253,6 +259,8 @@ class Glob(object):
                         yield path
 
             else:
+                this = rest.pop(0) if rest else None
+
                 # Normal directory
                 self.set_match(_wcparse._compile((target,), self.flags) if is_magic else target)
                 for path in self._glob_shallow(curdir, True):

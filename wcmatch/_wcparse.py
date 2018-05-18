@@ -729,20 +729,23 @@ class WcParse(object):
         self.reset_dir_track()
         if value == globstar:
             sep = _GLOBSTAR_DIV % self.get_path_sep()
-            if current[-1] == '|':
-                # Special case following `|` in a extglob group.
-                # We can't follow a path separator in this scenario,
-                # so we're safe.
-                current.append(value)
-            elif current[-1] == '':
-                # At the beginning of the pattern
-                current[-1] = value
-            else:
-                # Replace the last path separator
-                current[-1] = _NEED_CHAR
-                current.append(value)
-            self.consume_path_sep(i)
-            current.append(sep)
+            # Check if the last entry was a globstar
+            # If so, don't bother adding another.
+            if current[-1] != sep:
+                if current[-1] == '|':
+                    # Special case following `|` in a extglob group.
+                    # We can't follow a path separator in this scenario,
+                    # so we're safe.
+                    current.append(value)
+                elif current[-1] == '':
+                    # At the beginning of the pattern
+                    current[-1] = value
+                else:
+                    # Replace the last path separator
+                    current[-1] = _NEED_CHAR
+                    current.append(value)
+                self.consume_path_sep(i)
+                current.append(sep)
             self.set_start_dir()
         else:
             current.append(value)
