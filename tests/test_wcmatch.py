@@ -5,6 +5,7 @@ import pytest
 import os
 import mock
 import wcmatch.glob as glob
+import wcmatch._wcparse as _wcparse
 import wcmatch.fnmatch as fnmatch
 import wcmatch.wcmatch as wcmatch
 from wcmatch import util
@@ -385,15 +386,16 @@ class TestGlob(unittest.TestCase):
         else:
             files = self.files if len(p) < 4 else p[3]
             flags = 0 if len(p) < 3 else p[2]
+            flags = self.flags ^ flags
             pat = p[0] if isinstance(p[0], list) else [p[0]]
             print("PATTERN: ", p[0])
             print("FILES: ", files)
-            print("FLAGS: ", bin(self.flags ^ flags)[2:])
+            print("FLAGS: ", bin(flags)[2:])
             result = sorted(
                 glob.globfilter(
                     files,
                     pat,
-                    flags=self.flags ^ flags
+                    flags=flags
                 )
             )
             source = sorted(p[1])
@@ -407,7 +409,7 @@ class TestGlob(unittest.TestCase):
 
         mock_platform.return_value = "linux"
         mock__iscase_sensitive.return_value = True
-        fnmatch._compile.cache_clear()
+        _wcparse._compile.cache_clear()
 
         for p in self.file_filter:
             self._filter(p)
@@ -437,7 +439,7 @@ class TestGlob(unittest.TestCase):
 
         mock_platform.return_value = "windows"
         mock__iscase_sensitive.return_value = False
-        fnmatch._compile.cache_clear()
+        _wcparse._compile.cache_clear()
 
         self.assertTrue(
             glob.globmatch(
@@ -506,7 +508,7 @@ class TestGlob(unittest.TestCase):
 
         mock_platform.return_value = "linux"
         mock__iscase_sensitive.return_value = True
-        fnmatch._compile.cache_clear()
+        _wcparse._compile.cache_clear()
 
         self.assertTrue(
             glob.globmatch(
@@ -561,7 +563,7 @@ class TestWildcard(unittest.TestCase):
 
         mock__iscase_sensitive.return_value = True
 
-        fnmatch._compile.cache_clear()
+        _wcparse._compile.cache_clear()
 
         p1, p2 = fnmatch.translate(
             fnmatch.fnsplit('*test[a-z]?|*test2[a-z]?|!test[!a-z]|!test[!-|a-z]'), flags=fnmatch.N
@@ -676,7 +678,7 @@ class TestWildcard(unittest.TestCase):
 
         mock__iscase_sensitive.return_value = True
 
-        fnmatch._compile.cache_clear()
+        _wcparse._compile.cache_clear()
 
         p1, p2 = fnmatch.translate(
             fnmatch.fnsplit(b'*test[a-z]?|*test2[a-z]?|!test[!a-z]|!test[!-|a-z]'), flags=fnmatch.N
@@ -792,7 +794,7 @@ class TestWildcard(unittest.TestCase):
 
         mock__iscase_sensitive.return_value = True
 
-        fnmatch._compile.cache_clear()
+        _wcparse._compile.cache_clear()
 
         p1, p2 = fnmatch.translate(r'test\x70\u0070\U00000070\160\N{LATIN SMALL LETTER P}', flags=fnmatch.R)
         if util.PY36:
