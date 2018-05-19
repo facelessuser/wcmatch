@@ -145,12 +145,20 @@ class Glob(object):
     def _glob_shallow(self, curdir, dir_only=False):
         """Non recursive directory glob."""
 
+        scandir = '.' if not curdir else curdir
+
+        # Python will never return . or .., so fake it.
+        if os.path.isdir(scandir):
+            for special in ('.', '..'):
+                if self._matcher(special):
+                    yield os.path.join(curdir, special)
+
         try:
             if NO_SCANDIR_WORKAROUND:
                 # Our current directory can be empty if the path starts with magic,
                 # But we don't want to return paths with '.', so just use it to list
                 # files, but use '' when constructing the path.
-                with os.scandir('.' if not curdir else curdir) as scan:
+                with os.scandir(scandir) as scan:
                     for f in scan:
                         try:
                             if (not dir_only or f.is_dir()) and self._matcher(f.name):
@@ -158,7 +166,7 @@ class Glob(object):
                         except OSError:
                             pass
             else:
-                for f in os.listdir('.' if not curdir else curdir):
+                for f in os.listdir(scandir):
                     is_dir = os.path.isdir(os.path.join(curdir, f))
                     if (not dir_only or is_dir) and self._matcher(f):
                         yield os.path.join(curdir, f)
@@ -168,12 +176,14 @@ class Glob(object):
     def _glob_deep(self, curdir, dir_only=False):
         """Recursive directory glob."""
 
+        scandir = '.' if not curdir else curdir
+
         try:
             if NO_SCANDIR_WORKAROUND:
                 # Our current directory can be empty if the path starts with magic,
                 # But we don't want to return paths with '.', so just use it to list
                 # files, but use '' when constructing the path.
-                with os.scandir('.' if not curdir else curdir) as scan:
+                with os.scandir(scandir) as scan:
                     for f in scan:
                         try:
                             # Quicker to just test this way than to run through fnmatch.
@@ -186,7 +196,7 @@ class Glob(object):
                         except OSError:
                             pass
             else:
-                for f in os.listdir('.' if not curdir else curdir):
+                for f in os.listdir(scandir):
                     # Quicker to just test this way than to run through fnmatch.
                     if self._is_hidden(f):
                         continue
@@ -217,57 +227,51 @@ class Glob(object):
         is_dir = this[2]
         target = this[0]
 
-        # Handle relative directories: `\\` (windows), `/`, `.`, and `..`.
-        # We want to append these to the current directory and get the next
-        # file or folder name or pattern we need to check against.
-        while target is not None and (self._is_this(target) or self._is_parent(target)):
-            if target not in self.sep:
-                curdir = os.path.join(curdir, target)
-            if not os.path.isdir(curdir):
-                # Can't find this directory.
-                return
+        # Strip out extra slashes as multiple consecutive slashes is the same as one.
+        while target is not None and target in self.sep:
             if rest:
                 # Get the next target.
                 this = rest.pop(0)
                 target, is_magic, is_dir = this
-            elif is_dir:
-                # Nothing left to append, but nothing left to search.
-                yield curdir
-                return
 
-        if not is_dir:
+        # Directories
+        if is_magic and self._is_globstar(target):
+            dir_only = is_dir
+            this = rest.pop(0) if rest else None
+
+            # Throw away multiple consecutive globstars
+            done = False
+            while this and not done:
+                if this:
+                    dir_only = this[2]
+                if self._is_globstar(this[0]) or this[0] in self.sep:
+                    this = rest.pop(0) if rest else None
+                else:
+                    done = True
+
+            # Glob star directory pattern `**`.
+            for dirname, base in self._glob_deep(curdir, dir_only):
+                path = os.path.join(dirname, base)
+                if this:
+                    yield from self._glob(path, this, rest[:])
+                else:
+                    yield path
+
+        elif not is_dir:
             # Files
             self.set_match(_wcparse._compile((target,), self.flags) if is_magic else target)
             yield from self._glob_shallow(curdir)
 
         else:
-            # Directories
-            if is_magic and self._is_globstar(target):
+            this = rest.pop(0) if rest else None
 
-                # Throw away multiple consecutive globstars
-                this = rest.pop(0) if rest else None
-                while this is not None and (self._is_globstar(this[0]) or this[0] in self.sep):
-                    is_dir = this[2]
-                    this = rest.pop(0) if rest else None
-
-                # Glob star directory pattern `**`.
-                for dirname, base in self._glob_deep(curdir, True):
-                    path = os.path.join(dirname, base)
-                    if this:
-                        yield from self._glob(path, this, rest[:])
-                    else:
-                        yield path
-
-            else:
-                this = rest.pop(0) if rest else None
-
-                # Normal directory
-                self.set_match(_wcparse._compile((target,), self.flags) if is_magic else target)
-                for path in self._glob_shallow(curdir, True):
-                    if this:
-                        yield from self._glob(path, this, rest[:])
-                    else:
-                        yield path
+            # Normal directory
+            self.set_match(_wcparse._compile((target,), self.flags) if is_magic else target)
+            for path in self._glob_shallow(curdir, True):
+                if this:
+                    yield from self._glob(path, this, rest[:])
+                else:
+                    yield path
 
     def get_starting_paths(self, curdir):
         """
@@ -279,17 +283,16 @@ class Glob(object):
         the actual casing and then compare.
         """
 
+        results = [curdir]
+
         if not self._is_parent(curdir) and not self._is_this(curdir):
             fullpath = os.path.abspath(curdir)
             basename = os.path.basename(fullpath)
             dirname = os.path.dirname(fullpath)
             if basename:
-                self._match = basename
+                self.set_match(basename)
                 results = [os.path.basename(name) for name in self._glob_shallow(dirname, self)]
-            else:
-                results = [curdir]
-        else:
-            results = [curdir]
+
         return results
 
     def glob(self):
