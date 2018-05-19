@@ -59,17 +59,12 @@ FLAG_MASK = (
     NOBRACE        # Inverse
 )
 
-FS_FLAG_MASK = FLAG_MASK ^ (NEGATE | MINUSNEGATE)
 
-
-def _flag_transform(flags, full=False):
+def _flag_transform(flags):
     """Transform flags to glob defaults."""
 
-    if not full:
-        # Here we force PATHNAME and disable negation NEGATE
-        flags = (flags & FS_FLAG_MASK) | _wcparse.PATHNAME
-    else:
-        flags = (flags & FLAG_MASK) | _wcparse.PATHNAME
+    # Here we force PATHNAME and disable negation NEGATE
+    flags = (flags & FLAG_MASK) | _wcparse.PATHNAME
     # Enable by default (flipped logic for fnmatch which disables it by default)
     flags ^= NOGLOBSTAR
     flags ^= NOBRACE
@@ -86,19 +81,32 @@ class Glob(object):
 
         self.flags = _flag_transform(flags)
         self.dot = bool(self.flags & NODOT)
+        self.negate = bool(self.flags & NEGATE)
+        self.minus = bool(self.flags & MINUSNEGATE)
         self.globstar = bool(self.flags & _wcparse.GLOBSTAR)
         self.braces = bool(self.flags & _wcparse.BRACE)
         self.case_sensitive = _wcparse.get_case(self.flags)
         self.is_bytes = isinstance(pattern, bytes)
-        if self.braces:
-            self.pattern = [_wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(pattern)]
-        else:
-            self.pattern = [_wcparse.WcPathSplit(pattern, self.flags).split()]
+        self._parse_patterns(pattern)
         if util.platform() == "windows":
             self.sep = (b'\\', '\\')
         else:
             self.sep = (b'/', '/')
         self.scandir = util.PY36 or (util.PY35 and util.platform() != "windows")
+
+    def _parse_patterns(self, pattern):
+        """Parse patterns."""
+
+        neg = (b'!', '!') if not self.minus else (b'-', '-')
+        self.pattern = []
+        self.npattern = []
+        for p in pattern:
+            if self.negate and p[0:1] in neg:
+                self.npattern.append(_wcparse._compile(util.to_tuple(p), self.flags))
+            elif self.braces:
+                self.pattern.extend(_wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p))
+            else:
+                self.pattern.extend(_wcparse.WcPathSplit(pattern, self.flags).split())
 
     def _is_globstar(self, name):
         """Check if name is a rescursive globstar."""
@@ -238,8 +246,17 @@ class Glob(object):
                 this = rest.pop(0)
                 target, is_magic, is_dir = this
 
+        # File (arrives via a _glob_deep)
+        # We don't normally feed files through here,
+        # but glob_deep sends evereything through here
+        # if a next target is available.
+        if not os.path.isdir(curdir) and os.path.lexists(curdir):
+            self.set_match(_wcparse._compile((target,), self.flags) if is_magic else target)
+            if self._matcher(curdir):
+                yield curdir
+
         # Directories
-        if is_magic and self._is_globstar(target):
+        elif is_magic and self._is_globstar(target):
             dir_only = is_dir
             this = rest.pop(0) if rest else None
 
@@ -258,8 +275,8 @@ class Glob(object):
                 path = os.path.join(dirname, base)
                 if this:
                     yield from self._glob(path, this, rest[:])
-                else:
-                    yield path
+                elif not this:
+                    yield curdir
 
         elif not is_dir:
             # Files
@@ -299,6 +316,16 @@ class Glob(object):
 
         return results
 
+    def _is_excluded(self, path):
+        """Check if file is excluded."""
+
+        excluded = False
+        for n in self.npattern:
+            excluded = not n.match(path)
+            if excluded:
+                break
+        return excluded
+
     def glob(self):
         """Starts off the glob iterator."""
 
@@ -334,37 +361,41 @@ class Glob(object):
                                 rest = pattern[1:]
                                 if rest:
                                     this = rest.pop(0)
-                                    yield from self._glob(curdir, this, rest)
-                                else:
+                                    for match in self._glob(curdir, this, rest):
+                                        if not self._is_excluded(match):
+                                            yield match
+                                elif not self._is_excluded(curdir):
                                     yield curdir
                     else:
                         # Return the file(s) and finish.
                         for start in results:
-                            if os.path.lexists(start):
-                                yield curdir
+                            if os.path.lexists(start) and not self._is_excluded(start):
+                                yield start
                 else:
                     # Path starts with a magic pattern, let's get globbing
                     rest = pattern[:]
                     this = rest.pop(0)
-                    yield from self._glob(curdir if not curdir == '.' else '', this, rest)
+                    for match in self._glob(curdir if not curdir == '.' else '', this, rest):
+                        if not self._is_excluded(match):
+                            yield match
 
 
-def iglob(pattern, *, flags=0):
+def iglob(patterns, *, flags=0):
     """Glob."""
 
-    yield from Glob(pattern, flags).glob()
+    yield from Glob(util.to_tuple(patterns), flags).glob()
 
 
-def glob(pattern, *, flags=0):
+def glob(patterns, *, flags=0):
     """Glob."""
 
-    return list(iglob(pattern, flags=flags))
+    return list(iglob(util.to_tuple(patterns), flags=flags))
 
 
 def globsplit(pattern, *, flags=0):
     """Split pattern by '|'."""
 
-    return _wcparse.WcSplit(pattern, _flag_transform(flags, True)).split()
+    return _wcparse.WcSplit(pattern, _flag_transform(flags & FLAG_MASK)).split()
 
 
 def globmatch(filename, patterns, *, flags=0):
@@ -377,7 +408,7 @@ def globmatch(filename, patterns, *, flags=0):
 
     return _wcparse._compile(
         util.to_tuple(patterns),
-        _flag_transform(flags & _wcparse.FLAG_MASK, True)
+        _flag_transform(flags & _wcparse.FLAG_MASK)
     ).match(util.norm_slash(filename))
 
 
@@ -386,7 +417,7 @@ def globfilter(filenames, patterns, *, flags=0):
 
     matches = []
 
-    obj = _wcparse._compile(util.to_tuple(patterns), _flag_transform(flags & FLAG_MASK, True))
+    obj = _wcparse._compile(util.to_tuple(patterns), _flag_transform(flags & FLAG_MASK))
 
     for filename in filenames:
         filename = util.norm_slash(filename)
