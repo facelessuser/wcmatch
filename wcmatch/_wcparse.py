@@ -129,6 +129,16 @@ def _compile(patterns, flags):
     return WcRegexp(p1, p2)
 
 
+def expand_braces(pattern):
+    """Expand braces."""
+
+    try:
+        expanded = bracex.expand(pattern, keep_escapes=True)
+    except Exception as e:
+        expanded = [pattern]
+    return expanded
+
+
 def get_case(flags):
     """Parse flags for case sensitivity settings."""
 
@@ -1002,12 +1012,7 @@ class WcParse(object):
         for pat in self.pattern:
             pat = util.norm_pattern(pat, self.pathname, self.raw_chars)
 
-            try:
-                expanded = bracex.expand(pat, keep_escapes=True) if self.braces else [pat]
-            except Exception as e:
-                expanded = [pat]
-
-            for p in expanded:
+            for p in (expand_braces(pat) if self.braces else [pat]):
                 p = p.decode('latin-1') if self.is_bytes else p
                 if self.negate and p[0:1] == self.negate_symbol:
                     current = exclude_result

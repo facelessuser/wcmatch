@@ -87,9 +87,13 @@ class Glob(object):
         self.flags = _flag_transform(flags)
         self.dot = bool(self.flags & NODOT)
         self.globstar = bool(self.flags & _wcparse.GLOBSTAR)
+        self.braces = bool(self.flags & _wcparse.BRACE)
         self.case_sensitive = _wcparse.get_case(self.flags)
         self.is_bytes = isinstance(pattern, bytes)
-        self.pattern = _wcparse.WcPathSplit(pattern, self.flags).split()
+        if self.braces:
+            self.pattern = [_wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(pattern)]
+        else:
+            self.pattern = [_wcparse.WcPathSplit(pattern, self.flags).split()]
         if util.platform() == "windows":
             self.sep = (b'\\', '\\')
         else:
@@ -215,11 +219,11 @@ class Glob(object):
 
         There are really only a couple of cases:
 
-        - File name
-        - File name pattern (magic)
-        - Directory
-        - Directory name pattern (magic)
-        - Relative indicators `.` and `..`
+        - File name.
+        - File name pattern (magic).
+        - Directory.
+        - Directory name pattern (magic).
+        - Extra slashes ////.
         - Lastyl globstar `**`.
         """
 
@@ -303,45 +307,46 @@ class Glob(object):
         else:
             curdir = os.curdir
 
-        if self.pattern:
-            if not self.pattern[0][1]:
-                # Path starts with normal plain text
-                # Lets verify the case of the starting directory (if possible)
-                this = self.pattern[0]
+        for pattern in self.pattern:
+            if pattern:
+                if not pattern[0][1]:
+                    # Path starts with normal plain text
+                    # Lets verify the case of the starting directory (if possible)
+                    this = pattern[0]
 
-                curdir = this[0]
+                    curdir = this[0]
 
-                if not os.path.isdir(curdir) and not os.path.lexists(curdir):
-                    return
+                    if not os.path.isdir(curdir) and not os.path.lexists(curdir):
+                        return
 
-                # Make sure case matches, but running case insensitive
-                # on a case sensitive file system may return more than
-                # one starting location.
-                results = self.get_starting_paths(curdir)
-                if not results:
-                    # Nothing to do.
-                    return
+                    # Make sure case matches, but running case insensitive
+                    # on a case sensitive file system may return more than
+                    # one starting location.
+                    results = self.get_starting_paths(curdir)
+                    if not results:
+                        # Nothing to do.
+                        return
 
-                if this[2]:
-                    # Glob these directories if they exists
-                    for start in results:
-                        if os.path.isdir(start):
-                            rest = self.pattern[1:]
-                            if rest:
-                                this = rest.pop(0)
-                                yield from self._glob(curdir, this, rest)
-                            else:
+                    if this[2]:
+                        # Glob these directories if they exists
+                        for start in results:
+                            if os.path.isdir(start):
+                                rest = pattern[1:]
+                                if rest:
+                                    this = rest.pop(0)
+                                    yield from self._glob(curdir, this, rest)
+                                else:
+                                    yield curdir
+                    else:
+                        # Return the file(s) and finish.
+                        for start in results:
+                            if os.path.lexists(start):
                                 yield curdir
                 else:
-                    # Return the file(s) and finish.
-                    for start in results:
-                        if os.path.lexists(start):
-                            yield curdir
-            else:
-                # Path starts with a magic pattern, let's get globbing
-                rest = self.pattern[:]
-                this = rest.pop(0)
-                yield from self._glob(curdir if not curdir == '.' else '', this, rest)
+                    # Path starts with a magic pattern, let's get globbing
+                    rest = pattern[:]
+                    this = rest.pop(0)
+                    yield from self._glob(curdir if not curdir == '.' else '', this, rest)
 
 
 def iglob(pattern, *, flags=0):
@@ -353,7 +358,7 @@ def iglob(pattern, *, flags=0):
 def glob(pattern, *, flags=0):
     """Glob."""
 
-    return list(Glob(pattern, flags).glob())
+    return list(iglob(pattern, flags=flags))
 
 
 def globsplit(pattern, *, flags=0):
