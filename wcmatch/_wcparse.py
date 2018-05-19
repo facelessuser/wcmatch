@@ -24,6 +24,7 @@ import re
 import copyreg
 import functools
 import bracex
+from collections import namedtuple
 from . import util
 
 RE_WIN_PATH = re.compile(r'(\\{4}[^\\]+\\{2}[^\\]+|[a-z]:)(\\{2}|$)')
@@ -109,7 +110,14 @@ _GROUP = r'(?:%s)'
 # for. So there is an opening and a closing.
 _EXCLA_GROUP = r'(?:(?!(?:%s)'
 # Closing for inverse group
-_EXCLA_GROUP_CLOSE = r')[^%s]*?)'
+_EXCLA_GROUP_CLOSE = r')%s)'
+
+
+class Placeholder(str): pass
+
+
+class WcGlob(namedtuple('WcGlob', ['pattern', 'is_magic', 'is_globstar', 'dir_only'])):
+    """File Glob."""
 
 
 class PathNameException(Exception):
@@ -180,6 +188,10 @@ class WcPathSplit(object):
         """Initialize."""
 
         self.flags = flags
+        self.negate = flags & NEGATE
+        self.minus = flags & MINUSNEGATE
+        if self.negate:
+            self.flags ^= NEGATE
         self.pattern = util.norm_pattern(pattern, True, self.flags & RAWCHARS)
         self.is_bytes = isinstance(pattern, bytes)
         self.extend = bool(flags & EXTEND)
@@ -280,12 +292,18 @@ class WcPathSplit(object):
 
         return success
 
-    def store(self, value, l, directory):
+    def store(self, value, l, dir_only):
         """Group patterns by literals and potential magic patterns."""
 
+        if l and value == '':
+            return
+
         relative_dir = value in ('.', '..')
+        globstar = value == '**'
         magic = self.is_magic(value)
-        l.append([value + (self.sep if directory and not magic and not relative_dir else ''), magic, directory])
+        if magic:
+            value = _compile(util.to_tuple(value), self.flags)
+        l.append(WcGlob(value, magic, globstar, dir_only))
 
     def split(self):
         """Start parsing the pattern."""
@@ -298,13 +316,23 @@ class WcPathSplit(object):
 
         i = util.StringIter(pattern)
         iter(i)
+
+        # Strip inverse symbol as we don't care about it
+        if self.negate and pattern[0:1] == ('-' if self.minus else '!'):
+            pattern = pattern[1:]
+
         if self.win_drive_detect:
             m = RE_WIN_PATH.match(pattern)
             if m:
                 drive = m.group(0).replace('\\\\', '\\')
-                parts.append([drive, False, drive.endswith('\\')])
+                dir_only = drive.endswith('\\')
+                drive = drive.rstrip('\\')
+                if self.is_bytes:
+                    drive = drive.encode('latin-1')
+                parts.append(WcGlob(drive, False, False, dir_only))
                 start = m.end(0) - 1
                 i.advance(start + 1)
+
         for c in i:
 
             if self.extend and self.parse_extend(c, i):
@@ -345,6 +373,8 @@ class WcPathSplit(object):
                 value = pattern[start + 1:]
             if value:
                 self.store(value, parts, False)
+        if len(pattern) == 0:
+            parts.append(WcGlob(pattern, False, False, False))
 
         return parts
 
@@ -682,7 +712,10 @@ class WcParse(object):
                 star = self.path_star
                 globstar = self.path_gstar_dot1
         else:
-            star = _STAR
+            if self.after_start and self.dot:
+                star = _NO_DOT + _STAR
+            else:
+                star = _STAR
             globstar = ''
         value = star
 
@@ -783,9 +816,9 @@ class WcParse(object):
 
         index = len(current) - 1
         while index >= 0:
-            if current[index] is None:
+            if isinstance(current[index], Placeholder):
                 content = current[index + 1:]
-                current[index] = (''.join(content) if content else default) + (_EXCLA_GROUP_CLOSE % self.get_path_sep())
+                current[index] = (''.join(content) if content else default) + (_EXCLA_GROUP_CLOSE % str(current[index]))
             index -= 1
         self.inv_ext = 0
 
@@ -837,7 +870,7 @@ class WcParse(object):
                 elif c == "|":
                     self.clean_up_inverse(extended)
                     extended.append(c)
-                    if self.pathname and temp_after_start:
+                    if temp_after_start:
                         self.set_start_dir()
                 elif c == '\\':
                     subindex = i.index
@@ -877,8 +910,23 @@ class WcParse(object):
                 self.inv_ext += 1
                 # If pattern is at the end, anchor the match to the end.
                 current.append(_EXCLA_GROUP % ''.join(extended))
-                # Place holder for closing
-                current.append(None)
+                if self.pathname:
+                    if temp_after_start and self.dot:
+                        star = self.path_star_dot2
+                    elif temp_after_start:
+                        star = self.path_star_dot1
+                    else:
+                        star = self.path_star
+                else:
+                    if temp_after_start and self.dot:
+                        star = _NO_DOT + _STAR
+                    else:
+                        star = _STAR
+                if temp_after_start:
+                    star = _NEED_CHAR + star
+                # Place holder for closing, but store the proper star
+                # so we know which one to use
+                current.append(Placeholder(star))
 
         except StopIteration:
             success = False

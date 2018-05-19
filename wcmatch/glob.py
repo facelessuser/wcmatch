@@ -136,9 +136,9 @@ class Glob(object):
         """Do a simple match."""
 
         if not self.case_sensitive:
-            return name.lower().rstrip(os.sep) == self._match
+            return name.lower() == self._match
         else:
-            return name.rstrip(os.sep) == self._match
+            return name == self._match
 
     def set_match(self, match):
         """Set the match."""
@@ -146,9 +146,9 @@ class Glob(object):
         if isinstance(match, (str, bytes)):
             # Plain text match
             if not self.case_sensitive:
-                self._match = match.lower().rstrip(os.sep)
+                self._match = match.lower()
             else:
-                self._match = match.rstrip(os.sep)
+                self._match = match
             self._matcher = self.match
         else:
             # File match pattern
@@ -235,37 +235,30 @@ class Glob(object):
         - Lastyl globstar `**`.
         """
 
-        is_magic = this[1]
-        is_dir = this[2]
-        target = this[0]
-
-        # Strip out extra slashes as multiple consecutive slashes is the same as one.
-        while target is not None and target in self.sep:
-            if rest:
-                # Get the next target.
-                this = rest.pop(0)
-                target, is_magic, is_dir = this
+        is_magic = this.is_magic
+        dir_only = this.dir_only
+        target = this.pattern
+        is_globstar = this.is_globstar
 
         # File (arrives via a _glob_deep)
         # We don't normally feed files through here,
         # but glob_deep sends evereything through here
         # if a next target is available.
         if not os.path.isdir(curdir) and os.path.lexists(curdir):
-            self.set_match(_wcparse._compile((target,), self.flags) if is_magic else target)
+            self.set_match(target)
             if self._matcher(curdir):
                 yield curdir
 
         # Directories
-        elif is_magic and self._is_globstar(target):
-            dir_only = is_dir
+        elif is_magic and is_globstar:
             this = rest.pop(0) if rest else None
 
             # Throw away multiple consecutive globstars
             done = False
             while this and not done:
                 if this:
-                    dir_only = this[2]
-                if self._is_globstar(this[0]) or this[0] in self.sep:
+                    dir_only = this.dir_only
+                if this.is_globstar:
                     this = rest.pop(0) if rest else None
                 else:
                     done = True
@@ -278,16 +271,16 @@ class Glob(object):
                 elif not this:
                     yield curdir
 
-        elif not is_dir:
+        elif not dir_only:
             # Files
-            self.set_match(_wcparse._compile((target,), self.flags) if is_magic else target)
+            self.set_match(target)
             yield from self._glob_shallow(curdir)
 
         else:
             this = rest.pop(0) if rest else None
 
             # Normal directory
-            self.set_match(_wcparse._compile((target,), self.flags) if is_magic else target)
+            self.set_match(target)
             for path in self._glob_shallow(curdir, True):
                 if this:
                     yield from self._glob(path, this, rest[:])
@@ -336,7 +329,7 @@ class Glob(object):
 
         for pattern in self.pattern:
             if pattern:
-                if not pattern[0][1]:
+                if not pattern[0].is_magic:
                     # Path starts with normal plain text
                     # Lets verify the case of the starting directory (if possible)
                     this = pattern[0]
@@ -354,7 +347,7 @@ class Glob(object):
                         # Nothing to do.
                         return
 
-                    if this[2]:
+                    if this.dir_only:
                         # Glob these directories if they exists
                         for start in results:
                             if os.path.isdir(start):
