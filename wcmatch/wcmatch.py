@@ -26,8 +26,8 @@ from . import _wcparse
 from . import util
 
 __all__ = (
-    "FORCECASE", "IGNORECASE", "RAWCHARS", "PATHNAME", "EXTEND", "GLOBSTAR", "MINUSNEGATE", "BRACE",
-    "F", "I", "R", "P", "E", "G", "M",
+    "FORCECASE", "IGNORECASE", "RAWCHARS", "PATHNAME", "EXTGLOB", "GLOBSTAR", "BRACE",
+    "F", "I", "R", "P", "E", "G",
     "WcMatch"
 )
 
@@ -35,9 +35,8 @@ F = FORCECASE = _wcparse.FORCECASE
 I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
 P = PATHNAME = _wcparse.PATHNAME
-E = EXTEND = _wcparse.EXTEND
+E = EXTGLOB = _wcparse.EXTGLOB
 G = GLOBSTAR = _wcparse.GLOBSTAR
-M = MINUSNEGATE = _wcparse.MINUSNEGATE
 B = BRACE = _wcparse.BRACE
 
 FLAG_MASK = (
@@ -45,9 +44,8 @@ FLAG_MASK = (
     IGNORECASE |
     RAWCHARS |
     PATHNAME |
-    EXTEND |
+    EXTGLOB |
     GLOBSTAR |
-    MINUSNEGATE |
     BRACE
 )
 
@@ -67,7 +65,7 @@ class WcMatch(object):
         self.recursive = args.pop(0) if args else kwargs.pop('recursive', False)
         self.show_hidden = args.pop(0) if args else kwargs.pop('show_hidden', True)
         self.flags = (args.pop(0) if args else kwargs.pop('flags', 0)) & FLAG_MASK
-        self.flags |= _wcparse.NEGATE
+        self.flags |= _wcparse.NEGATE | _wcparse.DOTGLOB
         self.pathname = bool(self.flags & PATHNAME)
         if self.pathname:
             self.flags ^= PATHNAME

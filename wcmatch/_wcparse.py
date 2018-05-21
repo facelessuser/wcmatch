@@ -38,10 +38,9 @@ I = IGNORECASE = 0x0002
 R = RAWCHARS = 0x0004
 N = NEGATE = 0x0008
 P = PATHNAME = 0x0010
-D = DOT = 0x0020
-E = EXTEND = 0x0040
+D = DOTGLOB = 0x0020
+E = EXTGLOB = 0x0040
 G = GLOBSTAR = 0x0080
-M = MINUSNEGATE = 0x0100
 B = BRACE = 0x0200
 
 FLAG_MASK = (
@@ -50,10 +49,9 @@ FLAG_MASK = (
     RAWCHARS |
     NEGATE |
     PATHNAME |
-    DOT |
-    EXTEND |
+    DOTGLOB |
+    EXTGLOB |
     GLOBSTAR |
-    MINUSNEGATE |
     BRACE
 )
 CASE_FLAGS = FORCECASE | IGNORECASE
@@ -113,7 +111,8 @@ _EXCLA_GROUP = r'(?:(?!(?:%s)'
 _EXCLA_GROUP_CLOSE = r')%s)'
 
 
-class Placeholder(str): pass
+class InvPlaceholder(str):
+    """Placeholder for inverse pattern !(...)."""
 
 
 class WcGlob(namedtuple('WcGlob', ['pattern', 'is_magic', 'is_globstar', 'dir_only'])):
@@ -189,12 +188,11 @@ class WcPathSplit(object):
 
         self.flags = flags
         self.negate = flags & NEGATE
-        self.minus = flags & MINUSNEGATE
         if self.negate:
             self.flags ^= NEGATE
         self.pattern = util.norm_pattern(pattern, True, self.flags & RAWCHARS)
         self.is_bytes = isinstance(pattern, bytes)
-        self.extend = bool(flags & EXTEND)
+        self.extend = bool(flags & EXTGLOB)
         if util.platform() == "windows":
             self.win_drive_detect = True
             self.bslash_abort = True
@@ -298,7 +296,6 @@ class WcPathSplit(object):
         if l and value == '':
             return
 
-        relative_dir = value in ('.', '..')
         globstar = value == '**'
         magic = self.is_magic(value)
         if magic:
@@ -318,9 +315,12 @@ class WcPathSplit(object):
         iter(i)
 
         # Strip inverse symbol as we don't care about it
-        if self.negate and pattern[0:1] == ('-' if self.minus else '!'):
+        # The caller should detect and do something with this
+        # before calling.
+        if self.negate and pattern[0:1] == '-':
             pattern = pattern[1:]
 
+        # Detect and store away windows drive as a literal
         if self.win_drive_detect:
             m = RE_WIN_PATH.match(pattern)
             if m:
@@ -334,7 +334,6 @@ class WcPathSplit(object):
                 i.advance(start + 1)
 
         for c in i:
-
             if self.extend and self.parse_extend(c, i):
                 continue
 
@@ -388,7 +387,7 @@ class WcSplit(object):
         self.pattern = pattern
         self.is_bytes = isinstance(pattern, bytes)
         self.pathname = bool(flags & PATHNAME)
-        self.extend = bool(flags & EXTEND)
+        self.extend = bool(flags & EXTGLOB)
         self.bslash_abort = self.pathname if util.platform() == "windows" else False
 
     def _sequence(self, i):
@@ -524,14 +523,14 @@ class WcParse(object):
 
         self.pattern = pattern
         self.braces = bool(flags & BRACE)
-        self.negate_symbol = '-' if bool(flags & MINUSNEGATE) else '!'
+        self.negate_symbol = '-'
         self.is_bytes = isinstance(pattern[0], bytes)
         self.negate = bool(flags & NEGATE)
         self.pathname = bool(flags & PATHNAME)
         self.raw_chars = bool(flags & RAWCHARS)
         self.globstar = self.pathname and bool(flags & GLOBSTAR)
-        self.dot = bool(flags & DOT)
-        self.extend = bool(flags & EXTEND)
+        self.dot = bool(flags & DOTGLOB)
+        self.extend = bool(flags & EXTGLOB)
         self.case_sensitive = get_case(flags)
         self.in_list = False
         self.flags = flags
@@ -573,13 +572,27 @@ class WcParse(object):
         self.dir_start = False
         self.after_start = False
 
+    def update_dir_state(self):
+        """
+        Update the dir state.
+
+        If we are at the directory start,
+        update to after start state (the character right after).
+        If at after start, reset state.
+        """
+
+        if self.dir_start and not self.after_start:
+            self.set_after_start()
+        elif not self.dir_start and self.after_start:
+            self.reset_dir_track()
+
     def _restrict_sequence(self):
         """Restrict sequence."""
 
         if self.pathname:
-            value = self.seq_path_dot if self.after_start and self.dot else self.seq_path
+            value = self.seq_path_dot if self.after_start and not self.dot else self.seq_path
         else:
-            value = _NO_DOT
+            value = _NO_DOT if self.after_start and not self.dot else ""
         self.reset_dir_track()
 
         return value
@@ -661,7 +674,7 @@ class WcParse(object):
             c = next(i)
 
         result.append(']')
-        if self.pathname or (self.after_start and self.dot):
+        if self.pathname or (self.after_start and not self.dot):
             return self._restrict_sequence() + ''.join(result)
 
         return ''.join(result)
@@ -702,7 +715,7 @@ class WcParse(object):
         """Handle star."""
 
         if self.pathname:
-            if self.after_start and self.dot:
+            if self.after_start and not self.dot:
                 star = self.path_star_dot2
                 globstar = self.path_gstar_dot2
             elif self.after_start:
@@ -712,7 +725,7 @@ class WcParse(object):
                 star = self.path_star
                 globstar = self.path_gstar_dot1
         else:
-            if self.after_start and self.dot:
+            if self.after_start and not self.dot:
                 star = _NO_DOT + _STAR
             else:
                 star = _STAR
@@ -816,7 +829,7 @@ class WcParse(object):
 
         index = len(current) - 1
         while index >= 0:
-            if isinstance(current[index], Placeholder):
+            if isinstance(current[index], InvPlaceholder):
                 content = current[index + 1:]
                 current[index] = (''.join(content) if content else default) + (_EXCLA_GROUP_CLOSE % str(current[index]))
             index -= 1
@@ -845,28 +858,19 @@ class WcParse(object):
                 c = next(i)
 
                 if self.extend and self.parse_extend(c, i, extended):
-                    # Track when next char needs special dot logic
-                    if self.dir_start and not self.after_start:
-                        self.set_after_start()
-                    elif not self.dir_start and self.after_start:
-                        self.reset_dir_track()
-                    continue
-
-                if c == '*':
+                    # Nothing more to do
+                    pass
+                elif c == '*':
                     self._handle_star(i, extended)
+                elif c == '.' and not self.dot and self.after_start:
+                    extended.append(_NO_DOT + c)
+                    self.reset_dir_track()
                 elif c == '?':
-                    if not self.pathname:
-                        extended.append(self._restrict_sequence() + _QMARK)
-                    else:
-                        if self.after_start:
-                            extended.append(_NO_DOT + _QMARK if self.dot else _QMARK)
-                        else:
-                            extended.append(_QMARK)
-                        self.reset_dir_track()
+                    extended.append(self._restrict_sequence() + _QMARK)
                 elif c == '/':
                     if self.pathname:
                         extended.append(self._restrict_sequence())
-                    extended.append(c)
+                    extended.append(re.escape(c))
                 elif c == "|":
                     self.clean_up_inverse(extended)
                     extended.append(c)
@@ -891,11 +895,7 @@ class WcParse(object):
                 elif c != ')':
                     extended.append(re.escape(c))
 
-                # Track when next char needs special dot logic
-                if self.dir_start and not self.after_start:
-                    self.set_after_start()
-                elif not self.dir_start and self.after_start:
-                    self.reset_dir_track()
+                self.update_dir_state()
 
             self.clean_up_inverse(extended)
             if list_type == '?':
@@ -911,14 +911,14 @@ class WcParse(object):
                 # If pattern is at the end, anchor the match to the end.
                 current.append(_EXCLA_GROUP % ''.join(extended))
                 if self.pathname:
-                    if temp_after_start and self.dot:
+                    if temp_after_start and not self.dot:
                         star = self.path_star_dot2
                     elif temp_after_start:
                         star = self.path_star_dot1
                     else:
                         star = self.path_star
                 else:
-                    if temp_after_start and self.dot:
+                    if temp_after_start and not self.dot:
                         star = _NO_DOT + _STAR
                     else:
                         star = _STAR
@@ -926,7 +926,7 @@ class WcParse(object):
                     star = _NEED_CHAR + star
                 # Place holder for closing, but store the proper star
                 # so we know which one to use
-                current.append(Placeholder(star))
+                current.append(InvPlaceholder(star))
 
         except StopIteration:
             success = False
@@ -990,25 +990,12 @@ class WcParse(object):
 
             index = i.index
             if self.extend and self.parse_extend(c, i, current):
-                # Track when next char needs special dot logic
-                if self.dir_start and not self.after_start:
-                    self.set_after_start()
-                elif not self.dir_start and self.after_start:
-                    self.reset_dir_track()
-                continue
-            assert i.index == index, "%d | %d" % (i.index, index)
-
-            if c == '*':
+                # Nothing to do
+                pass
+            elif c == '*':
                 self._handle_star(i, current)
             elif c == '?':
-                if self.pathname:
-                    current.append(self._restrict_sequence() + _QMARK)
-                else:
-                    if self.after_start:
-                        current.append(_NO_DOT + _QMARK if self.dot else _QMARK)
-                    else:
-                        current.append(_QMARK)
-                    self.reset_dir_track()
+                current.append(self._restrict_sequence() + _QMARK)
             elif c == '/':
                 if self.pathname:
                     self.set_start_dir()
@@ -1016,7 +1003,7 @@ class WcParse(object):
                     current.append(self.get_path_sep() + _ONE_OR_MORE)
                     self.consume_path_sep(i)
                 else:
-                    current.append(self.get_path_sep())
+                    current.append(re.escape(c))
             elif c == '\\':
                 index = i.index
                 try:
@@ -1038,11 +1025,8 @@ class WcParse(object):
             else:
                 current.append(re.escape(c))
 
-            # Track when next char needs special dot logic
-            if self.dir_start and not self.after_start:
-                self.set_after_start()
-            elif not self.dir_start and self.after_start:
-                self.reset_dir_track()
+            self.update_dir_state()
+
         self.clean_up_inverse(current, default=_EOP)
         if self.pathname:
             current.append(_PATH_TRAIL % self.get_path_sep())
@@ -1058,7 +1042,9 @@ class WcParse(object):
         pattern = None
 
         for pat in self.pattern:
-            pat = util.norm_pattern(pat, self.pathname, self.raw_chars)
+            pat = util.norm_pattern(pat, (self.pathname or not self.case_sensitive), self.raw_chars)
+
+            print('parse: ', pat)
 
             for p in (expand_braces(pat) if self.braces else [pat]):
                 p = p.decode('latin-1') if self.is_bytes else p
@@ -1094,6 +1080,7 @@ class WcParse(object):
                 pattern = pattern.encode('latin-1')
             if exclude_pattern is not None:
                 exclude_pattern = exclude_pattern.encode('latin-1')
+        print("Regex: ", pattern)
         return pattern, exclude_pattern
 
 

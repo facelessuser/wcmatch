@@ -24,9 +24,8 @@ from . import util
 from . import _wcparse
 
 __all__ = (
-    "EXTEND", "FORCECASE", "IGNORECASE", "RAWCHARS", "NEGATE",
-    "PATHNAME", "DOT", "GLOBSTAR", "MINUSNEGATE", "BRACE",
-    "F", "I", "R", "N", "P", "D", "E", "G", "M",
+    "EXTMATCH", "FORCECASE", "IGNORECASE", "RAWCHARS", "NEGATE", "PERIOD", "BRACE",
+    "F", "I", "R", "N", "P", "E",
     "translate", "fnmatch", "filter", "fnsplit"
 )
 
@@ -34,11 +33,8 @@ F = FORCECASE = _wcparse.FORCECASE
 I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
 N = NEGATE = _wcparse.NEGATE
-P = PATHNAME = _wcparse.PATHNAME
-D = DOT = _wcparse.DOT
-E = EXTEND = _wcparse.EXTEND
-G = GLOBSTAR = _wcparse.GLOBSTAR
-M = MINUSNEGATE = _wcparse.MINUSNEGATE
+P = PERIOD = _wcparse.DOTGLOB
+E = EXTMATCH = _wcparse.EXTGLOB
 B = BRACE = _wcparse.BRACE
 
 FLAG_MASK = (
@@ -46,25 +42,31 @@ FLAG_MASK = (
     IGNORECASE |
     RAWCHARS |
     NEGATE |
-    PATHNAME |
-    DOT |
-    EXTEND |
-    GLOBSTAR |
-    MINUSNEGATE |
+    PERIOD |       # Inverse
+    EXTMATCH |
     BRACE
 )
+
+
+def _flag_transform(flags):
+    """Transform flags to glob defaults."""
+
+    flags = (flags & FLAG_MASK)
+    # Enable by default (flipped logic as the underlying library disables it by default).
+    flags ^= PERIOD
+    return flags
 
 
 def fnsplit(pattern, *, flags=0):
     """Split pattern by '|'."""
 
-    return _wcparse.WcSplit(pattern, flags).split()
+    return _wcparse.WcSplit(pattern, _flag_transform(flags)).split()
 
 
 def translate(patterns, *, flags=0):
-    """Translate fnmatch pattern counting `|` as a separator and `-` as a negative pattern."""
+    """Translate fnmatch pattern."""
 
-    return _wcparse.WcParse(util.to_tuple(patterns), flags & FLAG_MASK).parse()
+    return _wcparse.WcParse(util.to_tuple(patterns), _flag_transform(flags)).parse()
 
 
 def fnmatch(filename, patterns, *, flags=0):
@@ -75,7 +77,10 @@ def fnmatch(filename, patterns, *, flags=0):
     but if `case_sensitive` is set, respect that instead.
     """
 
-    return _wcparse._compile(util.to_tuple(patterns), flags & FLAG_MASK).match(util.norm_slash(filename))
+    flags = _flag_transform(flags)
+    if not _wcparse.get_case(flags):
+        filename = util.norm_slash(filename)
+    return _wcparse._compile(util.to_tuple(patterns), flags).match(filename)
 
 
 def filter(filenames, patterns, *, flags=0):  # noqa A001
@@ -83,10 +88,13 @@ def filter(filenames, patterns, *, flags=0):  # noqa A001
 
     matches = []
 
-    obj = _wcparse._compile(util.to_tuple(patterns), flags & FLAG_MASK)
+    flags = _flag_transform(flags)
+    case_sensitive = _wcparse.get_case(flags)
+    obj = _wcparse._compile(util.to_tuple(patterns), flags)
 
     for filename in filenames:
-        filename = util.norm_slash(filename)
+        if not case_sensitive:
+            filename = util.norm_slash(filename)
         if obj.match(filename):
             matches.append(filename)
     return matches

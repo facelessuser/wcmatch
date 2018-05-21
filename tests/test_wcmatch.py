@@ -173,6 +173,7 @@ class TestGlob(unittest.TestCase):
         ['*(a|{b),c)}', ['a', 'ab', 'ac'], 0, ['a', 'ab', 'ac', 'ad']],
 
         # test partial parsing in the presence of comment/negation chars
+        # NOTE: We don't support these so they should work fine.
         ['[!a*', ['[!ab'], 0, ['[!ab', '[ab']],
         ['[#a*', ['[#ab'], 0, ['[#ab', '[ab']],
 
@@ -210,7 +211,7 @@ class TestGlob(unittest.TestCase):
             ['x(a|b|c)', 'x(a|c)', '(a|b|c)', '(a|c)'],
             glob.E
         ],
-        # UNSUPPORTED
+        # NOTE: We don't currently support the base match option
         # [
         #   'a?b',
         #   ['x/y/acb', 'acb/'],
@@ -220,22 +221,23 @@ class TestGlob(unittest.TestCase):
         ['#*', ['#a', '#b'], 0, ['#a', '#b', 'c#d']],
 
         # begin channelling Boole and deMorgan...
+        # NOTE: We changed these to `-` since our negation dosn't use `!`.
         'negation tests',
         lambda files: files.clear(),
-        lambda files: files.extend(['d', 'e', '!ab', '!abc', 'a!b', '\\!a']),
+        lambda files: files.extend(['d', 'e', '-ab', '-abc', 'a-b', '\\-a']),
 
         # anything that is NOT a* matches.
-        ['!a*', ['\\!a', 'd', 'e', '!ab', '!abc']],
+        ['-a*', ['\\-a', 'd', 'e', '-ab', '-abc']],
 
         # anything that IS !a* matches.
-        ['!a*', ['!ab', '!abc'], glob.N],
+        ['-a*', ['-ab', '-abc'], glob.N],
 
-        # UNSUPPORTED
+        # NOTE: We don't allow negating negation.
         # # anything that IS a* matches
         # ['!!a*', ['a!b']],
 
         # anything that is NOT !a* matches
-        ['!\\!a*', ['a!b', 'd', 'e', '\\!a']],
+        ['-\\-a*', ['a-b', 'd', 'e', '\\-a']],
 
         # negation nestled within a pattern
         lambda files: files.clear(),
@@ -556,11 +558,155 @@ class TestGlob(unittest.TestCase):
         self.assertTrue(all([glob.globmatch(x, './///**///./../*.py') for x in glob.glob('./**/.//////..////*.py')]))
 
 
-class TestWildcard(unittest.TestCase):
-    """Test wildcard pattern parsing."""
+class TestFnMatch(unittest.TestCase):
+    """Test fnmatch."""
+
+    cases = [
+        ['abc', 'abc', True, 0],
+        ['?*?', 'abc', True, 0],
+        ['???*', 'abc', True, 0],
+        ['*???', 'abc', True, 0],
+        ['???', 'abc', True, 0],
+        ['*', 'abc', True, 0],
+        ['ab[cd]', 'abc', True, 0],
+        ['ab[!de]', 'abc', True, 0],
+        ['ab[de]', 'abc', False, 0],
+        ['??', 'a', False, 0],
+        ['b', 'a', False, 0],
+
+        # these test that '\' is handled correctly in character sets;
+        [r'[\]', '\\', False, 0],
+        [r'[!\]', 'a', False, 0],
+        [r'[!\]', '\\', False, 0],
+        [r'[\\]', '\\', True, 0],
+        [r'[!\\]', 'a', True, 0],
+        [r'[!\\]', '\\', False, 0],
+
+        # test that filenames with newlines in them are handled correctly.
+        ['foo*', 'foo\nbar', True, 0],
+        ['foo*', 'foo\nbar\n', True, 0],
+        ['foo*', '\nfoo', False, 0],
+        ['*', '\n', True, 0],
+
+        "Force Case",
+        ['abc', 'abc', True, fnmatch.F],
+        ['abc', 'AbC', False, fnmatch.F],
+        ['AbC', 'abc', False, fnmatch.F],
+        ['AbC', 'AbC', True, fnmatch.F],
+
+        ['usr/bin', 'usr/bin', True, fnmatch.F],
+        ['usr/bin', 'usr\\bin', False, fnmatch.F],
+        [r'usr\\bin', 'usr/bin', False, fnmatch.F],
+        [r'usr\\bin', 'usr\\bin', True, fnmatch.F],
+
+        [b'te*', b'test', True, 0],
+        [b'te*\xff', b'test\xff', True, 0],
+        [b'foo*', b'foo\nbar', True, 0],
+
+        "OS Case",
+        ['abc', 'abc', True, 0],
+        ['abc', 'AbC', not util.is_case_sensitive(), 0],
+        ['AbC', 'abc', not util.is_case_sensitive(), 0],
+        ['AbC', 'AbC', True, 0],
+
+        ['usr/bin', 'usr/bin', True, 0],
+        ['usr/bin', 'usr\\bin', not util.is_case_sensitive(), 0],
+        [r'usr\\bin', 'usr/bin', not util.is_case_sensitive(), 0],
+        [r'usr\\bin', 'usr\\bin', True, 0],
+
+        ['[[]', '[', True, 0],
+        ['[a&&b]', '&', True, 0],
+        ['[a||b]', '|', True, 0],
+        ['[a~~b]', '~', True, 0],
+        ['[a-z+--A-Z]', ',', True, 0],
+        ['[a-z--/A-Z]', '.', True, 0],
+
+        ['.abc', '.abc', True, 0],
+        ['?abc', '.abc', True, 0],
+        ['*abc', '.abc', True, 0],
+        ['[.]abc', '.abc', True, 0],
+        ['*(.)abc', '.abc', True, fnmatch.E],
+        ['*(?)abc', '.abc', True, fnmatch.E],
+        ['*(?|.)abc', '.abc', True, fnmatch.E],
+        ['*(?|*)abc', '.abc', True, fnmatch.E],
+
+        "Period",
+        ['.abc', '.abc', True, fnmatch.P],
+        ['?abc', '.abc', False, fnmatch.P],
+        ['*abc', '.abc', False, fnmatch.P],
+        ['[.]abc', '.abc', False, fnmatch.P],
+        ['*(.)abc', '.abc', False, fnmatch.E | fnmatch.P],
+        ['*(?)abc', '.abc', False, fnmatch.E | fnmatch.P],
+        ['*(?|.)abc', '.abc', False, fnmatch.E | fnmatch.P],
+        ['*(?|*)abc', '.abc', False, fnmatch.E | fnmatch.P],
+        ['a.bc', 'a.bc', True, fnmatch.P],
+        ['a?bc', 'a.bc', True, fnmatch.P],
+        ['a*bc', 'a.bc', True, fnmatch.P],
+        ['a[.]bc', 'a.bc', True, fnmatch.P],
+        ['a*(.)bc', 'a.bc', True, fnmatch.E | fnmatch.P],
+        ['a*(?)bc', 'a.bc', True, fnmatch.E | fnmatch.P],
+        ['a*(?|.)bc', 'a.bc', True, fnmatch.E | fnmatch.P],
+        ['a*(?|*)bc', 'a.bc', True, fnmatch.E | fnmatch.P]
+    ]
+
+    filter_cases = [
+        ['P*', ['Python', 'Ruby', 'Perl', 'Tcl'], ['Python', 'Perl'], 0],
+        [b'P*', [b'Python', b'Ruby', b'Perl', b'Tcl'], [b'Python', b'Perl'], 0],
+        [
+            '*.p*',
+            ['Test.py', 'Test.rb', 'Test.PL'],
+            (['Test.py', 'Test.PL'] if not util.is_case_sensitive() else ['Test.PL']),
+            0
+        ],
+        [
+            '*.P*',
+            ['Test.py', 'Test.rb', 'Test.PL'],
+            (['Test.py', 'Test.PL'] if not util.is_case_sensitive() else ['Test.PL']),
+            0
+        ],
+        [
+            'usr/*',
+            ['usr/bin', 'usr', 'usr\\lib'],
+            (['usr/bin', 'usr\\lib'] if not util.is_case_sensitive() else ['usr/bin']),
+            0
+        ],
+        [
+            r'usr\\*',
+            ['usr/bin', 'usr', 'usr\\lib'],
+            (['usr/bin', 'usr\\lib'] if not util.is_case_sensitive() else ['usr\\lib']),
+            0
+        ]
+    ]
+
+    def test_matches(self):
+        """Test matches."""
+
+        for case in self.cases:
+            if isinstance(case, str):
+                print(case, '\n')
+            else:
+                print("PATTERN: ", case[0])
+                print("FILE: ", case[1])
+                print("FLAGS: ", bin(case[3]))
+                print("TEST: ", case[2], '\n')
+                self.assertEqual(fnmatch.fnmatch(case[1], case[0], flags=case[3]), case[2])
+
+    def test_filters(self):
+        """Test filters."""
+
+        for case in self.cases:
+            if isinstance(case, str):
+                print(case, '\n')
+            else:
+                print("PATTERN: ", case[0])
+                print("FILES: ", case[1])
+                print("FLAGS: ", bin(case[3]))
+                value = fnmatch.fnmatch(case[1], case[0], flags=case[3])
+                print("TEST: ", value, '<=>', case[2], '\n')
+                self.assertEqual(value, case[2])
 
     @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_wildcard_parsing(self, mock__iscase_sensitive):
+    def test_split_parsing(self, mock__iscase_sensitive):
         """Test wildcard parsing."""
 
         mock__iscase_sensitive.return_value = True
@@ -568,17 +714,7 @@ class TestWildcard(unittest.TestCase):
         _wcparse._compile.cache_clear()
 
         p1, p2 = fnmatch.translate(
-            fnmatch.fnsplit('*test[a-z]?|*test2[a-z]?|!test[!a-z]|!test[!-|a-z]'), flags=fnmatch.N
-        )
-        if util.PY36:
-            self.assertEqual(p1, r'^(?s:(?=.).*?test[a-z].|(?=.).*?test2[a-z].)$')
-            self.assertEqual(p2, r'^(?s:test[^a-z]|test[^\-\|a-z])$')
-        else:
-            self.assertEqual(p1, r'(?ms)^(?:(?=.).*?test[a-z].|(?=.).*?test2[a-z].)$')
-            self.assertEqual(p2, r'(?ms)^(?:test[^a-z]|test[^\-\|a-z])$')
-
-        p1, p2 = fnmatch.translate(
-            fnmatch.fnsplit('*test[a-z]?|*test2[a-z]?|-test[!a-z]|-test[!-|a-z]'), flags=fnmatch.M | fnmatch.N
+            fnmatch.fnsplit('*test[a-z]?|*test2[a-z]?|-test[!a-z]|-test[!-|a-z]'), flags=fnmatch.N
         )
         if util.PY36:
             self.assertEqual(p1, r'^(?s:(?=.).*?test[a-z].|(?=.).*?test2[a-z].)$')
@@ -611,15 +747,7 @@ class TestWildcard(unittest.TestCase):
             self.assertEqual(p1, r'(?ms)^(?:|test|)$')
             self.assertEqual(p2, None)
 
-        p1, p2 = fnmatch.translate(fnmatch.fnsplit('!|!test|!'), flags=fnmatch.N)
-        if util.PY36:
-            self.assertEqual(p1, r'^(?s:.*?)$')
-            self.assertEqual(p2, r'^(?s:|test|)$')
-        else:
-            self.assertEqual(p1, r'(?ms)^(?:.*?)$')
-            self.assertEqual(p2, r'(?ms)^(?:|test|)$')
-
-        p1, p2 = fnmatch.translate(fnmatch.fnsplit('-|-test|-'), flags=fnmatch.M | fnmatch.N)
+        p1, p2 = fnmatch.translate(fnmatch.fnsplit('-|-test|-'), flags=fnmatch.N)
         if util.PY36:
             self.assertEqual(p1, r'^(?s:.*?)$')
             self.assertEqual(p2, r'^(?s:|test|)$')
@@ -641,7 +769,6 @@ class TestWildcard(unittest.TestCase):
         else:
             self.assertEqual(p1, r'(?ms)^(?:test[^\\-\\\&])$')
 
-        # BROKEN
         p1 = fnmatch.translate(fnmatch.fnsplit(r'\\*\\?\\|\\[\\]'))[0]
         if util.PY36:
             self.assertEqual(p1, r'^(?s:\\.*?\\.\\|\\[\\])$')
@@ -659,139 +786,8 @@ class TestWildcard(unittest.TestCase):
             ['testm', 'testa']
         )
 
-        self.assertTrue(fnmatch.fnmatch('test\test', r'test\test', flags=fnmatch.R))
-        self.assertTrue(fnmatch.fnmatch('testtest', r'test\test'))
-        self.assertTrue(fnmatch.fnmatch('test\\test', r'test\\test', flags=fnmatch.R))
-        self.assertTrue(fnmatch.fnmatch('test\\test', r'test\\test'))
-        self.assertTrue(fnmatch.fnmatch('test\\m', r'test\\m'))
-        self.assertTrue(fnmatch.fnmatch('test\\b', r'test\\[a-z]'))
-        self.assertTrue(fnmatch.fnmatch('test\\b', r'test\\[a-z]', flags=fnmatch.R))
-        self.assertTrue(fnmatch.fnmatch('test\\b', r'test\\[a-z]'))
-        self.assertTrue(fnmatch.fnmatch('[', '[[]'))
-        self.assertTrue(fnmatch.fnmatch('&', '[a&&b]'))
-        self.assertTrue(fnmatch.fnmatch('|', '[a||b]'))
-        self.assertTrue(fnmatch.fnmatch('~', '[a~~b]'))
-        self.assertTrue(fnmatch.fnmatch(',', '[a-z+--A-Z]'))
-        self.assertTrue(fnmatch.fnmatch('.', '[a-z--/A-Z]'))
-
     @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_byte_wildcard_parsing(self, mock__iscase_sensitive):
-        """Test byte_wildcard parsing."""
-
-        mock__iscase_sensitive.return_value = True
-
-        _wcparse._compile.cache_clear()
-
-        p1, p2 = fnmatch.translate(
-            fnmatch.fnsplit(b'*test[a-z]?|*test2[a-z]?|!test[!a-z]|!test[!-|a-z]'), flags=fnmatch.N
-        )
-        if util.PY36:
-            self.assertEqual(p1, br'^(?s:(?=.).*?test[a-z].|(?=.).*?test2[a-z].)$')
-            self.assertEqual(p2, br'^(?s:test[^a-z]|test[^\-\|a-z])$')
-        else:
-            self.assertEqual(p1, br'(?ms)^(?:(?=.).*?test[a-z].|(?=.).*?test2[a-z].)$')
-            self.assertEqual(p2, br'(?ms)^(?:test[^a-z]|test[^\-\|a-z])$')
-
-        p1, p2 = fnmatch.translate(
-            fnmatch.fnsplit(b'*test[a-z]?|*test2[a-z]?|-test[!a-z]|-test[!-|a-z]'),
-            flags=fnmatch.M | fnmatch.N
-        )
-        if util.PY36:
-            self.assertEqual(p1, br'^(?s:(?=.).*?test[a-z].|(?=.).*?test2[a-z].)$')
-            self.assertEqual(p2, br'^(?s:test[^a-z]|test[^\-\|a-z])$')
-        else:
-            self.assertEqual(p1, br'(?ms)^(?:(?=.).*?test[a-z].|(?=.).*?test2[a-z].)$')
-            self.assertEqual(p2, br'(?ms)^(?:test[^a-z]|test[^\-\|a-z])$')
-
-        p1, p2 = fnmatch.translate(fnmatch.fnsplit(b'test[]][!][][]'))
-        if util.PY36:
-            self.assertEqual(p1, br'^(?s:test[\]][^\][]\[\])$')
-            self.assertEqual(p2, None)
-        else:
-            self.assertEqual(p1, br'(?ms)^(?:test[\]][^\][]\[\])$')
-            self.assertEqual(p2, None)
-
-        p1, p2 = fnmatch.translate(fnmatch.fnsplit(b'test[!]'))
-        if util.PY36:
-            self.assertEqual(p1, br'^(?s:test\[\!\])$')
-            self.assertEqual(p2, None)
-        else:
-            self.assertEqual(p1, br'(?ms)^(?:test\[\!\])$')
-            self.assertEqual(p2, None)
-
-        p1, p2 = fnmatch.translate(fnmatch.fnsplit(b'|test|'))
-        if util.PY36:
-            self.assertEqual(p1, br'^(?s:|test|)$')
-            self.assertEqual(p2, None)
-        else:
-            self.assertEqual(p1, br'(?ms)^(?:|test|)$')
-            self.assertEqual(p2, None)
-
-        p1, p2 = fnmatch.translate(fnmatch.fnsplit(b'!|!test|!'), flags=fnmatch.N)
-        if util.PY36:
-            self.assertEqual(p1, br'^(?s:.*?)$')
-            self.assertEqual(p2, br'^(?s:|test|)$')
-        else:
-            self.assertEqual(p1, br'(?ms)^(?:.*?)$')
-            self.assertEqual(p2, br'(?ms)^(?:|test|)$')
-
-        p1, p2 = fnmatch.translate(fnmatch.fnsplit(b'-|-test|-'), flags=fnmatch.M | fnmatch.N)
-        if util.PY36:
-            self.assertEqual(p1, br'^(?s:.*?)$')
-            self.assertEqual(p2, br'^(?s:|test|)$')
-        else:
-            self.assertEqual(p1, br'(?ms)^(?:.*?)$')
-            self.assertEqual(p2, br'(?ms)^(?:|test|)$')
-
-        p1, p2 = fnmatch.translate(fnmatch.fnsplit(b'test[^chars]'))
-        if util.PY36:
-            self.assertEqual(p1, br'^(?s:test[^chars])$')
-            self.assertEqual(p2, None)
-        else:
-            self.assertEqual(p1, br'(?ms)^(?:test[^chars])$')
-            self.assertEqual(p2, None)
-
-        p1 = fnmatch.translate(fnmatch.fnsplit(br'test[^\\-\\&]'))[0]
-        if util.PY36:
-            self.assertEqual(p1, br'^(?s:test[^\\-\\\&])$')
-        else:
-            self.assertEqual(p1, br'(?ms)^(?:test[^\\-\\\&])$')
-
-        # BROKEN
-        p1 = fnmatch.translate(fnmatch.fnsplit(br'\\*\\?\\|\\[\\]'))[0]
-        if util.PY36:
-            self.assertEqual(p1, br'^(?s:\\.*?\\.\\|\\[\\])$')
-        else:
-            self.assertEqual(p1, br'(?ms)^(?:\\.*?\\.\\|\\[\\])$')
-
-        p1 = fnmatch.translate(fnmatch.fnsplit(br'\\u0300'), flags=fnmatch.R)[0]
-        if util.PY36:
-            self.assertEqual(p1, br'^(?s:\\u0300)$')
-        else:
-            self.assertEqual(p1, br'(?ms)^(?:\\u0300)$')
-
-        self.assertEqual(
-            fnmatch.filter([b'testm', b'test\\3', b'testa'], fnmatch.fnsplit(br'te\st[ma]')),
-            [b'testm', b'testa']
-        )
-
-        self.assertTrue(fnmatch.fnmatch(b'test\test', br'test\test', flags=fnmatch.R))
-        self.assertTrue(fnmatch.fnmatch(b'testtest', br'test\test'))
-        self.assertTrue(fnmatch.fnmatch(b'test\\test', br'test\\test', flags=fnmatch.R))
-        self.assertTrue(fnmatch.fnmatch(b'test\\test', br'test\\test'))
-        self.assertTrue(fnmatch.fnmatch(b'test\\m', br'test\\m'))
-        self.assertTrue(fnmatch.fnmatch(b'test\\b', br'test\\[a-z]'))
-        self.assertTrue(fnmatch.fnmatch(b'test\\b', br'test\\[a-z]', flags=fnmatch.R))
-        self.assertTrue(fnmatch.fnmatch(b'test\\b', br'test\\[a-z]'))
-        self.assertTrue(fnmatch.fnmatch(b'[', b'[[]'))
-        self.assertTrue(fnmatch.fnmatch(b'&', b'[a&&b]'))
-        self.assertTrue(fnmatch.fnmatch(b'|', b'[a||b]'))
-        self.assertTrue(fnmatch.fnmatch(b'~', b'[a~~b]'))
-        self.assertTrue(fnmatch.fnmatch(b',', b'[a-z+--A-Z]'))
-        self.assertTrue(fnmatch.fnmatch(b'.', b'[a-z--/A-Z]'))
-
-    @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_wildcard_character_notation(self, mock__iscase_sensitive):
+    def test_special_escapes(self, mock__iscase_sensitive):
         """Test wildcard character notations."""
 
         mock__iscase_sensitive.return_value = True
@@ -878,7 +874,7 @@ class TestDirWalker(unittest.TestCase):
     def setUp(self):
         """Setup the tests."""
 
-        self.default_flags = wcmatch.R | wcmatch.I | wcmatch.M
+        self.default_flags = wcmatch.R | wcmatch.I
         self.errors = []
         self.skipped = 0
         self.files = []

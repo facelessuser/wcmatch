@@ -26,9 +26,9 @@ from . import _wcparse
 from . import util
 
 __all__ = (
-    "FORCECASE", "IGNORECASE", "RAWCHARS", "NODOT",
-    "NOEXTEND", "NOGLOBSTAR", "NEGATE", "MINUSNEGATE", "NOBRACE",
-    "F", "I", "R", "D", "E", "G", "N", "M",
+    "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB",
+    "NOEXTGLOB", "NOGLOBSTAR", "NEGATE", "NOBRACE",
+    "F", "I", "R", "D", "E", "G", "N",
     "iglob", "glob", "globsplit", "globmatch", "globfilter", "escape"
 )
 
@@ -40,22 +40,20 @@ NO_SCANDIR_WORKAROUND = util.PY36 or (util.PY35 and not WIN)
 F = FORCECASE = _wcparse.FORCECASE
 I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
-D = NODOT = _wcparse.DOT
-E = NOEXTEND = _wcparse.EXTEND
+D = DOTGLOB = _wcparse.DOTGLOB
+E = NOEXTGLOB = _wcparse.EXTGLOB
 G = NOGLOBSTAR = _wcparse.GLOBSTAR
 N = NEGATE = _wcparse.NEGATE
-M = MINUSNEGATE = _wcparse.MINUSNEGATE
 B = NOBRACE = _wcparse.BRACE
 
 FLAG_MASK = (
     FORCECASE |
     IGNORECASE |
     RAWCHARS |
-    NODOT |        # Inverse
-    NOEXTEND |     # Inverse
+    DOTGLOB |      # Inverse
+    NOEXTGLOB |    # Inverse
     NOGLOBSTAR |   # Inverse
     NEGATE |
-    MINUSNEGATE |
     NOBRACE        # Inverse
 )
 
@@ -68,8 +66,7 @@ def _flag_transform(flags):
     # Enable by default (flipped logic for fnmatch which disables it by default)
     flags ^= NOGLOBSTAR
     flags ^= NOBRACE
-    flags ^= NODOT
-    flags ^= NOEXTEND
+    flags ^= NOEXTGLOB
     return flags
 
 
@@ -80,9 +77,8 @@ class Glob(object):
         """Init the directory walker object."""
 
         self.flags = _flag_transform(flags)
-        self.dot = bool(self.flags & NODOT)
+        self.dot = bool(self.flags & DOTGLOB)
         self.negate = bool(self.flags & NEGATE)
-        self.minus = bool(self.flags & MINUSNEGATE)
         self.globstar = bool(self.flags & _wcparse.GLOBSTAR)
         self.braces = bool(self.flags & _wcparse.BRACE)
         self.case_sensitive = _wcparse.get_case(self.flags)
@@ -97,16 +93,25 @@ class Glob(object):
     def _parse_patterns(self, pattern):
         """Parse patterns."""
 
-        neg = (b'!', '!') if not self.minus else (b'-', '-')
+        neg = (b'-', '-')
         self.pattern = []
         self.npattern = []
         for p in pattern:
             if self.negate and p[0:1] in neg:
-                self.npattern.append(_wcparse._compile(util.to_tuple(p), self.flags))
+                if self.braces:
+                    self.pattern.extend(
+                        _wcparse._compile(util.to_tuple(p), self.flags).split() for x in _wcparse.expand_braces(p)
+                    )
+                else:
+                    self.npattern.append(
+                        _wcparse._compile(util.to_tuple(p), self.flags)
+                    )
             elif self.braces:
-                self.pattern.extend(_wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p))
+                self.pattern.extend(
+                    _wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p)
+                )
             else:
-                self.pattern.extend(_wcparse.WcPathSplit(pattern, self.flags).split())
+                self.pattern.extend(_wcparse.WcPathSplit(p, self.flags).split())
 
     def _is_globstar(self, name):
         """Check if name is a rescursive globstar."""
@@ -120,7 +125,7 @@ class Glob(object):
         REMOVE: Should just use standard dot convention and remove this.
         """
 
-        return self.dot and name[0:1] in (b'.', '.')
+        return not self.dot and name[0:1] in (b'.', '.')
 
     def _is_this(self, name):
         """Check if "this" directory `.`."""
@@ -388,7 +393,13 @@ def glob(patterns, *, flags=0):
 def globsplit(pattern, *, flags=0):
     """Split pattern by '|'."""
 
-    return _wcparse.WcSplit(pattern, _flag_transform(flags & FLAG_MASK)).split()
+    return _wcparse.WcSplit(pattern, _flag_transform(flags)).split()
+
+
+def translate(patterns, *, flags=0):
+    """Translate glob pattern."""
+
+    return _wcparse.WcParse(util.to_tuple(patterns), _flag_transform(flags)).parse()
 
 
 def globmatch(filename, patterns, *, flags=0):
@@ -399,10 +410,7 @@ def globmatch(filename, patterns, *, flags=0):
     but if `case_sensitive` is set, respect that instead.
     """
 
-    return _wcparse._compile(
-        util.to_tuple(patterns),
-        _flag_transform(flags & _wcparse.FLAG_MASK)
-    ).match(util.norm_slash(filename))
+    return _wcparse._compile(util.to_tuple(patterns), _flag_transform(flags)).match(util.norm_slash(filename))
 
 
 def globfilter(filenames, patterns, *, flags=0):
@@ -410,7 +418,7 @@ def globfilter(filenames, patterns, *, flags=0):
 
     matches = []
 
-    obj = _wcparse._compile(util.to_tuple(patterns), _flag_transform(flags & FLAG_MASK))
+    obj = _wcparse._compile(util.to_tuple(patterns), _flag_transform(flags))
 
     for filename in filenames:
         filename = util.norm_slash(filename)
