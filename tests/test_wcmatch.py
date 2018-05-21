@@ -52,11 +52,11 @@ class TestGlob(unittest.TestCase):
         ['[a-c]b*', ['abc', 'abd', 'abe', 'bb', 'cb']],
         ['[a-y]*[^c]', ['abd', 'abe', 'bb', 'bcd', 'bdir/', 'ca', 'cb', 'dd', 'de']],
         ['a*[^c]', ['abd', 'abe']],
-        lambda files: files.extend(['a-b', 'aXb']),
+        lambda self: self.files.extend(['a-b', 'aXb']),
         ['a[X-]b', ['a-b', 'aXb']],
-        lambda files: files.extend(['.x', '.y']),
+        lambda self: self.files.extend(['.x', '.y']),
         ['[^a-c]*', ['d', 'dd', 'de']],
-        lambda files: files.extend(['a*b/', 'a*b/ooo']),
+        lambda self: self.files.extend(['a*b/', 'a*b/ooo']),
         ['a\\*b/*', ['a*b/ooo']],
         ['a\\*?/*', ['a*b/ooo']],
         ['*\\\\!*', [], 0, ['echo !7']],
@@ -69,7 +69,7 @@ class TestGlob(unittest.TestCase):
         ['', [''], 0, ['']],
 
         'http://www.opensource.apple.com/source/bash/bash-23/bash/tests/glob-test',
-        lambda files: files.extend(['man/', 'man/man1/', 'man/man1/bash.1']),
+        lambda self: self.files.extend(['man/', 'man/man1/', 'man/man1/bash.1']),
         ['*/man*/bash.*', ['man/man1/bash.1']],
         ['man/man1/bash.1', ['man/man1/bash.1']],
         ['a***c', ['abc'], 0, ['abc']],
@@ -136,8 +136,8 @@ class TestGlob(unittest.TestCase):
 
         # .. and . can only match patterns starting with .,
         # even when options.dot is set.
-        lambda files: files.clear(),
-        lambda files: files.extend(['a/./b', 'a/../b', 'a/c/b', 'a/.d/b']),
+        lambda self: self.files.clear(),
+        lambda self: self.files.extend(['a/./b', 'a/../b', 'a/c/b', 'a/.d/b']),
         ['a/*/b', ['a/c/b', 'a/.d/b'], glob.D],
         ['a/.*/b', ['a/./b', 'a/../b', 'a/.d/b'], glob.D],
         ['a/*/b', ['a/c/b'], 0],
@@ -177,6 +177,10 @@ class TestGlob(unittest.TestCase):
         ['[!a*', ['[!ab'], 0, ['[!ab', '[ab']],
         ['[#a*', ['[#ab'], 0, ['[#ab', '[ab']],
 
+        # The following tests have `|` not included in things like +(...) etc.
+        # We run these tests through normally and through glob.globsplit which splits
+        # patterns on unenclosed `|`, so disable these few tests during split tests.
+        lambda self: self.set_skip_split(True),
         # like: {a,b|c\\,d\\\|e} except it's unclosed, so it has to be escaped.
         # NOTE: I don't know what the original test was doing because it was matching
         # something crazy. Multimatch regex expanded to escapes to like a 50.
@@ -189,8 +193,8 @@ class TestGlob(unittest.TestCase):
         ],
 
         # crazy nested {,,} and *(||) tests.
-        lambda files: files.clear(),
-        lambda files: files.extend(
+        lambda self: self.files.clear(),
+        lambda self: self.files.extend(
             [
                 'a', 'b', 'c', 'd', 'ab', 'ac', 'ad', 'bc', 'cb', 'bc,d',
                 'c,db', 'c,d', 'd)', '(b|c', '*(b|c', 'b|c', 'b|cc', 'cb|c',
@@ -211,6 +215,7 @@ class TestGlob(unittest.TestCase):
             ['x(a|b|c)', 'x(a|c)', '(a|b|c)', '(a|c)'],
             glob.E
         ],
+        lambda self: self.set_skip_split(False),
         # NOTE: We don't currently support the base match option
         # [
         #   'a?b',
@@ -223,8 +228,8 @@ class TestGlob(unittest.TestCase):
         # begin channelling Boole and deMorgan...
         # NOTE: We changed these to `-` since our negation dosn't use `!`.
         'negation tests',
-        lambda files: files.clear(),
-        lambda files: files.extend(['d', 'e', '-ab', '-abc', 'a-b', '\\-a']),
+        lambda self: self.files.clear(),
+        lambda self: self.files.extend(['d', 'e', '-ab', '-abc', 'a-b', '\\-a']),
 
         # anything that is NOT a* matches.
         ['-a*', ['\\-a', 'd', 'e', '-ab', '-abc']],
@@ -240,8 +245,8 @@ class TestGlob(unittest.TestCase):
         ['-\\-a*', ['a-b', 'd', 'e', '\\-a']],
 
         # negation nestled within a pattern
-        lambda files: files.clear(),
-        lambda files: files.extend(
+        lambda self: self.files.clear(),
+        lambda self: self.files.extend(
             [
                 'foo.js',
                 'foo.bar',
@@ -256,8 +261,8 @@ class TestGlob(unittest.TestCase):
         ['*.!(js)', ['foo.bar', 'foo.', 'boo.js.boo', 'foo.js.js']],
 
         'https://github.com/isaacs/minimatch/issues/5',
-        lambda files: files.clear(),
-        lambda files: files.extend(
+        lambda self: self.files.clear(),
+        lambda self: self.files.extend(
             [
                 'a/b/.x/c', 'a/b/.x/c/d', 'a/b/.x/c/d/e', 'a/b/.x', 'a/b/.x/',
                 'a/.x/b', '.x', '.x/', '.x/a', '.x/a/b', 'a/.x/b/.x/c', '.x/.x'
@@ -379,12 +384,18 @@ class TestGlob(unittest.TestCase):
         self.files = self.FILES[:]
         # The tests we scraped were written with this assumed.
         self.flags = glob.NEGATE
+        self.skip_split = False
 
-    def _filter(self, p):
+    def set_skip_split(self, value):
+        """Set skip split."""
+
+        self.skip_split = value
+
+    def _filter(self, p, split=False):
         """Filter with glob pattern."""
 
         if callable(p):
-            p(self.files)
+            p(self)
         elif isinstance(p, str):
             print(">>> ", p, '<<<\n')
         else:
@@ -392,6 +403,13 @@ class TestGlob(unittest.TestCase):
             flags = 0 if len(p) < 3 else p[2]
             flags = self.flags ^ flags
             pat = p[0] if isinstance(p[0], list) else [p[0]]
+            if split and self.skip_split:
+                return
+            if split:
+                new_pat = []
+                for x in pat:
+                    new_pat.extend(list(glob.globsplit(x)))
+                pat = new_pat
             print("PATTERN: ", p[0])
             print("FILES: ", files)
             print("FLAGS: ", bin(flags)[2:])
@@ -417,6 +435,18 @@ class TestGlob(unittest.TestCase):
 
         for p in self.file_filter:
             self._filter(p)
+
+    @mock.patch('wcmatch.util.platform')
+    @mock.patch('wcmatch.util.is_case_sensitive')
+    def test_glob_split_filter(self, mock__iscase_sensitive, mock_platform):
+        """Test wildcard parsing with split."""
+
+        mock_platform.return_value = "linux"
+        mock__iscase_sensitive.return_value = True
+        _wcparse._compile.cache_clear()
+
+        for p in self.file_filter:
+            self._filter(p, split=True)
 
     def test_ignore_cases(self):
         """Test ignore cases."""
