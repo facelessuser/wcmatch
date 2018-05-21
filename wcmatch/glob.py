@@ -119,11 +119,7 @@ class Glob(object):
         return self.globstar and name in (b'**', '**')
 
     def _is_hidden(self, name):
-        """
-        Check if is file hidden.
-
-        REMOVE: Should just use standard dot convention and remove this.
-        """
+        """Check if is file hidden."""
 
         return not self.dot and name[0:1] in (b'.', '.')
 
@@ -137,7 +133,18 @@ class Glob(object):
 
         return name in (b'..', '..')
 
-    def match(self, name):
+    def _is_excluded(self, path):
+        """Check if file is excluded."""
+
+        excluded = False
+        for n in self.npattern:
+            excluded = not n.match(path)
+            if excluded:
+                break
+        return excluded
+
+
+    def _literal_match(self, name):
         """Do a simple match."""
 
         if not self.case_sensitive:
@@ -145,7 +152,7 @@ class Glob(object):
         else:
             return name == self._match
 
-    def set_match(self, match):
+    def _set_match(self, match):
         """Set the match."""
 
         if isinstance(match, (str, bytes)):
@@ -154,7 +161,7 @@ class Glob(object):
                 self._match = match.lower()
             else:
                 self._match = match
-            self._matcher = self.match
+            self._matcher = self._literal_match
         else:
             # File match pattern
             self._matcher = match.match
@@ -250,7 +257,7 @@ class Glob(object):
         # but glob_deep sends evereything through here
         # if a next target is available.
         if not os.path.isdir(curdir) and os.path.lexists(curdir):
-            self.set_match(target)
+            self._set_match(target)
             if self._matcher(curdir):
                 yield curdir
 
@@ -278,21 +285,21 @@ class Glob(object):
 
         elif not dir_only:
             # Files
-            self.set_match(target)
+            self._set_match(target)
             yield from self._glob_shallow(curdir)
 
         else:
             this = rest.pop(0) if rest else None
 
             # Normal directory
-            self.set_match(target)
+            self._set_match(target)
             for path in self._glob_shallow(curdir, True):
                 if this:
                     yield from self._glob(path, this, rest[:])
                 else:
                     yield path
 
-    def get_starting_paths(self, curdir):
+    def _get_starting_paths(self, curdir):
         """
         Get the starting location.
 
@@ -313,16 +320,6 @@ class Glob(object):
                 results = [os.path.basename(name) for name in self._glob_shallow(dirname, self)]
 
         return results
-
-    def _is_excluded(self, path):
-        """Check if file is excluded."""
-
-        excluded = False
-        for n in self.npattern:
-            excluded = not n.match(path)
-            if excluded:
-                break
-        return excluded
 
     def glob(self):
         """Starts off the glob iterator."""
@@ -347,7 +344,7 @@ class Glob(object):
                     # Make sure case matches, but running case insensitive
                     # on a case sensitive file system may return more than
                     # one starting location.
-                    results = self.get_starting_paths(curdir)
+                    results = self._get_starting_paths(curdir)
                     if not results:
                         # Nothing to do.
                         return
