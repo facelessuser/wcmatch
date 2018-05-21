@@ -52,8 +52,8 @@ setup(
     name='wcmatch',
     python_requires=">=3.4",
     version=VER,
-    keywords='grep search find',
-    description='Wildcard file name matcher.',
+    keywords='glob fnmatch search wildcard',
+    description='Wildcard/glob file name matcher.',
     long_description=get_description(),
     long_description_content_type='text/markdown',
     author='Isaac Muse',
@@ -61,7 +61,6 @@ setup(
     url='https://github.com/facelessuser/wcmatch',
     packages=find_packages(exclude=['tests', 'tools']),
     setup_requires=get_requirements("requirements/setup.txt"),
-    zip_safe=False,
     license='MIT License',
     classifiers=[
         'Development Status :: %s' % DEVSTATUS,
