@@ -408,7 +408,7 @@ def globmatch(filename, patterns, *, flags=0):
     flags = _flag_transform(flags)
     if not _wcparse.is_unix_style(flags):
         filename = util.norm_slash(filename)
-    return _wcparse._compile(util.to_tuple(patterns), flags).match(util.norm_slash(filename))
+    return _wcparse._compile(util.to_tuple(patterns), flags).match(filename)
 
 
 def globfilter(filenames, patterns, *, flags=0):

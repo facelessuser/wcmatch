@@ -94,15 +94,14 @@ def norm_pattern(pattern, normalize, is_raw_chars):
     """
 
     is_bytes = isinstance(pattern, bytes)
-    is_case = is_case_sensitive()
 
-    if is_case and not is_raw_chars:
+    if not normalize and not is_raw_chars:
         return pattern
 
     def norm_char(token):
         """Normalize slash."""
 
-        if not is_case and normalize and token in ('/', b'/'):
+        if normalize and token in ('/', b'/'):
             token = br'\\' if is_bytes else r'\\'
         return token
 
@@ -111,7 +110,7 @@ def norm_pattern(pattern, normalize, is_raw_chars):
 
         if m.group(1):
             char = m.group(1)
-            if not is_case and normalize:
+            if normalize:
                 char = br'\\\\' if is_bytes else r'\\\\' if len(char) > 1 else norm_char(char)
         elif m.group(2):
             char = norm_char(BACK_SLASH_TRANSLATION[m.group(2)] if is_raw_chars else m.group(2))
