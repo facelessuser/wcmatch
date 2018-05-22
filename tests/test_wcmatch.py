@@ -424,24 +424,20 @@ class TestGlob(unittest.TestCase):
             print("TEST: ", result, '<==>', source, '\n')
             self.assertEqual(result, source)
 
-    @mock.patch('wcmatch.util.platform')
     @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_glob_filter(self, mock__iscase_sensitive, mock_platform):
+    def test_glob_filter(self, mock__iscase_sensitive):
         """Test wildcard parsing."""
 
-        mock_platform.return_value = "linux"
         mock__iscase_sensitive.return_value = True
         _wcparse._compile.cache_clear()
 
         for p in self.file_filter:
             self._filter(p)
 
-    @mock.patch('wcmatch.util.platform')
     @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_glob_split_filter(self, mock__iscase_sensitive, mock_platform):
+    def test_glob_split_filter(self, mock__iscase_sensitive):
         """Test wildcard parsing with split."""
 
-        mock_platform.return_value = "linux"
         mock__iscase_sensitive.return_value = True
         _wcparse._compile.cache_clear()
 
@@ -468,8 +464,8 @@ class TestGlob(unittest.TestCase):
 
     @mock.patch('wcmatch.util.platform')
     @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_glob_parsing_windows(self, mock__iscase_sensitive, mock_platform):
-        """Test wildcard parsing."""
+    def test_glob_parsing_win(self, mock__iscase_sensitive, mock_platform):
+        """Test windows style glob parsing."""
 
         mock_platform.return_value = "windows"
         mock__iscase_sensitive.return_value = False
@@ -535,12 +531,10 @@ class TestGlob(unittest.TestCase):
             )
         )
 
-    @mock.patch('wcmatch.util.platform')
     @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_glob_parsing_nix(self, mock__iscase_sensitive, mock_platform):
+    def test_glob_parsing_nix(self, mock__iscase_sensitive):
         """Test wildcard parsing."""
 
-        mock_platform.return_value = "linux"
         mock__iscase_sensitive.return_value = True
         _wcparse._compile.cache_clear()
 
@@ -652,6 +646,7 @@ class TestFnMatch(unittest.TestCase):
         ['[a-z--/A-Z]', '.', True, 0],
 
         ['.abc', '.abc', True, 0],
+        [r'\.abc', '.abc', True, 0],
         ['?abc', '.abc', True, 0],
         ['*abc', '.abc', True, 0],
         ['[.]abc', '.abc', True, 0],
@@ -662,10 +657,12 @@ class TestFnMatch(unittest.TestCase):
 
         "Period",
         ['.abc', '.abc', True, fnmatch.P],
+        [r'\.abc', '.abc', True, fnmatch.P],
         ['?abc', '.abc', False, fnmatch.P],
         ['*abc', '.abc', False, fnmatch.P],
         ['[.]abc', '.abc', False, fnmatch.P],
         ['*(.)abc', '.abc', False, fnmatch.E | fnmatch.P],
+        [r'*(\.)abc', '.abc', False, fnmatch.E | fnmatch.P],
         ['*(?)abc', '.abc', False, fnmatch.E | fnmatch.P],
         ['*(?|.)abc', '.abc', False, fnmatch.E | fnmatch.P],
         ['*(?|*)abc', '.abc', False, fnmatch.E | fnmatch.P],
@@ -674,6 +671,7 @@ class TestFnMatch(unittest.TestCase):
         ['a*bc', 'a.bc', True, fnmatch.P],
         ['a[.]bc', 'a.bc', True, fnmatch.P],
         ['a*(.)bc', 'a.bc', True, fnmatch.E | fnmatch.P],
+        [r'a*(\.)bc', 'a.bc', True, fnmatch.E | fnmatch.P],
         ['a*(?)bc', 'a.bc', True, fnmatch.E | fnmatch.P],
         ['a*(?|.)bc', 'a.bc', True, fnmatch.E | fnmatch.P],
         ['a*(?|*)bc', 'a.bc', True, fnmatch.E | fnmatch.P]

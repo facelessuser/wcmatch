@@ -158,6 +158,12 @@ def get_case(flags):
     return case_sensitive
 
 
+def is_unix_style(flags):
+    """Check if we should use Unix style."""
+
+    return util.platform() != "windows" or get_case(flags)
+
+
 class WcPathSplit(object):
     """
     Split glob pattern on "magic" file and directories.
@@ -388,7 +394,8 @@ class WcSplit(object):
         self.is_bytes = isinstance(pattern, bytes)
         self.pathname = bool(flags & PATHNAME)
         self.extend = bool(flags & EXTGLOB)
-        self.bslash_abort = self.pathname if util.platform() == "windows" else False
+        self.unix = is_unix_style(flags)
+        self.bslash_abort = not self.unix
 
     def _sequence(self, i):
         """Handle fnmatch character group."""
@@ -535,7 +542,8 @@ class WcParse(object):
         self.in_list = False
         self.flags = flags
         self.inv_ext = 0
-        if util.platform() == "windows":
+        self.unix = is_unix_style(self.flags)
+        if not self.unix:
             self.win_drive_detect = self.pathname
             self.char_avoid = (ord('\\'), ord('/'), ord('.'))
             self.bslash_abort = self.pathname
@@ -706,6 +714,8 @@ class WcParse(object):
                 i.rewind(1)
             else:
                 value = re.escape(c)
+        elif self.in_list and not sequence and self.after_start and c == '.':
+            value = _NO_DOT + re.escape(c)
         else:
             # \a, \b, \c, etc.
             value = re.escape(c)
@@ -863,7 +873,7 @@ class WcParse(object):
                 elif c == '*':
                     self._handle_star(i, extended)
                 elif c == '.' and not self.dot and self.after_start:
-                    extended.append(_NO_DOT + c)
+                    extended.append(_NO_DOT + re.escape(c))
                     self.reset_dir_track()
                 elif c == '?':
                     extended.append(self._restrict_sequence() + _QMARK)
@@ -1042,7 +1052,7 @@ class WcParse(object):
         pattern = None
 
         for pat in self.pattern:
-            pat = util.norm_pattern(pat, (self.pathname or not self.case_sensitive), self.raw_chars)
+            pat = util.norm_pattern(pat, not self.unix, self.raw_chars)
 
             for p in (expand_braces(pat) if self.braces else [pat]):
                 p = p.decode('latin-1') if self.is_bytes else p

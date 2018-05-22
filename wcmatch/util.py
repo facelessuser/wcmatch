@@ -83,7 +83,7 @@ def norm_slash(name):
         return name.replace(b'/', b"\\") if not is_case_sensitive() else name
 
 
-def norm_pattern(pattern, is_pathname, is_raw_chars):
+def norm_pattern(pattern, normalize, is_raw_chars):
     r"""
     Normalize pattern.
 
@@ -102,7 +102,7 @@ def norm_pattern(pattern, is_pathname, is_raw_chars):
     def norm_char(token):
         """Normalize slash."""
 
-        if not is_case and is_pathname and token in ('/', b'/'):
+        if not is_case and normalize and token in ('/', b'/'):
             token = br'\\' if is_bytes else r'\\'
         return token
 
@@ -111,7 +111,7 @@ def norm_pattern(pattern, is_pathname, is_raw_chars):
 
         if m.group(1):
             char = m.group(1)
-            if not is_case and is_pathname:
+            if not is_case and normalize:
                 char = br'\\\\' if is_bytes else r'\\\\' if len(char) > 1 else norm_char(char)
         elif m.group(2):
             char = norm_char(BACK_SLASH_TRANSLATION[m.group(2)] if is_raw_chars else m.group(2))

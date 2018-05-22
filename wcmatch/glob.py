@@ -81,14 +81,13 @@ class Glob(object):
         self.negate = bool(self.flags & NEGATE)
         self.globstar = bool(self.flags & _wcparse.GLOBSTAR)
         self.braces = bool(self.flags & _wcparse.BRACE)
-        self.case_sensitive = _wcparse.get_case(self.flags)
+        self.case_sensitive = _wcparse.get_case(self.flags) and not util.platform() == "windows"
         self.is_bytes = isinstance(pattern, bytes)
         self._parse_patterns(pattern)
         if util.platform() == "windows":
             self.sep = (b'\\', '\\')
         else:
             self.sep = (b'/', '/')
-        self.scandir = util.PY36 or (util.PY35 and util.platform() != "windows")
 
     def _parse_patterns(self, pattern):
         """Parse patterns."""
@@ -142,7 +141,6 @@ class Glob(object):
             if excluded:
                 break
         return excluded
-
 
     def _literal_match(self, name):
         """Do a simple match."""
@@ -407,7 +405,10 @@ def globmatch(filename, patterns, *, flags=0):
     but if `case_sensitive` is set, respect that instead.
     """
 
-    return _wcparse._compile(util.to_tuple(patterns), _flag_transform(flags)).match(util.norm_slash(filename))
+    flags = _flag_transform(flags)
+    if not _wcparse.is_unix_style(flags):
+        filename = util.norm_slash(filename)
+    return _wcparse._compile(util.to_tuple(patterns), flags).match(util.norm_slash(filename))
 
 
 def globfilter(filenames, patterns, *, flags=0):
@@ -415,10 +416,13 @@ def globfilter(filenames, patterns, *, flags=0):
 
     matches = []
 
-    obj = _wcparse._compile(util.to_tuple(patterns), _flag_transform(flags))
+    flags = _flag_transform(flags)
+    unix = _wcparse.is_unix_style(flags)
+    obj = _wcparse._compile(util.to_tuple(patterns), flags)
 
     for filename in filenames:
-        filename = util.norm_slash(filename)
+        if not unix:
+            filename = util.norm_slash(filename)
         if obj.match(filename):
             matches.append(filename)
     return matches

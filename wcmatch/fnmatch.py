@@ -78,7 +78,7 @@ def fnmatch(filename, patterns, *, flags=0):
     """
 
     flags = _flag_transform(flags)
-    if not _wcparse.get_case(flags):
+    if not _wcparse.is_unix_style(flags):
         filename = util.norm_slash(filename)
     return _wcparse._compile(util.to_tuple(patterns), flags).match(filename)
 
@@ -89,11 +89,11 @@ def filter(filenames, patterns, *, flags=0):  # noqa A001
     matches = []
 
     flags = _flag_transform(flags)
-    case_sensitive = _wcparse.get_case(flags)
+    unix = _wcparse.is_unix_style(flags)
     obj = _wcparse._compile(util.to_tuple(patterns), flags)
 
     for filename in filenames:
-        if not case_sensitive:
+        if not unix:
             filename = util.norm_slash(filename)
         if obj.match(filename):
             matches.append(filename)
