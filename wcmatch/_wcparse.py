@@ -1044,8 +1044,6 @@ class WcParse(object):
         for pat in self.pattern:
             pat = util.norm_pattern(pat, (self.pathname or not self.case_sensitive), self.raw_chars)
 
-            print('parse: ', pat)
-
             for p in (expand_braces(pat) if self.braces else [pat]):
                 p = p.decode('latin-1') if self.is_bytes else p
                 if self.negate and p[0:1] == self.negate_symbol:
@@ -1080,7 +1078,6 @@ class WcParse(object):
                 pattern = pattern.encode('latin-1')
             if exclude_pattern is not None:
                 exclude_pattern = exclude_pattern.encode('latin-1')
-        print("Regex: ", pattern)
         return pattern, exclude_pattern
 
 
