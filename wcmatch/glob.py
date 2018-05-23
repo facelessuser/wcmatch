@@ -99,7 +99,7 @@ class Glob(object):
             if self.negate and p[0:1] in neg:
                 if self.braces:
                     self.pattern.extend(
-                        _wcparse._compile(util.to_tuple(p), self.flags).split() for x in _wcparse.expand_braces(p)
+                        _wcparse._compile(util.to_tuple(p), self.flags) for x in _wcparse.expand_braces(p)
                     )
                 else:
                     self.npattern.append(

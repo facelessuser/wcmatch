@@ -942,7 +942,6 @@ class WcParse(object):
             success = False
             self.inv_ext = temp_inv_ext
             i.rewind(i.index - index)
-            assert i.index == index, "%d | %d" % (i.index, index)
 
         # Either restore if extend parsing failed, or reset if it worked
         if not temp_in_list:
