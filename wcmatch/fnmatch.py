@@ -24,8 +24,8 @@ from . import util
 from . import _wcparse
 
 __all__ = (
-    "EXTMATCH", "FORCECASE", "IGNORECASE", "RAWCHARS", "NEGATE", "PERIOD", "BRACE",
-    "F", "I", "R", "N", "P", "E",
+    "EXTMATCH", "FORCECASE", "IGNORECASE", "RAWCHARS", "NEGATE", "MINUSNEGATE", "PERIOD", "BRACE",
+    "F", "I", "R", "N", "M", "P", "E",
     "translate", "fnmatch", "filter", "fnsplit"
 )
 
@@ -33,6 +33,7 @@ F = FORCECASE = _wcparse.FORCECASE
 I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
 N = NEGATE = _wcparse.NEGATE
+M = MINUSNEGATE = _wcparse.MINUSNEGATE
 P = PERIOD = _wcparse.DOTGLOB
 E = EXTMATCH = _wcparse.EXTGLOB
 B = BRACE = _wcparse.BRACE
@@ -42,6 +43,7 @@ FLAG_MASK = (
     IGNORECASE |
     RAWCHARS |
     NEGATE |
+    MINUSNEGATE |
     PERIOD |       # Inverse
     EXTMATCH |
     BRACE
@@ -66,7 +68,7 @@ def fnsplit(pattern, *, flags=0):
 def translate(patterns, *, flags=0):
     """Translate fnmatch pattern."""
 
-    return _wcparse.WcParse(util.to_tuple(patterns), _flag_transform(flags)).parse()
+    return _wcparse.translate(patterns, _flag_transform(flags))
 
 
 def fnmatch(filename, patterns, *, flags=0):
@@ -80,7 +82,7 @@ def fnmatch(filename, patterns, *, flags=0):
     flags = _flag_transform(flags)
     if not _wcparse.is_unix_style(flags):
         filename = util.norm_slash(filename)
-    return _wcparse._compile(util.to_tuple(patterns), flags).match(filename)
+    return _wcparse.compile(patterns, flags).match(filename)
 
 
 def filter(filenames, patterns, *, flags=0):  # noqa A001
@@ -90,7 +92,7 @@ def filter(filenames, patterns, *, flags=0):  # noqa A001
 
     flags = _flag_transform(flags)
     unix = _wcparse.is_unix_style(flags)
-    obj = _wcparse._compile(util.to_tuple(patterns), flags)
+    obj = _wcparse.compile(patterns, flags)
 
     for filename in filenames:
         if not unix:

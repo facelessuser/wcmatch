@@ -27,8 +27,8 @@ from . import util
 
 __all__ = (
     "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB",
-    "NOEXTGLOB", "NOGLOBSTAR", "NEGATE", "NOBRACE",
-    "F", "I", "R", "D", "E", "G", "N",
+    "NOEXTGLOB", "NOGLOBSTAR", "NEGATE", "MINUSNEGATE", "NOBRACE",
+    "F", "I", "R", "D", "E", "G", "N", "M",
     "iglob", "glob", "globsplit", "globmatch", "globfilter", "escape"
 )
 
@@ -44,6 +44,7 @@ D = DOTGLOB = _wcparse.DOTGLOB
 E = NOEXTGLOB = _wcparse.EXTGLOB
 G = NOGLOBSTAR = _wcparse.GLOBSTAR
 N = NEGATE = _wcparse.NEGATE
+M = MINUSNEGATE = _wcparse.MINUSNEGATE
 B = NOBRACE = _wcparse.BRACE
 
 FLAG_MASK = (
@@ -54,6 +55,7 @@ FLAG_MASK = (
     NOEXTGLOB |    # Inverse
     NOGLOBSTAR |   # Inverse
     NEGATE |
+    MINUSNEGATE |
     NOBRACE        # Inverse
 )
 
@@ -92,25 +94,17 @@ class Glob(object):
     def _parse_patterns(self, pattern):
         """Parse patterns."""
 
-        neg = (b'-', '-')
         self.pattern = []
         self.npattern = []
         for p in pattern:
-            if self.negate and p[0:1] in neg:
-                if self.braces:
-                    self.pattern.extend(
-                        _wcparse._compile(util.to_tuple(p), self.flags) for x in _wcparse.expand_braces(p)
-                    )
-                else:
-                    self.npattern.append(
-                        _wcparse._compile(util.to_tuple(p), self.flags)
-                    )
-            elif self.braces:
+            if _wcparse.is_negative(p, self.flags):
                 self.pattern.extend(
-                    _wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p)
+                    _wcparse.compile(_wcparse.expand_braces(p, self.flags), self.flags)
                 )
             else:
-                self.pattern.extend(_wcparse.WcPathSplit(p, self.flags).split())
+                self.pattern.extend(
+                    _wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p, self.flags)
+                )
 
     def _is_globstar(self, name):
         """Check if name is a rescursive globstar."""
@@ -211,10 +205,11 @@ class Glob(object):
                             # Quicker to just test this way than to run through fnmatch.
                             if self._is_hidden(f.name):
                                 continue
+                            path = os.path.join(curdir, f.name)
                             if not dir_only or f.is_dir():
-                                yield curdir, f.name
+                                yield path
                             if f.is_dir():
-                                yield from self._glob_deep(os.path.join(curdir, f.name), dir_only)
+                                yield from self._glob_deep(path, dir_only)
                         except OSError:
                             pass
             else:
@@ -225,7 +220,7 @@ class Glob(object):
                     path = os.path.join(curdir, f)
                     is_dir = os.path.isdir(path)
                     if not dir_only or is_dir:
-                        yield curdir, f
+                        yield path
                     if is_dir:
                         yield from self._glob_deep(path, dir_only)
         except OSError:
@@ -268,18 +263,17 @@ class Glob(object):
             while this and not done:
                 if this:
                     dir_only = this.dir_only
-                if this.is_globstar:
+                if this and this.is_globstar:
                     this = rest.pop(0) if rest else None
                 else:
                     done = True
 
             # Glob star directory pattern `**`.
-            for dirname, base in self._glob_deep(curdir, dir_only):
-                path = os.path.join(dirname, base)
+            for path in self._glob_deep(curdir, dir_only):
                 if this:
                     yield from self._glob(path, this, rest[:])
-                elif not this:
-                    yield curdir
+                else:
+                    yield path
 
         elif not dir_only:
             # Files
@@ -314,7 +308,7 @@ class Glob(object):
             basename = os.path.basename(fullpath)
             dirname = os.path.dirname(fullpath)
             if basename:
-                self.set_match(basename)
+                self._set_match(basename)
                 results = [os.path.basename(name) for name in self._glob_shallow(dirname, self)]
 
         return results
@@ -394,7 +388,7 @@ def globsplit(pattern, *, flags=0):
 def translate(patterns, *, flags=0):
     """Translate glob pattern."""
 
-    return _wcparse.WcParse(util.to_tuple(patterns), _flag_transform(flags)).parse()
+    return _wcparse.translate(patterns, _flag_transform(flags))
 
 
 def globmatch(filename, patterns, *, flags=0):
@@ -408,7 +402,7 @@ def globmatch(filename, patterns, *, flags=0):
     flags = _flag_transform(flags)
     if not _wcparse.is_unix_style(flags):
         filename = util.norm_slash(filename)
-    return _wcparse._compile(util.to_tuple(patterns), flags).match(filename)
+    return _wcparse.compile(patterns, flags).match(filename)
 
 
 def globfilter(filenames, patterns, *, flags=0):
@@ -418,7 +412,7 @@ def globfilter(filenames, patterns, *, flags=0):
 
     flags = _flag_transform(flags)
     unix = _wcparse.is_unix_style(flags)
-    obj = _wcparse._compile(util.to_tuple(patterns), flags)
+    obj = _wcparse.compile(patterns, flags)
 
     for filename in filenames:
         if not unix:

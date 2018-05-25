@@ -21,7 +21,6 @@ CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFT
 IN THE SOFTWARE.
 """
 import re
-import copyreg
 import functools
 import bracex
 from collections import namedtuple
@@ -32,22 +31,26 @@ RE_MAGIC = re.compile(r'([-!*?(\[|^{\\])')
 RE_BMAGIC = re.compile(r'([-!*?(\[|^{\\])')
 
 SET_OPERATORS = frozenset(('&', '~', '|'))
+NEGATIVE_SYM = frozenset((b'!', '!'))
+MINUS_NEGATIVE_SYM = frozenset((b'-', '-'))
 
-F = FORCECASE = 0x0001
-I = IGNORECASE = 0x0002
-R = RAWCHARS = 0x0004
-N = NEGATE = 0x0008
-P = PATHNAME = 0x0010
-D = DOTGLOB = 0x0020
-E = EXTGLOB = 0x0040
-G = GLOBSTAR = 0x0080
-B = BRACE = 0x0200
+FORCECASE = 0x0001
+IGNORECASE = 0x0002
+RAWCHARS = 0x0004
+NEGATE = 0x0008
+MINUSNEGATE = 0x0010
+PATHNAME = 0x0020
+DOTGLOB = 0x0040
+EXTGLOB = 0x0080
+GLOBSTAR = 0x0100
+BRACE = 0x0200
 
 FLAG_MASK = (
     FORCECASE |
     IGNORECASE |
     RAWCHARS |
     NEGATE |
+    MINUSNEGATE |
     PATHNAME |
     DOTGLOB |
     EXTGLOB |
@@ -123,27 +126,27 @@ class PathNameException(Exception):
     """Path name exception."""
 
 
-@functools.lru_cache(maxsize=256, typed=True)
-def _compile(patterns, flags):
-    """Compile patterns."""
+def is_negative(pattern, flags):
+    """Check if negative pattern."""
 
-    p1, p2 = WcParse(patterns, flags & FLAG_MASK).parse()
-
-    if p1 is not None:
-        p1 = re.compile(p1)
-    if p2 is not None:
-        p2 = re.compile(p2)
-    return WcRegexp(p1, p2)
+    if flags & MINUSNEGATE:
+        return flags & NEGATE and pattern[0:1] in MINUS_NEGATIVE_SYM
+    else:
+        return flags & NEGATE and pattern[0:1] in NEGATIVE_SYM
 
 
-def expand_braces(pattern):
+def expand_braces(patterns, flags):
     """Expand braces."""
 
-    try:
-        expanded = bracex.expand(pattern, keep_escapes=True)
-    except Exception as e:
-        expanded = [pattern]
-    return expanded
+    if flags & BRACE:
+        for p in ([patterns] if isinstance(patterns, (str, bytes)) else patterns):
+            try:
+                yield from bracex.iexpand(p, keep_escapes=True)
+            except Exception as e:
+                yield p
+    else:
+        for p in ([patterns] if isinstance(patterns, (str, bytes)) else patterns):
+            yield p
 
 
 def get_case(flags):
@@ -162,6 +165,56 @@ def is_unix_style(flags):
     """Check if we should use Unix style."""
 
     return util.platform() != "windows" or get_case(flags)
+
+
+def translate(patterns, flags):
+    """Translate patterns."""
+
+    positive = []
+    negative = []
+    if isinstance(patterns, (str, bytes)):
+        patterns = [patterns]
+    is_bytes = isinstance(patterns[0], bytes)
+
+    if util.PY36:
+        any_name = br'^(?s:.*?)$' if is_bytes else r'^(?s:.*?)$'
+    else:
+        any_name = br'(?ms)^(?:.*?)$' if is_bytes else r'(?ms)^(?:.*?)$'
+
+    for pattern in patterns:
+        for expanded in expand_braces(pattern, flags):
+            (negative if is_negative(expanded, flags) else positive).append(WcParse(pattern, flags & FLAG_MASK).parse())
+
+    if negative and not positive:
+        positive.append(any_name)
+
+    return positive, negative
+
+
+def compile(patterns, flags, translate=False):  # noqa A001
+    """Compile patterns."""
+
+    positive = []
+    negative = []
+    if isinstance(patterns, (str, bytes)):
+        patterns = [patterns]
+    is_bytes = isinstance(patterns[0], bytes)
+
+    for pattern in patterns:
+        for expanded in expand_braces(pattern, flags):
+            (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
+
+    if negative and not positive:
+        positive.append(re.compile(br'^.*?$' if is_bytes else r'^.*?$'))
+
+    return WcRegexp(tuple(positive), tuple(negative))
+
+
+@functools.lru_cache(maxsize=256, typed=True)
+def _compile(pattern, flags):
+    """Compile the pattern to regex."""
+
+    return re.compile(WcParse(pattern, flags & FLAG_MASK).parse())
 
 
 class WcPathSplit(object):
@@ -193,10 +246,12 @@ class WcPathSplit(object):
         """Initialize."""
 
         self.flags = flags
-        self.negate = flags & NEGATE
-        if self.negate:
-            self.flags ^= NEGATE
-        self.pattern = util.norm_pattern(pattern, True, self.flags & RAWCHARS)
+        self.pattern = util.norm_pattern(pattern, True, flags & RAWCHARS)
+        if is_negative(self.pattern, flags):
+            self.pattern = self.pattern[0:1]
+        if flags & NEGATE:
+            flags ^= NEGATE
+        self.flags = flags
         self.is_bytes = isinstance(pattern, bytes)
         self.extend = bool(flags & EXTGLOB)
         if util.platform() == "windows":
@@ -305,7 +360,7 @@ class WcPathSplit(object):
         globstar = value == '**'
         magic = self.is_magic(value)
         if magic:
-            value = _compile(util.to_tuple(value), self.flags)
+            value = compile(value, self.flags)
         l.append(WcGlob(value, magic, globstar, dir_only))
 
     def split(self):
@@ -319,12 +374,6 @@ class WcPathSplit(object):
 
         i = util.StringIter(pattern)
         iter(i)
-
-        # Strip inverse symbol as we don't care about it
-        # The caller should detect and do something with this
-        # before calling.
-        if self.negate and pattern[0:1] == '-':
-            pattern = pattern[1:]
 
         # Detect and store away windows drive as a literal
         if self.win_drive_detect:
@@ -507,17 +556,13 @@ class WcSplit(object):
 
         start = -1
         for split in split_index:
-            if self.is_bytes:
-                parts.append(pattern[start + 1:split].encode('latin-1'))
-            else:
-                parts.append(pattern[start + 1:split])
+            p = pattern[start + 1:split]
+            parts.append(p.encode('latin-1') if self.is_bytes else p)
             start = split
 
         if start < len(pattern):
-            if self.is_bytes:
-                parts.append(pattern[start + 1:].encode('latin-1'))
-            else:
-                parts.append(pattern[start + 1:])
+            p = pattern[start + 1:]
+            parts.append(p.encode('latin-1') if self.is_bytes else p)
 
         return tuple(parts)
 
@@ -530,9 +575,7 @@ class WcParse(object):
 
         self.pattern = pattern
         self.braces = bool(flags & BRACE)
-        self.negate_symbol = '-'
-        self.is_bytes = isinstance(pattern[0], bytes)
-        self.negate = bool(flags & NEGATE)
+        self.is_bytes = isinstance(pattern, bytes)
         self.pathname = bool(flags & PATHNAME)
         self.raw_chars = bool(flags & RAWCHARS)
         self.globstar = self.pathname and bool(flags & GLOBSTAR)
@@ -1043,51 +1086,26 @@ class WcParse(object):
     def parse(self):
         """Parse pattern list."""
 
-        result = []
-        exclude_result = []
-        empty_include = True
-        empty_exclude = True
-        exclude_pattern = None
-        pattern = None
+        result = ['']
 
-        for pat in self.pattern:
-            pat = util.norm_pattern(pat, not self.unix, self.raw_chars)
+        p = util.norm_pattern(self.pattern, not self.unix, self.raw_chars)
 
-            for p in (expand_braces(pat) if self.braces else [pat]):
-                p = p.decode('latin-1') if self.is_bytes else p
-                if self.negate and p[0:1] == self.negate_symbol:
-                    current = exclude_result
-                    p = p[1:]
-                    current.append('|' if not empty_exclude else '')
-                else:
-                    current = result
-                    current.append('|' if not empty_include else '')
+        p = p.decode('latin-1') if self.is_bytes else p
+        if is_negative(p, self.flags):
+            p = p[1:]
 
-                if current is result:
-                    empty_include = False
-                else:
-                    empty_exclude = False
+        self.root(p, result)
 
-                self.root(p, current)
-
-        if exclude_result and not result:
-            result.append('.*?')
         case_flag = 'i' if not self.case_sensitive else ''
         if util.PY36:
             pattern = r'^(?s%s:%s)$' % (case_flag, ''.join(result))
-            if exclude_result:
-                exclude_pattern = r'^(?s%s:%s)$' % (case_flag, ''.join(exclude_result))
         else:
             pattern = r'(?ms%s)^(?:%s)$' % (case_flag, ''.join(result))
-            if exclude_result:
-                exclude_pattern = r'(?ms%s)^(?:%s)$' % (case_flag, ''.join(exclude_result))
 
         if self.is_bytes:
-            if pattern is not None:
-                pattern = pattern.encode('latin-1')
-            if exclude_pattern is not None:
-                exclude_pattern = exclude_pattern.encode('latin-1')
-        return pattern, exclude_pattern
+            pattern = pattern.encode('latin-1')
+
+        return pattern
 
 
 class WcRegexp(util.Immutable):
@@ -1130,14 +1148,14 @@ class WcRegexp(util.Immutable):
     def match(self, filename):
         """Match filename."""
 
-        valid = self._include.fullmatch(filename) is not None
-        if valid and self._exclude is not None and self._exclude.fullmatch(filename) is not None:
-            valid = False
-        return valid
-
-
-def _pickle(p):
-    return WcRegexp, (p._include, p._exclude)
-
-
-copyreg.pickle(WcRegexp, _pickle)
+        matched = False
+        for x in self._include:
+            if x.fullmatch(filename):
+                matched = True
+                break
+        if matched:
+            for x in self._exclude:
+                if x.fullmatch(filename):
+                    matched = False
+                    break
+        return matched

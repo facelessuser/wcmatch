@@ -26,8 +26,8 @@ from . import _wcparse
 from . import util
 
 __all__ = (
-    "FORCECASE", "IGNORECASE", "RAWCHARS", "PATHNAME", "EXTGLOB", "GLOBSTAR", "BRACE",
-    "F", "I", "R", "P", "E", "G",
+    "FORCECASE", "IGNORECASE", "RAWCHARS", "PATHNAME", "EXTGLOB", "GLOBSTAR", "BRACE", "MINUSNEGATE",
+    "F", "I", "R", "P", "E", "G", "M",
     "WcMatch"
 )
 
@@ -38,6 +38,7 @@ P = PATHNAME = _wcparse.PATHNAME
 E = EXTGLOB = _wcparse.EXTGLOB
 G = GLOBSTAR = _wcparse.GLOBSTAR
 B = BRACE = _wcparse.BRACE
+M = MINUSNEGATE = _wcparse.MINUSNEGATE
 
 FLAG_MASK = (
     FORCECASE |
@@ -46,7 +47,8 @@ FLAG_MASK = (
     PATHNAME |
     EXTGLOB |
     GLOBSTAR |
-    BRACE
+    BRACE |
+    MINUSNEGATE
 )
 
 
@@ -81,8 +83,8 @@ class WcMatch(object):
         if self.pathname:
             flags |= PATHNAME
         if pattern:
-            patterns = tuple(_wcparse.WcSplit(pattern, flags=self.flags).split())
-        return _wcparse._compile(patterns, self.flags) if patterns else patterns
+            patterns = _wcparse.WcSplit(pattern, flags=self.flags).split()
+        return _wcparse.compile(patterns, self.flags) if patterns else patterns
 
     def _compile(self, file_pattern, folder_exclude_pattern):
         """Compile patterns."""
