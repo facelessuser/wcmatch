@@ -22,6 +22,7 @@ IN THE SOFTWARE.
 """
 import os
 import sys
+import functools
 from . import _wcparse
 from . import util
 
@@ -139,31 +140,12 @@ class Glob(object):
                 break
         return excluded
 
-    def _literal_match(self, name):
-        """Do a simple match."""
+    def _match_literal(self, a, b=''):
+        """Match two names."""
 
-        if not self.case_sensitive:
-            return name.lower() == self._match
-        else:
-            return name == self._match
+        return a.lower() == b if not self.case_sensitive else a == b
 
-    def _set_match(self, match):
-        """Set the match."""
-
-        if match is None:
-            self._matcher = None
-        elif isinstance(match, (str, bytes)):
-            # Plain text match
-            if not self.case_sensitive:
-                self._match = match.lower()
-            else:
-                self._match = match
-            self._matcher = self._literal_match
-        else:
-            # File match pattern
-            self._matcher = match.match
-
-    def _get_deep_match(self, target):
+    def _get_matcher(self, target):
         """Get deep match."""
 
         if target is None:
@@ -174,13 +156,13 @@ class Glob(object):
                 match = target.lower()
             else:
                 match = target
-            matcher = lambda name: name.lower() == match if not self.case_sensitive else name == match
+            matcher = functools.partial(self._match_literal, b=match)
         else:
             # File match pattern
             matcher = target.match
         return matcher
 
-    def _glob_shallow(self, curdir, dir_only=False):
+    def _glob_shallow(self, curdir, matcher, dir_only=False):
         """Non recursive directory glob."""
 
         scandir = '.' if not curdir else curdir
@@ -188,7 +170,7 @@ class Glob(object):
         # Python will never return . or .., so fake it.
         if os.path.isdir(scandir):
             for special in self.specials:
-                if self._matcher(special):
+                if matcher(special):
                     yield os.path.join(curdir, special)
 
         try:
@@ -199,14 +181,14 @@ class Glob(object):
                 with os.scandir(scandir) as scan:
                     for f in scan:
                         try:
-                            if (not dir_only or f.is_dir()) and self._matcher(f.name):
+                            if (not dir_only or f.is_dir()) and matcher(f.name):
                                 yield os.path.join(curdir, f.name)
                         except OSError:
                             pass
             else:
                 for f in os.listdir(scandir):
                     is_dir = os.path.isdir(os.path.join(curdir, f))
-                    if (not dir_only or is_dir) and self._matcher(f):
+                    if (not dir_only or is_dir) and matcher(f):
                         yield os.path.join(curdir, f)
         except OSError:
             pass
@@ -304,7 +286,7 @@ class Glob(object):
 
             this = rest.pop(0) if rest else None
 
-            matcher = self._get_deep_match(target)
+            matcher = self._get_matcher(target)
             # Glob star directory pattern `**`.
             for path in self._glob_deep(curdir, matcher, dir_only):
                 if this:
@@ -314,15 +296,15 @@ class Glob(object):
 
         elif not dir_only:
             # Files
-            self._set_match(target)
-            yield from self._glob_shallow(curdir)
+            matcher = self._get_matcher(target)
+            yield from self._glob_shallow(curdir, matcher)
 
         else:
             this = rest.pop(0) if rest else None
 
             # Normal directory
-            self._set_match(target)
-            for path in self._glob_shallow(curdir, True):
+            matcher = self._get_matcher(target)
+            for path in self._glob_shallow(curdir, matcher, True):
                 if this:
                     yield from self._glob(path, this, rest[:])
                 else:
@@ -345,8 +327,8 @@ class Glob(object):
             basename = os.path.basename(fullpath)
             dirname = os.path.dirname(fullpath)
             if basename:
-                self._set_match(basename)
-                results = [os.path.basename(name) for name in self._glob_shallow(dirname, self)]
+                matcher = self._get_matcher(basename)
+                results = [os.path.basename(name) for name in self._glob_shallow(dirname, matcher, self)]
 
         return results
 

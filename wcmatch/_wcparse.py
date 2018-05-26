@@ -177,7 +177,9 @@ def translate(patterns, flags):
 
     for pattern in patterns:
         for expanded in expand_braces(pattern, flags):
-            (negative if is_negative(expanded, flags) else positive).append(WcParse(expanded, flags & FLAG_MASK).parse())
+            (negative if is_negative(expanded, flags) else positive).append(
+                WcParse(expanded, flags & FLAG_MASK).parse()
+            )
 
     return positive, negative
 
