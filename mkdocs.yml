@@ -24,6 +24,8 @@ theme:
 
 pages:
   - Wildcard Match: index.md
+  - Fnmatch: fnmatch.md
+  - Glob: glob.md
   - Changelog: changelog.md
   - License: license.md
 
