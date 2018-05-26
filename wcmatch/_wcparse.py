@@ -174,19 +174,10 @@ def translate(patterns, flags):
     negative = []
     if isinstance(patterns, (str, bytes)):
         patterns = [patterns]
-    is_bytes = isinstance(patterns[0], bytes)
-
-    if util.PY36:
-        any_name = br'^(?s:.*?)$' if is_bytes else r'^(?s:.*?)$'
-    else:
-        any_name = br'(?ms)^(?:.*?)$' if is_bytes else r'(?ms)^(?:.*?)$'
 
     for pattern in patterns:
         for expanded in expand_braces(pattern, flags):
             (negative if is_negative(expanded, flags) else positive).append(WcParse(pattern, flags & FLAG_MASK).parse())
-
-    if negative and not positive:
-        positive.append(any_name)
 
     return positive, negative
 
@@ -198,14 +189,10 @@ def compile(patterns, flags, translate=False):  # noqa A001
     negative = []
     if isinstance(patterns, (str, bytes)):
         patterns = [patterns]
-    is_bytes = isinstance(patterns[0], bytes)
 
     for pattern in patterns:
         for expanded in expand_braces(pattern, flags):
             (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
-
-    if negative and not positive:
-        positive.append(re.compile(br'^.*?$' if is_bytes else r'^.*?$'))
 
     return WcRegexp(tuple(positive), tuple(negative))
 
@@ -1087,20 +1074,22 @@ class WcParse(object):
         """Parse pattern list."""
 
         result = ['']
+        negative = False
 
         p = util.norm_pattern(self.pattern, not self.unix, self.raw_chars)
 
         p = p.decode('latin-1') if self.is_bytes else p
         if is_negative(p, self.flags):
+            negative = True
             p = p[1:]
 
         self.root(p, result)
 
         case_flag = 'i' if not self.case_sensitive else ''
         if util.PY36:
-            pattern = r'^(?s%s:%s)$' % (case_flag, ''.join(result))
+            pattern = (r'^(?!(?s%s:%s)).*?$' if negative else r'^(?s%s:%s)$') % (case_flag, ''.join(result))
         else:
-            pattern = r'(?ms%s)^(?:%s)$' % (case_flag, ''.join(result))
+            pattern = (r'(?s%s)^(?!(?:%s)).*?$' if negative else r'(?s%s)^(?:%s)$') % (case_flag, ''.join(result))
 
         if self.is_bytes:
             pattern = pattern.encode('latin-1')
@@ -1153,9 +1142,14 @@ class WcRegexp(util.Immutable):
             if x.fullmatch(filename):
                 matched = True
                 break
+
+        if not self._include and self._exclude:
+            matched = True
+
         if matched:
+            matched = True
             for x in self._exclude:
-                if x.fullmatch(filename):
+                if not x.fullmatch(filename):
                     matched = False
                     break
         return matched

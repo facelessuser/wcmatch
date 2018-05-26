@@ -84,7 +84,7 @@ class Glob(object):
         self.globstar = bool(self.flags & _wcparse.GLOBSTAR)
         self.braces = bool(self.flags & _wcparse.BRACE)
         self.case_sensitive = _wcparse.get_case(self.flags) and not util.platform() == "windows"
-        self.is_bytes = isinstance(pattern, bytes)
+        self.is_bytes = isinstance(pattern[0], bytes)
         self._parse_patterns(pattern)
         if util.platform() == "windows":
             self.sep = (b'\\', '\\')
@@ -98,13 +98,15 @@ class Glob(object):
         self.npattern = []
         for p in pattern:
             if _wcparse.is_negative(p, self.flags):
-                self.pattern.extend(
-                    _wcparse.compile(_wcparse.expand_braces(p, self.flags), self.flags)
+                self.npattern.append(
+                    _wcparse.compile(list(_wcparse.expand_braces(p, self.flags)), self.flags)
                 )
             else:
                 self.pattern.extend(
                     _wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p, self.flags)
                 )
+        if not self.pattern and self.npattern:
+            self.pattern.append(_wcparse.WcPathSplit((b'**' if self.is_bytes else '**'), self.flags).split())
 
     def _is_globstar(self, name):
         """Check if name is a rescursive globstar."""
