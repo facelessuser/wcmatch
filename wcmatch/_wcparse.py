@@ -177,7 +177,7 @@ def translate(patterns, flags):
 
     for pattern in patterns:
         for expanded in expand_braces(pattern, flags):
-            (negative if is_negative(expanded, flags) else positive).append(WcParse(pattern, flags & FLAG_MASK).parse())
+            (negative if is_negative(expanded, flags) else positive).append(WcParse(expanded, flags & FLAG_MASK).parse())
 
     return positive, negative
 
@@ -232,8 +232,9 @@ class WcPathSplit(object):
     def __init__(self, pattern, flags):
         """Initialize."""
 
+        self.unix = util.platform() != "windows"
         self.flags = flags
-        self.pattern = util.norm_pattern(pattern, True, flags & RAWCHARS)
+        self.pattern = util.norm_pattern(pattern, not self.unix, flags & RAWCHARS)
         if is_negative(self.pattern, flags):
             self.pattern = self.pattern[0:1]
         if flags & NEGATE:
@@ -241,7 +242,7 @@ class WcPathSplit(object):
         self.flags = flags
         self.is_bytes = isinstance(pattern, bytes)
         self.extend = bool(flags & EXTGLOB)
-        if util.platform() == "windows":
+        if not self.unix:
             self.win_drive_detect = True
             self.bslash_abort = True
             self.sep = '\\'

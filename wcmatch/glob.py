@@ -85,6 +85,7 @@ class Glob(object):
         self.braces = bool(self.flags & _wcparse.BRACE)
         self.case_sensitive = _wcparse.get_case(self.flags) and not util.platform() == "windows"
         self.is_bytes = isinstance(pattern[0], bytes)
+        self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
         self._parse_patterns(pattern)
         if util.platform() == "windows":
             self.sep = (b'\\', '\\')
@@ -149,7 +150,9 @@ class Glob(object):
     def _set_match(self, match):
         """Set the match."""
 
-        if isinstance(match, (str, bytes)):
+        if match is None:
+            self._matcher = None
+        elif isinstance(match, (str, bytes)):
             # Plain text match
             if not self.case_sensitive:
                 self._match = match.lower()
@@ -160,6 +163,23 @@ class Glob(object):
             # File match pattern
             self._matcher = match.match
 
+    def _get_deep_match(self, target):
+        """Get deep match."""
+
+        if target is None:
+            matcher = None
+        elif isinstance(target, (str, bytes)):
+            # Plain text match
+            if not self.case_sensitive:
+                match = target.lower()
+            else:
+                match = target
+            matcher = lambda name: name.lower() == match if not self.case_sensitive else name == match
+        else:
+            # File match pattern
+            matcher = target.match
+        return matcher
+
     def _glob_shallow(self, curdir, dir_only=False):
         """Non recursive directory glob."""
 
@@ -167,7 +187,7 @@ class Glob(object):
 
         # Python will never return . or .., so fake it.
         if os.path.isdir(scandir):
-            for special in ('.', '..'):
+            for special in self.specials:
                 if self._matcher(special):
                     yield os.path.join(curdir, special)
 
@@ -191,10 +211,16 @@ class Glob(object):
         except OSError:
             pass
 
-    def _glob_deep(self, curdir, dir_only=False):
+    def _glob_deep(self, curdir, matcher, dir_only=False):
         """Recursive directory glob."""
 
         scandir = '.' if not curdir else curdir
+
+        # Python will never return . or .., so fake it.
+        if os.path.isdir(scandir) and matcher is not None:
+            for special in self.specials:
+                if matcher(special):
+                    yield os.path.join(curdir, special)
 
         try:
             if NO_SCANDIR_WORKAROUND:
@@ -208,10 +234,16 @@ class Glob(object):
                             if self._is_hidden(f.name):
                                 continue
                             path = os.path.join(curdir, f.name)
-                            if not dir_only or f.is_dir():
-                                yield path
-                            if f.is_dir():
-                                yield from self._glob_deep(path, dir_only)
+                            if matcher is None:
+                                if (not dir_only or f.is_dir()):
+                                    yield path
+                                if f.is_dir():
+                                    yield from self._glob_deep(path, matcher, dir_only)
+                            else:
+                                if (not dir_only or f.is_dir()) and matcher(f.name):
+                                    yield path
+                                if f.is_dir():
+                                    yield from self._glob_deep(path, matcher, dir_only)
                         except OSError:
                             pass
             else:
@@ -221,10 +253,16 @@ class Glob(object):
                         continue
                     path = os.path.join(curdir, f)
                     is_dir = os.path.isdir(path)
-                    if not dir_only or is_dir:
-                        yield path
-                    if is_dir:
-                        yield from self._glob_deep(path, dir_only)
+                    if matcher is None:
+                        if (not dir_only or is_dir):
+                            yield path
+                        if is_dir:
+                            yield from self._glob_deep(path, matcher, dir_only)
+                    else:
+                        if (not dir_only or is_dir) and matcher(f):
+                            yield path
+                        if is_dir:
+                            yield from self._glob_deep(path, matcher, dir_only)
         except OSError:
             pass
 
@@ -247,31 +285,28 @@ class Glob(object):
         target = this.pattern
         is_globstar = this.is_globstar
 
-        # File (arrives via a _glob_deep)
-        # We don't normally feed files through here,
-        # but glob_deep sends evereything through here
-        # if a next target is available.
-        if not os.path.isdir(curdir) and os.path.lexists(curdir):
-            self._set_match(target)
-            if self._matcher(curdir):
-                yield curdir
-
         # Directories
-        elif is_magic and is_globstar:
+        if is_magic and is_globstar:
             this = rest.pop(0) if rest else None
 
             # Throw away multiple consecutive globstars
-            done = False
+            done = this is None
+            if done:
+                target = None
             while this and not done:
                 if this:
                     dir_only = this.dir_only
+                    target = this.pattern
                 if this and this.is_globstar:
                     this = rest.pop(0) if rest else None
                 else:
                     done = True
 
+            this = rest.pop(0) if rest else None
+
+            matcher = self._get_deep_match(target)
             # Glob star directory pattern `**`.
-            for path in self._glob_deep(curdir, dir_only):
+            for path in self._glob_deep(curdir, matcher, dir_only):
                 if this:
                     yield from self._glob(path, this, rest[:])
                 else:
