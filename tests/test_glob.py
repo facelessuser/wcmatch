@@ -45,8 +45,7 @@ def change_cwd(path, quiet=False):
     except OSError as exc:
         if not quiet:
             raise
-        warnings.warn(f'tests may fail, unable to change the current working '
-                      f'directory to {path!r}: {exc}',
+        warnings.warn('tests may fail, unable to change CWD to: ' + path,
                       RuntimeWarning, stacklevel=3)
     try:
         yield os.getcwd()
@@ -105,8 +104,8 @@ class GlobTests(unittest.TestCase):
 
     def globjoin(self, *parts):
         """Joins glob path."""
-
-        return self.globsep.join(list(parts))
+        sep = os.fsencode(self.globsep) if isinstance(parts[0], bytes) else self.globsep
+        return sep.join(list(parts))
 
     def joins(self, *tuples):
         """Joins path."""
@@ -183,12 +182,12 @@ class GlobTests(unittest.TestCase):
 
         res = glob.glob('*')
         self.assertEqual({type(r) for r in res}, {str})
-        res = glob.glob(os.path.join(os.curdir, '*'))
+        res = glob.glob(self.globjoin(os.curdir, '*'))
         self.assertEqual({type(r) for r in res}, {str})
 
         res = glob.glob(b'*')
         self.assertEqual({type(r) for r in res}, {bytes})
-        res = glob.glob(os.path.join(os.fsencode(os.curdir), b'*'))
+        res = glob.glob(self.globjoin(os.fsencode(os.curdir), b'*'))
         self.assertEqual({type(r) for r in res}, {bytes})
 
     def test_glob_one_directory(self):
@@ -383,23 +382,23 @@ class GlobTests(unittest.TestCase):
         with change_cwd(self.tempdir):
             join = os.path.join
             eq(glob.glob('**'), [join(*i) for i in full])
-            eq(glob.glob(join('**', '')),
+            eq(glob.glob(self.globjoin('**', '')),
                 [join(*i) for i in dirs])
-            eq(glob.glob(join('**', '*')),
+            eq(glob.glob(self.globjoin('**', '*')),
                 [join(*i) for i in full])
-            eq(glob.glob(join(os.curdir, '**')),
+            eq(glob.glob(self.globjoin(os.curdir, '**')),
                 [join(os.curdir, '')] + [join(os.curdir, *i) for i in full])
-            eq(glob.glob(join(os.curdir, '**', '')),
+            eq(glob.glob(self.globjoin(os.curdir, '**', '')),
                 [join(os.curdir, '')] + [join(os.curdir, *i) for i in dirs])
-            eq(glob.glob(join(os.curdir, '**', '*')),
+            eq(glob.glob(self.globjoin(os.curdir, '**', '*')),
                 [join(os.curdir, *i) for i in full])
-            eq(glob.glob(join('**', 'zz*F')),
+            eq(glob.glob(self.globjoin('**', 'zz*F')),
                 [join('aaa', 'zzzF')])
             eq(glob.glob('**zz*F'), [])
             expect = [join('a', 'bcd', 'EF'), 'EF']
             if can_symlink():
                 expect += [join('sym3', 'EF')]
-            eq(glob.glob(join('**', 'EF')), expect)
+            eq(glob.glob(self.globjoin('**', 'EF')), expect)
 
 
 @skip_unless_symlink

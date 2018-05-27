@@ -462,7 +462,7 @@ def escape(pattern):
     # detect and undo it later.
     drive = b'' if is_bytes else ''
     if util.platform() == "windows":
-        m = _wcparse.RE_WIN_PATH.match(pattern)
+        m = (_wcparse.RE_BWIN_PATH if is_bytes else _wcparse.RE_WIN_PATH).match(pattern)
         if m:
             drive = m.group(0)
     pattern = pattern[len(drive):]

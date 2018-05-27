@@ -27,6 +27,7 @@ from collections import namedtuple
 from . import util
 
 RE_WIN_PATH = re.compile(r'(\\{4}[^\\]+\\{2}[^\\]+|[a-z]:)(\\{2}|$)')
+RE_BWIN_PATH = re.compile(br'(\\{4}[^\\]+\\{2}[^\\]+|[a-z]:)(\\{2}|$)')
 RE_MAGIC = re.compile(r'([-!*?(\[|^{\\])')
 RE_BMAGIC = re.compile(br'([-!*?(\[|^{\\])')
 
