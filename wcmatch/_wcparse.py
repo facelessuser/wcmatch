@@ -26,8 +26,10 @@ import bracex
 from collections import namedtuple
 from . import util
 
-RE_WIN_PATH = re.compile(r'(\\{4}[^\\]+\\{2}[^\\]+|[a-z]:)(\\{2}|$)')
-RE_BWIN_PATH = re.compile(br'(\\{4}[^\\]+\\{2}[^\\]+|[a-z]:)(\\{2}|$)')
+RE_WIN_PATH = re.compile(r'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)')
+RE_BWIN_PATH = re.compile(br'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)')
+RE_WIN_MAGIC = re.compile(r'([-!*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
+RE_BWIN_MAGIC = re.compile(br'([-!*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
 RE_MAGIC = re.compile(r'([-!*?(\[|^{\\])')
 RE_BMAGIC = re.compile(br'([-!*?(\[|^{\\])')
 
@@ -119,7 +121,7 @@ class InvPlaceholder(str):
     """Placeholder for inverse pattern !(...)."""
 
 
-class WcGlob(namedtuple('WcGlob', ['pattern', 'is_magic', 'is_globstar', 'dir_only'])):
+class WcGlob(namedtuple('WcGlob', ['pattern', 'is_magic', 'is_globstar', 'dir_only', 'is_drive'])):
     """File Glob."""
 
 
@@ -253,8 +255,10 @@ class WcPathSplit(object):
             self.win_drive_detect = False
             self.bslash_abort = False
             self.sep = '/'
-        self.magic = False
+        # Once split, Windows file names will never have `\\` in them,
+        # so we can use the unix matgic detect
         self.re_magic = RE_MAGIC if not self.is_bytes else RE_BMAGIC
+        self.magic = False
 
     def is_magic(self, name):
         """Check if name contains magic characters."""
@@ -352,7 +356,7 @@ class WcPathSplit(object):
         magic = self.is_magic(value)
         if magic:
             value = compile(value, self.flags)
-        l.append(WcGlob(value, magic, globstar, dir_only))
+        l.append(WcGlob(value, magic, globstar, dir_only, False))
 
     def split(self):
         """Start parsing the pattern."""
@@ -371,11 +375,9 @@ class WcPathSplit(object):
             m = RE_WIN_PATH.match(pattern)
             if m:
                 drive = m.group(0).replace('\\\\', '\\')
-                dir_only = drive.endswith('\\')
-                drive = drive.rstrip('\\')
                 if self.is_bytes:
                     drive = drive.encode('latin-1')
-                parts.append(WcGlob(drive, False, False, dir_only))
+                parts.append(WcGlob(drive, False, False, True, True))
                 start = m.end(0) - 1
                 i.advance(start + 1)
 
@@ -419,7 +421,7 @@ class WcPathSplit(object):
             if value:
                 self.store(value, parts, False)
         if len(pattern) == 0:
-            parts.append(WcGlob(pattern.encode('latin-1') if self.is_bytes else pattern, False, False, False))
+            parts.append(WcGlob(pattern.encode('latin-1') if self.is_bytes else pattern, False, False, False, False))
 
         return parts
 

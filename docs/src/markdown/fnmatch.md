@@ -1,5 +1,9 @@
 # wcmatch.fnmatch
 
+```py3
+from wcmatch import fnmatch
+```
+
 ## Syntax
 
 Fnmatch is similar to the builtin fnmatch, but with some enhancements. It is mainly used for matching file names with glob patterns. Fnmatch is targeted at matching file names, not pathnames. For pathnames, [glob.globmatch](glob#globglobmatch) is a more appropriate choice. Not all of the features listed below are enabled by default. See [flags](#flags) for more information.
@@ -19,8 +23,8 @@ Pattern           | Meaning
 `!(pattern_list)` | The pattern matches if the input string cannot be matched with any of the patterns in the `pattern_list`.
 `{}`              | Bash style brace expansions.  This is applied to patterns before anything else.
 
-- Slashes are generally treated as normal characters, but on windows they will be normalized: `/` will become `\\`.
-- If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern will be treated as a Linux/Unix path.
+- Slashes are generally treated as normal characters, but on windows they will be normalized: `/` will become `\\`. There is no need to explicitly use `\\` in patterns on Windows, but if you do, it will be handled.  This applies to matching patterns and the file names the patterns are applied to.
+- If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern and file names will be treated as a Linux/Unix path.
 - For `glob` there are additional Windows drive consideration. Check out [`glob`](glob#wcmatchglob) for more information.
 
 ### API

@@ -363,7 +363,7 @@ class Glob(object):
                     # Make sure case matches, but running case insensitive
                     # on a case sensitive file system may return more than
                     # one starting location.
-                    results = self._get_starting_paths(curdir)
+                    results = [curdir] if this.is_drive else self._get_starting_paths(curdir)
                     if not results:
                         # Nothing to do.
                         return
@@ -449,19 +449,30 @@ def globfilter(filenames, patterns, *, flags=0):
     return matches
 
 
-def escape(pattern):
+def raw_escape(pattern, unix=False):
+    """Apply raw character transform before applying escape."""
+
+    pattern = util.norm_pattern(pattern, False, True)
+    return escape(pattern, unix)
+
+
+def escape(pattern, unix=False):
     """Escape."""
 
     is_bytes = isinstance(pattern, bytes)
     replace = br'\\\1' if is_bytes else r'\\\1'
-    magic = _wcparse.RE_BMAGIC if is_bytes else _wcparse.RE_MAGIC
+    win = util.platform() == "windows"
+    if win and not unix:
+        magic = _wcparse.RE_BWIN_MAGIC if is_bytes else _wcparse.RE_WIN_MAGIC
+    else:
+        magic = _wcparse.RE_BMAGIC if is_bytes else _wcparse.RE_MAGIC
 
     # Handle windows drives special.
     # Windows drives are handled special internally.
     # So we shouldn't escape them as we'll just have to
     # detect and undo it later.
     drive = b'' if is_bytes else ''
-    if util.platform() == "windows":
+    if win and not unix:
         m = (_wcparse.RE_BWIN_PATH if is_bytes else _wcparse.RE_WIN_PATH).match(pattern)
         if m:
             drive = m.group(0)

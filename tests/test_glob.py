@@ -13,7 +13,7 @@ import contextlib
 from wcmatch import glob
 import os
 import shutil
-# import sys
+import sys
 import unittest
 import warnings
 
@@ -289,19 +289,19 @@ class GlobTests(unittest.TestCase):
         eq(self.glob('sym1'), [self.norm('sym1')])
         eq(self.glob('sym2'), [self.norm('sym2')])
 
-    # @unittest.skipUnless(sys.platform == "win32", "Win32 specific test")
-    # def test_glob_magic_in_drive(self):
-    #     """Test glob magic in drive name."""
+    @unittest.skipUnless(sys.platform == "win32", "Win32 specific test")
+    def test_glob_magic_in_drive(self):
+        """Test glob magic in drive name."""
 
-    #     eq = self.assertSequencesEqual_noorder
-    #     eq(glob.glob('*:'), [])
-    #     eq(glob.glob(b'*:'), [])
-    #     eq(glob.glob('?:'), [])
-    #     eq(glob.glob(b'?:'), [])
-    #     eq(glob.glob('\\\\?\\c:\\'), ['\\\\?\\c:\\'])
-    #     eq(glob.glob(b'\\\\?\\c:\\'), [b'\\\\?\\c:\\'])
-    #     eq(glob.glob('\\\\*\\*\\'), [])
-    #     eq(glob.glob(b'\\\\*\\*\\'), [])
+        eq = self.assertSequencesEqual_noorder
+        eq(glob.glob('*:'), [])
+        eq(glob.glob(b'*:'), [])
+        eq(glob.glob('?:'), [])
+        eq(glob.glob(b'?:'), [])
+        eq(glob.glob(r'\\\\?\\c:\\'), ['\\\\?\\c:\\'])
+        eq(glob.glob(br'\\\\?\\c:\\'), [b'\\\\?\\c:\\'])
+        eq(glob.glob(r'\\\\*\\*\\'), [])
+        eq(glob.glob(br'\\\\*\\*\\'), [])
 
     def check_escape(self, arg, expected):
         """Verify escapes."""
@@ -320,16 +320,16 @@ class GlobTests(unittest.TestCase):
         check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_]]')
         check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_]]/')
 
-    # @unittest.skipUnless(sys.platform == "win32", "Win32 specific test")
-    # def test_escape_windows(self):
-    #     """Test windows escapes."""
-    #     check = self.check_escape
-    #     check('?:?', r'?:\?')
-    #     check('*:*', r'*:\*')
-    #     check(r'\\?\c:\?', r'\\\\?\\c:\\\?')
-    #     check(r'\\*\*\*', r'\\\\*\\*\\\*')
-    #     check('//?/c:/?', '//?/c:/[?]')
-    #     check('//*/*/*', '//*/*/[*]')
+    @unittest.skipUnless(sys.platform == "win32", "Win32 specific test")
+    def test_escape_windows(self):
+        """Test windows escapes."""
+        check = self.check_escape
+        check('a:\\?', r'a:\\\?')
+        check('b:\\*', r'b:\\\*')
+        check(r'\\\\?\\c:\\?', r'\\\\?\\c:\\\?')
+        check(r'\\\\*\\*\\*', r'\\\\*\\*\\\*')
+        check('//?/c:/?', r'//?/c:/\?')
+        check('//*/*/*', r'//*/*/\*')
 
     def test_recursive_glob(self):
         """Test recurision."""

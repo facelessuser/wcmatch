@@ -1,5 +1,9 @@
 # wcmatch.glob
 
+```py3
+from wcmatch import glob
+```
+
 ## Syntax
 
 The `glob` library provides a method for traversing the file system and returning matching files defined via glob patterns.  It also provides methods for matching a file pattern (similar to fnmatch, but for paths) with the same glob patterns used for glob. In short, globmatch matches what glob globs :slight_smile:. The features are similar to `fnmatch`'s, but the flags and what features that are enabled by default vary.
@@ -20,8 +24,9 @@ Pattern           | Meaning
 `!(pattern_list)` | The pattern matches if the input string cannot be matched with any of the patterns in the `pattern_list`.
 `{}`              | Bash style brace expansions.  This is applied to patterns before anything else.
 
-- Slashes are generally treated special in glob related methods. Slashes are not matched in `[]`, `*`, `?`, or extended patterns like `*(...)`. Slashes can be matched by `**`.
-- On windows, slashes will be normalized: `/` will become `\\`.
+- Slashes are generally treated special in glob related methods. Slashes are not matched in `[]`, `*`, `?`, or extended patterns like `*(...)`. Slashes can be matched by `**`. There is no need to explicitly use `\\` in patterns on Windows, but if you do, it will be handled.
+- Slash escaping applies to paths patterns are applied to as well minus the pattern specific exceptions.
+- On Windows, slashes will be normalized: `/` will become `\\`.
 - If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern will be treated as a Linux/Unix. One exception is when using `glob.glob` or `glob.iglob`.  Since `glob.glob` and `glob.iglob` work on the actual file system of the system, it will normalize slashes when on a Windows system.
 - On Windows (no case sensitivity), drives are treated special and must come at the beginning of the pattern and cannot be matched with `*`, `[]`, `?`, or even extended match patterns `+(...)`, etc.
 - Windows drives are recognized as either `C:\\` or `\\\\Server\\mount\\` (or `C:/` and `//Server/mount/`).
@@ -38,7 +43,7 @@ def glob(patterns, *, flags=0):
 `glob` takes a pattern (or list of patterns) and will crawl the file system returning matching files. If a file/folder matches any postive patterns, it is considered a match.  If it matches *any* inverse pattern (when enabling the NEGATE flag), then it will be not be returned.
 
 ```pycon3
-from wcmatch import glob
+>>> from wcmatch import glob
 >>> glob.glob(r'**/*.md')
 ['docs/src/markdown/changelog.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md', 'docs/src/markdown/_snippets/abbr.md', 'docs/src/markdown/_snippets/links.md', 'docs/src/markdown/_snippets/refs.md', 'README.md']
 ```
@@ -46,7 +51,7 @@ from wcmatch import glob
 We can also exclude directories and/or files:
 
 ```pycon3
-from wcmatch import glob
+>>> from wcmatch import glob
 >>> glob.glob([r'**/*.md', r'!README.md', r'!**/_snippets'], flags=glob.NEGATE)
 ['docs/src/markdown/changelog.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md']
 ```
@@ -54,7 +59,7 @@ from wcmatch import glob
 When a glob pattern ends with a slash, it will only return directories:
 
 ```pycon3
-from wcmatch import glob
+>>> from wcmatch import glob
 >>> glob.glob(r'**/')
 ['__pycache__', 'docs', 'docs/docs', 'docs/src', 'docs/src/markdown', 'docs/src/markdown/_snippets', 'docs/theme', 'requirements', 'tests', 'tests/__pycache__', 'tests/dir_walker', 'wcmatch', 'wcmatch/__pycache__']
 ```
@@ -152,12 +157,34 @@ def translate(patterns, \*, flags=0):
 `translate` takes a glob pattern (or list of patterns) and returns two lists (one for positive patterns and one for inverse patterns) of equivalent regular expressions for each pattern. This returns a list even when only one pattern is given as features like brace expansion literally expand a pattern into multiple patterns.
 
 ```pycon3
-from wcmatch import glob
+>>> from wcmatch import glob
 >>> glob.translate(r'**/*.{py,txt}')
 (['^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?\\.py[\\/]*?)$', '^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?\\.txt[\\/]*?)$'], [])
 >>> glob.translate(r'!**/*.{py,txt}', flags=glob.NEGATE)
 ([], ['^(?!(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?\\.py[\\/]*?)).*?$', '^(?!(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?\\.txt[\\/]*?)).*?$'])
 ```
+
+#### glob.escape
+
+```py3
+def escape(pattern, unix=False)
+```
+
+This escapes special glob meta characters so they will be treated as literal characters.  It escapes using backslashes. It will escape `-`, `!`, `*`, `?`, `(`, `[`, `|`, `^`, `{`, and `\`. On Windows, it will specifically only escape `\` when not already escaped (`\\`). `/` and `\\` (on Windows) are not escaped as they are path separators.
+
+On a Windows system, drives are not escaped as they are treated special because they could contain special characters like in `\\?\c:\`. Meta characters cannot be used in drives.
+
+`escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since [`globmatch`](#globglobmatch) allows you to match Unix style paths on a Windows system, you can force Unix style escaping via the `unix` parameter.
+
+#### glob.raw_escape
+
+```py3
+def raw_escape(pattern, unix=False)
+```
+
+This is like [`escape`](#globescape) except it will apply raw character string escapes before doing meta character escapes.  This is meant for use with [`RAWCHARS`](#globrawchars) flag.
+
+`raw_escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since [`globmatch`](#globglobmatch) allows you to match Unix style paths on a Windows system, you can force Unix style escaping via the `unix` parameter.
 
 ### Flags
 
