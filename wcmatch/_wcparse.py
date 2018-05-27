@@ -28,7 +28,7 @@ from . import util
 
 RE_WIN_PATH = re.compile(r'(\\{4}[^\\]+\\{2}[^\\]+|[a-z]:)(\\{2}|$)')
 RE_MAGIC = re.compile(r'([-!*?(\[|^{\\])')
-RE_BMAGIC = re.compile(r'([-!*?(\[|^{\\])')
+RE_BMAGIC = re.compile(br'([-!*?(\[|^{\\])')
 
 SET_OPERATORS = frozenset(('&', '~', '|'))
 NEGATIVE_SYM = frozenset((b'!', '!'))
@@ -344,10 +344,10 @@ class WcPathSplit(object):
     def store(self, value, l, dir_only):
         """Group patterns by literals and potential magic patterns."""
 
-        if l and value == '':
+        if l and value in (b'', ''):
             return
 
-        globstar = value == '**'
+        globstar = value in (b'**', '**')
         magic = self.is_magic(value)
         if magic:
             value = compile(value, self.flags)
@@ -418,7 +418,7 @@ class WcPathSplit(object):
             if value:
                 self.store(value, parts, False)
         if len(pattern) == 0:
-            parts.append(WcGlob(pattern, False, False, False))
+            parts.append(WcGlob(pattern.encode('latin-1') if self.is_bytes else pattern, False, False, False))
 
         return parts
 
