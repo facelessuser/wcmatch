@@ -6,7 +6,10 @@ from wcmatch import glob
 
 ## Syntax
 
-The `glob` library provides a method for traversing the file system and returning matching files defined via glob patterns.  It also provides methods for matching a file pattern (similar to fnmatch, but for paths) with the same glob patterns used for glob. In short, globmatch matches what glob globs :slight_smile:. The features are similar to `fnmatch`'s, but the flags and what features that are enabled by default vary.
+The `glob` library provides a methods for traversing the file system and returning files that matched a defined set of glob patterns.  It also provides methods for matching a file pattern (similar to [`fnmatch`](fnmatch#fnmatchfnmatch), but for paths) with the same glob patterns used for glob. In short, [`globmatch`](#globglobmatch) matches what [`glob`](#globglob) globs :slight_smile:. The features are similar to `fnmatch`'s, but the flags and what features that are enabled by default vary.
+
+!!! tip
+    When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a character `#!py3 r'\?'`.  If you want to represent a literal backslash, you must use two: `#!py3 r'some\\path'`.
 
 Pattern           | Meaning
 ----------------- | -------
@@ -24,13 +27,45 @@ Pattern           | Meaning
 `!(pattern_list)` | The pattern matches if the input string cannot be matched with any of the patterns in the `pattern_list`.
 `{}`              | Bash style brace expansions.  This is applied to patterns before anything else.
 
-- Slashes are generally treated special in glob related methods. Slashes are not matched in `[]`, `*`, `?`, or extended patterns like `*(...)`. Slashes can be matched by `**`. There is no need to explicitly use `\\` in patterns on Windows, but if you do, it will be handled.
-- Slash escaping applies to paths patterns are applied to as well minus the pattern specific exceptions.
-- On Windows, slashes will be normalized: `/` will become `\\`.
-- If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern will be treated as a Linux/Unix. One exception is when using `glob.glob` or `glob.iglob`.  Since `glob.glob` and `glob.iglob` work on the actual file system of the system, it will normalize slashes when on a Windows system.
-- On Windows (no case sensitivity), drives are treated special and must come at the beginning of the pattern and cannot be matched with `*`, `[]`, `?`, or even extended match patterns `+(...)`, etc.
+- Slashes are generally treated special in glob related methods. Slashes are not matched in `[]`, `*`, `?`, or extended patterns like `*(...)`. Slashes can be matched by `**` unless [`NOGLOBSTAR`](#globnoglobstar) is set.
+- On Windows, slashes will be normalized in paths and patterns: `/` will become `\\`. There is no need to explicitly use `\\` in patterns on Windows, but if you do, it will be handled.
+- On Windows, drives are treated special and must come at the beginning of the pattern and cannot be matched with `*`, `[]`, `?`, or even extended match patterns `+(...)`, etc.
 - Windows drives are recognized as either `C:\\` or `\\\\Server\\mount\\` (or `C:/` and `//Server/mount/`).
 - Meta characters have no effect when inside a UNC path: `\\\\Server?\\mount*\\`.
+- If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern and paths will be treated as if on Linux/Unix. Also Windows drives are no longer handled special. One exception is when using functions [`glob`](#globglob) or [`iglob`](#globiglob).  Since `glob` and `iglob` work on the actual file system of the system, it *must* normalize slashes and handle drives to work properly on the system.
+- By default, file and directory names starting with `.` are only matched with literal `.`.  The patterns `*`, `?`, `[]`, and extended patterns like `*(...)` will not match a leading `.`.  See [`DOTGLOB`](#globdotglob) to alter this behavior. Even with `DOTGLOB`, `*` and `**` will not match a directory `.` or `..`.  But a pattern like `.*` will match `.` and `..`.
+- Relative paths and patterns are supported.
+
+    ```pycon3
+    >>> from wcmatch import glob
+    >>> glob.glob('./docs/src/../*')
+    ['./docs/src/../src', './docs/src/../theme']
+    ```
+
+- In general, Wildcard Match's behavior is modeled off of Bash's, so unlike the builtin `glob`, Wildcard Match's `glob` will match and return `.` and `..` in certain cases just like Bash does.
+
+    Buitin:
+
+    ```pycon3
+    >>> import glob
+    >>> glob.glob('docs/.*')
+    []
+    ```
+
+    Wcmatch:
+
+    ```pycon3
+    >>> from wcmatch import glob
+    >>> glob.glob('docs/.*')
+    ['docs/.', 'docs/..']
+    ```
+
+    Bash:
+
+    ```shell-session
+    $ echo docs/.*
+    docs/. docs/..
+    ```
 
 ### API
 
@@ -40,7 +75,7 @@ Pattern           | Meaning
 def glob(patterns, *, flags=0):
 ```
 
-`glob` takes a pattern (or list of patterns) and will crawl the file system returning matching files. If a file/folder matches any postive patterns, it is considered a match.  If it matches *any* inverse pattern (when enabling the NEGATE flag), then it will be not be returned.
+`glob` takes a pattern (or list of patterns) and will crawl the file system returning matching files. If a file/folder matches any postive patterns, it is considered a match.  If it matches *any* inverse pattern (when enabling the [`NEGATE`](#globnegate) flag), then it will be not be returned.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -70,10 +105,10 @@ When a glob pattern ends with a slash, it will only return directories:
 def iglob(patterns, *, flags=0):
 ```
 
-`iglob` is just like [`glob`](#glob.glob) except it returns an iterator.
+`iglob` is just like [`glob`](#globglob) except it returns an iterator.
 
 ```pycon3
-from wcmatch import glob
+>>> from wcmatch import glob
 >>> list(glob.iglob(r'**/*.md'))
 ['docs/src/markdown/_snippets/abbr.md', 'docs/src/markdown/_snippets/links.md', 'docs/src/markdown/_snippets/refs.md', 'docs/src/markdown/changelog.md', 'docs/src/markdown/fnmatch.md', 'docs/src/markdown/glob.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md', 'README.md']
 ```
@@ -81,7 +116,7 @@ from wcmatch import glob
 #### glob.globmatch
 
 ```py3
-def globmatch(filename, patterns, \*, flags=0)
+def globmatch(filename, patterns, \*, flags=0):
 ```
 
 `globmatch` takes a file name, a pattern (or list of patterns) and flags.  It will return a boolean indicating whether the file path was matched by the pattern(s).
@@ -126,7 +161,7 @@ False
 def globfilter(filenames, patterns, *, flags=0):
 ```
 
-`globfilter` takes a list of file paths, a pattern (or list of patterns) and flags. It returns a list of all files paths that matched the pattern(s). The same logic used for `globmatch` is used for `globfilter`, albeit more efficient for processing multiple files.
+`globfilter` takes a list of file paths, a pattern (or list of patterns) and flags. It returns a list of all files paths that matched the pattern(s). The same logic used for [`globmatch`](#globglobmatch) is used for `globfilter`, albeit more efficient for processing multiple files.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -167,7 +202,7 @@ def translate(patterns, \*, flags=0):
 #### glob.escape
 
 ```py3
-def escape(pattern, unix=False)
+def escape(pattern, unix=False):
 ```
 
 This escapes special glob meta characters so they will be treated as literal characters.  It escapes using backslashes. It will escape `-`, `!`, `*`, `?`, `(`, `[`, `|`, `^`, `{`, and `\`. On Windows, it will specifically only escape `\` when not already escaped (`\\`). `/` and `\\` (on Windows) are not escaped as they are path separators.
@@ -187,10 +222,10 @@ On a Windows system, drives are not escaped as they are treated special because 
 #### glob.raw_escape
 
 ```py3
-def raw_escape(pattern, unix=False)
+def raw_escape(pattern, unix=False):
 ```
 
-This is like [`escape`](#globescape) except it will apply raw character string escapes before doing meta character escapes.  This is meant for use with [`RAWCHARS`](#globrawchars) flag.
+This is like [`escape`](#globescape) except it will apply raw character string escapes before doing meta character escapes.  This is meant for use with the [`RAWCHARS`](#globrawchars) flag.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -206,23 +241,23 @@ True
 
 #### glob.FORCECASE
 
-`FORCECASE` forces case sensitivity. On Windows, this will force paths to be treated like Linux/Unix paths, and slashes will not be normalized. Path normalization only relates to globmatch and not for glob and iglob. Paths must be normalized for glob and iglob in order to scan the file system. `FORCECASE` has higher priority than `IGNORECASE`. 
+`FORCECASE` forces case sensitivity. On Windows, this will force paths to be treated like Linux/Unix paths, and slashes will not be normalized. Path normalization only relates to globmatch and not for glob and iglob. Paths must be normalized for glob and iglob in order to scan the file system. `FORCECASE` has higher priority than [`IGNORECASE`](#globignorecase).
 
 #### glob.IGNORECASE
 
-`IGNORECASE` force case insensitivity. `FORCECASE` has higher priority than `IGNORECASE`.
+`IGNORECASE` force case insensitivity. [`FORCECASE`](#globforcecase) has higher priority than `IGNORECASE`.
 
 #### glob.RAWCHARS
 
-`RAWCHARS` causes string character syntax to be parsed in raw strings: `r'\u0040'` --> `r'@'`. This will handled standard string escapes and Unicode (including `\N{CHAR NAME}`).
+`RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will handled standard string escapes and Unicode (including `#!py3 r'\N{CHAR NAME}'`).
 
 #### glob.NEGATE
 
-`NEGATE` causes patterns that start with `!` to be treated as inverse matches. A pattern of `!*.py` would match any file but Python files. If used with `EXTMATCH`, patterns like `!(inverse|pattern)` will be mistakenly parsed as an inverse path instead of an inverse extmatch group.  See `MINUSNEGATE` for an alternative syntax that plays nice with `EXTMATCH`.
+`NEGATE` causes patterns that start with `!` to be treated as inverse matches. A pattern of `!*.py` would match any file but Python files. If used with the extended glob feature, patterns like `!(inverse|pattern)` will be mistakenly parsed as an inverse path instead of as an inverse extended glob group.  See [`MINUSNEGATE`](#globminusgate) for an alternative syntax that plays nice with extended glob.
 
 #### glob.MINUSNEGATE
 
-When `MINUSNEGATE` is used with `NEGATE`, negate patterns are recognized by a pattern starting with `-` instead of `!`. This plays nice with the `EXTMATCH` option.
+When `MINUSNEGATE` is used with [`NEGATE`](#globnegate), negate patterns are recognized by a pattern starting with `-` instead of `!`. This plays nice with the extended glob feature which already uses `!` in patterns such as `!(...)`.
 
 #### glob.NOGLOBSTAR
 
@@ -230,11 +265,11 @@ By default, `**` matches zero or more directories. You can disable `**` with `NO
 
 #### glob.DOTGLOB
 
-By default, `glob` and `globmatch` will not match file or directory names that start with dot (`.`) unless matched with a literal dot. `DOTGLOB` allows the meta characters (such as `*`) to glob dots like any other character. Dots will not be matched in `[]`, `*`, `?`, or extended patterns like `+(...)`.
+By default, [`glob`](#globglob) and [`globmatch`](#globglobmatch) will not match file or directory names that start with dot (`.`) unless matched with a literal dot. `DOTGLOB` allows the meta characters (such as `*`) to glob dots like any other character. Dots will not be matched in `[]`, `*`, `?`, or extended patterns like `+(...)`.
 
 #### glob.NOEXTGLOB
 
-`NOEXTGLOB` disables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc. See the [syntax overview](#glob) for more information.
+`NOEXTGLOB` disables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc. See the [syntax overview](#syntax) for more information.
 
 #### glob.NOBRACE
 
