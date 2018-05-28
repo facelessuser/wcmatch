@@ -1,0 +1,61 @@
+sudo: false
+
+language: python
+
+# Limit git depth to speed up build
+git:
+  depth: 5
+
+matrix:
+  include:
+    - python: 3.4
+      env: TOXENV=py34
+    - python: 3.5
+      env: TOXENV=py35
+    - python: 3.6
+      env: TOXENV=py36
+    - python: 3.7-dev
+      env: TOXENV=py37
+    - python: 3.6
+      env: TOXENV=lint
+  allow_failures:
+    - python: 3.7-dev
+
+# addons:
+#   apt:
+#     packages:
+#       - aspell
+#       - aspell-en
+
+install:
+  - pip install tox
+  - pip install codecov
+
+script:
+  - tox
+
+after_success:
+  - codecov
+
+deploy:
+  - provider: pypi
+    user: facelessuser
+    server: https://upload.pypi.org/legacy/
+    password:
+      secure: o+W20ryWYDcLwvUpNBs+awLimvSphPycWiNHbymur0tzGPJFv8xGK0dz2buFXQ7qVikWEKMwWOAhOBEQPCRueqwg53Geg/zPlqPuoOnKv06kcZGn5EL9O57aewX69M/zPZ+nRcnSSJRDlQvd12CHXznSKPWdWIP9xNQBZw3bqKd4OFsJHwMNoWF2jVavbKBzFbIP9uMP3yZF2CaBMbvRVScQK1nXbqq5QGjI4vtOv79fWBbiTfhmOh6wKjB5HIklUDI5jSDmxIB5EoZscs00LbC5GGqPhqAgMmSDx/pzNg+Iu3CPzprSRFnDhL+BqAeMIAkr0ZNHGy+c60qEIrh1varnBFsHiWFs1DjHqLGL+sT10lPnij8FtZcpSL5YWvvYHmViJ7JZ1AZM8blClhm4L1SdZrMgdk3yp+YqFPcX/3uOk2QVBva1GAxsCYztsGCN1VFZdE2Unxf2y0D91Wz0gp22gNJZs8wUW/sWiNooXjG4GxBcMxN58Cs6BF2on33htC2nbiuYIltiL47CaTWDeOsRrBcWcFuivgiYdoqA9b3dM+2UOK8MbCpPC4Ptret7bFUmh/9QRQOMMnyBCcEoZYWhepRpCU/jKxuPsfpKKCO/o5taBH80a3it8/lr4MqdLbnCAq4p0Iam3IOEK88VVPDR802YOlLnl9uXNVR4ZeI=
+    distributions: "sdist bdist_wheel"
+    skip_upload_docs: true
+    on:
+      tags: true
+      repo: facelessuser/wcmatch
+      condition: "$TOXENV = lint"
+  # - provider: pages
+  #   github_token: $GITHUB_TOKEN
+  #   name: $GITHUB_USER
+  #   email: $GITHUB_EMAIL
+  #   skip_cleanup: true
+  #   local_dir: site
+  #   on:
+  #     tags: true
+  #     repo: facelessuser/wcmatch
+  #     condition: "$TOXENV = documents"

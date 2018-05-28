@@ -45,7 +45,7 @@ def glob(patterns, *, flags=0):
 ```pycon3
 >>> from wcmatch import glob
 >>> glob.glob(r'**/*.md')
-['docs/src/markdown/changelog.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md', 'docs/src/markdown/_snippets/abbr.md', 'docs/src/markdown/_snippets/links.md', 'docs/src/markdown/_snippets/refs.md', 'README.md']
+['docs/src/markdown/_snippets/abbr.md', 'docs/src/markdown/_snippets/links.md', 'docs/src/markdown/_snippets/refs.md', 'docs/src/markdown/changelog.md', 'docs/src/markdown/fnmatch.md', 'docs/src/markdown/glob.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md', 'README.md']
 ```
 
 We can also exclude directories and/or files:
@@ -53,7 +53,7 @@ We can also exclude directories and/or files:
 ```pycon3
 >>> from wcmatch import glob
 >>> glob.glob([r'**/*.md', r'!README.md', r'!**/_snippets'], flags=glob.NEGATE)
-['docs/src/markdown/changelog.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md']
+['docs/src/markdown/changelog.md', 'docs/src/markdown/fnmatch.md', 'docs/src/markdown/glob.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md']
 ```
 
 When a glob pattern ends with a slash, it will only return directories:
@@ -61,7 +61,7 @@ When a glob pattern ends with a slash, it will only return directories:
 ```pycon3
 >>> from wcmatch import glob
 >>> glob.glob(r'**/')
-['__pycache__', 'docs', 'docs/docs', 'docs/src', 'docs/src/markdown', 'docs/src/markdown/_snippets', 'docs/theme', 'requirements', 'tests', 'tests/__pycache__', 'tests/dir_walker', 'wcmatch', 'wcmatch/__pycache__']
+['__pycache__/', 'docs/', 'docs/src/', 'docs/src/markdown/', 'docs/src/markdown/_snippets/', 'docs/theme/', 'requirements/', 'stuff/', 'tests/', 'tests/__pycache__/', 'tests/dir_walker/', 'wcmatch/', 'wcmatch/__pycache__/']
 ```
 
 #### glob.iglob
@@ -75,7 +75,7 @@ def iglob(patterns, *, flags=0):
 ```pycon3
 from wcmatch import glob
 >>> list(glob.iglob(r'**/*.md'))
-['docs/src/markdown/changelog.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md', 'docs/src/markdown/_snippets/abbr.md', 'docs/src/markdown/_snippets/links.md', 'docs/src/markdown/_snippets/refs.md', 'README.md']
+['docs/src/markdown/_snippets/abbr.md', 'docs/src/markdown/_snippets/links.md', 'docs/src/markdown/_snippets/refs.md', 'docs/src/markdown/changelog.md', 'docs/src/markdown/fnmatch.md', 'docs/src/markdown/glob.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md', 'README.md']
 ```
 
 #### glob.globmatch
@@ -172,6 +172,14 @@ def escape(pattern, unix=False)
 
 This escapes special glob meta characters so they will be treated as literal characters.  It escapes using backslashes. It will escape `-`, `!`, `*`, `?`, `(`, `[`, `|`, `^`, `{`, and `\`. On Windows, it will specifically only escape `\` when not already escaped (`\\`). `/` and `\\` (on Windows) are not escaped as they are path separators.
 
+```pycon3
+>>> from wcmatch import glob
+>>> glob.escape('some/path?/**file**{}.txt')
+'some/path\\?/\\*\\*file\\*\\*\\{}.txt'
+>>> glob.globmatch('some/path?/**file**{}.txt', glob.escape('some/path?/**file**{}.txt'))
+True
+```
+
 On a Windows system, drives are not escaped as they are treated special because they could contain special characters like in `\\?\c:\`. Meta characters cannot be used in drives.
 
 `escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since [`globmatch`](#globglobmatch) allows you to match Unix style paths on a Windows system, you can force Unix style escaping via the `unix` parameter.
@@ -183,6 +191,14 @@ def raw_escape(pattern, unix=False)
 ```
 
 This is like [`escape`](#globescape) except it will apply raw character string escapes before doing meta character escapes.  This is meant for use with [`RAWCHARS`](#globrawchars) flag.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.raw_escape('some/path?/\x2a\x2afile\x2a\x2a{}.txt')
+'some/path\\?/\\*\\*file\\*\\*\\{}.txt'
+>>> glob.globmatch('some/path?/**file**{}.txt', glob.escape('some/path?/\x2a\x2afile\x2a\x2a{}.txt'), flags=glob.RAWCHARS)
+True
+```
 
 `raw_escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since [`globmatch`](#globglobmatch) allows you to match Unix style paths on a Windows system, you can force Unix style escaping via the `unix` parameter.
 

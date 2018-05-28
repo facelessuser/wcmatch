@@ -1,0 +1,10 @@
+recursive-include wcmatch *.py
+recursive-include tests *.txt *.py
+recursive-include requirements *.txt
+recursive-exclude site *
+include setup.py
+include setup.cfg
+include tox.ini
+include LICENSE.md
+include README.md
+include MANIFEST.in
