@@ -36,7 +36,7 @@ __all__ = (
 # We don't use util.platform only because we mock it in tests,
 # and scandir will not work with bytes on the wrong system.
 WIN = sys.platform.startswith('win')
-NO_SCANDIR_WORKAROUND = util.PY36 or (util.PY35 and not WIN)
+NO_SCANDIR_WORKAROUND = util.PY36
 
 F = FORCECASE = _wcparse.FORCECASE
 I = IGNORECASE = _wcparse.IGNORECASE
