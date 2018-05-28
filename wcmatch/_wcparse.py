@@ -48,6 +48,9 @@ EXTGLOB = 0x0080
 GLOBSTAR = 0x0100
 BRACE = 0x0200
 
+# Internal flag
+_FORCEWIN = 0x10000
+
 FLAG_MASK = (
     FORCECASE |
     IGNORECASE |
@@ -58,7 +61,8 @@ FLAG_MASK = (
     DOTGLOB |
     EXTGLOB |
     GLOBSTAR |
-    BRACE
+    BRACE |
+    _FORCEWIN
 )
 CASE_FLAGS = FORCECASE | IGNORECASE
 
@@ -187,7 +191,7 @@ def translate(patterns, flags):
     return positive, negative
 
 
-def compile(patterns, flags, translate=False):  # noqa A001
+def compile(patterns, flags):  # noqa A001
     """Compile patterns."""
 
     positive = []
@@ -237,7 +241,7 @@ class WcPathSplit(object):
     def __init__(self, pattern, flags):
         """Initialize."""
 
-        self.unix = util.platform() != "windows"
+        self.unix = is_unix_style(flags) and not flags & _FORCEWIN
         self.flags = flags
         self.pattern = util.norm_pattern(pattern, not self.unix, flags & RAWCHARS)
         if is_negative(self.pattern, flags):
@@ -436,7 +440,7 @@ class WcSplit(object):
         self.is_bytes = isinstance(pattern, bytes)
         self.pathname = bool(flags & PATHNAME)
         self.extend = bool(flags & EXTGLOB)
-        self.unix = is_unix_style(flags)
+        self.unix = is_unix_style(flags) and not flags & _FORCEWIN
         self.bslash_abort = not self.unix
 
     def _sequence(self, i):
@@ -578,7 +582,7 @@ class WcParse(object):
         self.in_list = False
         self.flags = flags
         self.inv_ext = 0
-        self.unix = is_unix_style(self.flags)
+        self.unix = is_unix_style(self.flags) and not self.flags & _FORCEWIN
         if not self.unix:
             self.win_drive_detect = self.pathname
             self.char_avoid = (ord('\\'), ord('/'), ord('.'))

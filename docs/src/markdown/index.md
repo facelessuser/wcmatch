@@ -13,7 +13,7 @@ Wildcard Match is a fnmatch/glob library. It adds a number of features over the 
 
 ## Libraries
 
-- [fnmatch](fnmatch): A filename matching library.
+- [fnmatch](fnmatch): A file name matching library.
 - [glob](glob): A file system searching and file path matching library.
 
 --8<--

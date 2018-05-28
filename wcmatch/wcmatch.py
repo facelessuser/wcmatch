@@ -69,6 +69,8 @@ class WcMatch(object):
         self.flags = (args.pop(0) if args else kwargs.pop('flags', 0)) & FLAG_MASK
         self.flags |= _wcparse.NEGATE | _wcparse.DOTGLOB
         self.pathname = bool(self.flags & PATHNAME)
+        if util.platform() == "windows":
+            self.flags |= _wcparse._FORCEWIN
         if self.pathname:
             self.flags ^= PATHNAME
 

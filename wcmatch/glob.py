@@ -91,6 +91,7 @@ class Glob(object):
         self.current = b'.' if self.is_bytes else '.'
         self._parse_patterns(pattern)
         if util.platform() == "windows":
+            self.flags |= _wcparse._FORCEWIN
             self.sep = (b'\\', '\\')
         else:
             self.sep = (b'/', '/')
