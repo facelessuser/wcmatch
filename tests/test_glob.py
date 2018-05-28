@@ -104,6 +104,7 @@ class GlobTests(unittest.TestCase):
 
     def globjoin(self, *parts):
         """Joins glob path."""
+
         sep = os.fsencode(self.globsep) if isinstance(parts[0], bytes) else self.globsep
         return sep.join(list(parts))
 
@@ -405,6 +406,20 @@ class GlobTests(unittest.TestCase):
 class SymlinkLoopGlobTests(unittest.TestCase):
     """Symlink loop test case."""
 
+    def globjoin(self, *parts):
+        """Joins glob path."""
+
+        sep = os.fsencode(self.globsep) if isinstance(parts[0], bytes) else self.globsep
+        return sep.join(list(parts))
+
+    def setUp(self):
+        """Setup."""
+
+        if os.sep == '/':
+            self.globsep = os.sep
+        else:
+            self.globsep = r'\\'
+
     def test_selflink(self):
         """Test self links."""
 
@@ -441,7 +456,7 @@ class SymlinkLoopGlobTests(unittest.TestCase):
                 results.remove(path)
                 depth += 1
 
-            results = glob.glob(os.path.join('**', ''))
+            results = glob.glob(self.globjoin('**', ''))
             self.assertEqual(len(results), len(set(results)))
             results = set(results)
             depth = 0
