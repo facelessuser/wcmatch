@@ -11,7 +11,7 @@ Wildcard Match is a fnmatch/glob library. It adds a number of features over the 
 - Adds ability to match path names via globmatch as well as traditional file system searching via glob.
 - And more...
 
-## Documentation
+## Libraries
 
 - [fnmatch](fnmatch): A filename matching library.
 - [glob](glob): A file system searching and file path matching library.
