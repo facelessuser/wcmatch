@@ -62,14 +62,14 @@ class WcMatch(object):
         self._skipped = 0
         self._abort = False
         self.directory = util.norm_slash(args.pop(0))
-        self.file_pattern = args.pop(0) if args else kwargs.pop('file_pattern', '*')
-        self.exclude_pattern = args.pop(0) if args else kwargs.pop('exclude_pattern', '')
+        self.is_bytes = isinstance(self.directory, bytes)
+        self.file_pattern = args.pop(0) if args else kwargs.pop('file_pattern', b'*' if self.is_bytes else '*')
+        self.exclude_pattern = args.pop(0) if args else kwargs.pop('exclude_pattern', b'' if self.is_bytes else '')
         self.recursive = args.pop(0) if args else kwargs.pop('recursive', False)
         self.show_hidden = args.pop(0) if args else kwargs.pop('show_hidden', False)
         self.flags = (args.pop(0) if args else kwargs.pop('flags', 0)) & FLAG_MASK
         self.flags |= _wcparse.NEGATE | _wcparse.DOTGLOB
         self.pathname = bool(self.flags & PATHNAME)
-        self.is_bytes = isinstance(self.directory, bytes)
         if util.platform() == "windows":
             self.flags |= _wcparse._FORCEWIN
         if self.pathname:

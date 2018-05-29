@@ -973,6 +973,21 @@ class TestDirWalker(unittest.TestCase):
         self.assertEqual(len(self.files), 2)
         self.assertEqual(os.path.basename(sorted(self.files)[0]), 'a.txt')
 
+    def test_recursive_hidden_bytes(self):
+        """Test non-recursive search with byte strings."""
+
+        walker = wcmatch.WcMatch(
+            b'tests/dir_walker',
+            b'*.txt', None,
+            True, True, self.default_flags
+        )
+
+        self.crawl_files(walker)
+
+        self.assertEqual(self.skipped, 4)
+        self.assertEqual(len(self.files), 2)
+        self.assertEqual(os.path.basename(sorted(self.files)[0]), b'a.txt')
+
     def test_recursive_hidden_folder_exclude(self):
         """Test non-recursive search."""
 
