@@ -151,6 +151,6 @@ When `MINUSNEGATE` is used with [`NEGATE`](#fnmatchnegate), negate patterns are 
 
 #### fnmatch.BRACE
 
-`BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
+`BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
 For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch) as it will be more efficient as it won't spawn multiple patterns that need to be separately parsed. A pattern such as `{1..100}` would generate one hundred patterns that will all get individually parsed. But when needed, this feature can be quite useful.

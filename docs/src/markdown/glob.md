@@ -273,6 +273,6 @@ By default, [`glob`](#globglob) and [`globmatch`](#globglobmatch) will not match
 
 #### glob.NOBRACE
 
-`NOBRACE` disables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
+`NOBRACE` disables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
 For simple patterns, it may make more sense to use extended patterns as they will be more efficient since they won't spawn multiple patterns that need to be separately parsed. A pattern such as `{1..100}` would generate one hundred patterns that will all get individually parsed. But when needed, this feature can be quite useful.
