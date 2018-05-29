@@ -21,7 +21,7 @@ CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFT
 IN THE SOFTWARE.
 """
 import os
-from .file_hidden import is_hidden as _is_hidden
+from . import file_hidden
 from . import _wcparse
 from . import util
 
@@ -104,7 +104,10 @@ class WcMatch(object):
     def _is_hidden(self, path):
         """Check if file is hidden."""
 
-        return _is_hidden(path) if not self.show_hidden else False
+        if self.is_bytes:
+            return file_hidden.is_hidden_bytes(path) if not self.show_hidden else False
+        else:
+            return file_hidden.is_hidden(path) if not self.show_hidden else False
 
     def _valid_file(self, base, name):
         """Return whether a file can be searched."""
