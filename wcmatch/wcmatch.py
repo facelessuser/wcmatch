@@ -62,13 +62,14 @@ class WcMatch(object):
         self._skipped = 0
         self._abort = False
         self.directory = util.norm_slash(args.pop(0))
-        self.file_pattern = args.pop(0) if args else kwargs.pop('file_pattern', '')
+        self.file_pattern = args.pop(0) if args else kwargs.pop('file_pattern', '*')
         self.exclude_pattern = args.pop(0) if args else kwargs.pop('exclude_pattern', '')
         self.recursive = args.pop(0) if args else kwargs.pop('recursive', False)
-        self.show_hidden = args.pop(0) if args else kwargs.pop('show_hidden', True)
+        self.show_hidden = args.pop(0) if args else kwargs.pop('show_hidden', False)
         self.flags = (args.pop(0) if args else kwargs.pop('flags', 0)) & FLAG_MASK
         self.flags |= _wcparse.NEGATE | _wcparse.DOTGLOB
         self.pathname = bool(self.flags & PATHNAME)
+        self.is_bytes = isinstance(self.directory, bytes)
         if util.platform() == "windows":
             self.flags |= _wcparse._FORCEWIN
         if self.pathname:
@@ -82,7 +83,7 @@ class WcMatch(object):
 
         patterns = None
         flags = self.flags
-        if self.pathname:
+        if pathname and self.pathname:
             flags |= PATHNAME
         if pattern:
             patterns = _wcparse.WcSplit(pattern, flags=self.flags).split()
@@ -92,15 +93,11 @@ class WcMatch(object):
         """Compile patterns."""
 
         if not isinstance(file_pattern, _wcparse.WcRegexp):
-            # Ensure file pattern is not empty
-            if file_pattern is None:
-                file_pattern = '*'
-
             file_pattern = self._compile_wildcard(file_pattern)
 
         if not isinstance(folder_exclude_pattern, _wcparse.WcRegexp):
 
-            folder_exclude_pattern = self._compile_wildcard(folder_exclude_pattern)
+            folder_exclude_pattern = self._compile_wildcard(folder_exclude_pattern, True)
 
         return file_pattern, folder_exclude_pattern
 
@@ -171,10 +168,18 @@ class WcMatch(object):
 
         self._abort = False
 
-    def walk(self):
+    def _walk(self):
         """Start search for valid files."""
 
-        for base, dirs, files in os.walk(self.directory):
+        if not self.directory:
+            if self.is_bytes:
+                curdir = bytes(os.curdir, 'ASCII')
+            else:
+                curdir = os.curdir
+        else:
+            curdir = self.directory
+
+        for base, dirs, files in os.walk(curdir):
             # Remove child folders based on exclude rules
             for name in dirs[:]:
                 try:
@@ -224,5 +229,5 @@ class WcMatch(object):
         """Run the directory walker as iterator."""
 
         self._skipped = 0
-        for f in self.walk():
+        for f in self._walk():
             yield f
