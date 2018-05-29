@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 import contextlib
 import ctypes
-from os.path import expanduser, basename
+import os
 from . import util
 
 _OSX_FOUNDATION_NOT_LOADED = 0
@@ -22,9 +22,13 @@ if util.platform() == "windows":
     def is_win_hidden(path):
         """Check if hidden for Windows."""
 
-        f = basename(path)
-        attrs = ctypes.windll.kernel32.GetFileAttributesW(path)
-        return (attrs != -1 and bool(attrs & 2)) or (f.startswith('.') and f != "..")
+        f = os.path.basename(path)
+        if isinstance(f, bytes):
+            attrs = ctypes.windll.kernel32.GetFileAttributes(path)
+            return (attrs != -1 and bool(attrs & 2)) or f.startswith(b'.')
+        else:
+            attrs = ctypes.windll.kernel32.GetFileAttributesW(path)
+            return (attrs != -1 and bool(attrs & 2)) or f.startswith('.')
 else:
     is_win_hidden = platform_not_implemented
 
@@ -32,14 +36,14 @@ else:
 def is_nix_hidden(path):
     """Check if hidden for Linux."""
 
-    f = basename(path)
-    return f.startswith('.') and f != ".."
+    f = os.path.basename(path)
+    return f.startswith(b'.') if isinstance(f, bytes) else f.startswith('.')
 
 
 def _test(fn):
     """Test if osx hidden is working."""
 
-    path = expanduser("~/Library")
+    path = os.path.expanduser("~/Library")
     is_osx_hidden(path)
     # print "OSX Hidden Method: %d, Test Path: %s, Result: %s"  % (_OSX_FOUNDATION_METHOD, path, str(fn(path)))
 
@@ -90,7 +94,7 @@ if util.platform() == "osx" and _OSX_FOUNDATION_METHOD == _OSX_FOUNDATION_NOT_LO
 
             # Convert file name to bytes
             if not isinstance(path, bytes):
-                path = path.encode('UTF-8')
+                path = os.fsencode(path)
 
             objects = []
             with cfreleasing(objects):
@@ -137,5 +141,5 @@ if __name__ == '__main__':
     import sys
 
     for arg in sys.argv[1:]:
-        filename = expanduser(arg)
+        filename = os.path.expanduser(arg)
         print('{}: {}'.format(filename, is_hidden(filename)))
