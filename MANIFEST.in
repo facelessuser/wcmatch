@@ -1,5 +1,5 @@
 recursive-include wcmatch *.py
-recursive-include tests *.txt *.py
+recursive-include tests *.py
 recursive-include requirements *.txt
 recursive-exclude site *
 include setup.py

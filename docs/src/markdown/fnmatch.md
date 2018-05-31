@@ -17,7 +17,7 @@ Pattern           | Meaning
 `?`               | Matches any single character.
 `[seq]`           | Matches any character in seq.
 `[!seq]`          | Matches any character not in seq.
-`\`               | Escapes characters. If applied to a meta characters, it will be treated as normal characters.
+`\`               | Escapes characters. If applied to a meta character, it will be treated as a normal character.
 `!`               | Inverse pattern (with configuration, can use `-` instead of `!`).
 `?(pattern_list)` | The pattern matches if zero or one occurrences of any of the patterns in the `pattern_list` match the input string.
 `*(pattern_list)` | The pattern matches if zero or more occurrences of any of the patterns in the `pattern_list` match the input string.
@@ -31,7 +31,7 @@ Pattern           | Meaning
 - For `glob` there are additional Windows drive consideration. Check out [`glob`](glob#wcmatchglob) for more information.
 - By default `.` is matched (even at the start of a file) by `*`, `?`, `[]`, and extended patterns such as `*(...)`. See the [`PERIOD`](#fnmatchperiod) flag to limit this matching at the start of a filename.
 
-### API
+## API
 
 #### fnmatch.fnmatch
 
@@ -119,7 +119,7 @@ def translate(patterns, \*, flags=0):
 ([], ['^(?!(?s:(?=.).*?\\.a)).*?$', '^(?!(?s:(?=.).*?\\.b)).*?$', '^(?!(?s:(?=.).*?\\.c)).*?$'])
 ```
 
-### Flags
+## Flags
 
 #### fnmatch.FORCECASE
 
@@ -154,3 +154,7 @@ When `MINUSNEGATE` is used with [`NEGATE`](#fnmatchnegate), negate patterns are 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
 For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch) as it will be more efficient as it won't spawn multiple patterns that need to be separately parsed. A pattern such as `{1..100}` would generate one hundred patterns that will all get individually parsed. But when needed, this feature can be quite useful.
+
+--8<--
+refs.md
+--8<--

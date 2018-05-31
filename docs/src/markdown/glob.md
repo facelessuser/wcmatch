@@ -6,7 +6,7 @@ from wcmatch import glob
 
 ## Syntax
 
-The `glob` library provides a methods for traversing the file system and returning files that matched a defined set of glob patterns.  It also provides methods for matching a file pattern (similar to [`fnmatch`](fnmatch#fnmatchfnmatch), but for paths) with the same glob patterns used for glob. In short, [`globmatch`](#globglobmatch) matches what [`glob`](#globglob) globs :slight_smile:. The features are similar to `fnmatch`'s, but the flags and what features that are enabled by default vary.
+The `glob` library provides methods for traversing the file system and returning files that matched a defined set of glob patterns.  It also provides methods for matching a file pattern (similar to [`fnmatch`](fnmatch#fnmatchfnmatch), but for paths) with the same glob patterns used for glob. In short, [`globmatch`](#globglobmatch) matches what [`glob`](#globglob) globs :slight_smile:. The features are similar to `fnmatch`'s, but the flags and what features that are enabled by default vary.
 
 !!! tip
     When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a character `#!py3 r'\?'`.  If you want to represent a literal backslash, you must use two: `#!py3 r'some\\path'`.
@@ -18,7 +18,7 @@ Pattern           | Meaning
 `?`               | Matches any single character.
 `[seq]`           | Matches any character in seq.
 `[!seq]`          | Matches any character not in seq.
-`\`               | Escapes characters. If applied to a meta characters, it will be treated as normal characters.
+`\`               | Escapes characters. If applied to a meta character, it will be treated as a normal character.
 `!`               | Inverse pattern (with configuration, can use `-` instead of `!`).
 `?(pattern_list)` | The pattern matches if zero or one occurrences of any of the patterns in the `pattern_list` match the input string.
 `*(pattern_list)` | The pattern matches if zero or more occurrences of any of the patterns in the `pattern_list` match the input string.
@@ -67,7 +67,7 @@ Pattern           | Meaning
     docs/. docs/..
     ```
 
-### API
+## API
 
 #### glob.glob
 
@@ -237,7 +237,7 @@ True
 
 `raw_escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since [`globmatch`](#globglobmatch) allows you to match Unix style paths on a Windows system, you can force Unix style escaping via the `unix` parameter.
 
-### Flags
+## Flags
 
 #### glob.FORCECASE
 
@@ -276,3 +276,7 @@ By default, [`glob`](#globglob) and [`globmatch`](#globglobmatch) will not match
 `NOBRACE` disables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
 For simple patterns, it may make more sense to use extended patterns as they will be more efficient since they won't spawn multiple patterns that need to be separately parsed. A pattern such as `{1..100}` would generate one hundred patterns that will all get individually parsed. But when needed, this feature can be quite useful.
+
+--8<--
+refs.md
+--8<--

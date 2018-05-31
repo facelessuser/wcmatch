@@ -6,11 +6,11 @@ from wcmatch import wcmatch
 
 ## Overview
 
-`wcmatch` was originally written to provide a simple user interface for searching specific files in [Rummage](https://github.com/facelessuser/Rummage). An interface was needed where a user could select a base path, define one or more file patterns they wanted to search for, and provide folders to exclude if needed. It needed to be aware of hidden files on different systems, not just ignoring files that start with `.`. It also needed to be extendable so we could further filter returned files by size, creation date, or whatever else was decided. While `glob` is a fantastic file and folder search tool, it just didn't make sense for such a user interface.
+`wcmatch.WcMatch` was originally written to provide a simple user interface for searching specific files in [Rummage](https://github.com/facelessuser/Rummage). A class was needed to facilitate a user interface where a user could select a base path, define one or more file patterns they wanted to search for, and provide folders to exclude if needed. It needed to be aware of hidden files on different systems, not just ignoring files that start with `.`. It also needed to be extendable so we could further filter returned files by size, creation date, or whatever else was decided. While `glob` is a fantastic file and folder search tool, it just didn't make sense for such a user interface.
 
 ## wcmatch.WcMatch
 
-`WcMatch` is an extendable file search class. It allows you to specify a base path, file patterns, and optional folder exclude patterns. You can specify whether you want to see hidden files as well and whether you wish to do a recursive search. You can tap into specific hooks to change what is returns or done for a match, error, or when a file is skipped. You can also tap into hooks to further filter returned files by other requirements such as creation dates, size etc.
+`WcMatch` is an extendable file search class. It allows you to specify a base path, file patterns, and optional folder exclude patterns. You can specify whether you want to see hidden files and whether the search should be recursive. You can also derive from the class and tap into specific hooks to change what is returned or done when a file is matched, skipped, or when there is an error. There are also hooks where you can inject additional, custom filtering.
 
 Parameter         | Default       | Description
 ----------------- | ------------- | -----------
@@ -84,7 +84,7 @@ Enabling hidden files:
 ['./.codecov.yml', './.travis.yml', './appveyor.yml', './mkdocs.yml']
 ```
 
-### Methods
+## Methods
 
 #### WcMatch.match
 
@@ -150,7 +150,7 @@ Returns the number of skipped files. Files in skipped folders are not included i
 10
 ```
 
-### Hooks
+## Hooks
 
 #### WcMatch.on_init
 
@@ -216,7 +216,7 @@ When accessing or processing a file throws an error, it is sent to `on_error`. H
 
 On match returns the path of the matched file.  You can override `on_match` and change what is returned.  You could return just the base, you could parse the file and return the content, or return a special match record with additional file meta data. `on_match` must return something, and all results will be returned via `match` or `imatch`.
 
-### Flags
+## Flags
 
 #### wcmatch.FORCECASE
 
@@ -263,3 +263,7 @@ When [`PATHNAME`](#wcmatchpathname) flag is provided, you can also enable `GLOBS
 >>> wcmatch.WcMatch('.', '*.md|*.txt', '**/markdown', recursive=True, flags=wcmatch.PATHNAME).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt', './tests/dir_walker/a.txt']
 ```
+
+--8<--
+refs.md
+--8<--
