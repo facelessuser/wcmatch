@@ -25,6 +25,7 @@ import functools
 import bracex
 from collections import namedtuple
 from . import util
+from backrefs import uniprops
 
 RE_WIN_PATH = re.compile(r'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)')
 RE_BWIN_PATH = re.compile(br'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)')
@@ -32,6 +33,7 @@ RE_WIN_MAGIC = re.compile(r'([-!*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
 RE_BWIN_MAGIC = re.compile(br'([-!*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
 RE_MAGIC = re.compile(r'([-!*?(\[|^{\\])')
 RE_BMAGIC = re.compile(br'([-!*?(\[|^{\\])')
+RE_POSIX = re.compile(r':(alnum|alpha|ascii|blank|cntrl|digit|graph|lower|print|punct|space|upper|xdigit):\]')
 
 SET_OPERATORS = frozenset(('&', '~', '|'))
 NEGATIVE_SYM = frozenset((b'!', '!'))
@@ -646,16 +648,45 @@ class WcParse(object):
         return value
 
     def _sequence_range_check(self, result, last):
-        """Swap range if backwards in sequence."""
+        """
+        If range backwards, remove it.
 
+        A bad range will cause the regular expresion to fail,
+        so we need to remove, but return that we removed it
+        so the caller can no the sequence wasn't empty.
+        Caller will have to craft a sequence that makes sense
+        if empty at the end with either an impossible sequence
+        for inclusive sequences or a sequence that matches
+        everything for an exclusive sequence.
+        """
+
+        removed = False
         first = result[-2]
         v1 = ord(first[1:2] if len(first) > 1 else first)
         v2 = ord(last[1:2] if len(last) > 1 else last)
         if v2 < v1:
-            result[-2] = '\\' + last
-            result.append(first)
+            result.pop()
+            result.pop()
+            removed = True
         else:
             result.append(last)
+        return removed
+
+    def _handle_posix(self, i, result, end_range):
+        """Handle posix classes."""
+
+        last_posix = False
+        m = i.match(RE_POSIX)
+        if m:
+            last_posix = True
+            # Cannot do range with posix class
+            # so escape last `-` if we think this
+            # is the end of a range.
+            if end_range and i.index - 1 >= end_range:
+                result[-1] = '\\' + result[-1]
+            posix_type = uniprops.POSIX_BINARY if self.is_bytes else uniprops.POSIX
+            result.append(uniprops.get_posix_property(m.group(1), posix_type))
+        return last_posix
 
     def _sequence(self, i):
         """Handle fnmatch character group."""
@@ -667,15 +698,24 @@ class WcParse(object):
             # Handle negate char
             result.append('^')
             c = next(i)
-        if c in ('-', '[', ']'):
+        if c == '[':
+            if not self._handle_posix(i, result, 0):
+                result.append(re.escape(c))
+            c = next(i)
+        elif c in ('-', ']'):
             result.append(re.escape(c))
             c = next(i)
 
         end_range = 0
         escape_hypen = -1
+        last_posix = False
+        removed = False
         while c != ']':
             if c == '-':
-                if i.index - 1 > escape_hypen:
+                if last_posix:
+                    result.append('\\' + c)
+                    last_posix = False
+                elif i.index - 1 > escape_hypen:
                     # Found a range delimiter.
                     # Mark the next two characters as needing to be escaped if hypens.
                     # The next character would be the end char range (s-e),
@@ -685,12 +725,20 @@ class WcParse(object):
                     escape_hypen = i.index + 1
                     end_range = i.index
                 elif end_range and i.index - 1 >= end_range:
-                    self._sequence_range_check(result, '\\' + c)
+                    if self._sequence_range_check(result, '\\' + c):
+                        removed = True
                     end_range = 0
                 else:
                     result.append('\\' + c)
                 c = next(i)
                 continue
+            last_posix = False
+
+            if c == '[':
+                last_posix = self._handle_posix(i, result, end_range)
+                if last_posix:
+                    c = next(i)
+                    continue
 
             if c == '\\':
                 # Handle escapes
@@ -714,7 +762,8 @@ class WcParse(object):
                 value = c
 
             if end_range and i.index - 1 >= end_range:
-                self._sequence_range_check(result, value)
+                if self._sequence_range_check(result, value):
+                    removed = True
                 end_range = 0
             else:
                 result.append(value)
@@ -722,6 +771,21 @@ class WcParse(object):
             c = next(i)
 
         result.append(']')
+        # Bad range removed.
+        if removed:
+            value = "".join(result)
+            if value == '[]':
+                # We specified some ranges, but they are all
+                # out of reach.  Create an impossible sequence to match.
+                result = ['[^%s]' % ('\x00-\xff' if self.is_bytes else uniprops.UNICODE_RANGE)]
+            elif value == '[^]':
+                # We specified some range, but hey are all
+                # out of reach. Since this is exclusive
+                # that means we can match *anything*.
+                result = ['[%s]' % ('\x00-\xff' if self.is_bytes else uniprops.UNICODE_RANGE)]
+            else:
+                result = [value]
+
         if self.pathname or (self.after_start and not self.dot):
             return self._restrict_sequence() + ''.join(result)
 

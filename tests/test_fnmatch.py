@@ -100,7 +100,26 @@ class TestFnMatch(unittest.TestCase):
         [r'a*(\.)bc', 'a.bc', True, fnmatch.E | fnmatch.P],
         ['a*(?)bc', 'a.bc', True, fnmatch.E | fnmatch.P],
         ['a*(?|.)bc', 'a.bc', True, fnmatch.E | fnmatch.P],
-        ['a*(?|*)bc', 'a.bc', True, fnmatch.E | fnmatch.P]
+        ['a*(?|*)bc', 'a.bc', True, fnmatch.E | fnmatch.P],
+
+        "POSIX style character classes",
+        ['[[:alnum:]]bc', 'zbc', True, 0],
+        ['[[:alnum:]]bc', '1bc', True, 0],
+        ['[a[:alnum:]]bc', 'zbc', True, 0],
+        ['[[:alnum:][:blank:]]bc', ' bc', True, 0],
+        # We can't use a character class as a range.
+        ['[-[:alnum:]]bc', '-bc', True, 0],
+        ['[a-[:alnum:]]bc', '-bc', True, 0],
+        ['[[:alnum:]-z]bc', '-bc', True, 0],
+        # Negation
+        ['[![:alnum:]]bc', '!bc', True, 0],
+        ['[^[:alnum:]]bc', '!bc', True, 0],
+
+        "Backwards ranges",
+        ['[a-z]', 'a', True, 0],
+        ['[z-a]', 'a', False, 0],
+        ['[!z-a]', 'a', True, 0],
+        ['[!a-z]', 'a', False, 0]
     ]
 
     filter_cases = [

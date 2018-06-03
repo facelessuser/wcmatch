@@ -148,7 +148,7 @@ class StringIter(object):
 
         return self.iternext()
 
-    def match(self, pattern):  # pragma: no cover
+    def match(self, pattern):
         """Perform regex match at index."""
 
         m = pattern.match(self._string, self._index)
