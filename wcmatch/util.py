@@ -5,6 +5,7 @@ import os
 import re
 import unicodedata
 
+PY37 = (3, 7) <= sys.version_info
 PY36 = (3, 6) <= sys.version_info
 PY35 = (3, 5) <= sys.version_info
 
