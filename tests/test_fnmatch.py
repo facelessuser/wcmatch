@@ -205,7 +205,10 @@ class TestFnMatch(unittest.TestCase):
             self.assertEqual(p2, [])
 
         p1, p2 = fnmatch.translate(fnmatch.fnsplit('test[!]'))
-        if util.PY36:
+        if util.PY37:
+            self.assertEqual(p1, [r'^(?s:test\[!\])$'])
+            self.assertEqual(p2, [])
+        elif util.PY36:
             self.assertEqual(p1, [r'^(?s:test\[\!\])$'])
             self.assertEqual(p2, [])
         else:
@@ -324,7 +327,10 @@ class TestFnMatch(unittest.TestCase):
             self.assertEqual(p2, [])
 
         p1, p2 = fnmatch.translate(r'test\400', flags=fnmatch.R)
-        if util.PY36:
+        if util.PY37:
+            self.assertEqual(p1, [r'^(?s:testĀ)$'])
+            self.assertEqual(p2, [])
+        elif util.PY36:
             self.assertEqual(p1, [r'^(?s:test\Ā)$'])
             self.assertEqual(p2, [])
         else:
