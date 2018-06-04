@@ -1,2 +1,2 @@
 bracex
-backrefs
+backrefs>=3.5.1

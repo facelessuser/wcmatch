@@ -684,7 +684,7 @@ class WcParse(object):
             # is the end of a range.
             if end_range and i.index - 1 >= end_range:
                 result[-1] = '\\' + result[-1]
-            posix_type = uniprops.POSIX_BINARY if self.is_bytes else uniprops.POSIX
+            posix_type = uniprops.POSIX_BYTES if self.is_bytes else uniprops.POSIX
             result.append(uniprops.get_posix_property(m.group(1), posix_type))
         return last_posix
 
