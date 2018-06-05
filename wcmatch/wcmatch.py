@@ -26,29 +26,36 @@ from . import _wcparse
 from . import util
 
 __all__ = (
-    "FORCECASE", "IGNORECASE", "RAWCHARS", "PATHNAME", "EXTGLOB", "GLOBSTAR", "BRACE", "MINUSNEGATE",
-    "F", "I", "R", "P", "E", "G", "M",
+    "FORCECASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME",
+    "EXTGLOB", "GLOBSTAR", "BRACE", "MINUSNEGATE",
+    "F", "I", "R", "P", "E", "G", "M", "DP", "FP",
     "WcMatch"
 )
 
 F = FORCECASE = _wcparse.FORCECASE
 I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
-P = PATHNAME = _wcparse.PATHNAME
 E = EXTGLOB = _wcparse.EXTGLOB
 G = GLOBSTAR = _wcparse.GLOBSTAR
 B = BRACE = _wcparse.BRACE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
 
+# Control PATHNAME individually for folder exclude and files
+DP = DIRPATHNAME = 0x100000
+FP = FILEPATHNAME = 0x200000
+# Control PATHNAME for file and folder
+P = PATHNAME = DIRPATHNAME | FILEPATHNAME
+
 FLAG_MASK = (
     FORCECASE |
     IGNORECASE |
     RAWCHARS |
-    PATHNAME |
     EXTGLOB |
     GLOBSTAR |
     BRACE |
-    MINUSNEGATE
+    MINUSNEGATE |
+    DIRPATHNAME |
+    FILEPATHNAME
 )
 
 
@@ -61,43 +68,53 @@ class WcMatch(object):
         args = list(args)
         self._skipped = 0
         self._abort = False
-        self.directory = util.norm_slash(args.pop(0))
-        self.is_bytes = isinstance(self.directory, bytes)
+        self._directory = util.norm_slash(args.pop(0))
+        self.is_bytes = isinstance(self._directory, bytes)
+        if not self._directory:
+            if self.is_bytes:
+                curdir = bytes(os.curdir, 'ASCII')
+            else:
+                curdir = os.curdir
+        else:
+            curdir = self._directory
+        sep = os.fsencode(os.sep) if self.is_bytes else os.sep
+        self.base = curdir if curdir.endswith(sep) else curdir + sep
         self.file_pattern = args.pop(0) if args else kwargs.pop('file_pattern', b'*' if self.is_bytes else '*')
         self.exclude_pattern = args.pop(0) if args else kwargs.pop('exclude_pattern', b'' if self.is_bytes else '')
         self.recursive = args.pop(0) if args else kwargs.pop('recursive', False)
         self.show_hidden = args.pop(0) if args else kwargs.pop('show_hidden', False)
         self.flags = (args.pop(0) if args else kwargs.pop('flags', 0)) & FLAG_MASK
         self.flags |= _wcparse.NEGATE | _wcparse.DOTGLOB
-        self.pathname = bool(self.flags & PATHNAME)
+        self.dir_pathname = bool(self.flags & DIRPATHNAME)
+        self.file_pathname = bool(self.flags & FILEPATHNAME)
         if util.platform() == "windows":
             self.flags |= _wcparse._FORCEWIN
-        if self.pathname:
-            self.flags ^= PATHNAME
+        self.flags = self.flags & _wcparse.FLAG_MASK
 
         self.on_init(*args, **kwargs)
         self.file_check, self.folder_exclude_check = self._compile(self.file_pattern, self.exclude_pattern)
 
-    def _compile_wildcard(self, pattern, force_default=False, pathname=False):
+    def _compile_wildcard(self, pattern, pathname=False):
         """Compile or format the wildcard inclusion/exclusion pattern."""
 
         patterns = None
         flags = self.flags
-        if pathname and self.pathname:
-            flags |= PATHNAME
+        if pathname:
+            flags |= _wcparse.PATHNAME
         if pattern:
-            patterns = _wcparse.WcSplit(pattern, flags=self.flags).split()
-        return _wcparse.compile(patterns, self.flags) if patterns else patterns
+            patterns = _wcparse.WcSplit(pattern, flags=flags).split()
+
+        return _wcparse.compile(patterns, flags) if patterns else patterns
 
     def _compile(self, file_pattern, folder_exclude_pattern):
         """Compile patterns."""
 
         if not isinstance(file_pattern, _wcparse.WcRegexp):
-            file_pattern = self._compile_wildcard(file_pattern)
+            file_pattern = self._compile_wildcard(file_pattern, self.file_pathname)
 
         if not isinstance(folder_exclude_pattern, _wcparse.WcRegexp):
 
-            folder_exclude_pattern = self._compile_wildcard(folder_exclude_pattern, True)
+            folder_exclude_pattern = self._compile_wildcard(folder_exclude_pattern, self.dir_pathname)
 
         return file_pattern, folder_exclude_pattern
 
@@ -113,8 +130,9 @@ class WcMatch(object):
         """Return whether a file can be searched."""
 
         valid = False
-        if self.file_check is not None and not self._is_hidden(os.path.join(base, name)):
-            valid = self.file_check.match(name)
+        fullpath = os.path.join(base, name)
+        if self.file_check is not None and not self._is_hidden(fullpath):
+            valid = self.file_check.match(fullpath[self._base_len:] if self.file_pathname else name)
         return self.on_validate_file(base, name) if valid else valid
 
     def on_validate_file(self, base, name):
@@ -130,7 +148,7 @@ class WcMatch(object):
         if not self.recursive or self._is_hidden(fullpath):
             valid = False
         elif self.folder_exclude_check is not None:
-            valid = not self.folder_exclude_check.match(fullpath if self.pathname else name)
+            valid = not self.folder_exclude_check.match(fullpath[self._base_len:] if self.dir_pathname else name)
         return self.on_validate_directory(base, name) if valid else valid
 
     def on_init(self, *args, **kwargs):
@@ -174,15 +192,9 @@ class WcMatch(object):
     def _walk(self):
         """Start search for valid files."""
 
-        if not self.directory:
-            if self.is_bytes:
-                curdir = bytes(os.curdir, 'ASCII')
-            else:
-                curdir = os.curdir
-        else:
-            curdir = self.directory
+        self._base_len = len(self.base)
 
-        for base, dirs, files in os.walk(curdir):
+        for base, dirs, files in os.walk(self.base):
             # Remove child folders based on exclude rules
             for name in dirs[:]:
                 try:

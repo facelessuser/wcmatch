@@ -39,7 +39,7 @@ Recursively searching for files:
 ```pycon3
 >>> from wcmatch import wcmatch
 >>> wcmatch.WcMatch('.', '*.md|*.txt', recursive=True).match()
-['./LICENSE.md', './README.md', './docs/src/markdown/changelog.md', './docs/src/markdown/fnmatch.md', './docs/src/markdown/glob.md', './docs/src/markdown/index.md', './docs/src/markdown/installation.md', './docs/src/markdown/license.md', './docs/src/markdown/wcmatch.md', './docs/src/markdown/_snippets/abbr.md', './docs/src/markdown/_snippets/links.md', './docs/src/markdown/_snippets/refs.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt', './tests/dir_walker/a.txt', './tests/dir_walker/.hidden/a.txt']
+['./LICENSE.md', './README.md', './docs/src/markdown/changelog.md', './docs/src/markdown/fnmatch.md', './docs/src/markdown/glob.md', './docs/src/markdown/index.md', './docs/src/markdown/installation.md', './docs/src/markdown/license.md', './docs/src/markdown/wcmatch.md', './docs/src/markdown/_snippets/abbr.md', './docs/src/markdown/_snippets/links.md', './docs/src/markdown/_snippets/refs.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
 Excluding directories:
@@ -47,7 +47,7 @@ Excluding directories:
 ```pycon3
 >>> from wcmatch import wcmatch
 >>> wcmatch.WcMatch('.', '*.md|*.txt', 'docs', recursive=True).match()
-['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt', './tests/dir_walker/a.txt', './tests/dir_walker/.hidden/a.txt']
+['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
 Using file negation patterns:
@@ -55,7 +55,7 @@ Using file negation patterns:
 ```pycon3
 >>> from wcmatch import wcmatch
 >>> wcmatch.WcMatch('.', '*.md|*.txt|!README*', 'docs', recursive=True).match()
-['./LICENSE.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt', './tests/dir_walker/a.txt', './tests/dir_walker/.hidden/a.txt']
+['./LICENSE.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
 You can also use negation patterns in directory exclude. Here we avoid all folders with `*`, but add an exception for `requirements`. It should be noted that you cannot add an exception for the child of an excluded folder.
@@ -244,15 +244,29 @@ For simple patterns, it may make more sense to use [`EXTGLOB`](#wcmatchextglob) 
 
 `MINUSNEGATE` requires negation patterns to use `-` instead of `!`.
 
-#### wcmatch.PATHNAME
+#### wcmatch.DIRPATHNAME
 
-`PATHNAME` will enable path name searching for excluded folder patterns, but it will not apply to file patterns. This is mainly provided for cases where you may have multiple folders with the same name, but you want to target a specific folder to exclude.
+`DIRPATHNAME` will enable path name searching for excluded folder patterns, but it will not apply to file patterns. This is mainly provided for cases where you may have multiple folders with the same name, but you want to target a specific folder to exclude. The path name compared will be the entire path relative to the base path.  So if the provided base folder was `.`, and the folder under evaluation is `./some/folder`, `some/folder` will be matched against the pattern.
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '*.md|*.txt', './docs/src/markdown', recursive=True, flags=wcmatch.PATHNAME).match()
-['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt', './tests/dir_walker/a.txt']
+>>> wcmatch.WcMatch('.', '*.md|*.txt', 'docs/src/markdown', recursive=True, flags=wcmatch.DIRPATHNAME).match()
+['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
+
+#### wcmatch.FILEPATHNAME
+
+`FILEPATHNAME` will enable path name searching for the file patterns, but it will not apply to directory exclude patterns. The path name compared will be the entire path relative to the base path.  So if the provided base folder was `.`, and the file under evaluation is `./some/file.txt`, `some/file.txt` will be matched against the pattern.
+
+```pycon3
+>>> from wcmatch import wcmatch
+>>> wcmatch.WcMatch('.', '**/*.md|!**/_snippets/*', recursive=True, flags=wcmatch.FILEPATHNAME | wcmatch.GLOBSTAR).match()
+['./LICENSE.md', './README.md', './docs/src/markdown/changelog.md', './docs/src/markdown/fnmatch.md', './docs/src/markdown/glob.md', './docs/src/markdown/index.md', './docs/src/markdown/license.md', './docs/src/markdown/wcmatch.md']
+```
+
+#### wcmatch.PATHNAME
+
+`PATHNAME` enables both [`DIRPATHNAME`](#wcmatchdirpathname) and [`FILEPATHNAME`](#wcmathfilepathname). It is provided for convenience.
 
 #### wcmatch.GLOBSTAR
 
@@ -260,8 +274,8 @@ When [`PATHNAME`](#wcmatchpathname) flag is provided, you can also enable `GLOBS
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '*.md|*.txt', '**/markdown', recursive=True, flags=wcmatch.PATHNAME).match()
-['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt', './tests/dir_walker/a.txt']
+>>> wcmatch.WcMatch('.', '*.md|*.txt', '**/markdown', recursive=True, flags=wcmatch.DIRPATHNAME | wcmatch.GLOBSTAR).match()
+['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
 --8<--

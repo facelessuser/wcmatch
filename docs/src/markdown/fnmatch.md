@@ -17,7 +17,7 @@ Pattern           | Meaning
 `?`               | Matches any single character.
 `[seq]`           | Matches any character in seq.
 `[!seq]`          | Matches any character not in seq.
-`[[:alnum:]]`     | POSIX style character classes inside sequences. See [POSIX Character Classes](#posix-character-classes) for more info.
+`[[:alnum:]]`     | POSIX style character classes inside sequences. The `C` locale is used for byte string and Unicode properties for Unicode strings. See [POSIX Character Classes](#posix-character-classes) for more info.
 `\`               | Escapes characters. If applied to a meta character, it will be treated as a normal character.
 `!`               | Inverse pattern (with configuration, can use `-` instead of `!`).
 `?(pattern_list)` | The pattern matches if zero or one occurrences of any of the patterns in the `pattern_list` match the input string.
@@ -31,6 +31,8 @@ Pattern           | Meaning
 - If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern and file names will be treated as a Linux/Unix path.
 - For `glob` there are additional Windows drive consideration. Check out [`glob`](glob#wcmatchglob) for more information.
 - By default `.` is matched (even at the start of a file) by `*`, `?`, `[]`, and extended patterns such as `*(...)`. See the [`PERIOD`](#fnmatchperiod) flag to limit this matching at the start of a filename.
+
+--8<-- "posix.md"
 
 ## API
 

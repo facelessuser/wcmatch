@@ -18,7 +18,7 @@ Pattern           | Meaning
 `?`               | Matches any single character.
 `[seq]`           | Matches any character in seq.
 `[!seq]`          | Matches any character not in seq.
-`[[:alnum:]]`     | POSIX style character classes inside sequences.  See [POSIX Character Classes](#posix-character-classes) for more info.
+`[[:alnum:]]`     | POSIX style character classes inside sequences.  The `C` locale is used for byte string and Unicode properties for Unicode strings. See [POSIX Character Classes](#posix-character-classes) for more info.
 `\`               | Escapes characters. If applied to a meta character, it will be treated as a normal character.
 `!`               | Inverse pattern (with configuration, can use `-` instead of `!`).
 `?(pattern_list)` | The pattern matches if zero or one occurrences of any of the patterns in the `pattern_list` match the input string.
@@ -68,6 +68,8 @@ Pattern           | Meaning
     docs/. docs/..
     ```
 
+--8<-- "posix.md"
+
 ## API
 
 #### glob.glob
@@ -97,7 +99,7 @@ When a glob pattern ends with a slash, it will only return directories:
 ```pycon3
 >>> from wcmatch import glob
 >>> glob.glob(r'**/')
-['__pycache__/', 'docs/', 'docs/src/', 'docs/src/markdown/', 'docs/src/markdown/_snippets/', 'docs/theme/', 'requirements/', 'stuff/', 'tests/', 'tests/__pycache__/', 'tests/dir_walker/', 'wcmatch/', 'wcmatch/__pycache__/']
+['__pycache__/', 'docs/', 'docs/src/', 'docs/src/markdown/', 'docs/src/markdown/_snippets/', 'docs/theme/', 'requirements/', 'stuff/', 'tests/', 'tests/__pycache__/', 'wcmatch/', 'wcmatch/__pycache__/']
 ```
 
 #### glob.iglob

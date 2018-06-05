@@ -4,6 +4,7 @@ Wildcard Match provides an enhanced `fnmatch` and `glob` library. In some ways i
 
 - Adds support for `**` in glob.
 - Adds support for escaping characters with `\`.
+- Add support for POSIX style character classes inside sequences: `[[:alnum:]]`, etc. The `C` locale is used for byte string and Unicode properties for Unicode strings.
 - Adds support for brace expansion: `a{b,{c,d}}` --> `ab ac ad`.
 - Adds support for extended match patterns: `@(...)`, `+(...)`, `*(...)`, `?(...)`, and `!(...)`.
 - Adds ability to match path names via `globmatch` as well as traditional file system searching via glob.
