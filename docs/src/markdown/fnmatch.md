@@ -17,7 +17,7 @@ Pattern           | Meaning
 `?`               | Matches any single character.
 `[seq]`           | Matches any character in seq.
 `[!seq]`          | Matches any character not in seq.
-`[[:alnum:]]`     | POSIX style character classes inside sequences. The `C` locale is used for byte string and Unicode properties for Unicode strings. See [POSIX Character Classes](#posix-character-classes) for more info.
+`[[:alnum:]]`     | POSIX style character classes inside sequences. The `C` locale is used for byte strings and Unicode properties for Unicode strings. See [POSIX Character Classes](#posix-character-classes) for more info.
 `\`               | Escapes characters. If applied to a meta character, it will be treated as a normal character.
 `!`               | Inverse pattern (with configuration, can use `-` instead of `!`).
 `?(pattern_list)` | The pattern matches if zero or one occurrences of any of the patterns in the `pattern_list` match the input string.
@@ -29,8 +29,7 @@ Pattern           | Meaning
 
 - Slashes are generally treated as normal characters, but on windows they will be normalized: `/` will become `\\`. There is no need to explicitly use `\\` in patterns on Windows, but if you do, it will be handled.  This applies to matching patterns and the file names the patterns are applied to.
 - If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern and file names will be treated as a Linux/Unix path.
-- For `glob` there are additional Windows drive consideration. Check out [`glob`](glob#wcmatchglob) for more information.
-- By default `.` is matched (even at the start of a file) by `*`, `?`, `[]`, and extended patterns such as `*(...)`. See the [`PERIOD`](#fnmatchperiod) flag to limit this matching at the start of a filename.
+- By default, `.` is always matched by `*`, `?`, `[]`, and extended patterns such as `*(...)`. See the [`PERIOD`](#fnmatchperiod) flag to avoid matching `.` at the start of a filename.
 
 --8<-- "posix.md"
 
@@ -39,10 +38,10 @@ Pattern           | Meaning
 #### fnmatch.fnmatch
 
 ```py3
-def fnmatch(filename, patterns, \*, flags=0)
+def fnmatch(filename, patterns, *, flags=0)
 ```
 
-`fnmatch` takes a file name, a pattern (or list of patterns) and flags.  It will return a boolean indicating whether the file name was matched by the pattern(s).
+`fnmatch` takes a file name, a pattern (or list of patterns), and flags.  It will return a boolean indicating whether the file name was matched by the pattern(s).
 
 ```pycon3
 >>> from wcmatch import fnmatch
@@ -68,7 +67,7 @@ False
 True
 ```
 
-When used in conjunction with other patterns, a file will match if matches one of the positive patterns **and** does not match any inverse pattern. If only inverse patterns are applied, the file must not match any of the patterns.
+When inverse patterns are used in conjunction with other patterns, a file will be considered matched if one of the positive patterns match **and** none of the inverse patterns match. If only inverse patterns are applied, the file must not match any of the patterns.
 
 ```pycon3
 >>> from wcmatch import fnmatch
@@ -81,10 +80,10 @@ False
 #### fnmatch.filter
 
 ```py3
-def filter(filenames, patterns, \*, flags=0):
+def filter(filenames, patterns, *, flags=0):
 ```
 
-`filter` takes a list of file names, a pattern (or list of patterns) and flags. It returns a list of all files that matched the pattern(s). The same logic used for [`fnmatch`](#fnmatchfnmatch) is used for `filter`, albeit more efficient for processing multiple files.
+`filter` takes a list of file names, a pattern (or list of patterns), and flags. It returns a list of all files that matched the pattern(s). The same logic used for [`fnmatch`](#fnmatchfnmatch) is used for `filter`, albeit more efficient for processing multiple files.
 
 ```pycon3
 >>> from wcmatch import fnmatch
@@ -98,7 +97,7 @@ def filter(filenames, patterns, \*, flags=0):
 def fnsplit(pattern, *, flags=0):
 ```
 
-`fnsplit` is used to take a string of multiple patterns that divided by `|` and split them into separate patterns. It takes into account things like sequences (`[]`) and extended patterns (`*(...)`) and will not parse `|` within them.  You can escape the dividers if needed (`\|`). This is useful for certain interfaces.
+`fnsplit` is used to take a string of multiple patterns that are divided by `|` and split them into separate patterns. This is provided to help with some interfaces they might need a way to define multiple patterns in one input. It takes into account things like sequences (`[]`) and extended patterns (`*(...)`) and will not parse `|` within them.  You can escape the dividers if needed (`\|`).
 
 ```pycon3
 >>> from wcmatch import fnmatch
@@ -109,10 +108,10 @@ def fnsplit(pattern, *, flags=0):
 #### fnmatch.translate
 
 ```py3
-def translate(patterns, \*, flags=0):
+def translate(patterns, *, flags=0):
 ```
 
-`translate` takes a file glob pattern (or list of patterns) and returns two lists (one for positive patterns and one for inverse patterns) of equivalent regular expressions for each pattern. This returns a list even when only one pattern is given as features like brace expansion literally expand a pattern into multiple patterns.
+`translate` takes a file pattern (or list of patterns) and returns two lists: one for positive patterns and one for inverse patterns. The lists contain the regular expressions used for matching the given patterns.
 
 ```pycon3
 >>> from wcmatch import translate
@@ -130,15 +129,15 @@ def translate(patterns, \*, flags=0):
 
 #### fnmatch.IGNORECASE
 
-`IGNORECASE` force case insensitivity. [`FORCECASE`](#fnmatchforecase) has higher priority than `IGNORECASE`.
+`IGNORECASE` forces case insensitivity. [`FORCECASE`](#fnmatchforecase) has higher priority than `IGNORECASE`.
 
 #### fnmatch.RAWCHARS
 
-`RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will handled standard string escapes and Unicode (including `#!py3 r'\N{CHAR NAME}'`).
+`RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will handled standard string escapes and Unicode including `#!py3 r'\N{CHAR NAME}'`.
 
 #### fnmatch.NEGATE
 
-`NEGATE` causes patterns that start with `!` to be treated as inverse matches. A pattern of `!*.py` would match any file but Python files. If used with [`EXTMATCH`](#fnmatchextmatch), patterns like `!(inverse|pattern)` will be mistakenly parsed as an inverse path instead of an inverse extmatch group.  See [`MINUSNEGATE`](#fnmatchminusnegate) for an alternative syntax that plays nice with `EXTMATCH`.
+`NEGATE` causes patterns that start with `!` to be treated as inverse matches. A pattern of `!*.py` would match any file but Python files. If used with [`EXTMATCH`](#fnmatchextmatch), patterns like `!(inverse|pattern)` will be mistakenly parsed as an inverse pattern instead of an inverse extmatch group.  See [`MINUSNEGATE`](#fnmatchminusnegate) for an alternative syntax that plays nice with `EXTMATCH`.
 
 #### fnmatch.MINUSNEGATE
 
@@ -146,17 +145,19 @@ When `MINUSNEGATE` is used with [`NEGATE`](#fnmatchnegate), negate patterns are 
 
 #### fnmatch.PERIOD
 
-`PERIOD` causes file names that start with dot (`.`) to only be matched with a literal `.`. Dots will not be matched in `[]`, `*`, `?`, or extended patterns like `+(...)`.
+`PERIOD` causes file names that start with dot (`.`) to only be matched with a literal `.`. Dots will not be matched by `[]`, `*`, `?`, or extended patterns like `+(...)`.
 
 #### fnmatch.EXTMATCH
 
-`EXTMATCH` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc. See the [syntax overview](#syntax) for more information.
+`EXTMATCH` enables extended pattern matching. This includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc. See the [syntax overview](#syntax) for more information.
 
 #### fnmatch.BRACE
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
-For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch) as it will be more efficient as it won't spawn multiple patterns that need to be separately parsed. A pattern such as `{1..100}` would generate one hundred patterns that will all get individually parsed. But when needed, this feature can be quite useful.
+For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch) which will only generate a single pattern: `@(ab|ac|ad)`.
+
+Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of patterns.
 
 --8<--
 refs.md

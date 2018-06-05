@@ -14,7 +14,7 @@ A number of POSIX style character classes are available in the form `[:posix:]`.
 `graph`    | `Graph`     | `[\x21-\x7E]`                                     | `[^\p{Z}\p{C}]`
 `lower`    | `Lower`     | `[a-z]`                                           | `[\p{Ll}]`
 `print`    | `Print`     | `[\x20-\x7E]`                                     | `[\P{C}]`
-`punct`    | `Punct`     | ``[!\"\#$%&'()*+,\-./:;&lt;=&gt;?@\[\\\]^_`{}~]`` | `[\p{P}\p{S}]`
+`punct`    | `Punct`     | ``[!\"\#$%&'()*+,\-./:;<=>?@\[\\\]^_`{}~]``       | `[\p{P}\p{S}]`
 `space`    | `Space`     | `[ \t\r\n\v\f]`                                   | `[\p{Z}\t\r\n\v\f]`
 `upper`    | `Upper`     | `[A-Z]`                                           | `[\p{Lu}]`
 `xdigit`   | `XDigit`    | `[A-Fa-f0-9]`                                     | `[A-Fa-f0-9]`

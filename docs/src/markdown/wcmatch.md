@@ -15,7 +15,7 @@ from wcmatch import wcmatch
 Parameter         | Default       | Description
 ----------------- | ------------- | -----------
 `directory`       |               | The base directory to search.
-`file_pattern`    | `#!py3 '*'`   | One or more `fnmatch` file patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#wcmatchminusnegate) is set).
+`file_pattern`    | `#!py3 '*'`   | One or more patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#wcmatchminusnegate) is set).
 `exclude_pattern` | `#!py3 ''`    | Zero or more folder exclude patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#wcmatchminusnegate) is set).
 `recursive`       | `#!py3 False` | Whether search should be recursive.
 `show_hidden`     | `#!py3 False` | Whether hidden files should be shown.
@@ -66,7 +66,7 @@ You can also use negation patterns in directory exclude. Here we avoid all folde
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
-Notice when a positive pattern is missing, that `*` is assumed. This logic applies to files and folder exclude.
+Negative patterns can be given by themselves.
 
 ```pycon3
 >>> from wcmatch import wcmatch
@@ -220,7 +220,7 @@ On match returns the path of the matched file.  You can override `on_match` and 
 
 #### wcmatch.FORCECASE
 
-`FORCECASE` forces cased searches. `FORCECASE` has higher priority than [`IGNORECASE`](#wcmatchignorecase).
+`FORCECASE` forces cased searches. `FORCECASE` has higher priority than [`IGNORECASE`](#wcmatchignorecase). This does **not** affect path normalization. All paths are normalized for the host as it is required to properly access the file system.
 
 #### wcmatch.IGNORECASE
 
@@ -238,7 +238,9 @@ On match returns the path of the matched file.  You can override `on_match` and 
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
-For simple patterns, it may make more sense to use [`EXTGLOB`](#wcmatchextglob) as it will be more efficient as it won't spawn multiple patterns that need to be separately parsed. A pattern such as `{1..100}` would generate one hundred patterns that will all get individually parsed. But when needed, this feature can be quite useful.
+For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch) which will only generate a single pattern: `@(ab|ac|ad)`.
+
+Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of patterns.
 
 #### wcmatch.MINUSNEGATE
 
@@ -270,7 +272,7 @@ For simple patterns, it may make more sense to use [`EXTGLOB`](#wcmatchextglob) 
 
 #### wcmatch.GLOBSTAR
 
-When [`PATHNAME`](#wcmatchpathname) flag is provided, you can also enable `GLOBSTAR` to enable the recursive directory pattern `**`. This only applies to folder exclude.
+When the [`PATHNAME`](#wcmatchpathname) flag is provided, you can also enable `GLOBSTAR` to enable the recursive directory pattern matches wth `**`.
 
 ```pycon3
 >>> from wcmatch import wcmatch
