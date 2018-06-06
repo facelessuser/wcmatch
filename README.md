@@ -1,4 +1,9 @@
-# Wildcard Match (WIP)
+[![Unix Build Status][travis-image]][travis-link]
+[![Windows Build Status][appveyor-image]][appveyor-link]
+[![Coverage][codecov-image]][codecov-link]
+[![pypi-version][pypi-image]][pypi-link]
+![License][license-image-mit]
+# Wildcard Match
 
 Wildcard Match provides an enhanced `fnmatch` and `glob` library. In some ways it is similar to Python's builtin `fnmatch` and `glob` as it provides functions to match, filter, and glob the file system. But it adds a number of features found in Bash's globbing such as backslash escaping, brace expansion, extended glob pattern groups, etc. It also adds a path centric matcher called `globmatch` which functions like `fnmatch` for paths. Paths that would normally be returned when providing `glob` a pattern should also be properly match in `globmatch`.
 
@@ -39,3 +44,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+[codecov-image]: https://img.shields.io/codecov/c/github/facelessuser/wcmatch/master.svg
+[codecov-link]: https://codecov.io/github/facelessuser/wcmatch
+[travis-image]: https://img.shields.io/travis/facelessuser/wcmatch/master.svg?label=Unix%20Build
+[travis-link]: https://travis-ci.org/facelessuser/wcmatch
+[appveyor-image]: https://img.shields.io/appveyor/ci/facelessuser/wcmatch/master.svg?label=Windows%20Build
+[appveyor-link]: https://ci.appveyor.com/project/facelessuser/wcmatch
+[pypi-image]: https://img.shields.io/pypi/v/wcmatch.svg
+[pypi-link]: https://pypi.python.org/pypi/wcmatch
+[license-image-mit]: https://img.shields.io/badge/license-MIT-blue.svg
