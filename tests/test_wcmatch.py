@@ -43,7 +43,7 @@ class TestWcmatch(unittest.TestCase):
     def norm_list(self, files):
         """Normalize file list."""
 
-        return [self.norm(x) for x in files]
+        return [self.norm(os.path.normpath(x)) for x in files]
 
     def setUp(self):
         """Setup."""
