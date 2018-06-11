@@ -305,7 +305,6 @@ class TestWcmatch(unittest.TestCase):
         self.errors = []
         self.skipped = 0
         self.files = []
-        records = 0
 
         walker = wcmatch.WcMatch(
             self.tempdir,
