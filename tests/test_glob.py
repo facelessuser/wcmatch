@@ -225,17 +225,17 @@ class GlobTests(unittest.TestCase):
 
         eq = self.assertSequencesEqual_noorder
         nfiles = [
-            'sym3/efg',
-            'EF',
-            'sym1',
-            'sym3',
-            'sym2',
-            'ZZZ',
-            '',
-            'sym3/efg/ha',
-            'sym3/EF'
+            ['sym3', 'efg'],
+            ['EF'],
+            ['sym1'],
+            ['sym3'],
+            ['sym2'],
+            ['ZZZ'],
+            [''],
+            ['sym3', 'efg', 'ha'],
+            ['sym3', 'EF']
         ]
-        eq(self.nglob('a*', flags=glob.NEGATE), map(self.norm, nfiles))
+        eq(self.nglob('a*', flags=glob.NEGATE), map(lambda x: self.norm(*x), nfiles))
 
     def test_glob_nested_directory(self):
         """Test nested glob directory."""
