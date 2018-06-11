@@ -215,7 +215,7 @@ class WcMatch(object):
                 for name in files:
                     try:
                         valid = self._valid_file(base, name)
-                    except Exception:  # pragma: no cover
+                    except Exception:
                         valid = False
                         value = self.on_error(base, name)
                         if value:

@@ -35,6 +35,11 @@ class TestWcmatch(unittest.TestCase):
             os.makedirs(base)
         create_empty_file(filename)
 
+    def force_err(self):
+        """Force an error."""
+
+        raise TypeError
+
     def norm(self, *parts):
         """Normalizes file path (in relation to temp dir)."""
         tempdir = os.fsencode(self.tempdir) if isinstance(parts[0], bytes) else self.tempdir
@@ -59,6 +64,8 @@ class TestWcmatch(unittest.TestCase):
         self.default_flags = wcmatch.R | wcmatch.I | wcmatch.M
         self.errors = []
         self.skipped = 0
+        self.skip_records = []
+        self.error_records = []
         self.files = []
 
     def tearDown(self):
@@ -70,7 +77,12 @@ class TestWcmatch(unittest.TestCase):
         """Crawl the files."""
 
         for f in walker.match():
-            self.files.append(f)
+            if f == '<SKIPPED>':
+                self.skip_records.append(f)
+            elif f == '<ERROR>':
+                self.error_records.append(f)
+            else:
+                self.files.append(f)
         self.skipped = walker.get_skipped()
 
     def test_full_path_exclude(self):
@@ -218,6 +230,16 @@ class TestWcmatch(unittest.TestCase):
             walker.kill()
         self.assertEqual(records, 1)
 
+        # Reset our test tracker along with the walker object
+        self.errors = []
+        self.skipped = 0
+        self.files = []
+        records = 0
+        walker.reset()
+
+        self.crawl_files(walker)
+        self.assertEqual(sorted(self.files), self.norm_list(['.hidden/a.txt', 'a.txt']))
+
     def test_abort_early(self):
         """Test aborting early."""
 
@@ -233,3 +255,50 @@ class TestWcmatch(unittest.TestCase):
             records += 1
 
         self.assertTrue(records == 1 or walker.get_skipped() == 1)
+
+    def test_empty_string_dir(self):
+        """Test when directory is an empty string."""
+
+        target = '.' + os.sep
+        walker = wcmatch.WcMatch(
+            '',
+            '*.txt*', None,
+            True, True, self.default_flags
+        )
+        self.assertEqual(walker.base, target)
+
+        walker = wcmatch.WcMatch(
+            b'',
+            b'*.txt*', None,
+            True, True, self.default_flags
+        )
+        self.assertEqual(walker.base, os.fsencode(target))
+
+    def test_skip_override(self):
+        """Test `on_skip` override."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            '*.txt', None,
+            True, True, self.default_flags
+        )
+
+        walker.on_skip = lambda base, name: '<SKIPPED>'
+
+        self.crawl_files(walker)
+        self.assertEqual(len(self.skip_records), 4)
+
+    def test_error_override(self):
+        """Test `on_eror` override."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            '*.txt', None,
+            True, True, self.default_flags
+        )
+
+        walker.on_validate_file = lambda base, name: self.force_err()
+        walker.on_error = lambda base, name: '<ERROR>'
+
+        self.crawl_files(walker)
+        self.assertEqual(len(self.error_records), 2)
