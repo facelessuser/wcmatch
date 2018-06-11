@@ -200,10 +200,10 @@ class WcMatch(object):
                 try:
                     if not self._valid_folder(base, name):
                         dirs.remove(name)
-                except Exception:  # pragma: no cover
+                except Exception:
                     dirs.remove(name)
                     value = self.on_error(base, name)
-                    if value:
+                    if value:  # pragma: no cover
                         yield value
 
                 if self._abort:

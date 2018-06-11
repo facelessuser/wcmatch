@@ -288,6 +288,36 @@ class TestWcmatch(unittest.TestCase):
         self.crawl_files(walker)
         self.assertEqual(len(self.skip_records), 4)
 
+    def test_errors(self):
+        """Test errors."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            '*.txt', None,
+            True, True, self.default_flags
+        )
+
+        walker.on_validate_file = lambda base, name: self.force_err()
+
+        self.crawl_files(walker)
+        self.assertEqual(sorted(self.files), self.norm_list([]))
+
+        self.errors = []
+        self.skipped = 0
+        self.files = []
+        records = 0
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            '*.txt', None,
+            True, True, self.default_flags
+        )
+
+        walker.on_validate_directory = lambda base, name: self.force_err()
+
+        self.crawl_files(walker)
+        self.assertEqual(sorted(self.files), self.norm_list(['a.txt']))
+
     def test_error_override(self):
         """Test `on_eror` override."""
 
