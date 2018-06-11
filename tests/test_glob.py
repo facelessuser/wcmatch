@@ -139,7 +139,8 @@ class GlobTests(unittest.TestCase):
         self.mktemp('EF')
         self.mktemp('a', 'bcd', 'EF')
         self.mktemp('a', 'bcd', 'efg', 'ha')
-        if can_symlink():
+        self.can_symlink = can_symlink()
+        if self.can_symlink:
             os.symlink(self.norm('broken'), self.norm('sym1'))
             os.symlink('broken', self.norm('sym2'))
             os.symlink(os.path.join('a', 'bcd'), self.norm('sym3'))
@@ -225,16 +226,21 @@ class GlobTests(unittest.TestCase):
 
         eq = self.assertSequencesEqual_noorder
         nfiles = [
-            ['sym3', 'efg'],
             ['EF'],
-            ['sym1'],
-            ['sym3'],
-            ['sym2'],
             ['ZZZ'],
-            [''],
-            ['sym3', 'efg', 'ha'],
-            ['sym3', 'EF']
+            ['']
         ]
+        if self.can_symlink:
+            nfiles.extend(
+                [
+                    ['sym1'],
+                    ['sym3'],
+                    ['sym2'],
+                    ['sym3', 'efg'],
+                    ['sym3', 'efg', 'ha'],
+                    ['sym3', 'EF']
+                ]
+            )
         eq(self.nglob('a*', flags=glob.NEGATE), map(lambda x: self.norm(*x), nfiles))
 
     def test_glob_nested_directory(self):
