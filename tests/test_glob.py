@@ -164,6 +164,23 @@ class GlobTests(unittest.TestCase):
         self.assertCountEqual(glob.iglob(os.fsencode(p), **kwargs), bres)
         return res
 
+    def nglob(self, *parts, **kwargs):
+        """Perform a glob with validation."""
+
+        if len(parts) == 1:
+            pattern = parts[0]
+        else:
+            pattern = self.globjoin(*parts)
+        p = self.globjoin(self.tempdir, pattern)
+        p = b'!' + p if isinstance(p, bytes) else '!' + p
+        p = [self.globjoin(self.tempdir, '**'), p]
+        res = glob.glob(p, **kwargs)
+        self.assertCountEqual(glob.iglob(p, **kwargs), res)
+        bres = [os.fsencode(x) for x in res]
+        self.assertCountEqual(glob.glob([os.fsencode(x) for x in p], **kwargs), bres)
+        self.assertCountEqual(glob.iglob([os.fsencode(x) for x in p], **kwargs), bres)
+        return res
+
     def assertSequencesEqual_noorder(self, l1, l2):
         """Verify lists match (unordered)."""
 
@@ -202,6 +219,23 @@ class GlobTests(unittest.TestCase):
         eq(self.glob('aa?'), map(self.norm, ['aaa', 'aab']))
         eq(self.glob('aa[ab]'), map(self.norm, ['aaa', 'aab']))
         eq(self.glob('*q'), [])
+
+    def test_glob_inverse(self):
+        """Test glob inverse."""
+
+        eq = self.assertSequencesEqual_noorder
+        nfiles = [
+            'sym3/efg',
+            'EF',
+            'sym1',
+            'sym3',
+            'sym2',
+            'ZZZ',
+            '',
+            'sym3/efg/ha',
+            'sym3/EF'
+        ]
+        eq(self.nglob('a*', flags=glob.NEGATE), map(self.norm, nfiles))
 
     def test_glob_nested_directory(self):
         """Test nested glob directory."""
