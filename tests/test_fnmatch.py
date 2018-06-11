@@ -257,8 +257,16 @@ class TestFnMatch(unittest.TestCase):
         else:
             self.assertEqual(p1, [r'(?s)^(?:\\u0300)$'])
 
+    def test_filter(self):
+        """Test filter."""
+
         self.assertEqual(
-            fnmatch.filter(['testm', 'test\\3', 'testa'], fnmatch.fnsplit(r'te\st[ma]')),
+            fnmatch.filter(['testm', 'test\\3', 'testa'], fnmatch.fnsplit(r'te\st[ma]'), flags=fnmatch.I),
+            ['testm', 'testa']
+        )
+
+        self.assertEqual(
+            fnmatch.filter(['testm', 'test\\3', 'testa'], fnmatch.fnsplit(r'te\st[ma]'), flags=fnmatch.F),
             ['testm', 'testa']
         )
 

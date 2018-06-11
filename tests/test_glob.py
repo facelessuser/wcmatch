@@ -304,11 +304,15 @@ class GlobTests(unittest.TestCase):
         eq(glob.glob(r'\\\\*\\*\\'), [])
         eq(glob.glob(br'\\\\*\\*\\'), [])
 
-    def check_escape(self, arg, expected):
+    def check_escape(self, arg, expected, raw=False):
         """Verify escapes."""
 
-        self.assertEqual(glob.escape(arg), expected)
-        self.assertEqual(glob.escape(os.fsencode(arg)), os.fsencode(expected))
+        if raw:
+            self.assertEqual(glob.raw_escape(arg), expected)
+            self.assertEqual(glob.raw_escape(os.fsencode(arg)), os.fsencode(expected))
+        else:
+            self.assertEqual(glob.escape(arg), expected)
+            self.assertEqual(glob.escape(os.fsencode(arg)), os.fsencode(expected))
 
     def test_escape(self):
         """Test path escapes."""
@@ -320,6 +324,18 @@ class GlobTests(unittest.TestCase):
         check('*', r'\*')
         check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_]]')
         check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_]]/')
+
+    def test_raw_escape(self):
+        """Test path escapes."""
+
+        check = self.check_escape
+        check('abc', 'abc', raw=True)
+        check('[', r'\[', raw=True)
+        check('?', r'\?', raw=True)
+        check('*', r'\*', raw=True)
+        check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_]]', raw=True)
+        check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_]]/', raw=True)
+        check(r'\x3f', r'\?', raw=True)
 
     @unittest.skipUnless(sys.platform == "win32", "Win32 specific test")
     def test_escape_windows(self):

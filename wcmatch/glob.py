@@ -113,11 +113,6 @@ class Glob(object):
         if not self.pattern and self.npattern:
             self.pattern.append(_wcparse.WcPathSplit((b'**' if self.is_bytes else '**'), self.flags).split())
 
-    def _is_globstar(self, name):
-        """Check if name is a rescursive globstar."""
-
-        return self.globstar and name in (b'**', '**')
-
     def _is_hidden(self, name):
         """Check if is file hidden."""
 
@@ -186,14 +181,14 @@ class Glob(object):
                         try:
                             if (not dir_only or f.is_dir()) and matcher(f.name):
                                 yield os.path.join(curdir, f.name)
-                        except OSError:
+                        except OSError:  # pragma: no cover
                             pass
             else:
                 for f in os.listdir(scandir):
                     is_dir = os.path.isdir(os.path.join(curdir, f))
                     if (not dir_only or is_dir) and matcher(f):
                         yield os.path.join(curdir, f)
-        except OSError:
+        except OSError:  # pragma: no cover
             pass
 
     def _glob_deep(self, curdir, matcher, dir_only=False):
@@ -223,7 +218,7 @@ class Glob(object):
                                 yield path
                             if f.is_dir():
                                 yield from self._glob_deep(path, matcher, dir_only)
-                        except OSError:
+                        except OSError:  # pragma: no cover
                             pass
             else:
                 for f in os.listdir(scandir):
@@ -236,7 +231,7 @@ class Glob(object):
                         yield path
                     if is_dir:
                         yield from self._glob_deep(path, matcher, dir_only)
-        except OSError:
+        except OSError:  # pragma: no cover
             pass
 
     def _glob(self, curdir, this, rest):
@@ -365,8 +360,9 @@ class Glob(object):
                     # on a case sensitive file system may return more than
                     # one starting location.
                     results = [curdir] if this.is_drive else self._get_starting_paths(curdir)
-                    if not results:
+                    if not results:  # pragma: no cover
                         # Nothing to do.
+                        # Do we need this?
                         return
 
                     if this.dir_only:
