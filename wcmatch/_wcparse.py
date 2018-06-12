@@ -22,6 +22,7 @@ IN THE SOFTWARE.
 """
 import re
 import functools
+import copyreg
 import bracex
 from collections import namedtuple
 from . import util
@@ -151,7 +152,10 @@ def expand_braces(patterns, flags):
         for p in ([patterns] if isinstance(patterns, (str, bytes)) else patterns):
             try:
                 yield from bracex.iexpand(p, keep_escapes=True)
-            except Exception as e:
+            except Exception:  # pragma: no cover
+                # We will probably never hit this as bracex
+                # doesn't throw any specific exceptions and
+                # should normally always parse, but just in case.
                 yield p
     else:
         for p in ([patterns] if isinstance(patterns, (str, bytes)) else patterns):
@@ -1227,3 +1231,10 @@ class WcRegexp(util.Immutable):
                     matched = False
                     break
         return matched
+
+
+def _pickle(p):
+    return WcRegexp, (p._include, p._exclude)
+
+
+copyreg.pickle(WcRegexp, _pickle)
