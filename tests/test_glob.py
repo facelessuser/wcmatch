@@ -153,11 +153,14 @@ class GlobTests(unittest.TestCase):
     def glob(self, *parts, **kwargs):
         """Perform a glob with validation."""
 
-        if len(parts) == 1:
-            pattern = parts[0]
+        if parts:
+            if len(parts) == 1:
+                pattern = parts[0]
+            else:
+                pattern = self.globjoin(*parts)
+            p = self.globjoin(self.tempdir, pattern)
         else:
-            pattern = self.globjoin(*parts)
-        p = self.globjoin(self.tempdir, pattern)
+            p = self.tempdir
         res = glob.glob(p, **kwargs)
         self.assertCountEqual(glob.iglob(p, **kwargs), res)
         bres = [os.fsencode(x) for x in res]
@@ -242,6 +245,35 @@ class GlobTests(unittest.TestCase):
                 ]
             )
         eq(self.nglob('a*', flags=glob.NEGATE), map(lambda x: self.norm(*x), nfiles))
+
+    def test_glob_inverse_only(self):
+        """Test that when providing an inverse list without providing a positive list that it still works."""
+
+        eq = self.assertSequencesEqual_noorder
+        nfiles = [
+            ['EF'],
+            ['ZZZ']
+        ]
+        if self.can_symlink:
+            nfiles.extend(
+                [
+                    ['sym1'],
+                    ['sym3'],
+                    ['sym2'],
+                    ['sym3', 'efg'],
+                    ['sym3', 'efg', 'ha'],
+                    ['sym3', 'EF']
+                ]
+            )
+
+        with change_cwd(self.tempdir):
+            eq(map(self.norm, glob.glob('!a*', flags=glob.NEGATE)), map(lambda x: self.norm(*x), nfiles))
+
+    def test_glob_file_direct(self):
+        """Test the file directly -- without magic."""
+
+        eq = self.assertSequencesEqual_noorder
+        eq(self.glob(), [self.tempdir])
 
     def test_glob_nested_directory(self):
         """Test nested glob directory."""
@@ -411,6 +443,7 @@ class GlobTests(unittest.TestCase):
                 ('sym3', 'efg', 'ha'),
             ]
         eq(self.glob('**'), self.joins(('',), *full))
+        eq(self.glob('**', '**'), self.joins(('',), *full))
         eq(self.glob(os.curdir, '**'),
             self.joins((os.curdir, ''), *((os.curdir,) + i for i in full)))
         dirs = [('a', ''), ('a', 'bcd', ''), ('a', 'bcd', 'efg', ''),

@@ -4,6 +4,7 @@ import unittest
 import mock
 import wcmatch.glob as glob
 import wcmatch._wcparse as _wcparse
+import wcmatch.util as util
 
 
 class TestGlob(unittest.TestCase):
@@ -524,6 +525,35 @@ class TestGlob(unittest.TestCase):
                 r'**\\na[\/]m\ed\/file\\*.py',
                 flags=glob.R
             )
+        )
+
+    @mock.patch('wcmatch.util.is_case_sensitive')
+    def test_glob_translate(self, mock__iscase_sensitive):
+        """Test glob transaltion."""
+
+        mock__iscase_sensitive.return_value = True
+        _wcparse._compile.cache_clear()
+
+        if util.PY36:
+            value = (
+                [
+                    '^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=.)'
+                    '(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'
+                ],
+                []
+            )
+        else:
+            value = (
+                [
+                    '(?s)^(?:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=.)'
+                    '(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'
+                ],
+                []
+            )
+
+        self.assertEqual(
+            glob.translate('**/[[:ascii:]]/stuff/*'),
+            value
         )
 
     @mock.patch('wcmatch.util.is_case_sensitive')

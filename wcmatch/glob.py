@@ -259,17 +259,20 @@ class Glob(object):
             # Throw away multiple consecutive globstars
             # and acquire the pattern after the globstars if available.
             this = rest.pop(0) if rest else None
-            done = this is None
-            if done:
-                target = None
-            while this and not done:
+            globstar_end = this is None
+            while this and not globstar_end:
                 if this:
                     dir_only = this.dir_only
                     target = this.pattern
                 if this and this.is_globstar:
                     this = rest.pop(0) if rest else None
+                    if this is None:
+                        globstar_end = True
                 else:
-                    done = True
+                    break
+
+            if globstar_end:
+                target = None
 
             # We match `**/next` during `_glob_deep`, so what ever comes back,
             # we will send back through `_glob` with pattern after `next` (`**/next/after`).
@@ -281,11 +284,13 @@ class Glob(object):
             # Deep glob will account for this.
             matcher = self._get_matcher(target)
 
-            # If our pattern ends with `**` it matches zero or more,
+            # If our pattern ends with `curdir/**`, but does not start with `**` it matches zero or more,
             # so it should return `curdir/`, signifying curdir + no match.
             # If a pattern follows `**/something`, we always get the appropriate
             # return already, so this isn't needed in that case.
-            if matcher is None and curdir:
+            # There is one quirk though with Bash, if `curdir` had magic before `**`, Bash
+            # omits the trailing `/`. We don't worry about that.
+            if globstar_end and curdir:
                 yield os.path.join(curdir, self.empty)
 
             # Search
