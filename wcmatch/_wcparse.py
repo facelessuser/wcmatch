@@ -1003,7 +1003,6 @@ class WcParse(object):
                         # Do nothing because this is going to abort the extglob anyways.
                         pass
                 elif c == '[':
-                    subindex = i.index
                     try:
                         extended.append(self._sequence(i))
                     except StopIteration:
