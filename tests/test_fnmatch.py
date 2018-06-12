@@ -260,13 +260,13 @@ class TestFnMatch(unittest.TestCase):
     def test_posix_range(self):
         """Test posix range."""
 
-        p = fnmatch.translate(r'[[:ascii:]-z]')
+        p = fnmatch.translate(r'[[:ascii:]-z]', flags=fnmatch.F)
         if util.PY36:
             self.assertEqual(p, (['^(?s:[\x00-\x7f\\-z])$'], []))
         else:
             self.assertEqual(p, (['(?s)^(?:[\x00-\x7f\\-z])$'], []))
 
-        p = fnmatch.translate(r'[a-[:ascii:]-z]')
+        p = fnmatch.translate(r'[a-[:ascii:]-z]', flags=fnmatch.F)
         if util.PY36:
             self.assertEqual(p, (['^(?s:[a\\-\x00-\x7f\\-z])$'], []))
         else:
