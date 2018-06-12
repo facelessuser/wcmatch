@@ -264,13 +264,13 @@ class TestFnMatch(unittest.TestCase):
         if util.PY36:
             self.assertEqual(p, (['^(?s:[\x00-\x7f\\-z])$'], []))
         else:
-            self.assertEqual(p, ['(?s)^(?:[\x00-\x7f\\-z])$'])
+            self.assertEqual(p, (['(?s)^(?:[\x00-\x7f\\-z])$'], []))
 
         p = fnmatch.translate(r'[a-[:ascii:]-z]')
         if util.PY36:
             self.assertEqual(p, (['^(?s:[a\\-\x00-\x7f\\-z])$'], []))
         else:
-            self.assertEqual(p, ['(?s)^(?:[a\\-\x00-\x7f\\-z])$'])
+            self.assertEqual(p, (['(?s)^(?:[a\\-\x00-\x7f\\-z])$'], []))
 
     def test_filter(self):
         """Test filter."""
