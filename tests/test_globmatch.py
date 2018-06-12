@@ -87,7 +87,7 @@ class TestGlob(unittest.TestCase):
         ['[-abc]', ['-'], 0, ['-']],
         ['[abc-]', ['-'], 0, ['-']],
         ['\\', ['\\'], 0, ['\\']],
-        ['[\\\\]', ['\\'], 0, ['\\']],
+        ['[\\\\]', (['\\'] if util.is_case_sensitive() else []), 0, ['\\']],
         ['[[]', ['['], 0, ['[']],
         ['[', ['['], 0, ['[']],
         ['[*', ['[abc'], 0, ['[abc']],
@@ -183,7 +183,7 @@ class TestGlob(unittest.TestCase):
         # I think ours expands them proper, so the original test has been altered.
         [
             '+(a|*\\|c\\\\|d\\\\\\|e\\\\\\\\|f\\\\\\\\\\|g',
-            ['+(a|b\\|c\\|d\\|e\\\\|f\\\\|g'],
+            (['+(a|b\\|c\\|d\\|e\\\\|f\\\\|g'] if util.is_case_sensitive() else []),
             0,
             ['+(a|b\\|c\\|d\\|e\\\\|f\\\\|g', 'a', 'b\\c']
         ],
@@ -275,7 +275,18 @@ class TestGlob(unittest.TestCase):
         'https://github.com/isaacs/minimatch/issues/59',
         ['[z-a]', []],
         ['a/[2015-03-10T00:23:08.647Z]/z', []],
-        ['[a-0][a-\u0100]', []]
+        ['[a-0][a-\u0100]', []],
+
+        'Consecutive slashes.',
+        lambda self: self.files.clear(),
+        lambda self: self.files.extend(
+            [
+                'a/b/c', 'd/e/f', 'a/e/c'
+            ]
+        ),
+        ['*//e///*', ['d/e/f', 'a/e/c']],
+        [r'*//\e///*', ['d/e/f', 'a/e/c']]
+
     ]
 
     matches = {
@@ -387,6 +398,14 @@ class TestGlob(unittest.TestCase):
 
         self.skip_split = value
 
+    def norm_files(self, files, flags):
+        """Normalize files."""
+
+        flags = glob._flag_transform(flags)
+        unix = _wcparse.is_unix_style(flags)
+
+        return [(util.norm_slash(x) if not unix else x) for x in files]
+
     def _filter(self, p, split=False):
         """Filter with glob pattern."""
 
@@ -416,25 +435,21 @@ class TestGlob(unittest.TestCase):
                     flags=flags
                 )
             )
-            source = sorted(p[1])
+            source = sorted(self.norm_files(p[1], flags))
             print("TEST: ", result, '<==>', source, '\n')
             self.assertEqual(result, source)
 
-    @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_glob_filter(self, mock__iscase_sensitive):
+    def test_glob_filter(self):
         """Test wildcard parsing."""
 
-        mock__iscase_sensitive.return_value = True
         _wcparse._compile.cache_clear()
 
         for p in self.file_filter:
             self._filter(p)
 
-    @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_glob_split_filter(self, mock__iscase_sensitive):
+    def test_glob_split_filter(self):
         """Test wildcard parsing with split."""
 
-        mock__iscase_sensitive.return_value = True
         _wcparse._compile.cache_clear()
 
         for p in self.file_filter:

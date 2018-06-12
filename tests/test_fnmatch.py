@@ -119,7 +119,8 @@ class TestFnMatch(unittest.TestCase):
         ['[a-z]', 'a', True, 0],
         ['[z-a]', 'a', False, 0],
         ['[!z-a]', 'a', True, 0],
-        ['[!a-z]', 'a', False, 0]
+        ['[!a-z]', 'a', False, 0],
+        ['[9--]', '9', False, 0]
     ]
 
     filter_cases = [

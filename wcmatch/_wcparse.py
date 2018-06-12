@@ -656,8 +656,8 @@ class WcParse(object):
         If range backwards, remove it.
 
         A bad range will cause the regular expresion to fail,
-        so we need to remove, but return that we removed it
-        so the caller can no the sequence wasn't empty.
+        so we need to remove it, but return that we removed it
+        so the caller can know the sequence wasn't empty.
         Caller will have to craft a sequence that makes sense
         if empty at the end with either an impossible sequence
         for inclusive sequences or a sequence that matches
