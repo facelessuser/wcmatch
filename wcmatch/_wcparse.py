@@ -996,21 +996,20 @@ class WcParse(object):
                     if temp_after_start:
                         self.set_start_dir()
                 elif c == '\\':
-                    subindex = i.index
                     try:
                         extended.append(self._references(i))
                     except StopIteration:
-                        i.rewind(i.index - subindex)
-                        if self.bslash_abort:
-                            extended.append(self._restrict_sequence())
-                        extended.append(r'\\')
+                        # We've reached the end.
+                        # Do nothing because this is going to abort the extglob anyways.
+                        pass
                 elif c == '[':
                     subindex = i.index
                     try:
                         extended.append(self._sequence(i))
                     except StopIteration:
-                        i.rewind(i.index - subindex)
-                        extended.append(r'\[')
+                        # We've reached the end.
+                        # Do nothing because this is going to abort the extglob anyways.
+                        pass
                 elif c != ')':
                     extended.append(re.escape(c))
 

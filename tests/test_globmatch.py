@@ -285,8 +285,27 @@ class TestGlob(unittest.TestCase):
             ]
         ),
         ['*//e///*', ['d/e/f', 'a/e/c']],
-        [r'*//\e///*', ['d/e/f', 'a/e/c']]
+        [r'*//\e///*', ['d/e/f', 'a/e/c']],
 
+        'Backslash trailing cases',
+        lambda self: self.files.clear(),
+        lambda self: self.files.extend(
+            [
+                'a/b/c/', 'd/e/f/', 'a/e/c/'
+            ]
+        ),
+        ['**\\', [] if util.is_case_sensitive() else ['a/b/c/', 'd/e/f/', 'a/e/c/']],
+
+        'Invalid extglob groups',
+        lambda self: self.files.clear(),
+        lambda self: self.files.extend(
+            [
+                '@([test', '@([test\\', '@(test\\'
+            ]
+        ),
+        ['@([test', ['@([test'] if util.is_case_sensitive() else ['@([test', '@([test\\']],
+        ['@([test\\', ['@([test\\']],
+        ['@(test\\', ['@(test\\']]
     ]
 
     matches = {
@@ -472,6 +491,26 @@ class TestGlob(unittest.TestCase):
         for x in ['!', '?', '+', '*', '@']:
             self.assertTrue(glob.globmatch(x + '(a|B', x + '(a|B'))
             self.assertFalse(glob.globmatch(x + '(a|B', 'B'))
+
+    def test_windows_drives(self):
+        """Test windows drives."""
+
+        if util.is_case_sensitive():
+            return
+
+        self.assertTrue(
+            glob.globmatch(
+                '//?/c:/somepath/to/match/file.txt',
+                '//?/c:/**/*.txt'
+            )
+        )
+
+        self.assertTrue(
+            glob.globmatch(
+                'c:/somepath/to/match/file.txt',
+                'c:/**/*.txt'
+            )
+        )
 
     @mock.patch('wcmatch.util.platform')
     @mock.patch('wcmatch.util.is_case_sensitive')
