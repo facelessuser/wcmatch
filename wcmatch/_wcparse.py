@@ -696,6 +696,10 @@ class WcParse(object):
         """Handle fnmatch character group."""
 
         result = ['[']
+        end_range = 0
+        escape_hypen = -1
+        removed = False
+        last_posix = False
 
         c = next(i)
         if c in ('!', '^'):
@@ -703,17 +707,14 @@ class WcParse(object):
             result.append('^')
             c = next(i)
         if c == '[':
-            if not self._handle_posix(i, result, 0):
+            last_posix = self._handle_posix(i, result, 0)
+            if not last_posix:
                 result.append(re.escape(c))
             c = next(i)
         elif c in ('-', ']'):
             result.append(re.escape(c))
             c = next(i)
 
-        end_range = 0
-        escape_hypen = -1
-        last_posix = False
-        removed = False
         while c != ']':
             if c == '-':
                 if last_posix:

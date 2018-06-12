@@ -257,6 +257,21 @@ class TestFnMatch(unittest.TestCase):
         else:
             self.assertEqual(p1, [r'(?s)^(?:\\u0300)$'])
 
+    def test_posix_range(self):
+        """Test posix range."""
+
+        p = fnmatch.translate(r'[[:ascii:]-z]')
+        if util.PY36:
+            self.assertEqual(p, (['^(?s:[\x00-\x7f\\-z])$'], []))
+        else:
+            self.assertEqual(p, [r'(?s)^(?:[\x00-\x7f\\-z])$'])
+
+        p = fnmatch.translate(r'[a-[:ascii:]-z]')
+        if util.PY36:
+            self.assertEqual(p, (['^(?s:[a\\-\x00-\x7f\\-z])$'], []))
+        else:
+            self.assertEqual(p, ['(?s)^(?:[a\\-\x00-\x7f\\-z])$'])
+
     def test_filter(self):
         """Test filter."""
 
