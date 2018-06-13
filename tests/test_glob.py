@@ -315,15 +315,18 @@ class GlobTests(unittest.TestCase):
     def test_glob_only_directory(self):
         """Test only directories."""
 
+        files = [self.norm('aab', ''),
+                 self.norm('aaa', ''),
+                 self.norm('a', '')]
+
+        if self.can_symlink:
+            files.append(self.norm('sym3'))
+
         eq = self.assertSequencesEqual_noorder
-        eq(self.glob('*', ''), [self.norm('aab', ''),
-                                self.norm('aaa', ''),
-                                self.norm('a', '')])
+        eq(self.glob('*', ''), files)
 
         if not util.is_case_sensitive():
-            eq(self.glob('*\\'), [self.norm('aab', ''),
-                                  self.norm('aaa', ''),
-                                  self.norm('a', '')])
+            eq(self.glob('*\\'), files)
 
     def test_extglob(self):
         """Test extglob."""
