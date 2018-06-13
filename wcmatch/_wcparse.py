@@ -22,6 +22,7 @@ IN THE SOFTWARE.
 """
 import re
 import functools
+import copyreg
 import bracex
 from collections import namedtuple
 from . import util
@@ -38,6 +39,7 @@ RE_POSIX = re.compile(r':(alnum|alpha|ascii|blank|cntrl|digit|graph|lower|print|
 SET_OPERATORS = frozenset(('&', '~', '|'))
 NEGATIVE_SYM = frozenset((b'!', '!'))
 MINUS_NEGATIVE_SYM = frozenset((b'-', '-'))
+EXT_TYPES = frozenset(('*', '?', '+', '@', '!'))
 
 FORCECASE = 0x0001
 IGNORECASE = 0x0002
@@ -151,7 +153,10 @@ def expand_braces(patterns, flags):
         for p in ([patterns] if isinstance(patterns, (str, bytes)) else patterns):
             try:
                 yield from bracex.iexpand(p, keep_escapes=True)
-            except Exception as e:
+            except Exception:  # pragma: no cover
+                # We will probably never hit this as bracex
+                # doesn't throw any specific exceptions and
+                # should normally always parse, but just in case.
                 yield p
     else:
         for p in ([patterns] if isinstance(patterns, (str, bytes)) else patterns):
@@ -246,7 +251,10 @@ class WcPathSplit(object):
         self.unix = is_unix_style(flags) and not flags & _FORCEWIN
         self.flags = flags
         self.pattern = util.norm_pattern(pattern, not self.unix, flags & RAWCHARS)
-        if is_negative(self.pattern, flags):
+        if is_negative(self.pattern, flags):  # pragma: no cover
+            # This isn't really used, but we'll keep it around
+            # in case we find a reason to directly send inverse patterns
+            # Through here.
             self.pattern = self.pattern[0:1]
         if flags & NEGATE:
             flags ^= NEGATE
@@ -329,15 +337,14 @@ class WcPathSplit(object):
             while c != ')':
                 c = next(i)
 
-                if self.extend and self.parse_extend(c, i):
+                if self.extend and c in EXT_TYPES and self.parse_extend(c, i):
                     continue
 
                 if c == '\\':
-                    index = i.index
                     try:
                         self._references(i)
                     except StopIteration:
-                        i.rewind(i.index - index)
+                        pass
                 elif c == '[':
                     index = i.index
                     try:
@@ -388,7 +395,7 @@ class WcPathSplit(object):
                 i.advance(start + 1)
 
         for c in i:
-            if self.extend and self.parse_extend(c, i):
+            if self.extend and c in EXT_TYPES and self.parse_extend(c, i):
                 continue
 
             if c == '\\':
@@ -400,7 +407,7 @@ class WcPathSplit(object):
                         split_index.append((i.index - 2, 1))
                 except StopIteration:
                     i.rewind(i.index - index)
-                    if self.bslash_abort and value == '\\':
+                    if self.bslash_abort:
                         split_index.append((i.index - 1, 0))
             elif c == '/':
                 split_index.append((i.index - 1, 0))
@@ -501,15 +508,14 @@ class WcSplit(object):
             while c != ')':
                 c = next(i)
 
-                if self.extend and self.parse_extend(c, i):
+                if self.extend and c in EXT_TYPES and self.parse_extend(c, i):
                     continue
 
                 if c == '\\':
-                    index = i.index
                     try:
                         self._references(i)
                     except StopIteration:
-                        i.rewind(i.index - index)
+                        pass
                 elif c == '[':
                     index = i.index
                     try:
@@ -535,7 +541,7 @@ class WcSplit(object):
         i = util.StringIter(pattern)
         iter(i)
         for c in i:
-            if self.extend and self.parse_extend(c, i):
+            if self.extend and c in EXT_TYPES and self.parse_extend(c, i):
                 continue
 
             if c == '|':
@@ -652,8 +658,8 @@ class WcParse(object):
         If range backwards, remove it.
 
         A bad range will cause the regular expresion to fail,
-        so we need to remove, but return that we removed it
-        so the caller can no the sequence wasn't empty.
+        so we need to remove it, but return that we removed it
+        so the caller can know the sequence wasn't empty.
         Caller will have to craft a sequence that makes sense
         if empty at the end with either an impossible sequence
         for inclusive sequences or a sequence that matches
@@ -692,6 +698,10 @@ class WcParse(object):
         """Handle fnmatch character group."""
 
         result = ['[']
+        end_range = 0
+        escape_hypen = -1
+        removed = False
+        last_posix = False
 
         c = next(i)
         if c in ('!', '^'):
@@ -699,17 +709,14 @@ class WcParse(object):
             result.append('^')
             c = next(i)
         if c == '[':
-            if not self._handle_posix(i, result, 0):
+            last_posix = self._handle_posix(i, result, 0)
+            if not last_posix:
                 result.append(re.escape(c))
             c = next(i)
         elif c in ('-', ']'):
             result.append(re.escape(c))
             c = next(i)
 
-        end_range = 0
-        escape_hypen = -1
-        last_posix = False
-        removed = False
         while c != ']':
             if c == '-':
                 if last_posix:
@@ -902,12 +909,7 @@ class WcParse(object):
             # Check if the last entry was a globstar
             # If so, don't bother adding another.
             if current[-1] != sep:
-                if current[-1] == '|':
-                    # Special case following `|` in a extglob group.
-                    # We can't follow a path separator in this scenario,
-                    # so we're safe.
-                    current.append(value)
-                elif current[-1] == '':
+                if current[-1] == '':
                     # At the beginning of the pattern
                     current[-1] = value
                 else:
@@ -971,7 +973,7 @@ class WcParse(object):
             while c != ')':
                 c = next(i)
 
-                if self.extend and self.parse_extend(c, i, extended):
+                if self.extend and c in EXT_TYPES and self.parse_extend(c, i, extended):
                     # Nothing more to do
                     pass
                 elif c == '*':
@@ -991,14 +993,12 @@ class WcParse(object):
                     if temp_after_start:
                         self.set_start_dir()
                 elif c == '\\':
-                    subindex = i.index
                     try:
                         extended.append(self._references(i))
                     except StopIteration:
-                        i.rewind(i.index - subindex)
-                        if self.bslash_abort:
-                            extended.append(self._restrict_sequence())
-                        extended.append(r'\\')
+                        # We've reached the end.
+                        # Do nothing because this is going to abort the extglob anyways.
+                        pass
                 elif c == '[':
                     subindex = i.index
                     try:
@@ -1102,7 +1102,7 @@ class WcParse(object):
         for c in i:
 
             index = i.index
-            if self.extend and self.parse_extend(c, i, current):
+            if self.extend and c in EXT_TYPES and self.parse_extend(c, i, current):
                 # Nothing to do
                 pass
             elif c == '*':
@@ -1222,8 +1222,16 @@ class WcRegexp(util.Immutable):
 
         if matched:
             matched = True
-            for x in self._exclude:
-                if not x.fullmatch(filename):
-                    matched = False
-                    break
+            if self._exclude:
+                for x in self._exclude:
+                    if not x.fullmatch(filename):
+                        matched = False
+                        break
         return matched
+
+
+def _pickle(p):
+    return WcRegexp, (p._include, p._exclude)
+
+
+copyreg.pickle(WcRegexp, _pickle)

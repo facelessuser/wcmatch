@@ -11,6 +11,7 @@ made difference in implementation.
 """
 import contextlib
 from wcmatch import glob
+from wcmatch import util
 import os
 import shutil
 import sys
@@ -119,7 +120,13 @@ class GlobTests(unittest.TestCase):
         filename = self.norm(*parts)
         base, file = os.path.split(filename)
         if not os.path.exists(base):
-            os.makedirs(base)
+            retry = 3
+            while retry:
+                try:
+                    os.makedirs(base)
+                    retry = 0
+                except Exception:
+                    retry -= 1
         create_empty_file(filename)
 
     def setUp(self):
@@ -139,7 +146,8 @@ class GlobTests(unittest.TestCase):
         self.mktemp('EF')
         self.mktemp('a', 'bcd', 'EF')
         self.mktemp('a', 'bcd', 'efg', 'ha')
-        if can_symlink():
+        self.can_symlink = can_symlink()
+        if self.can_symlink:
             os.symlink(self.norm('broken'), self.norm('sym1'))
             os.symlink('broken', self.norm('sym2'))
             os.symlink(os.path.join('a', 'bcd'), self.norm('sym3'))
@@ -147,9 +155,33 @@ class GlobTests(unittest.TestCase):
     def tearDown(self):
         """Cleanup."""
 
-        shutil.rmtree(self.tempdir)
+        retry = 3
+        while retry:
+            try:
+                shutil.rmtree(self.tempdir)
+                retry = 0
+            except Exception:
+                retry -= 1
 
     def glob(self, *parts, **kwargs):
+        """Perform a glob with validation."""
+
+        if parts:
+            if len(parts) == 1:
+                pattern = parts[0]
+            else:
+                pattern = self.globjoin(*parts)
+            p = self.globjoin(self.tempdir, pattern)
+        else:
+            p = self.tempdir
+        res = glob.glob(p, **kwargs)
+        self.assertCountEqual(glob.iglob(p, **kwargs), res)
+        bres = [os.fsencode(x) for x in res]
+        self.assertCountEqual(glob.glob(os.fsencode(p), **kwargs), bres)
+        self.assertCountEqual(glob.iglob(os.fsencode(p), **kwargs), bres)
+        return res
+
+    def nglob(self, *parts, **kwargs):
         """Perform a glob with validation."""
 
         if len(parts) == 1:
@@ -157,11 +189,13 @@ class GlobTests(unittest.TestCase):
         else:
             pattern = self.globjoin(*parts)
         p = self.globjoin(self.tempdir, pattern)
+        p = b'!' + p if isinstance(p, bytes) else '!' + p
+        p = [self.globjoin(self.tempdir, '**'), p]
         res = glob.glob(p, **kwargs)
         self.assertCountEqual(glob.iglob(p, **kwargs), res)
         bres = [os.fsencode(x) for x in res]
-        self.assertCountEqual(glob.glob(os.fsencode(p), **kwargs), bres)
-        self.assertCountEqual(glob.iglob(os.fsencode(p), **kwargs), bres)
+        self.assertCountEqual(glob.glob([os.fsencode(x) for x in p], **kwargs), bres)
+        self.assertCountEqual(glob.iglob([os.fsencode(x) for x in p], **kwargs), bres)
         return res
 
     def assertSequencesEqual_noorder(self, l1, l2):
@@ -203,6 +237,57 @@ class GlobTests(unittest.TestCase):
         eq(self.glob('aa[ab]'), map(self.norm, ['aaa', 'aab']))
         eq(self.glob('*q'), [])
 
+    def test_glob_inverse(self):
+        """Test glob inverse."""
+
+        eq = self.assertSequencesEqual_noorder
+        nfiles = [
+            ['EF'],
+            ['ZZZ'],
+            ['']
+        ]
+        if self.can_symlink:
+            nfiles.extend(
+                [
+                    ['sym1'],
+                    ['sym3'],
+                    ['sym2'],
+                    ['sym3', 'efg'],
+                    ['sym3', 'efg', 'ha'],
+                    ['sym3', 'EF']
+                ]
+            )
+        eq(self.nglob('a*', flags=glob.NEGATE), map(lambda x: self.norm(*x), nfiles))
+
+    def test_glob_inverse_only(self):
+        """Test that when providing an inverse list without providing a positive list that it still works."""
+
+        eq = self.assertSequencesEqual_noorder
+        nfiles = [
+            ['EF'],
+            ['ZZZ']
+        ]
+        if self.can_symlink:
+            nfiles.extend(
+                [
+                    ['sym1'],
+                    ['sym3'],
+                    ['sym2'],
+                    ['sym3', 'efg'],
+                    ['sym3', 'efg', 'ha'],
+                    ['sym3', 'EF']
+                ]
+            )
+
+        with change_cwd(self.tempdir):
+            eq(map(self.norm, glob.glob('!a*', flags=glob.NEGATE)), map(lambda x: self.norm(*x), nfiles))
+
+    def test_glob_file_direct(self):
+        """Test the file directly -- without magic."""
+
+        eq = self.assertSequencesEqual_noorder
+        eq(self.glob(), [self.tempdir])
+
     def test_glob_nested_directory(self):
         """Test nested glob directory."""
 
@@ -226,6 +311,46 @@ class GlobTests(unittest.TestCase):
            [self.norm('a', 'bcd', 'efg', 'ha')])
         eq(self.glob('?a?', '*F'), [self.norm('aaa', 'zzzF'),
                                     self.norm('aab', 'F')])
+
+    def test_glob_only_directory(self):
+        """Test only directories."""
+
+        files = [self.norm('aab', ''),
+                 self.norm('aaa', ''),
+                 self.norm('a', '')]
+
+        if self.can_symlink:
+            files.append(self.norm('sym3', ''))
+
+        eq = self.assertSequencesEqual_noorder
+        eq(self.glob('*', ''), files)
+
+        if not util.is_case_sensitive():
+            eq(self.glob('*\\'), files)
+
+    def test_extglob(self):
+        """Test extglob."""
+
+        eq = self.assertSequencesEqual_noorder
+        eq(self.glob('@(a|aa*(a|b))'), [self.norm('aab'),
+                                        self.norm('aaa'),
+                                        self.norm('a')])
+
+    def test_seq(self):
+        """Test extglob."""
+
+        eq = self.assertSequencesEqual_noorder
+        eq(self.glob('[a]'), [self.norm('a')])
+        eq(self.glob('[!b]'), [self.norm('a')])
+        eq(self.glob('[^b]'), [self.norm('a')])
+        eq(self.glob(r'@([\a]|\aaa)'), [self.norm('a'),
+                                        self.norm('aaa')])
+
+    def test_empty(self):
+        """Test empty."""
+
+        eq = self.assertSequencesEqual_noorder
+        eq(glob.glob(''), [])
 
     def test_glob_directory_with_trailing_slash(self):
         """Patterns ending with a slash shouldn't match non-dirs."""
@@ -304,11 +429,15 @@ class GlobTests(unittest.TestCase):
         eq(glob.glob(r'\\\\*\\*\\'), [])
         eq(glob.glob(br'\\\\*\\*\\'), [])
 
-    def check_escape(self, arg, expected):
+    def check_escape(self, arg, expected, raw=False):
         """Verify escapes."""
 
-        self.assertEqual(glob.escape(arg), expected)
-        self.assertEqual(glob.escape(os.fsencode(arg)), os.fsencode(expected))
+        if raw:
+            self.assertEqual(glob.raw_escape(arg), expected)
+            self.assertEqual(glob.raw_escape(os.fsencode(arg)), os.fsencode(expected))
+        else:
+            self.assertEqual(glob.escape(arg), expected)
+            self.assertEqual(glob.escape(os.fsencode(arg)), os.fsencode(expected))
 
     def test_escape(self):
         """Test path escapes."""
@@ -320,6 +449,18 @@ class GlobTests(unittest.TestCase):
         check('*', r'\*')
         check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_]]')
         check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_]]/')
+
+    def test_raw_escape(self):
+        """Test path escapes."""
+
+        check = self.check_escape
+        check('abc', 'abc', raw=True)
+        check('[', r'\[', raw=True)
+        check('?', r'\?', raw=True)
+        check('*', r'\*', raw=True)
+        check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_]]', raw=True)
+        check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_]]/', raw=True)
+        check(r'\x3f', r'\?', raw=True)
 
     @unittest.skipUnless(sys.platform == "win32", "Win32 specific test")
     def test_escape_windows(self):
@@ -355,6 +496,7 @@ class GlobTests(unittest.TestCase):
                 ('sym3', 'efg', 'ha'),
             ]
         eq(self.glob('**'), self.joins(('',), *full))
+        eq(self.glob('**', '**'), self.joins(('',), *full))
         eq(self.glob(os.curdir, '**'),
             self.joins((os.curdir, ''), *((os.curdir,) + i for i in full)))
         dirs = [('a', ''), ('a', 'bcd', ''), ('a', 'bcd', 'efg', ''),
@@ -400,6 +542,103 @@ class GlobTests(unittest.TestCase):
             if can_symlink():
                 expect += [join('sym3', 'EF')]
             eq(glob.glob(self.globjoin('**', 'EF')), expect)
+
+
+class GlobCornerCaseTests(unittest.TestCase):
+    """Some tests that need a very specific file set to test against for corner cases."""
+
+    def norm(self, *parts):
+        """Normalizes file path (in relation to temp dir)."""
+
+        return os.path.join(self.tempdir, *parts)
+
+    def globjoin(self, *parts):
+        """Joins glob path."""
+
+        sep = os.fsencode(self.globsep) if isinstance(parts[0], bytes) else self.globsep
+        return sep.join(list(parts))
+
+    def mktemp(self, *parts):
+        """Make temp directory."""
+
+        filename = self.norm(*parts)
+        base, file = os.path.split(filename)
+        if not os.path.exists(base):
+            retry = 3
+            while retry:
+                try:
+                    os.makedirs(base)
+                    retry = 0
+                except Exception:
+                    retry -= 1
+        create_empty_file(filename)
+
+    def setUp(self):
+        """Setup."""
+
+        if os.sep == '/':
+            self.globsep = os.sep
+        else:
+            self.globsep = r'\\'
+        self.tempdir = TESTFN + "_dir"
+        self.mktemp('test[')
+        self.mktemp('a', 'b')
+        self.mktemp('a[', ']b')
+        self.mktemp('@(a', 'b)')
+        self.mktemp('@(a[', ']b)')
+        self.can_symlink = can_symlink()
+
+    def tearDown(self):
+        """Cleanup."""
+
+        retry = 3
+        while retry:
+            try:
+                shutil.rmtree(self.tempdir)
+                retry = 0
+            except Exception:
+                retry -= 1
+
+    def assertSequencesEqual_noorder(self, l1, l2):
+        """Verify lists match (unordered)."""
+
+        l1 = list(l1)
+        l2 = list(l2)
+        self.assertEqual(set(l1), set(l2))
+        self.assertEqual(sorted(l1), sorted(l2))
+
+    def glob(self, *parts, **kwargs):
+        """Perform a glob with validation."""
+
+        if parts:
+            if len(parts) == 1:
+                pattern = parts[0]
+            else:
+                pattern = self.globjoin(*parts)
+            p = self.globjoin(self.tempdir, pattern)
+        else:
+            p = self.tempdir
+        res = glob.glob(p, **kwargs)
+        self.assertCountEqual(glob.iglob(p, **kwargs), res)
+        bres = [os.fsencode(x) for x in res]
+        self.assertCountEqual(glob.glob(os.fsencode(p), **kwargs), bres)
+        self.assertCountEqual(glob.iglob(os.fsencode(p), **kwargs), bres)
+        return res
+
+    def test_special_cases(self):
+        """Test very specific, special cases."""
+
+        eq = self.assertSequencesEqual_noorder
+        eq(self.glob('a[/]b'), [self.norm('a[', ']b')])
+        eq(self.glob('@(a/b)'), [])
+        eq(self.glob('@(a[/]b)'), [])
+        eq(self.glob('test['), [self.norm('test[')])
+        eq(self.glob(r'a\/b'), [self.norm('a', 'b')] if not util.is_case_sensitive() else [])
+        eq(self.glob(r'a[\/]b'), [self.norm('a[', ']b')] if not util.is_case_sensitive() else [])
+
+        if not util.is_case_sensitive():
+            eq(self.glob('a[\\'), [self.norm('a[', '')])
+            eq(self.glob('@(a[\\'), [self.norm('@(a[', '')])
 
 
 @skip_unless_symlink

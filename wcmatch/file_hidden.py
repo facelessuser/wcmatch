@@ -12,7 +12,7 @@ _OSX_USE_CORE_FOUNDATION = 2
 _OSX_FOUNDATION_METHOD = _OSX_FOUNDATION_NOT_LOADED
 
 
-def platform_not_implemented(path):
+def platform_not_implemented(path):  # pragma: no cover
     """Raise an exception that platform not implemented."""
 
     raise NotImplementedError
@@ -51,7 +51,7 @@ else:
     is_win_hidden_bytes = platform_not_implemented
 
 
-def _test(fn):
+def _test(fn):  # pragma: no cover
     """Test if osx hidden is working."""
 
     path = os.path.expanduser("~/Library")
@@ -59,7 +59,7 @@ def _test(fn):
     # print "OSX Hidden Method: %d, Test Path: %s, Result: %s"  % (_OSX_FOUNDATION_METHOD, path, str(fn(path)))
 
 
-if util.platform() == "osx" and _OSX_FOUNDATION_METHOD == _OSX_FOUNDATION_NOT_LOADED:
+if util.platform() == "osx" and _OSX_FOUNDATION_METHOD == _OSX_FOUNDATION_NOT_LOADED:  # pragma: no cover
     # Fallback to use ctypes to call the ObjC library CoreFoundation for OSX is_hidden
 
     # http://stackoverflow.com/questions/284115/cross-platform-hidden-file-detection
@@ -141,7 +141,7 @@ def is_hidden(path):
     platform = util.platform()
     if platform == "windows":
         return is_win_hidden(path)
-    elif platform == "osx":
+    elif platform == "osx":  # pragma: no cover
         if is_nix_hidden(path):
             return True
         elif _OSX_FOUNDATION_METHOD != _OSX_FOUNDATION_NOT_LOADED:
@@ -157,7 +157,7 @@ def is_hidden_bytes(path):
     platform = util.platform()
     if platform == "windows":
         return is_win_hidden_bytes(path)
-    elif platform == "osx":
+    elif platform == "osx":  # pragma: no cover
         if is_nix_hidden_bytes(path):
             return True
         elif _OSX_FOUNDATION_METHOD != _OSX_FOUNDATION_NOT_LOADED:
@@ -167,7 +167,7 @@ def is_hidden_bytes(path):
         return is_nix_hidden_bytes(path)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     import sys
 
     for arg in sys.argv[1:]:

@@ -21,6 +21,7 @@ CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFT
 IN THE SOFTWARE.
 """
 import os
+import re
 from . import file_hidden
 from . import _wcparse
 from . import util
@@ -79,7 +80,11 @@ class WcMatch(object):
             curdir = self._directory
         sep = os.fsencode(os.sep) if self.is_bytes else os.sep
         self.base = curdir if curdir.endswith(sep) else curdir + sep
-        self.file_pattern = args.pop(0) if args else kwargs.pop('file_pattern', b'*' if self.is_bytes else '*')
+        self.file_pattern = args.pop(0) if args else kwargs.pop('file_pattern', b'' if self.is_bytes else '')
+        if not self.file_pattern:
+            self.file_pattern = _wcparse.WcRegexp(
+                (re.compile(br'^.*$', re.DOTALL),) if self.is_bytes else (re.compile(r'^.*$', re.DOTALL),)
+            )
         self.exclude_pattern = args.pop(0) if args else kwargs.pop('exclude_pattern', b'' if self.is_bytes else '')
         self.recursive = args.pop(0) if args else kwargs.pop('recursive', False)
         self.show_hidden = args.pop(0) if args else kwargs.pop('show_hidden', False)
@@ -200,10 +205,10 @@ class WcMatch(object):
                 try:
                     if not self._valid_folder(base, name):
                         dirs.remove(name)
-                except Exception:  # pragma: no cover
+                except Exception:
                     dirs.remove(name)
                     value = self.on_error(base, name)
-                    if value:
+                    if value:  # pragma: no cover
                         yield value
 
                 if self._abort:
@@ -215,7 +220,7 @@ class WcMatch(object):
                 for name in files:
                     try:
                         valid = self._valid_file(base, name)
-                    except Exception:  # pragma: no cover
+                    except Exception:
                         valid = False
                         value = self.on_error(base, name)
                         if value:

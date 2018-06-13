@@ -80,6 +80,9 @@ class TestFnMatch(unittest.TestCase):
         ['*(?)abc', '.abc', True, fnmatch.E],
         ['*(?|.)abc', '.abc', True, fnmatch.E],
         ['*(?|*)abc', '.abc', True, fnmatch.E],
+        ['!(test)', '.abc', False, fnmatch.P | fnmatch.E],
+        ['!(test)', 'abc', True, fnmatch.P | fnmatch.E],
+        ['!(test)', '.abc', True, fnmatch.E],
 
         "Period",
         ['.abc', '.abc', True, fnmatch.P],
@@ -119,7 +122,12 @@ class TestFnMatch(unittest.TestCase):
         ['[a-z]', 'a', True, 0],
         ['[z-a]', 'a', False, 0],
         ['[!z-a]', 'a', True, 0],
-        ['[!a-z]', 'a', False, 0]
+        ['[!a-z]', 'a', False, 0],
+        ['[9--]', '9', False, 0],
+
+        "Escaped slash",
+        # Escaped slashes are just slashes as they aren't treated special beyond normalization.
+        [r'a\/b', ('a/b' if util.is_case_sensitive() else 'a\\\\b'), True, 0]
     ]
 
     filter_cases = [
@@ -163,6 +171,9 @@ class TestFnMatch(unittest.TestCase):
                 print("FLAGS: ", bin(case[3]))
                 print("TEST: ", case[2], '\n')
                 self.assertEqual(fnmatch.fnmatch(case[1], case[0], flags=case[3]), case[2])
+                self.assertEqual(
+                    fnmatch.fnmatch(case[1], fnmatch.fnsplit(case[0], flags=case[3]), flags=case[3]), case[2]
+                )
 
     def test_filters(self):
         """Test filters."""
@@ -257,8 +268,31 @@ class TestFnMatch(unittest.TestCase):
         else:
             self.assertEqual(p1, [r'(?s)^(?:\\u0300)$'])
 
+    def test_posix_range(self):
+        """Test posix range."""
+
+        p = fnmatch.translate(r'[[:ascii:]-z]', flags=fnmatch.F)
+        if util.PY36:
+            self.assertEqual(p, (['^(?s:[\x00-\x7f\\-z])$'], []))
+        else:
+            self.assertEqual(p, (['(?s)^(?:[\x00-\x7f\\-z])$'], []))
+
+        p = fnmatch.translate(r'[a-[:ascii:]-z]', flags=fnmatch.F)
+        if util.PY36:
+            self.assertEqual(p, (['^(?s:[a\\-\x00-\x7f\\-z])$'], []))
+        else:
+            self.assertEqual(p, (['(?s)^(?:[a\\-\x00-\x7f\\-z])$'], []))
+
+    def test_filter(self):
+        """Test filter."""
+
         self.assertEqual(
-            fnmatch.filter(['testm', 'test\\3', 'testa'], fnmatch.fnsplit(r'te\st[ma]')),
+            fnmatch.filter(['testm', 'test\\3', 'testa'], fnmatch.fnsplit(r'te\st[ma]'), flags=fnmatch.I),
+            ['testm', 'testa']
+        )
+
+        self.assertEqual(
+            fnmatch.filter(['testm', 'test\\3', 'testa'], fnmatch.fnsplit(r'te\st[ma]'), flags=fnmatch.F),
             ['testm', 'testa']
         )
 

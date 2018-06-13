@@ -118,9 +118,11 @@ def norm_pattern(pattern, normalize, is_raw_chars):
         elif is_raw_chars and m.group(4):
             char = norm_char(bytes([int(m.group(4), 8) & 0xFF]) if is_bytes else chr(int(m.group(4), 8)))
         elif is_raw_chars and m.group(3):
-            char = norm_char(chr(int(m.group(3)[2:], 16)))
+            char = norm_char(bytes([int(m.group(3)[2:], 16)]) if is_bytes else chr(int(m.group(3)[2:], 16)))
         elif is_raw_chars and not is_bytes and m.group(5):
             char = norm_char(unicodedata.lookup(m.group(5)[3:-1]))
+        elif not is_raw_chars:
+            char = m.group(0)
         else:
             value = m.group(5) if is_bytes else m.group(6)
             pos = m.start(5) if is_bytes else m.start(6)

@@ -4,6 +4,7 @@ import unittest
 import mock
 import wcmatch.glob as glob
 import wcmatch._wcparse as _wcparse
+import wcmatch.util as util
 
 
 class TestGlob(unittest.TestCase):
@@ -86,7 +87,7 @@ class TestGlob(unittest.TestCase):
         ['[-abc]', ['-'], 0, ['-']],
         ['[abc-]', ['-'], 0, ['-']],
         ['\\', ['\\'], 0, ['\\']],
-        ['[\\\\]', ['\\'], 0, ['\\']],
+        ['[\\\\]', (['\\'] if util.is_case_sensitive() else []), 0, ['\\']],
         ['[[]', ['['], 0, ['[']],
         ['[', ['['], 0, ['[']],
         ['[*', ['[abc'], 0, ['[abc']],
@@ -182,7 +183,7 @@ class TestGlob(unittest.TestCase):
         # I think ours expands them proper, so the original test has been altered.
         [
             '+(a|*\\|c\\\\|d\\\\\\|e\\\\\\\\|f\\\\\\\\\\|g',
-            ['+(a|b\\|c\\|d\\|e\\\\|f\\\\|g'],
+            (['+(a|b\\|c\\|d\\|e\\\\|f\\\\|g'] if util.is_case_sensitive() else []),
             0,
             ['+(a|b\\|c\\|d\\|e\\\\|f\\\\|g', 'a', 'b\\c']
         ],
@@ -210,7 +211,14 @@ class TestGlob(unittest.TestCase):
             ['x(a|b|c)', 'x(a|c)', '(a|b|c)', '(a|c)'],
             glob.E
         ],
+
         lambda self: self.set_skip_split(False),
+        # test extglob nested in extglob
+        [
+            '@(a@(c|d)|c@(b|,d))',
+            ['ac', 'ad', 'cb', 'c,d']
+        ],
+
         # NOTE: We don't currently support the base match option
         # [
         #   'a?b',
@@ -274,7 +282,66 @@ class TestGlob(unittest.TestCase):
         'https://github.com/isaacs/minimatch/issues/59',
         ['[z-a]', []],
         ['a/[2015-03-10T00:23:08.647Z]/z', []],
-        ['[a-0][a-\u0100]', []]
+        ['[a-0][a-\u0100]', []],
+
+        'Consecutive slashes.',
+        lambda self: self.files.clear(),
+        lambda self: self.files.extend(
+            [
+                'a/b/c', 'd/e/f', 'a/e/c'
+            ]
+        ),
+        ['*//e///*', ['d/e/f', 'a/e/c']],
+        [r'*//\e///*', ['d/e/f', 'a/e/c']],
+
+        'Backslash trailing cases',
+        lambda self: self.files.clear(),
+        lambda self: self.files.extend(
+            [
+                'a/b/c/', 'd/e/f/', 'a/e/c/'
+            ]
+        ),
+        ['**\\', [] if util.is_case_sensitive() else ['a/b/c/', 'd/e/f/', 'a/e/c/']],
+
+        'Invalid extglob groups',
+        lambda self: self.files.clear(),
+        lambda self: self.files.extend(
+            [
+                '@([test', '@([test\\', '@(test\\', 'test['
+            ]
+        ),
+        ['@([test', ['@([test'] if util.is_case_sensitive() else ['@([test', '@([test\\']],
+        ['@([test\\', ['@([test\\']],
+        ['@(test\\', ['@(test\\']],
+        ['@(test[)', ['test[']],
+
+        'Inverse dot tests',
+        lambda self: self.files.clear(),
+        lambda self: self.files.extend(
+            [
+                '.', '..', '.abc', 'abc'
+            ]
+        ),
+        # We enable glob.N by default, so staring with `!`
+        # is a problem without glob.M
+        ['!(test)', ['abc'], glob.M],
+        ['!(test)', ['.abc', 'abc'], glob.D | glob.M],
+        ['.!(test)', ['.', '..', '.abc'], glob.M],
+        ['.!(test)', ['.', '..', '.abc'], glob.D | glob.M],
+
+        "Slash exclusion",
+        lambda self: self.files.clear(),
+        lambda self: self.files.extend(
+            [
+                'test/test', 'test\\/test'
+            ]
+        ),
+        ['test/test', ['test/test'], glob.F],
+        ['test\\/test', ['test\\/test'], glob.F],
+        ['@(test/test)', [], glob.F],
+        [r'@(test\/test)', [], glob.F],
+        ['test[/]test', [], glob.F],
+        [r'test[\/]test', [], glob.F]
     ]
 
     matches = {
@@ -386,6 +453,14 @@ class TestGlob(unittest.TestCase):
 
         self.skip_split = value
 
+    def norm_files(self, files, flags):
+        """Normalize files."""
+
+        flags = glob._flag_transform(flags)
+        unix = _wcparse.is_unix_style(flags)
+
+        return [(util.norm_slash(x) if not unix else x) for x in files]
+
     def _filter(self, p, split=False):
         """Filter with glob pattern."""
 
@@ -403,7 +478,7 @@ class TestGlob(unittest.TestCase):
             if split:
                 new_pat = []
                 for x in pat:
-                    new_pat.extend(list(glob.globsplit(x)))
+                    new_pat.extend(list(glob.globsplit(x, flags=flags)))
                 pat = new_pat
             print("PATTERN: ", p[0])
             print("FILES: ", files)
@@ -415,25 +490,21 @@ class TestGlob(unittest.TestCase):
                     flags=flags
                 )
             )
-            source = sorted(p[1])
+            source = sorted(self.norm_files(p[1], flags))
             print("TEST: ", result, '<==>', source, '\n')
             self.assertEqual(result, source)
 
-    @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_glob_filter(self, mock__iscase_sensitive):
+    def test_glob_filter(self):
         """Test wildcard parsing."""
 
-        mock__iscase_sensitive.return_value = True
         _wcparse._compile.cache_clear()
 
         for p in self.file_filter:
             self._filter(p)
 
-    @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_glob_split_filter(self, mock__iscase_sensitive):
+    def test_glob_split_filter(self):
         """Test wildcard parsing with split."""
 
-        mock__iscase_sensitive.return_value = True
         _wcparse._compile.cache_clear()
 
         for p in self.file_filter:
@@ -456,6 +527,26 @@ class TestGlob(unittest.TestCase):
         for x in ['!', '?', '+', '*', '@']:
             self.assertTrue(glob.globmatch(x + '(a|B', x + '(a|B'))
             self.assertFalse(glob.globmatch(x + '(a|B', 'B'))
+
+    def test_windows_drives(self):
+        """Test windows drives."""
+
+        if util.is_case_sensitive():
+            return
+
+        self.assertTrue(
+            glob.globmatch(
+                '//?/c:/somepath/to/match/file.txt',
+                '//?/c:/**/*.txt'
+            )
+        )
+
+        self.assertTrue(
+            glob.globmatch(
+                'c:/somepath/to/match/file.txt',
+                'c:/**/*.txt'
+            )
+        )
 
     @mock.patch('wcmatch.util.platform')
     @mock.patch('wcmatch.util.is_case_sensitive')
@@ -524,6 +615,43 @@ class TestGlob(unittest.TestCase):
                 r'**\\na[\/]m\ed\/file\\*.py',
                 flags=glob.R
             )
+        )
+
+    @mock.patch('wcmatch.util.is_case_sensitive')
+    def test_glob_translate(self, mock__iscase_sensitive):
+        """Test glob transaltion."""
+
+        mock__iscase_sensitive.return_value = True
+        _wcparse._compile.cache_clear()
+
+        if util.PY37:
+            value = (
+                [
+                    '^(?s:(?:(?!(?:/|^)\\.).)*?(?:^|$|/)+(?![/.])[\x00-\x7f]/+stuff/+(?=.)'
+                    '(?!(?:\\.{1,2})(?:$|/))(?:(?!\\.)[^/]*?)?[/]*?)$'
+                ],
+                []
+            )
+        elif util.PY36:
+            value = (
+                [
+                    '^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=.)'
+                    '(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'
+                ],
+                []
+            )
+        else:
+            value = (
+                [
+                    '(?s)^(?:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=.)'
+                    '(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'
+                ],
+                []
+            )
+
+        self.assertEqual(
+            glob.translate('**/[[:ascii:]]/stuff/*'),
+            value
         )
 
     @mock.patch('wcmatch.util.is_case_sensitive')
