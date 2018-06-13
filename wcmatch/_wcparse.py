@@ -334,7 +334,7 @@ class WcPathSplit(object):
             while c != ')':
                 c = next(i)
 
-                if self.extend and self.parse_extend(c, i):
+                if self.extend and c in EXT_TYPES and self.parse_extend(c, i):
                     continue
 
                 if c == '\\':
