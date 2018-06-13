@@ -320,7 +320,7 @@ class GlobTests(unittest.TestCase):
                  self.norm('a', '')]
 
         if self.can_symlink:
-            files.append(self.norm('sym3'))
+            files.append(self.norm('sym3', ''))
 
         eq = self.assertSequencesEqual_noorder
         eq(self.glob('*', ''), files)
