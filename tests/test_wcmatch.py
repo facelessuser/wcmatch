@@ -32,6 +32,21 @@ class TestWcmatch(unittest.TestCase):
         filename = self.norm(*parts)
         base, file = os.path.split(filename)
         if not os.path.exists(base):
+            retry = 3
+            while retry:
+                try:
+                    os.makedirs(base)
+                    retry = 0
+                except Exception:
+                    retry -= 1
+        create_empty_file(filename)
+
+    def mktemp(self, *parts):
+        """Make temp directory."""
+
+        filename = self.norm(*parts)
+        base, file = os.path.split(filename)
+        if not os.path.exists(base):
             os.makedirs(base)
         create_empty_file(filename)
 
@@ -71,7 +86,13 @@ class TestWcmatch(unittest.TestCase):
     def tearDown(self):
         """Cleanup."""
 
-        shutil.rmtree(self.tempdir)
+        retry = 3
+        while retry:
+            try:
+                shutil.rmtree(self.tempdir)
+                retry = 0
+            except Exception:
+                retry -= 1
 
     def crawl_files(self, walker):
         """Crawl the files."""
