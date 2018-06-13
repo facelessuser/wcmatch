@@ -80,6 +80,9 @@ class TestFnMatch(unittest.TestCase):
         ['*(?)abc', '.abc', True, fnmatch.E],
         ['*(?|.)abc', '.abc', True, fnmatch.E],
         ['*(?|*)abc', '.abc', True, fnmatch.E],
+        ['!(test)', '.abc', False, fnmatch.P | fnmatch.E],
+        ['!(test)', 'abc', True, fnmatch.P | fnmatch.E],
+        ['!(test)', '.abc', True, fnmatch.E],
 
         "Period",
         ['.abc', '.abc', True, fnmatch.P],

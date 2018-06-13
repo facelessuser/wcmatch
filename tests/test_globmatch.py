@@ -312,7 +312,35 @@ class TestGlob(unittest.TestCase):
         ),
         ['@([test', ['@([test'] if util.is_case_sensitive() else ['@([test', '@([test\\']],
         ['@([test\\', ['@([test\\']],
-        ['@(test\\', ['@(test\\']]
+        ['@(test\\', ['@(test\\']],
+
+        'Inverse dot tests',
+        lambda self: self.files.clear(),
+        lambda self: self.files.extend(
+            [
+                '.', '..', '.abc', 'abc'
+            ]
+        ),
+        # We enable glob.N by default, so staring with `!`
+        # is a problem without glob.M
+        ['!(test)', ['abc'], glob.M],
+        ['!(test)', ['.abc', 'abc'], glob.D | glob.M],
+        ['.!(test)', ['.', '..', '.abc'], glob.M],
+        ['.!(test)', ['.', '..', '.abc'], glob.D | glob.M],
+
+        "Slash exclusion",
+        lambda self: self.files.clear(),
+        lambda self: self.files.extend(
+            [
+                'test/test', 'test\\/test'
+            ]
+        ),
+        ['test/test', ['test/test'], glob.F],
+        ['test\\/test', ['test\\/test'], glob.F],
+        ['@(test/test)', [], glob.F],
+        [r'@(test\/test)', [], glob.F],
+        ['test[/]test', [], glob.F],
+        [r'test[\/]test', [], glob.F]
     ]
 
     matches = {
