@@ -120,7 +120,11 @@ class TestFnMatch(unittest.TestCase):
         ['[z-a]', 'a', False, 0],
         ['[!z-a]', 'a', True, 0],
         ['[!a-z]', 'a', False, 0],
-        ['[9--]', '9', False, 0]
+        ['[9--]', '9', False, 0],
+
+        "Escaped slash",
+        # Escaped slashes are just slashes as they aren't treated special beyond normalization.
+        [r'a\/b', ('a/b' if util.is_case_sensitive() else 'a\\\\b'), True, 0]
     ]
 
     filter_cases = [
@@ -164,6 +168,9 @@ class TestFnMatch(unittest.TestCase):
                 print("FLAGS: ", bin(case[3]))
                 print("TEST: ", case[2], '\n')
                 self.assertEqual(fnmatch.fnmatch(case[1], case[0], flags=case[3]), case[2])
+                self.assertEqual(
+                    fnmatch.fnmatch(case[1], fnmatch.fnsplit(case[0], flags=case[3]), flags=case[3]), case[2]
+                )
 
     def test_filters(self):
         """Test filters."""

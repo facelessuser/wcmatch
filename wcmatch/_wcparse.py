@@ -39,6 +39,7 @@ RE_POSIX = re.compile(r':(alnum|alpha|ascii|blank|cntrl|digit|graph|lower|print|
 SET_OPERATORS = frozenset(('&', '~', '|'))
 NEGATIVE_SYM = frozenset((b'!', '!'))
 MINUS_NEGATIVE_SYM = frozenset((b'-', '-'))
+EXT_TYPES = frozenset(('*', '?', '+', '@', '!'))
 
 FORCECASE = 0x0001
 IGNORECASE = 0x0002
@@ -392,7 +393,7 @@ class WcPathSplit(object):
                 i.advance(start + 1)
 
         for c in i:
-            if self.extend and self.parse_extend(c, i):
+            if self.extend and c in EXT_TYPES and self.parse_extend(c, i):
                 continue
 
             if c == '\\':
@@ -505,7 +506,7 @@ class WcSplit(object):
             while c != ')':
                 c = next(i)
 
-                if self.extend and self.parse_extend(c, i):
+                if self.extend and c in EXT_TYPES and self.parse_extend(c, i):
                     continue
 
                 if c == '\\':
@@ -539,7 +540,7 @@ class WcSplit(object):
         i = util.StringIter(pattern)
         iter(i)
         for c in i:
-            if self.extend and self.parse_extend(c, i):
+            if self.extend and c in EXT_TYPES and self.parse_extend(c, i):
                 continue
 
             if c == '|':
@@ -971,7 +972,7 @@ class WcParse(object):
             while c != ')':
                 c = next(i)
 
-                if self.extend and self.parse_extend(c, i, extended):
+                if self.extend and c in EXT_TYPES and self.parse_extend(c, i, extended):
                     # Nothing more to do
                     pass
                 elif c == '*':
@@ -1100,7 +1101,7 @@ class WcParse(object):
         for c in i:
 
             index = i.index
-            if self.extend and self.parse_extend(c, i, current):
+            if self.extend and c in EXT_TYPES and self.parse_extend(c, i, current):
                 # Nothing to do
                 pass
             elif c == '*':

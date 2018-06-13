@@ -211,7 +211,14 @@ class TestGlob(unittest.TestCase):
             ['x(a|b|c)', 'x(a|c)', '(a|b|c)', '(a|c)'],
             glob.E
         ],
+
         lambda self: self.set_skip_split(False),
+        # test extglob nested in extglob
+        [
+            '@(a@(c|d)|c@(b|,d))',
+            ['ac', 'ad', 'cb', 'c,d']
+        ],
+
         # NOTE: We don't currently support the base match option
         # [
         #   'a?b',
@@ -442,7 +449,7 @@ class TestGlob(unittest.TestCase):
             if split:
                 new_pat = []
                 for x in pat:
-                    new_pat.extend(list(glob.globsplit(x)))
+                    new_pat.extend(list(glob.globsplit(x, flags=flags)))
                 pat = new_pat
             print("PATTERN: ", p[0])
             print("FILES: ", files)
