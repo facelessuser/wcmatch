@@ -307,12 +307,13 @@ class TestGlob(unittest.TestCase):
         lambda self: self.files.clear(),
         lambda self: self.files.extend(
             [
-                '@([test', '@([test\\', '@(test\\'
+                '@([test', '@([test\\', '@(test\\', 'test['
             ]
         ),
         ['@([test', ['@([test'] if util.is_case_sensitive() else ['@([test', '@([test\\']],
         ['@([test\\', ['@([test\\']],
         ['@(test\\', ['@(test\\']],
+        ['@(test[)', ['test[']],
 
         'Inverse dot tests',
         lambda self: self.files.clear(),

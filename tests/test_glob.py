@@ -11,6 +11,7 @@ made difference in implementation.
 """
 import contextlib
 from wcmatch import glob
+from wcmatch import util
 import os
 import shutil
 import sys
@@ -119,7 +120,13 @@ class GlobTests(unittest.TestCase):
         filename = self.norm(*parts)
         base, file = os.path.split(filename)
         if not os.path.exists(base):
-            os.makedirs(base)
+            retry = 3
+            while retry:
+                try:
+                    os.makedirs(base)
+                    retry = 0
+                except Exception:
+                    retry -= 1
         create_empty_file(filename)
 
     def setUp(self):
@@ -148,7 +155,13 @@ class GlobTests(unittest.TestCase):
     def tearDown(self):
         """Cleanup."""
 
-        shutil.rmtree(self.tempdir)
+        retry = 3
+        while retry:
+            try:
+                shutil.rmtree(self.tempdir)
+                retry = 0
+            except Exception:
+                retry -= 1
 
     def glob(self, *parts, **kwargs):
         """Perform a glob with validation."""
@@ -298,6 +311,43 @@ class GlobTests(unittest.TestCase):
            [self.norm('a', 'bcd', 'efg', 'ha')])
         eq(self.glob('?a?', '*F'), [self.norm('aaa', 'zzzF'),
                                     self.norm('aab', 'F')])
+
+    def test_glob_only_directory(self):
+        """Test only directories."""
+
+        eq = self.assertSequencesEqual_noorder
+        eq(self.glob('*', ''), [self.norm('aab', ''),
+                                self.norm('aaa', ''),
+                                self.norm('a', '')])
+
+        if not util.is_case_sensitive():
+            eq(self.glob('*\\'), [self.norm('aab', ''),
+                                  self.norm('aaa', ''),
+                                  self.norm('a', '')])
+
+    def test_extglob(self):
+        """Test extglob."""
+
+        eq = self.assertSequencesEqual_noorder
+        eq(self.glob('@(a|aa*(a|b))'), [self.norm('aab'),
+                                        self.norm('aaa'),
+                                        self.norm('a')])
+
+    def test_seq(self):
+        """Test extglob."""
+
+        eq = self.assertSequencesEqual_noorder
+        eq(self.glob('[a]'), [self.norm('a')])
+        eq(self.glob('[!b]'), [self.norm('a')])
+        eq(self.glob('[^b]'), [self.norm('a')])
+        eq(self.glob(r'@([\a]|\aaa)'), [self.norm('a'),
+                                        self.norm('aaa')])
+
+    def test_empty(self):
+        """Test empty."""
+
+        eq = self.assertSequencesEqual_noorder
+        eq(glob.glob(''), [])
 
     def test_glob_directory_with_trailing_slash(self):
         """Patterns ending with a slash shouldn't match non-dirs."""

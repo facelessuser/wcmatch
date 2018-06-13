@@ -251,7 +251,10 @@ class WcPathSplit(object):
         self.unix = is_unix_style(flags) and not flags & _FORCEWIN
         self.flags = flags
         self.pattern = util.norm_pattern(pattern, not self.unix, flags & RAWCHARS)
-        if is_negative(self.pattern, flags):
+        if is_negative(self.pattern, flags):  # pragma: no cover
+            # This isn't really used, but we'll keep it around
+            # in case we find a reason to directly send inverse patterns
+            # Through here.
             self.pattern = self.pattern[0:1]
         if flags & NEGATE:
             flags ^= NEGATE
@@ -338,11 +341,10 @@ class WcPathSplit(object):
                     continue
 
                 if c == '\\':
-                    index = i.index
                     try:
                         self._references(i)
                     except StopIteration:
-                        i.rewind(i.index - index)
+                        pass
                 elif c == '[':
                     index = i.index
                     try:
@@ -405,7 +407,7 @@ class WcPathSplit(object):
                         split_index.append((i.index - 2, 1))
                 except StopIteration:
                     i.rewind(i.index - index)
-                    if self.bslash_abort and value == '\\':
+                    if self.bslash_abort:
                         split_index.append((i.index - 1, 0))
             elif c == '/':
                 split_index.append((i.index - 1, 0))
@@ -510,11 +512,10 @@ class WcSplit(object):
                     continue
 
                 if c == '\\':
-                    index = i.index
                     try:
                         self._references(i)
                     except StopIteration:
-                        i.rewind(i.index - index)
+                        pass
                 elif c == '[':
                     index = i.index
                     try:
@@ -999,12 +1000,12 @@ class WcParse(object):
                         # Do nothing because this is going to abort the extglob anyways.
                         pass
                 elif c == '[':
+                    subindex = i.index
                     try:
                         extended.append(self._sequence(i))
                     except StopIteration:
-                        # We've reached the end.
-                        # Do nothing because this is going to abort the extglob anyways.
-                        pass
+                        i.rewind(i.index - subindex)
+                        extended.append(r'\[')
                 elif c != ')':
                     extended.append(re.escape(c))
 
