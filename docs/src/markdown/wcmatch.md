@@ -15,7 +15,7 @@ from wcmatch import wcmatch
 Parameter         | Default       | Description
 ----------------- | ------------- | -----------
 `directory`       |               | The base directory to search.
-`file_pattern`    | `#!py3 '*'`   | One or more patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#wcmatchminusnegate) is set).
+`file_pattern`    | `#!py3 ''`    | One or more patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#wcmatchminusnegate) is set). The default is an empty string, but if an empty string is used, all files will be matched.
 `exclude_pattern` | `#!py3 ''`    | Zero or more folder exclude patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#wcmatchminusnegate) is set).
 `recursive`       | `#!py3 False` | Whether search should be recursive.
 `show_hidden`     | `#!py3 False` | Whether hidden files should be shown.
