@@ -21,6 +21,7 @@ CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFT
 IN THE SOFTWARE.
 """
 import os
+import re
 from . import file_hidden
 from . import _wcparse
 from . import util
@@ -79,7 +80,11 @@ class WcMatch(object):
             curdir = self._directory
         sep = os.fsencode(os.sep) if self.is_bytes else os.sep
         self.base = curdir if curdir.endswith(sep) else curdir + sep
-        self.file_pattern = args.pop(0) if args else kwargs.pop('file_pattern', b'*' if self.is_bytes else '*')
+        self.file_pattern = args.pop(0) if args else kwargs.pop('file_pattern', b'' if self.is_bytes else '')
+        if not self.file_pattern:
+            self.file_pattern = _wcparse.WcRegexp(
+                (re.compile(br'^.*$', re.DOTALL),) if self.is_bytes else (re.compile(r'^.*$', re.DOTALL),)
+            )
         self.exclude_pattern = args.pop(0) if args else kwargs.pop('exclude_pattern', b'' if self.is_bytes else '')
         self.recursive = args.pop(0) if args else kwargs.pop('recursive', False)
         self.show_hidden = args.pop(0) if args else kwargs.pop('show_hidden', False)

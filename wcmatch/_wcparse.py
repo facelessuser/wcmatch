@@ -1222,10 +1222,11 @@ class WcRegexp(util.Immutable):
 
         if matched:
             matched = True
-            for x in self._exclude:
-                if not x.fullmatch(filename):
-                    matched = False
-                    break
+            if self._exclude:
+                for x in self._exclude:
+                    if not x.fullmatch(filename):
+                        matched = False
+                        break
         return matched
 
 

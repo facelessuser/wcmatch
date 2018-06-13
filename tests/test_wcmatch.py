@@ -48,7 +48,7 @@ class TestWcmatch(unittest.TestCase):
     def norm_list(self, files):
         """Normalize file list."""
 
-        return [self.norm(os.path.normpath(x)) for x in files]
+        return sorted([self.norm(os.path.normpath(x)) for x in files])
 
     def setUp(self):
         """Setup."""
@@ -273,6 +273,22 @@ class TestWcmatch(unittest.TestCase):
             True, True, self.default_flags
         )
         self.assertEqual(walker.base, os.fsencode(target))
+
+    def test_empty_string_file(self):
+        """Test when file pattern is an empty string."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            '', None,
+            True, True, self.default_flags
+        )
+        self.crawl_files(walker)
+        self.assertEqual(
+            sorted(self.files),
+            self.norm_list(
+                ['a.txt', '.hidden/a.txt', '.hidden/b.file', 'b.file', '.hidden_file', 'c.txt.bak']
+            )
+        )
 
     def test_skip_override(self):
         """Test `on_skip` override."""
