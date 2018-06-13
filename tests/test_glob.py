@@ -633,8 +633,8 @@ class GlobCornerCaseTests(unittest.TestCase):
         eq(self.glob('@(a/b)'), [])
         eq(self.glob('@(a[/]b)'), [])
         eq(self.glob('test['), [self.norm('test[')])
-        eq(self.glob(r'a\/b'), [self.norm('a', 'b') if not util.is_case_sensitive() else []])
-        eq(self.glob(r'a[\/]b'), [self.norm('a[', ']b') if not util.is_case_sensitive() else []])
+        eq(self.glob(r'a\/b'), [self.norm('a', 'b')] if not util.is_case_sensitive() else [])
+        eq(self.glob(r'a[\/]b'), [self.norm('a[', ']b')] if not util.is_case_sensitive() else [])
 
         if not util.is_case_sensitive():
             eq(self.glob('a[\\'), [self.norm('a[', '')])

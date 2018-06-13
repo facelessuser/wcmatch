@@ -624,7 +624,15 @@ class TestGlob(unittest.TestCase):
         mock__iscase_sensitive.return_value = True
         _wcparse._compile.cache_clear()
 
-        if util.PY36:
+        if util.PY37:
+            value = (
+                [
+                    '^(?s:(?:(?!(?:/|^)\\.).)*?(?:^|$|/)+(?![/.])[\x00-\x7f]/+stuff/+(?=.)'
+                    '(?!(?:\\.{1,2})(?:$|/))(?:(?!\\.)[^/]*?)?[/]*?)$'
+                ],
+                []
+            )
+        elif util.PY36:
             value = (
                 [
                     '^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=.)'
