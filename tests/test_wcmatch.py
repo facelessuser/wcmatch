@@ -41,15 +41,6 @@ class TestWcmatch(unittest.TestCase):
                     retry -= 1
         create_empty_file(filename)
 
-    def mktemp(self, *parts):
-        """Make temp directory."""
-
-        filename = self.norm(*parts)
-        base, file = os.path.split(filename)
-        if not os.path.exists(base):
-            os.makedirs(base)
-        create_empty_file(filename)
-
     def force_err(self):
         """Force an error."""
 
