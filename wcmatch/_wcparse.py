@@ -907,12 +907,7 @@ class WcParse(object):
             # Check if the last entry was a globstar
             # If so, don't bother adding another.
             if current[-1] != sep:
-                if current[-1] == '|':
-                    # Special case following `|` in a extglob group.
-                    # We can't follow a path separator in this scenario,
-                    # so we're safe.
-                    current.append(value)
-                elif current[-1] == '':
+                if current[-1] == '':
                     # At the beginning of the pattern
                     current[-1] = value
                 else:
