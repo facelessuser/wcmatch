@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2
+
+- **FIX**: Officially support Python 3.7.
+
 ## 1.0.1
 
 - **FIX**: Ensure that all patterns in `glob` that have a directory preceding `**` but also end with `**` returns the preceding directory.
