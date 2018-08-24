@@ -218,25 +218,25 @@ On match returns the path of the matched file.  You can override `on_match` and 
 
 ## Flags
 
-#### wcmatch.FORCECASE
+#### wcmatch.FORCECASE, wcmatch.F {: #wcmatchforcecase}
 
 `FORCECASE` forces cased searches. `FORCECASE` has higher priority than [`IGNORECASE`](#wcmatchignorecase). This does **not** affect path normalization. All paths are normalized for the host as it is required to properly access the file system.
 
-#### wcmatch.IGNORECASE
+#### wcmatch.IGNORECASE, wcmatch.I {: #wcmatchignorecase}
 
 `IGNORECASE` forces case insensitive searches. `FORCECASE` has higher priority than [`IGNORECASE`](#wcmatchignorecase).
 
-#### wcmatch.RAWCHARS
+#### wcmatch.RAWCHARS, wcmatch.R {: #wcmatchrawchars}
 
 `RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will handled standard string escapes and Unicode (including `#!py3 r'\N{CHAR NAME}'`).
 
-#### wcmatch.EXTMATCH
+#### wcmatch.EXTMATCH, wcmatch.E {: #wcmatchextmatch}
 
 `EXTMATCH` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc.
 
-Alternatively `EXTGLOB` will also be accepted since if [`DIRPATHNAME`](#wcmatchdirpathname) or [`FILEPATHNAME`](#wcmatchfilepathname) is set the `glob` logic will be used in that case instead of the the `fnmatch` logic to match the paths.  Both flags are exactly the same and are provided as a convenience in case the user finds one more intuitive than the other.
+Alternatively `EXTGLOB` will also be accepted. Both flags are exactly the same and are provided as a convenience in case the user finds one more intuitive than the other.
 
-#### wcmatch.BRACE
+#### wcmatch.BRACE, wcmatch.B {: #wcmatchbrace}
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
@@ -244,11 +244,11 @@ For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch
 
 Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of patterns.
 
-#### wcmatch.MINUSNEGATE
+#### wcmatch.MINUSNEGATE, wcmatch.M {: #wcmatchminusnegate}
 
 `MINUSNEGATE` requires negation patterns to use `-` instead of `!`.
 
-#### wcmatch.DIRPATHNAME
+#### wcmatch.DIRPATHNAME, wcmatch.DP {: #wcmatchdirpathname}
 
 `DIRPATHNAME` will enable path name searching for excluded folder patterns, but it will not apply to file patterns. This is mainly provided for cases where you may have multiple folders with the same name, but you want to target a specific folder to exclude. The path name compared will be the entire path relative to the base path.  So if the provided base folder was `.`, and the folder under evaluation is `./some/folder`, `some/folder` will be matched against the pattern.
 
@@ -258,7 +258,7 @@ Be careful with patterns such as `{1..100}` which would generate one hundred pat
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
-#### wcmatch.FILEPATHNAME
+#### wcmatch.FILEPATHNAME, wcmatch.FP {: #wcmatchfilepathname}
 
 `FILEPATHNAME` will enable path name searching for the file patterns, but it will not apply to directory exclude patterns. The path name compared will be the entire path relative to the base path.  So if the provided base folder was `.`, and the file under evaluation is `./some/file.txt`, `some/file.txt` will be matched against the pattern.
 
@@ -268,11 +268,11 @@ Be careful with patterns such as `{1..100}` which would generate one hundred pat
 ['./LICENSE.md', './README.md', './docs/src/markdown/changelog.md', './docs/src/markdown/fnmatch.md', './docs/src/markdown/glob.md', './docs/src/markdown/index.md', './docs/src/markdown/license.md', './docs/src/markdown/wcmatch.md']
 ```
 
-#### wcmatch.PATHNAME
+#### wcmatch.PATHNAME, wcmatch.P {: #wcmatchpathname}
 
 `PATHNAME` enables both [`DIRPATHNAME`](#wcmatchdirpathname) and [`FILEPATHNAME`](#wcmathfilepathname). It is provided for convenience.
 
-#### wcmatch.GLOBSTAR
+#### wcmatch.GLOBSTAR, wcmatch.G {: #wcmatchglobstar}
 
 When the [`PATHNAME`](#wcmatchpathname) flag is provided, you can also enable `GLOBSTAR` to enable the recursive directory pattern matches wth `**`.
 

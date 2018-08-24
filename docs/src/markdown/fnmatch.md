@@ -123,35 +123,37 @@ def translate(patterns, *, flags=0):
 
 ## Flags
 
-#### fnmatch.FORCECASE
+#### fnmatch.FORCECASE, fnmatch.F {: #fnmatchforcecase}
 
 `FORCECASE` forces case sensitivity. On Windows, this will force paths to be treated like Linux/Unix paths, and slashes will not be normalized. `FORCECASE` has higher priority than [`IGNORECASE`](#fnmatchignorecase).
 
-#### fnmatch.IGNORECASE
+#### fnmatch.IGNORECASE, fnmatch.I {: #fnmatchignorecase}
 
 `IGNORECASE` forces case insensitivity. [`FORCECASE`](#fnmatchforecase) has higher priority than `IGNORECASE`.
 
-#### fnmatch.RAWCHARS
+#### fnmatch.RAWCHARS, fnmatch.R {: #fnmatchrawchars}
 
 `RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will handled standard string escapes and Unicode including `#!py3 r'\N{CHAR NAME}'`.
 
-#### fnmatch.NEGATE
+#### fnmatch.NEGATE, fnmatch.N {: #fnmatchnegate}
 
 `NEGATE` causes patterns that start with `!` to be treated as inverse matches. A pattern of `!*.py` would match any file but Python files. If used with [`EXTMATCH`](#fnmatchextmatch), patterns like `!(inverse|pattern)` will be mistakenly parsed as an inverse pattern instead of an inverse extmatch group.  See [`MINUSNEGATE`](#fnmatchminusnegate) for an alternative syntax that plays nice with `EXTMATCH`.
 
-#### fnmatch.MINUSNEGATE
+#### fnmatch.MINUSNEGATE, fnmatch.M {: #fnmatchminusnegate}
 
 When `MINUSNEGATE` is used with [`NEGATE`](#fnmatchnegate), negate patterns are recognized by a pattern starting with `-` instead of `!`. This plays nice with the [`EXTMATCH`](#fnmatchextmatch) option.
 
-#### fnmatch.DOTMATCH
+#### fnmatch.DOTMATCH, fnmatch.D {: #fnmatchdotmatch}
 
 By default, [`glob`](#fnmatchfnmatch) and related functions will not match file or directory names that start with dot `.` unless matched with a literal dot. `DOTMATCH` allows the meta characters (such as `*`) to match dots like any other character. Dots will not be matched in `[]`, `*`, `?`, or extended patterns like `+(...)`.
 
-#### fnmatch.EXTMATCH
+#### fnmatch.EXTMATCH, fnmatch.E {: #fnmatchextmatch}
 
 `EXTMATCH` enables extended pattern matching. This includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc. See the [syntax overview](#syntax) for more information.
 
-#### fnmatch.BRACE
+Alternatively `EXTGLOB` will also be accepted. Both flags are exactly the same and are provided as a convenience in case the user finds one more intuitive than the other.
+
+#### fnmatch.BRACE, fnmatch.B {: #fnmatchbrace}
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 

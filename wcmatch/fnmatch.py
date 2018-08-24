@@ -24,7 +24,8 @@ from . import util
 from . import _wcparse
 
 __all__ = (
-    "EXTMATCH", "FORCECASE", "IGNORECASE", "RAWCHARS", "NEGATE", "MINUSNEGATE", "DOTMATCH", "BRACE",
+    "EXTMATCH", "EXTGLOB", "FORCECASE", "IGNORECASE", "RAWCHARS",
+    "NEGATE", "MINUSNEGATE", "DOTMATCH", "EXTMATCH", "BRACE",
     "F", "I", "R", "N", "M", "D", "E",
     "translate", "fnmatch", "filter", "fnsplit"
 )
@@ -34,8 +35,8 @@ I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
 N = NEGATE = _wcparse.NEGATE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
-D = DOTMATCH = _wcparse.DOTGLOB
-E = EXTMATCH = _wcparse.EXTGLOB
+D = DOTMATCH = DOTGLOB = _wcparse.DOTGLOB
+E = EXTMATCH = EXTGLOB = _wcparse.EXTGLOB
 B = BRACE = _wcparse.BRACE
 
 FLAG_MASK = (

@@ -27,8 +27,8 @@ from . import _wcparse
 from . import util
 
 __all__ = (
-    "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB",
-    "EXTGLOB", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
+    "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
+    "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
     "F", "I", "R", "D", "E", "G", "N", "M",
     "iglob", "glob", "globsplit", "globmatch", "globfilter", "escape"
 )
@@ -52,12 +52,12 @@ FLAG_MASK = (
     FORCECASE |
     IGNORECASE |
     RAWCHARS |
-    DOTGLOB |      # Inverse
-    EXTGLOB |      # Inverse
-    GLOBSTAR |     # Inverse
+    DOTGLOB |
+    EXTGLOB |
+    GLOBSTAR |
     NEGATE |
     MINUSNEGATE |
-    BRACE          # Inverse
+    BRACE
 )
 
 
