@@ -45,7 +45,7 @@ def fnmatch(filename, patterns, *, flags=0)
 
 ```pycon3
 >>> from wcmatch import fnmatch
->>> fnmatch.fnmatch('test.txt', r'@(*.txt|*.py)', flags=fnmatch.EXTMATCH)
+>>> fnmatch.fnmatch('test.txt', r'@(*.txt|*.py)', flags=fnmatch.EXTGLOB)
 True
 ```
 
@@ -53,7 +53,7 @@ When applying multiple patterns, a file matches if it matches any of the pattern
 
 ```pycon3
 >>> from wcmatch import fnmatch
->>> fnmatch.fnmatch('test.txt', [r'*.txt', r'*.py'], flags=fnmatch.EXTMATCH)
+>>> fnmatch.fnmatch('test.txt', [r'*.txt', r'*.py'], flags=fnmatch.EXTGLOB)
 True
 ```
 
@@ -101,7 +101,7 @@ def fnsplit(pattern, *, flags=0):
 
 ```pycon3
 >>> from wcmatch import fnmatch
->>> fnmatch.fnsplit(r'*.txt|*(some|file).py', flags=fnmatch.EXTMATCH)
+>>> fnmatch.fnsplit(r'*.txt|*(some|file).py', flags=fnmatch.EXTGLOB)
 ('*.txt', '*(some|file).py')
 ```
 
@@ -137,25 +137,25 @@ def translate(patterns, *, flags=0):
 
 #### fnmatch.NEGATE
 
-`NEGATE` causes patterns that start with `!` to be treated as inverse matches. A pattern of `!*.py` would match any file but Python files. If used with [`EXTMATCH`](#fnmatchextmatch), patterns like `!(inverse|pattern)` will be mistakenly parsed as an inverse pattern instead of an inverse extmatch group.  See [`MINUSNEGATE`](#fnmatchminusnegate) for an alternative syntax that plays nice with `EXTMATCH`.
+`NEGATE` causes patterns that start with `!` to be treated as inverse matches. A pattern of `!*.py` would match any file but Python files. If used with [`EXTGLOB`](#fnmatchextglob), patterns like `!(inverse|pattern)` will be mistakenly parsed as an inverse pattern instead of an inverse extglob group.  See [`MINUSNEGATE`](#fnmatchminusnegate) for an alternative syntax that plays nice with `EXTGLOB`.
 
 #### fnmatch.MINUSNEGATE
 
-When `MINUSNEGATE` is used with [`NEGATE`](#fnmatchnegate), negate patterns are recognized by a pattern starting with `-` instead of `!`. This plays nice with the [`EXTMATCH`](#fnmatchextmatch) option.
+When `MINUSNEGATE` is used with [`NEGATE`](#fnmatchnegate), negate patterns are recognized by a pattern starting with `-` instead of `!`. This plays nice with the [`EXTMATCH`](#fnmatchextglob) option.
 
 #### fnmatch.PERIOD
 
 `PERIOD` causes file names that start with dot (`.`) to only be matched with a literal `.`. Dots will not be matched by `[]`, `*`, `?`, or extended patterns like `+(...)`.
 
-#### fnmatch.EXTMATCH
+#### fnmatch.EXTGLOB
 
-`EXTMATCH` enables extended pattern matching. This includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc. See the [syntax overview](#syntax) for more information.
+`EXTGLOB` enables extended pattern matching. This includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc. See the [syntax overview](#syntax) for more information.
 
 #### fnmatch.BRACE
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
-For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch) which will only generate a single pattern: `@(ab|ac|ad)`.
+For simple patterns, it may make more sense to use [`EXTGLOB`](#fnmatchextglob) which will only generate a single pattern: `@(ab|ac|ad)`.
 
 Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of patterns.
 

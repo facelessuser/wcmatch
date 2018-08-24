@@ -28,7 +28,7 @@ from . import util
 
 __all__ = (
     "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB",
-    "NOEXTGLOB", "NOGLOBSTAR", "NEGATE", "MINUSNEGATE", "NOBRACE",
+    "EXTGLOB", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
     "F", "I", "R", "D", "E", "G", "N", "M",
     "iglob", "glob", "globsplit", "globmatch", "globfilter", "escape"
 )
@@ -42,22 +42,22 @@ F = FORCECASE = _wcparse.FORCECASE
 I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
 D = DOTGLOB = _wcparse.DOTGLOB
-E = NOEXTGLOB = _wcparse.EXTGLOB
-G = NOGLOBSTAR = _wcparse.GLOBSTAR
+E = EXTGLOB = _wcparse.EXTGLOB
+G = GLOBSTAR = _wcparse.GLOBSTAR
 N = NEGATE = _wcparse.NEGATE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
-B = NOBRACE = _wcparse.BRACE
+B = BRACE = _wcparse.BRACE
 
 FLAG_MASK = (
     FORCECASE |
     IGNORECASE |
     RAWCHARS |
     DOTGLOB |      # Inverse
-    NOEXTGLOB |    # Inverse
-    NOGLOBSTAR |   # Inverse
+    EXTGLOB |      # Inverse
+    GLOBSTAR |     # Inverse
     NEGATE |
     MINUSNEGATE |
-    NOBRACE        # Inverse
+    BRACE          # Inverse
 )
 
 
@@ -66,10 +66,6 @@ def _flag_transform(flags):
 
     # Here we force PATHNAME and disable negation NEGATE
     flags = (flags & FLAG_MASK) | _wcparse.PATHNAME
-    # Enable by default (flipped logic for fnmatch which disables it by default)
-    flags ^= NOGLOBSTAR
-    flags ^= NOBRACE
-    flags ^= NOEXTGLOB
     return flags
 
 
