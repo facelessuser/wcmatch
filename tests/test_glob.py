@@ -416,7 +416,7 @@ class GlobTests(unittest.TestCase):
 
         eq = self.assertSequencesEqual_noorder
         eq(self.glob('sym*', flags=self.DEFAULT_FLAGS), [self.norm('sym1'), self.norm('sym2'),
-                               self.norm('sym3')])
+                                                         self.norm('sym3')])
         eq(self.glob('sym1', flags=self.DEFAULT_FLAGS), [self.norm('sym1')])
         eq(self.glob('sym2', flags=self.DEFAULT_FLAGS), [self.norm('sym2')])
 

@@ -230,9 +230,11 @@ On match returns the path of the matched file.  You can override `on_match` and 
 
 `RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will handled standard string escapes and Unicode (including `#!py3 r'\N{CHAR NAME}'`).
 
-#### wcmatch.EXTGLOB
+#### wcmatch.EXTMATCH
 
 `EXTMATCH` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc.
+
+Alternatively `EXTGLOB` will also be accepted since if [`DIRPATHNAME`](#wcmatchdirpathname) or [`FILEPATHNAME`](#wcmatchfilepathname) is set the `glob` logic will be used in that case instead of the the `fnmatch` logic to match the paths.  Both flags are exactly the same and are provided as a convenience in case the user finds one more intuitive than the other.
 
 #### wcmatch.BRACE
 

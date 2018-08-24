@@ -22,7 +22,7 @@ theme:
   feature:
     tabs: true
 
-pages:
+nav:
   - Wildcard Match: index.md
   - Fnmatch: fnmatch.md
   - Glob: glob.md

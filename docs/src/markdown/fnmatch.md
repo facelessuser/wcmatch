@@ -29,7 +29,7 @@ Pattern           | Meaning
 
 - Slashes are generally treated as normal characters, but on windows they will be normalized: `/` will become `\\`. There is no need to explicitly use `\\` in patterns on Windows, but if you do, it will be handled.  This applies to matching patterns and the file names the patterns are applied to.
 - If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern and file names will be treated as a Linux/Unix path.
-- By default, `.` is always matched by `*`, `?`, `[]`, and extended patterns such as `*(...)`. See the [`PERIOD`](#fnmatchperiod) flag to avoid matching `.` at the start of a filename.
+- By default, `.` is *not* matched by `*`, `?`, `[]`, and extended patterns such as `*(...)`. See the [`DOTMATCH`](#fnmatchdotmatch) flag to match `.` at the start of a filename without a literal `.`.
 
 --8<-- "posix.md"
 
@@ -45,7 +45,7 @@ def fnmatch(filename, patterns, *, flags=0)
 
 ```pycon3
 >>> from wcmatch import fnmatch
->>> fnmatch.fnmatch('test.txt', r'@(*.txt|*.py)', flags=fnmatch.EXTGLOB)
+>>> fnmatch.fnmatch('test.txt', r'@(*.txt|*.py)', flags=fnmatch.EXTMATCH)
 True
 ```
 
@@ -53,7 +53,7 @@ When applying multiple patterns, a file matches if it matches any of the pattern
 
 ```pycon3
 >>> from wcmatch import fnmatch
->>> fnmatch.fnmatch('test.txt', [r'*.txt', r'*.py'], flags=fnmatch.EXTGLOB)
+>>> fnmatch.fnmatch('test.txt', [r'*.txt', r'*.py'], flags=fnmatch.EXTMATCH)
 True
 ```
 
@@ -101,7 +101,7 @@ def fnsplit(pattern, *, flags=0):
 
 ```pycon3
 >>> from wcmatch import fnmatch
->>> fnmatch.fnsplit(r'*.txt|*(some|file).py', flags=fnmatch.EXTGLOB)
+>>> fnmatch.fnsplit(r'*.txt|*(some|file).py', flags=fnmatch.EXTMATCH)
 ('*.txt', '*(some|file).py')
 ```
 
@@ -137,25 +137,25 @@ def translate(patterns, *, flags=0):
 
 #### fnmatch.NEGATE
 
-`NEGATE` causes patterns that start with `!` to be treated as inverse matches. A pattern of `!*.py` would match any file but Python files. If used with [`EXTGLOB`](#fnmatchextglob), patterns like `!(inverse|pattern)` will be mistakenly parsed as an inverse pattern instead of an inverse extglob group.  See [`MINUSNEGATE`](#fnmatchminusnegate) for an alternative syntax that plays nice with `EXTGLOB`.
+`NEGATE` causes patterns that start with `!` to be treated as inverse matches. A pattern of `!*.py` would match any file but Python files. If used with [`EXTMATCH`](#fnmatchextmatch), patterns like `!(inverse|pattern)` will be mistakenly parsed as an inverse pattern instead of an inverse extmatch group.  See [`MINUSNEGATE`](#fnmatchminusnegate) for an alternative syntax that plays nice with `EXTMATCH`.
 
 #### fnmatch.MINUSNEGATE
 
-When `MINUSNEGATE` is used with [`NEGATE`](#fnmatchnegate), negate patterns are recognized by a pattern starting with `-` instead of `!`. This plays nice with the [`EXTMATCH`](#fnmatchextglob) option.
+When `MINUSNEGATE` is used with [`NEGATE`](#fnmatchnegate), negate patterns are recognized by a pattern starting with `-` instead of `!`. This plays nice with the [`EXTMATCH`](#fnmatchextmatch) option.
 
-#### fnmatch.PERIOD
+#### fnmatch.DOTMATCH
 
-`PERIOD` causes file names that start with dot (`.`) to only be matched with a literal `.`. Dots will not be matched by `[]`, `*`, `?`, or extended patterns like `+(...)`.
+By default, [`glob`](#fnmatchfnmatch) and related functions will not match file or directory names that start with dot `.` unless matched with a literal dot. `DOTMATCH` allows the meta characters (such as `*`) to match dots like any other character. Dots will not be matched in `[]`, `*`, `?`, or extended patterns like `+(...)`.
 
-#### fnmatch.EXTGLOB
+#### fnmatch.EXTMATCH
 
-`EXTGLOB` enables extended pattern matching. This includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc. See the [syntax overview](#syntax) for more information.
+`EXTMATCH` enables extended pattern matching. This includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc. See the [syntax overview](#syntax) for more information.
 
 #### fnmatch.BRACE
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
-For simple patterns, it may make more sense to use [`EXTGLOB`](#fnmatchextglob) which will only generate a single pattern: `@(ab|ac|ad)`.
+For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch) which will only generate a single pattern: `@(ab|ac|ad)`.
 
 Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of patterns.
 

@@ -25,7 +25,7 @@ from . import _wcparse
 
 __all__ = (
     "EXTMATCH", "FORCECASE", "IGNORECASE", "RAWCHARS", "NEGATE", "MINUSNEGATE", "DOTMATCH", "BRACE",
-    "F", "I", "R", "N", "M", "P", "E",
+    "F", "I", "R", "N", "M", "D", "E",
     "translate", "fnmatch", "filter", "fnsplit"
 )
 
