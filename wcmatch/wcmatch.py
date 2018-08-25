@@ -28,7 +28,7 @@ from . import util
 
 __all__ = (
     "FORCECASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME",
-    "EXTGLOB", "EXTMATCH", "GLOBSTAR", "BRACE", "MINUSNEGATE",
+    "EXTMATCH", "GLOBSTAR", "BRACE", "MINUSNEGATE",
     "F", "I", "R", "P", "E", "G", "M", "DP", "FP",
     "WcMatch"
 )
@@ -36,7 +36,7 @@ __all__ = (
 F = FORCECASE = _wcparse.FORCECASE
 I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
-E = EXTGLOB = EXTMATCH = _wcparse.EXTMATCH  # EXTGLOB is deprecated
+E = EXTMATCH = _wcparse.EXTMATCH
 G = GLOBSTAR = _wcparse.GLOBSTAR
 B = BRACE = _wcparse.BRACE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
