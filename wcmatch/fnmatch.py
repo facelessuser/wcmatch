@@ -24,8 +24,8 @@ from . import util
 from . import _wcparse
 
 __all__ = (
-    "EXTMATCH", "EXTGLOB", "FORCECASE", "IGNORECASE", "RAWCHARS",
-    "NEGATE", "MINUSNEGATE", "DOTMATCH", "EXTMATCH", "BRACE",
+    "EXTMATCH", "FORCECASE", "IGNORECASE", "RAWCHARS",
+    "NEGATE", "MINUSNEGATE", "DOTMATCH", "BRACE",
     "F", "I", "R", "N", "M", "D", "E",
     "translate", "fnmatch", "filter", "fnsplit"
 )
