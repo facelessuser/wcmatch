@@ -29,5 +29,5 @@ pip install wcmatch
 - [wcmatch](wcmatch): An alternative file search library built on `fnmatch` and `globmatch`.
 
 --8<--
-refs.md
+refs.txt
 --8<--

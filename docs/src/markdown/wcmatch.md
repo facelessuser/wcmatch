@@ -283,5 +283,5 @@ When the [`PATHNAME`](#wcmatchpathname) flag is provided, you can also enable `G
 ```
 
 --8<--
-refs.md
+refs.txt
 --8<--

@@ -31,7 +31,7 @@ Pattern           | Meaning
 - If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern and file names will be treated as a Linux/Unix path.
 - By default, `.` is *not* matched by `*`, `?`, `[]`, and extended patterns such as `*(...)`. See the [`DOTMATCH`](#fnmatchdotmatch) flag to match `.` at the start of a filename without a literal `.`.
 
---8<-- "posix.md"
+--8<-- "posix.txt"
 
 ## API
 
@@ -162,5 +162,5 @@ For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch
 Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of patterns.
 
 --8<--
-refs.md
+refs.txt
 --8<--
