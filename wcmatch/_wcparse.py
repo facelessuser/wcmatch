@@ -47,8 +47,8 @@ RAWCHARS = 0x0004
 NEGATE = 0x0008
 MINUSNEGATE = 0x0010
 PATHNAME = 0x0020
-DOTGLOB = 0x0040
-EXTGLOB = 0x0080
+DOTMATCH = 0x0040
+EXTMATCH = 0x0080
 GLOBSTAR = 0x0100
 BRACE = 0x0200
 
@@ -62,8 +62,8 @@ FLAG_MASK = (
     NEGATE |
     MINUSNEGATE |
     PATHNAME |
-    DOTGLOB |
-    EXTGLOB |
+    DOTMATCH |
+    EXTMATCH |
     GLOBSTAR |
     BRACE |
     _FORCEWIN
@@ -82,16 +82,16 @@ _PATH_TRAIL = r'[%s]*?'
 _NO_DIR = r'(?!(?:\.{1,2})(?:$|%(sep)s))'
 # Star for PATHNAME
 _PATH_STAR = r'[^%(sep)s]*?'
-# Star when at start of filename during dotglob
+# Star when at start of filename during dotmatch
 # (allow dot, but don't allow directory match /./ or /../)
-_PATH_STAR_DOTGLOB = _NO_DIR + _PATH_STAR
-# Star for PATHNAME when dotglob is disabled and start is at start of file.
+_PATH_STAR_DOTMATCH = _NO_DIR + _PATH_STAR
+# Star for PATHNAME when dotmatch is disabled and start is at start of file.
 # Disallow . and .. and don't allow match to start with a dot.
-_PATH_STAR_NO_DOTGLOB = _NO_DIR + (r'(?:(?!\.)%s)?' % _PATH_STAR)
-# GLOBSTAR during dotglob. Avoid directory match /./ or /../
-_PATH_GSTAR_DOTGLOB = r'(?:(?!(?:%(sep)s|^)(?:\.{1,2})($|%(sep)s)).)*?'
-# GLOBSTAR with dotglob disabled. Don't allow a dot to follow /
-_PATH_GSTAR_NO_DOTGLOB = r'(?:(?!(?:%(sep)s|^)\.).)*?'
+_PATH_STAR_NO_DOTMATCH = _NO_DIR + (r'(?:(?!\.)%s)?' % _PATH_STAR)
+# GLOBSTAR during dotmatch. Avoid directory match /./ or /../
+_PATH_GSTAR_DOTMATCH = r'(?:(?!(?:%(sep)s|^)(?:\.{1,2})($|%(sep)s)).)*?'
+# GLOBSTAR with dotmatch disabled. Don't allow a dot to follow /
+_PATH_GSTAR_NO_DOTMATCH = r'(?:(?!(?:%(sep)s|^)\.).)*?'
 # Next char cannot be a dot
 _NO_DOT = r'(?![.])'
 # Following char from sequence cannot be a separator or a dot
@@ -260,7 +260,7 @@ class WcPathSplit(object):
             flags ^= NEGATE
         self.flags = flags
         self.is_bytes = isinstance(pattern, bytes)
-        self.extend = bool(flags & EXTGLOB)
+        self.extend = bool(flags & EXTMATCH)
         if not self.unix:
             self.win_drive_detect = True
             self.bslash_abort = True
@@ -448,7 +448,7 @@ class WcSplit(object):
         self.pattern = pattern
         self.is_bytes = isinstance(pattern, bytes)
         self.pathname = bool(flags & PATHNAME)
-        self.extend = bool(flags & EXTGLOB)
+        self.extend = bool(flags & EXTMATCH)
         self.unix = is_unix_style(flags) and not flags & _FORCEWIN
         self.bslash_abort = not self.unix
 
@@ -584,8 +584,8 @@ class WcParse(object):
         self.pathname = bool(flags & PATHNAME)
         self.raw_chars = bool(flags & RAWCHARS)
         self.globstar = self.pathname and bool(flags & GLOBSTAR)
-        self.dot = bool(flags & DOTGLOB)
-        self.extend = bool(flags & EXTGLOB)
+        self.dot = bool(flags & DOTMATCH)
+        self.extend = bool(flags & EXTMATCH)
         self.case_sensitive = get_case(flags)
         self.in_list = False
         self.flags = flags
@@ -605,10 +605,10 @@ class WcParse(object):
         self.seq_path = _PATH_NO_SLASH % sep
         self.seq_path_dot = _PATH_NO_SLASH_DOT % sep
         self.path_star = _PATH_STAR % sep
-        self.path_star_dot1 = _PATH_STAR_DOTGLOB % sep
-        self.path_star_dot2 = _PATH_STAR_NO_DOTGLOB % sep
-        self.path_gstar_dot1 = _PATH_GSTAR_DOTGLOB % sep
-        self.path_gstar_dot2 = _PATH_GSTAR_NO_DOTGLOB % sep
+        self.path_star_dot1 = _PATH_STAR_DOTMATCH % sep
+        self.path_star_dot2 = _PATH_STAR_NO_DOTMATCH % sep
+        self.path_gstar_dot1 = _PATH_GSTAR_DOTMATCH % sep
+        self.path_gstar_dot2 = _PATH_GSTAR_NO_DOTMATCH % sep
 
     def set_after_start(self):
         """Set tracker for character after the start of a directory."""
@@ -932,7 +932,7 @@ class WcParse(object):
         that comes after the negative group. `!(this|that)other` --> `(?:(?!(?:this|that)other))[^/]*?)`.
 
         We have to update the list before | in nested cases: *(!(...)|stuff). Before we close a parent
-        extglob: `*(!(...))`. And of course on path separators (when path mode is on): `!(...)/stuff`.
+        extmatch: `*(!(...))`. And of course on path separators (when path mode is on): `!(...)/stuff`.
         Lastly we make sure all is accounted for when finishing the pattern at the end.  If there is nothing
         to store, we store `$`: `(?:(?!(?:this|that)$))[^/]*?)`.
         """
@@ -997,7 +997,7 @@ class WcParse(object):
                         extended.append(self._references(i))
                     except StopIteration:
                         # We've reached the end.
-                        # Do nothing because this is going to abort the extglob anyways.
+                        # Do nothing because this is going to abort the extmatch anyways.
                         pass
                 elif c == '[':
                     subindex = i.index

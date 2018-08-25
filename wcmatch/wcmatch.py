@@ -28,7 +28,7 @@ from . import util
 
 __all__ = (
     "FORCECASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME",
-    "EXTGLOB", "GLOBSTAR", "BRACE", "MINUSNEGATE",
+    "EXTGLOB", "EXTMATCH", "GLOBSTAR", "BRACE", "MINUSNEGATE",
     "F", "I", "R", "P", "E", "G", "M", "DP", "FP",
     "WcMatch"
 )
@@ -36,7 +36,7 @@ __all__ = (
 F = FORCECASE = _wcparse.FORCECASE
 I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
-E = EXTGLOB = _wcparse.EXTGLOB
+E = EXTGLOB = EXTMATCH = _wcparse.EXTMATCH  # EXTGLOB is deprecated
 G = GLOBSTAR = _wcparse.GLOBSTAR
 B = BRACE = _wcparse.BRACE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
@@ -51,7 +51,7 @@ FLAG_MASK = (
     FORCECASE |
     IGNORECASE |
     RAWCHARS |
-    EXTGLOB |
+    EXTMATCH |
     GLOBSTAR |
     BRACE |
     MINUSNEGATE |
@@ -89,7 +89,7 @@ class WcMatch(object):
         self.recursive = args.pop(0) if args else kwargs.pop('recursive', False)
         self.show_hidden = args.pop(0) if args else kwargs.pop('show_hidden', False)
         self.flags = (args.pop(0) if args else kwargs.pop('flags', 0)) & FLAG_MASK
-        self.flags |= _wcparse.NEGATE | _wcparse.DOTGLOB
+        self.flags |= _wcparse.NEGATE | _wcparse.DOTMATCH
         self.dir_pathname = bool(self.flags & DIRPATHNAME)
         self.file_pathname = bool(self.flags & FILEPATHNAME)
         if util.platform() == "windows":

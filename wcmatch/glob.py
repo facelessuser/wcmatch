@@ -27,8 +27,8 @@ from . import _wcparse
 from . import util
 
 __all__ = (
-    "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB",
-    "NOEXTGLOB", "NOGLOBSTAR", "NEGATE", "MINUSNEGATE", "NOBRACE",
+    "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
+    "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
     "F", "I", "R", "D", "E", "G", "N", "M",
     "iglob", "glob", "globsplit", "globmatch", "globfilter", "escape"
 )
@@ -41,23 +41,23 @@ NO_SCANDIR_WORKAROUND = util.PY36
 F = FORCECASE = _wcparse.FORCECASE
 I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
-D = DOTGLOB = _wcparse.DOTGLOB
-E = NOEXTGLOB = _wcparse.EXTGLOB
-G = NOGLOBSTAR = _wcparse.GLOBSTAR
+D = DOTGLOB = DOTMATCH = _wcparse.DOTMATCH
+E = EXTGLOB = EXTMATCH = _wcparse.EXTMATCH
+G = GLOBSTAR = _wcparse.GLOBSTAR
 N = NEGATE = _wcparse.NEGATE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
-B = NOBRACE = _wcparse.BRACE
+B = BRACE = _wcparse.BRACE
 
 FLAG_MASK = (
     FORCECASE |
     IGNORECASE |
     RAWCHARS |
-    DOTGLOB |      # Inverse
-    NOEXTGLOB |    # Inverse
-    NOGLOBSTAR |   # Inverse
+    DOTMATCH |
+    EXTMATCH |
+    GLOBSTAR |
     NEGATE |
     MINUSNEGATE |
-    NOBRACE        # Inverse
+    BRACE
 )
 
 
@@ -66,10 +66,6 @@ def _flag_transform(flags):
 
     # Here we force PATHNAME and disable negation NEGATE
     flags = (flags & FLAG_MASK) | _wcparse.PATHNAME
-    # Enable by default (flipped logic for fnmatch which disables it by default)
-    flags ^= NOGLOBSTAR
-    flags ^= NOBRACE
-    flags ^= NOEXTGLOB
     return flags
 
 
@@ -80,7 +76,7 @@ class Glob(object):
         """Init the directory walker object."""
 
         self.flags = _flag_transform(flags)
-        self.dot = bool(self.flags & DOTGLOB)
+        self.dot = bool(self.flags & DOTMATCH)
         self.negate = bool(self.flags & NEGATE)
         self.globstar = bool(self.flags & _wcparse.GLOBSTAR)
         self.braces = bool(self.flags & _wcparse.BRACE)

@@ -24,8 +24,9 @@ from . import util
 from . import _wcparse
 
 __all__ = (
-    "EXTMATCH", "FORCECASE", "IGNORECASE", "RAWCHARS", "NEGATE", "MINUSNEGATE", "PERIOD", "BRACE",
-    "F", "I", "R", "N", "M", "P", "E",
+    "EXTMATCH", "FORCECASE", "IGNORECASE", "RAWCHARS",
+    "NEGATE", "MINUSNEGATE", "DOTMATCH", "BRACE",
+    "F", "I", "R", "N", "M", "D", "E",
     "translate", "fnmatch", "filter", "fnsplit"
 )
 
@@ -34,8 +35,8 @@ I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
 N = NEGATE = _wcparse.NEGATE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
-P = PERIOD = _wcparse.DOTGLOB
-E = EXTMATCH = _wcparse.EXTGLOB
+D = DOTMATCH = _wcparse.DOTMATCH
+E = EXTMATCH = _wcparse.EXTMATCH
 B = BRACE = _wcparse.BRACE
 
 FLAG_MASK = (
@@ -44,7 +45,7 @@ FLAG_MASK = (
     RAWCHARS |
     NEGATE |
     MINUSNEGATE |
-    PERIOD |       # Inverse
+    DOTMATCH |
     EXTMATCH |
     BRACE
 )
@@ -54,8 +55,6 @@ def _flag_transform(flags):
     """Transform flags to glob defaults."""
 
     flags = (flags & FLAG_MASK)
-    # Enable by default (flipped logic as the underlying library disables it by default).
-    flags ^= PERIOD
     return flags
 
 

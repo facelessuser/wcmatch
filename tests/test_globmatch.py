@@ -8,7 +8,13 @@ import wcmatch.util as util
 
 
 class TestGlob(unittest.TestCase):
-    """Test globbing."""
+    """Test globbing.
+
+    Including a flag(s) in the rules below will set a flag,
+    but by default, we enable glob.NEGATE | glob.GLOBSTAR | glob.EXTGLOB | glob.BRACE,
+    so if these are set, it will do the opposite and disable those flags. This is because
+    the test suite we ripped these tests from defaulted the above flags, while we do not.
+    """
 
     FILES = [
         'a', 'b', 'c', 'd', 'abc',
@@ -445,7 +451,7 @@ class TestGlob(unittest.TestCase):
         """Setup the tests."""
         self.files = self.FILES[:]
         # The tests we scraped were written with this assumed.
-        self.flags = glob.NEGATE
+        self.flags = glob.NEGATE | glob.GLOBSTAR | glob.EXTGLOB | glob.BRACE
         self.skip_split = False
 
     def set_skip_split(self, value):
@@ -513,20 +519,26 @@ class TestGlob(unittest.TestCase):
     def test_ignore_cases(self):
         """Test ignore cases."""
 
+        flags = self.flags
+        flags ^= glob.NEGATE
+
         for filename, tests in self.matches.items():
             for pattern, goal in tests.items():
                 print("PATTERN: ", pattern)
                 print("FILE: ", filename)
                 print("GOAL: ", goal)
 
-                self.assertTrue(glob.globmatch(filename, pattern) == goal)
+                self.assertTrue(glob.globmatch(filename, pattern, flags=flags) == goal)
 
     def test_unfinished_ext(self):
         """Test unfinished ext."""
 
+        flags = self.flags
+        flags ^= glob.NEGATE
+
         for x in ['!', '?', '+', '*', '@']:
-            self.assertTrue(glob.globmatch(x + '(a|B', x + '(a|B'))
-            self.assertFalse(glob.globmatch(x + '(a|B', 'B'))
+            self.assertTrue(glob.globmatch(x + '(a|B', x + '(a|B', flags=flags))
+            self.assertFalse(glob.globmatch(x + '(a|B', 'B', flags=flags))
 
     def test_windows_drives(self):
         """Test windows drives."""
@@ -537,14 +549,16 @@ class TestGlob(unittest.TestCase):
         self.assertTrue(
             glob.globmatch(
                 '//?/c:/somepath/to/match/file.txt',
-                '//?/c:/**/*.txt'
+                '//?/c:/**/*.txt',
+                flags=self.flags
             )
         )
 
         self.assertTrue(
             glob.globmatch(
                 'c:/somepath/to/match/file.txt',
-                'c:/**/*.txt'
+                'c:/**/*.txt',
+                flags=self.flags
             )
         )
 
@@ -560,60 +574,64 @@ class TestGlob(unittest.TestCase):
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/named/file/test.py',
-                '**/named/file/*.py'
+                '**/named/file/*.py',
+                flags=self.flags
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na[/]med/file/test.py',
-                '**/na[/]med/file/*.py'
+                '**/na[/]med/file/*.py',
+                flags=self.flags
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na[/]med\\/file/test.py',
-                '**/na[/]med\\/file/*.py'
+                '**/na[/]med\\/file/*.py',
+                flags=self.flags
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na[\\]med/file/test.py',
-                r'**/na[\\]med/file/*.py', flags=glob.R
+                r'**/na[\\]med/file/*.py',
+                flags=self.flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some\\name\\with\\na[\\]med\\file\\test.py',
                 r'**/na[\\]med/file/*.py',
-                flags=glob.R
+                flags=self.flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some\\name\\with\\na[\\]med\\file*.py',
                 r'**\\na[\\]med\\file\*.py',
-                flags=glob.R
+                flags=self.flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some\\name\\with\\na[\\]med\\file\\test.py',
                 r'**\\na[\\]m\ed\\file\\*.py',
-                flags=glob.R
+                flags=self.flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some\\name\\with\\na[\\]med\\\\file\\test.py',
                 r'**\\na[\\]m\ed\\/file\\*.py',
-                flags=glob.R
+                flags=self.flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some\\name\\with\\na[\\\\]med\\\\file\\test.py',
                 r'**\\na[\/]m\ed\/file\\*.py',
-                flags=glob.R
+                flags=self.flags | glob.R
             )
         )
 
@@ -650,7 +668,7 @@ class TestGlob(unittest.TestCase):
             )
 
         self.assertEqual(
-            glob.translate('**/[[:ascii:]]/stuff/*'),
+            glob.translate('**/[[:ascii:]]/stuff/*', flags=self.flags),
             value
         )
 
@@ -664,33 +682,36 @@ class TestGlob(unittest.TestCase):
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/named/file/test.py',
-                '**/named/file/*.py'
+                '**/named/file/*.py',
+                flags=self.flags
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na[/]med/file/test.py',
-                '**/na[/]med/file/*.py'
+                '**/na[/]med/file/*.py',
+                flags=self.flags
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na[/]med\\/file/test.py',
-                '**/na[/]med\\/file/*.py'
+                '**/na[/]med\\/file/*.py',
+                flags=self.flags
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na\\med/file/test.py',
                 r'**/na[\\]med/file/*.py',
-                flags=glob.R
+                flags=self.flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na[\\/]med\\/file/test.py',
                 r'**/na[\/]med\/file/*.py',
-                flags=glob.R
+                flags=self.flags | glob.R
             )
         )
 
@@ -700,6 +721,30 @@ class TestGlob(unittest.TestCase):
         # Number of slashes is inconsequential
         # Glob really looks at what is in between. Multiple slashes are the same as one separator.
         # UNC mounts are special cases and it matters there.
-        self.assertTrue(all([glob.globmatch(x, '**/../*.{md,py}') for x in glob.glob('**/../*.{md,py}')]))
-        self.assertTrue(all([glob.globmatch(x, './**/./../*.py') for x in glob.glob('./**/./../*.py')]))
-        self.assertTrue(all([glob.globmatch(x, './///**///./../*.py') for x in glob.glob('./**/.//////..////*.py')]))
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/../*.{md,py}', flags=self.flags
+                    ) for x in glob.glob('**/../*.{md,py}', flags=self.flags)
+                ]
+            )
+        )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, './**/./../*.py', flags=self.flags
+                    ) for x in glob.glob('./**/./../*.py', flags=self.flags)
+                ]
+            )
+        )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, './///**///./../*.py', flags=self.flags
+                    ) for x in glob.glob('./**/.//////..////*.py', flags=self.flags)
+                ]
+            )
+        )

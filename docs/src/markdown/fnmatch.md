@@ -29,9 +29,9 @@ Pattern           | Meaning
 
 - Slashes are generally treated as normal characters, but on windows they will be normalized: `/` will become `\\`. There is no need to explicitly use `\\` in patterns on Windows, but if you do, it will be handled.  This applies to matching patterns and the file names the patterns are applied to.
 - If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern and file names will be treated as a Linux/Unix path.
-- By default, `.` is always matched by `*`, `?`, `[]`, and extended patterns such as `*(...)`. See the [`PERIOD`](#fnmatchperiod) flag to avoid matching `.` at the start of a filename.
+- By default, `.` is *not* matched by `*`, `?`, `[]`, and extended patterns such as `*(...)`. See the [`DOTMATCH`](#fnmatchdotmatch) flag to match `.` at the start of a filename without a literal `.`.
 
---8<-- "posix.md"
+--8<-- "posix.txt"
 
 ## API
 
@@ -123,35 +123,35 @@ def translate(patterns, *, flags=0):
 
 ## Flags
 
-#### fnmatch.FORCECASE
+#### fnmatch.FORCECASE, fnmatch.F {: #fnmatchforcecase}
 
 `FORCECASE` forces case sensitivity. On Windows, this will force paths to be treated like Linux/Unix paths, and slashes will not be normalized. `FORCECASE` has higher priority than [`IGNORECASE`](#fnmatchignorecase).
 
-#### fnmatch.IGNORECASE
+#### fnmatch.IGNORECASE, fnmatch.I {: #fnmatchignorecase}
 
 `IGNORECASE` forces case insensitivity. [`FORCECASE`](#fnmatchforecase) has higher priority than `IGNORECASE`.
 
-#### fnmatch.RAWCHARS
+#### fnmatch.RAWCHARS, fnmatch.R {: #fnmatchrawchars}
 
 `RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will handled standard string escapes and Unicode including `#!py3 r'\N{CHAR NAME}'`.
 
-#### fnmatch.NEGATE
+#### fnmatch.NEGATE, fnmatch.N {: #fnmatchnegate}
 
 `NEGATE` causes patterns that start with `!` to be treated as inverse matches. A pattern of `!*.py` would match any file but Python files. If used with [`EXTMATCH`](#fnmatchextmatch), patterns like `!(inverse|pattern)` will be mistakenly parsed as an inverse pattern instead of an inverse extmatch group.  See [`MINUSNEGATE`](#fnmatchminusnegate) for an alternative syntax that plays nice with `EXTMATCH`.
 
-#### fnmatch.MINUSNEGATE
+#### fnmatch.MINUSNEGATE, fnmatch.M {: #fnmatchminusnegate}
 
 When `MINUSNEGATE` is used with [`NEGATE`](#fnmatchnegate), negate patterns are recognized by a pattern starting with `-` instead of `!`. This plays nice with the [`EXTMATCH`](#fnmatchextmatch) option.
 
-#### fnmatch.PERIOD
+#### fnmatch.DOTMATCH, fnmatch.D {: #fnmatchdotmatch}
 
-`PERIOD` causes file names that start with dot (`.`) to only be matched with a literal `.`. Dots will not be matched by `[]`, `*`, `?`, or extended patterns like `+(...)`.
+By default, [`glob`](#fnmatchfnmatch) and related functions will not match file or directory names that start with dot `.` unless matched with a literal dot. `DOTMATCH` allows the meta characters (such as `*`) to match dots like any other character. Dots will not be matched in `[]`, `*`, `?`, or extended patterns like `+(...)`.
 
-#### fnmatch.EXTMATCH
+#### fnmatch.EXTMATCH, fnmatch.E {: #fnmatchextmatch}
 
 `EXTMATCH` enables extended pattern matching. This includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc. See the [syntax overview](#syntax) for more information.
 
-#### fnmatch.BRACE
+#### fnmatch.BRACE, fnmatch.B {: #fnmatchbrace}
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
@@ -160,5 +160,5 @@ For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch
 Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of patterns.
 
 --8<--
-refs.md
+refs.txt
 --8<--

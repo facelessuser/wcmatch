@@ -68,7 +68,7 @@ Pattern           | Meaning
     docs/. docs/..
     ```
 
---8<-- "posix.md"
+--8<-- "posix.txt"
 
 ## API
 
@@ -242,46 +242,50 @@ True
 
 ## Flags
 
-#### glob.FORCECASE
+#### glob.FORCECASE, glob.F {: #globforcecase}
 
 `FORCECASE` forces case sensitivity. On Windows, this will force paths to be treated like Linux/Unix paths, and slashes will not be normalized. Path normalization only relates to [`globmatch`](#globglobmatch) and not for [`glob`](#globglob) and [`iglob`](#globiglob). Paths must be normalized for `glob` and `iglob` in order to scan the file system. `FORCECASE` has higher priority than [`IGNORECASE`](#globignorecase).
 
-#### glob.IGNORECASE
+#### glob.IGNORECASE, glob.I {: #globignorecase}
 
 `IGNORECASE` forces case insensitivity. [`FORCECASE`](#globforcecase) has higher priority than `IGNORECASE`.
 
-#### glob.RAWCHARS
+#### glob.RAWCHARS, glob.R {: #globrawchars}
 
 `RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will handled standard string escapes and Unicode including `#!py3 r'\N{CHAR NAME}'`.
 
-#### glob.NEGATE
+#### glob.NEGATE, glob.N {: #globnegate}
 
 `NEGATE` causes patterns that start with `!` to be treated as inverse matches. A pattern of `!*.py` would match any file but Python files. If used with the extended glob feature, patterns like `!(inverse|pattern)` will be mistakenly parsed as an inverse pattern instead of as an inverse extended glob group.  See [`MINUSNEGATE`](#globminusgate) for an alternative syntax that plays nice with extended glob.
 
-#### glob.MINUSNEGATE
+#### glob.MINUSNEGATE, glob.M {: #globminusnegate}
 
 When `MINUSNEGATE` is used with [`NEGATE`](#globnegate), negate patterns are recognized by a pattern starting with `-` instead of `!`. This plays nice with the extended glob feature which already uses `!` in patterns such as `!(...)`.
 
-#### glob.NOGLOBSTAR
+#### glob.GLOBSTAR, glob.G {: #globglobstar}
 
-By default, `**` matches zero or more directories. You can disable `**` with `NOGLOBSTAR`.
+`GLOBSTAR` enables the feature where `**` matches zero or more directories.
 
-#### glob.DOTGLOB
+#### glob.DOTGLOB, glob.D {: #globdotglob}
 
 By default, [`glob`](#globglob) and [`globmatch`](#globglobmatch) will not match file or directory names that start with dot `.` unless matched with a literal dot. `DOTGLOB` allows the meta characters (such as `*`) to glob dots like any other character. Dots will not be matched in `[]`, `*`, `?`, or extended patterns like `+(...)`.
 
-#### glob.NOEXTGLOB
+Alternatively `DOTMATCH` will also be accepted for consistency with the other provided libraries. Both flags are exactly the same and are provided as a convenience in case the user finds one more intuitive than the other since `DOTGLOB` is often the name used in Bash.
 
-`NOEXTGLOB` disables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc. See the [syntax overview](#syntax) for more information.
+#### glob.EXTGLOB, glob.E {: #globextglob}
 
-#### glob.NOBRACE
+`EXTGLOB` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc. See the [syntax overview](#syntax) for more information.
 
-`NOBRACE` disables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
+Alternatively `EXTMATCH` will also be accepted for consistency with the other provided libraries. Both flags are exactly the same and are provided as a convenience in case the user finds one more intuitive than the other since `EXTGLOB` is often the name used in Bash.
 
-For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch) which will only generate a single pattern: `@(ab|ac|ad)`.
+#### glob.BRACE, glob.B {: #globbrace}
+
+`BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
+
+For simple patterns, it may make more sense to use [`EXTGLOB`](#globextglob) which will only generate a single pattern: `@(ab|ac|ad)`.
 
 Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of patterns.
 
 --8<--
-refs.md
+refs.txt
 --8<--
