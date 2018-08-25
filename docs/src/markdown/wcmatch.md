@@ -234,11 +234,6 @@ On match returns the path of the matched file.  You can override `on_match` and 
 
 `EXTMATCH` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc.
 
-!!! warning "2.0.0 Deprecation"
-    `EXTGLOB` flag has been deprecated in favor of `EXTMATCH`. `EXTGLOB` was never meant to be the name of the flag in wcmatch, but due to mistake it was the default flag despite the fact that the documentation expressed that `EXTMATCH` was the flag.  `EXTGLOB` will be removed in version 3.0.0, so please discontinue use of `EXTGLOB` moving forward.
-
-    Unfortunately, no warnings will be shown due to the difficulty of raising a warning on a flag name.
-
 #### wcmatch.BRACE, wcmatch.B {: #wcmatchbrace}
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.

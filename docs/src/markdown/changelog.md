@@ -9,7 +9,7 @@
 - **NEW**: Glob's `DOTGLOB` and `EXTGLOB` also have the respective aliases `DOTMATCH` and `EXTMATCH` to provide consistent flags across provided libraries, but the `GLOB` variants that match Bash's feature names can still be used.
 - **NEW**: Fnmatch's `PERIOD` flag has been replaced with `DOTMATCH` with inverted logic from what was originally provided.
 - **NEW**: Documentation exposes the shorthand form of flags: `FORCECASE` --> `F`, etc.
-- **FIX**: Wcmatch always documented that it had the flag named `EXTMATCH`, but internally it was actually `EXTGLOB`, this was a bug though.  To prevent breakage, `EXTGLOB` will still be accepted up to version 3.0.0, but should be considered deprecated.
+- **FIX**: Wcmatch always documented that it had the flag named `EXTMATCH`, but internally it was actually `EXTGLOB`, this was a bug though. `EXTMATCH` is now the documented and the actual flag to use.
 
 ## 1.0.2
 
