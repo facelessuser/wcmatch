@@ -6,8 +6,10 @@
     Version 2.0.0 introduces breaking changes in regards to flags.  This is meant to bring about consistency amongst the provided libraries. Flag names have been changed in some cases, and logic has been inverted in some cases.
 
 - **NEW**: Glob's `NOBRACE`, `NOGLOBSTAR`, and `NOEXTGLOB` flags are now `BRACE`, `GLOBSTAR`, and `EXTGLOB` and now enable the features instead of disabling the features. This logic matches the provided fnmatch and wcmatch.
-- **NEW**: Fnmatch's `PERIOD` flag has been replaced with `DOTMATCH` (and the alias `DOTGLOB`) with inverted logic from what was originally provided.
-- **NEW**: The libraries glob, fnmatch, and wcmatch libraries allow for the flag `EXTGLOB` or the alias `EXTMATCH` and the flag `DOTGLOB` or alias `DOTMATCH` (where applicable). If people are used to using `EXTMATCH` for fnmatch and `EXTGLOB` for glob, they are free to do so, or they could use `EXTMATCH` for all of the libraries, etc.
+- **NEW**: Glob's `DOTGLOB` and `EXTGLOB` also have the respective aliases `DOTMATCH` and `EXTMATCH` to provide consistent flags across provided libraries, but the `GLOB` variants that match Bash's feature names can still be used.
+- **NEW**: Fnmatch's `PERIOD` flag has been replaced with `DOTMATCH` with inverted logic from what was originally provided.
+- **NEW**: Documentation exposes the shorthand form of flags: `FORCECASE` --> `F`, etc.
+- **FIX**: Wcmatch always documented that it had the flag named `EXTMATCH`, but internally it was actually `EXTGLOB`, this was a bug though.  To prevent breakage, `EXTGLOB` will still be accepted up to version 3.0.0, but should be considered deprecated.
 
 ## 1.0.2
 

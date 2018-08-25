@@ -35,8 +35,8 @@ I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
 N = NEGATE = _wcparse.NEGATE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
-D = DOTMATCH = DOTGLOB = _wcparse.DOTGLOB
-E = EXTMATCH = EXTGLOB = _wcparse.EXTGLOB
+D = DOTMATCH = _wcparse.DOTMATCH
+E = EXTMATCH = _wcparse.EXTMATCH
 B = BRACE = _wcparse.BRACE
 
 FLAG_MASK = (

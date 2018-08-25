@@ -234,7 +234,10 @@ On match returns the path of the matched file.  You can override `on_match` and 
 
 `EXTMATCH` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc.
 
-Alternatively `EXTGLOB` will also be accepted. Both flags are exactly the same and are provided as a convenience in case the user finds one more intuitive than the other.
+!!! warning "2.0.0 Deprecation"
+    `EXTGLOB` flag has been deprecated in favor of `EXTMATCH`. `EXTGLOB` was never meant to be the name of the flag in wcmatch, but due to mistake it was the default flag despite the fact that the documentation expressed that `EXTMATCH` was the flag.  `EXTGLOB` will be removed in version 3.0.0, so please discontinue use of `EXTGLOB` moving forward.
+
+    Unfortunately, no warnings will be shown due to the difficulty of raising a warning on a flag name.
 
 #### wcmatch.BRACE, wcmatch.B {: #wcmatchbrace}
 

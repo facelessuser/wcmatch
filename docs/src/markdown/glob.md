@@ -270,11 +270,13 @@ When `MINUSNEGATE` is used with [`NEGATE`](#globnegate), negate patterns are rec
 
 By default, [`glob`](#globglob) and [`globmatch`](#globglobmatch) will not match file or directory names that start with dot `.` unless matched with a literal dot. `DOTGLOB` allows the meta characters (such as `*`) to glob dots like any other character. Dots will not be matched in `[]`, `*`, `?`, or extended patterns like `+(...)`.
 
+Alternatively `DOTMATCH` will also be accepted for consistency with the other provided libraries. Both flags are exactly the same and are provided as a convenience in case the user finds one more intuitive than the other since `DOTGLOB` is often the name used in Bash.
+
 #### glob.EXTGLOB, glob.E {: #globextglob}
 
 `EXTGLOB` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc. See the [syntax overview](#syntax) for more information.
 
-Alternatively `EXTMATCH` will also be accepted. Both flags are exactly the same and are provided as a convenience in case the user finds one more intuitive than the other.
+Alternatively `EXTMATCH` will also be accepted for consistency with the other provided libraries. Both flags are exactly the same and are provided as a convenience in case the user finds one more intuitive than the other since `EXTGLOB` is often the name used in Bash.
 
 #### glob.BRACE, glob.B {: #globbrace}
 

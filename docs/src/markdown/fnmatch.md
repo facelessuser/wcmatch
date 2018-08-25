@@ -151,8 +151,6 @@ By default, [`glob`](#fnmatchfnmatch) and related functions will not match file 
 
 `EXTMATCH` enables extended pattern matching. This includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc. See the [syntax overview](#syntax) for more information.
 
-Alternatively `EXTGLOB` will also be accepted. Both flags are exactly the same and are provided as a convenience in case the user finds one more intuitive than the other.
-
 #### fnmatch.BRACE, fnmatch.B {: #fnmatchbrace}
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.

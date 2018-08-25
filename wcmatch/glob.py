@@ -41,8 +41,8 @@ NO_SCANDIR_WORKAROUND = util.PY36
 F = FORCECASE = _wcparse.FORCECASE
 I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
-D = DOTGLOB = DOTMATCH = _wcparse.DOTGLOB
-E = EXTGLOB = EXTMATCH = _wcparse.EXTGLOB
+D = DOTGLOB = DOTMATCH = _wcparse.DOTMATCH
+E = EXTGLOB = EXTMATCH = _wcparse.EXTMATCH
 G = GLOBSTAR = _wcparse.GLOBSTAR
 N = NEGATE = _wcparse.NEGATE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
@@ -52,8 +52,8 @@ FLAG_MASK = (
     FORCECASE |
     IGNORECASE |
     RAWCHARS |
-    DOTGLOB |
-    EXTGLOB |
+    DOTMATCH |
+    EXTMATCH |
     GLOBSTAR |
     NEGATE |
     MINUSNEGATE |
@@ -76,7 +76,7 @@ class Glob(object):
         """Init the directory walker object."""
 
         self.flags = _flag_transform(flags)
-        self.dot = bool(self.flags & DOTGLOB)
+        self.dot = bool(self.flags & DOTMATCH)
         self.negate = bool(self.flags & NEGATE)
         self.globstar = bool(self.flags & _wcparse.GLOBSTAR)
         self.braces = bool(self.flags & _wcparse.BRACE)
