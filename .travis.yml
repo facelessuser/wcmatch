@@ -16,7 +16,7 @@ matrix:
       env: TOXENV=py36
     - python: 3.7
       dist: xenial
-      env: TOXENV=py37-unittests
+      env: TOXENV=py37
     - python: 3.6
       env: TOXENV=lint
     - python: 3.6
