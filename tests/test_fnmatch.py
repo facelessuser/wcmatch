@@ -9,7 +9,24 @@ import wcmatch._wcparse as _wcparse
 
 
 class TestFnMatch(unittest.TestCase):
-    """Test fnmatch."""
+    """
+    Test fnmatch.
+
+
+    Each entry in `cases` is run through the `fnmatch`.  They are also run through
+    `fnsplit` and then `fnmatch` as a separate operation to ensure `fnsplit` adds
+    no unintended side effects.
+
+    Each case entry is an array of 4 parameters.
+
+    * Pattern
+    * Filename
+    * Expected result (boolean of whether pattern matched filename)
+    * Flags
+
+    The default flags are DOTMATCH. Any flags passed through via entry are XORed.
+    So if DOTMATCH is passed via an entry, it will actually disable the default DOTMATCH.
+    """
 
     cases = [
         ['abc', 'abc', True, 0],
@@ -130,35 +147,6 @@ class TestFnMatch(unittest.TestCase):
         [r'a\/b', ('a/b' if util.is_case_sensitive() else 'a\\\\b'), True, 0]
     ]
 
-    filter_cases = [
-        ['P*', ['Python', 'Ruby', 'Perl', 'Tcl'], ['Python', 'Perl'], 0],
-        [b'P*', [b'Python', b'Ruby', b'Perl', b'Tcl'], [b'Python', b'Perl'], 0],
-        [
-            '*.p*',
-            ['Test.py', 'Test.rb', 'Test.PL'],
-            (['Test.py', 'Test.PL'] if not util.is_case_sensitive() else ['Test.PL']),
-            0
-        ],
-        [
-            '*.P*',
-            ['Test.py', 'Test.rb', 'Test.PL'],
-            (['Test.py', 'Test.PL'] if not util.is_case_sensitive() else ['Test.PL']),
-            0
-        ],
-        [
-            'usr/*',
-            ['usr/bin', 'usr', 'usr\\lib'],
-            (['usr/bin', 'usr\\lib'] if not util.is_case_sensitive() else ['usr/bin']),
-            0
-        ],
-        [
-            r'usr\\*',
-            ['usr/bin', 'usr', 'usr\\lib'],
-            (['usr/bin', 'usr\\lib'] if not util.is_case_sensitive() else ['usr\\lib']),
-            0
-        ]
-    ]
-
     def setUp(self):
         """Setup the tests."""
 
@@ -182,6 +170,59 @@ class TestFnMatch(unittest.TestCase):
                     fnmatch.fnmatch(case[1], fnmatch.fnsplit(case[0], flags=flags), flags=flags), case[2]
                 )
 
+
+class TestFnMatchFilter(unittest.TestCase):
+    """
+    Test filter.
+
+    `cases` is used in conjunction with the `filter` command
+    which takes a list of filenames and returns only those which match.
+
+    * Pattern
+    * List of filenames
+    * Expected result (list of filenames that matched the pattern)
+    * Flags
+
+    The default flags are DOTMATCH. Any flags passed through via entry are XORed.
+    So if DOTMATCH is passed via an entry, it will actually disable the default DOTMATCH.
+    """
+
+    cases = [
+        ['P*', ['Python', 'Ruby', 'Perl', 'Tcl'], ['Python', 'Perl'], 0],
+        [b'P*', [b'Python', b'Ruby', b'Perl', b'Tcl'], [b'Python', b'Perl'], 0],
+        [
+            '*.p*',
+            ['Test.py', 'Test.rb', 'Test.PL'],
+            (['Test.py', 'Test.PL'] if not util.is_case_sensitive() else ['Test.PL']),
+            0
+        ],
+        [
+            '*.P*',
+            ['Test.py', 'Test.rb', 'Test.PL'],
+            (['Test.py', 'Test.PL'] if not util.is_case_sensitive() else ['Test.PL']),
+            0
+        ],
+        [
+            'usr/*',
+            ['usr/bin', 'usr', 'usr\\lib'],
+            (['usr\\bin', 'usr\\lib'] if not util.is_case_sensitive() else ['usr/bin']),
+            0
+        ],
+        [
+            r'usr\\*',
+            ['usr/bin', 'usr', 'usr\\lib'],
+            (['usr\\bin', 'usr\\lib'] if not util.is_case_sensitive() else ['usr\\lib']),
+            0
+        ],
+        [r'te\st[ma]', ['testm', 'test\\3', 'testa'], ['testm', 'testa'], fnmatch.I],
+        [r'te\st[ma]', ['testm', 'test\\3', 'testa'], ['testm', 'testa'], fnmatch.F]
+    ]
+
+    def setUp(self):
+        """Setup the tests."""
+
+        self.flags = fnmatch.DOTMATCH
+
     def test_filters(self):
         """Test filters."""
 
@@ -194,9 +235,27 @@ class TestFnMatch(unittest.TestCase):
                 print("PATTERN: ", case[0])
                 print("FILES: ", case[1])
                 print("FLAGS: ", bin(flags))
-                value = fnmatch.fnmatch(case[1], case[0], flags=flags)
+                value = fnmatch.filter(case[1], case[0], flags=flags)
                 print("TEST: ", value, '<=>', case[2], '\n')
                 self.assertEqual(value, case[2])
+
+
+class TestFnMatchTranslate(unittest.TestCase):
+    """
+    Test translation cases.
+
+    All these cases assume DOTMATCH is enabled.
+    """
+
+    def setUp(self):
+        """Setup the tests."""
+
+        self.flags = fnmatch.DOTMATCH
+
+    def split_translate(self, pattern, flags):
+        """Translate pattern to regex after splitting."""
+
+        return fnmatch.translate(fnmatch.fnsplit(pattern, flags=flags), flags=flags)
 
     @mock.patch('wcmatch.util.is_case_sensitive')
     def test_split_parsing(self, mock__iscase_sensitive):
@@ -207,9 +266,7 @@ class TestFnMatch(unittest.TestCase):
         _wcparse._compile.cache_clear()
 
         flags = self.flags
-        p1, p2 = fnmatch.translate(
-            fnmatch.fnsplit('*test[a-z]?|*test2[a-z]?|!test[!a-z]|!test[!-|a-z]'), flags=flags | fnmatch.N
-        )
+        p1, p2 = self.split_translate('*test[a-z]?|*test2[a-z]?|!test[!a-z]|!test[!-|a-z]', flags | fnmatch.N)
         if util.PY36:
             self.assertEqual(p1, [r'^(?s:(?=.).*?test[a-z].)$', r'^(?s:(?=.).*?test2[a-z].)$'])
             self.assertEqual(p2, [r'^(?!(?s:test[^a-z])).*?$', r'^(?!(?s:test[^\-\|a-z])).*?$'])
@@ -217,7 +274,7 @@ class TestFnMatch(unittest.TestCase):
             self.assertEqual(p1, [r'(?s)^(?:(?=.).*?test[a-z].)$', r'(?s)^(?:(?=.).*?test2[a-z].)$'])
             self.assertEqual(p2, [r'(?s)^(?!(?:test[^a-z])).*?$', r'(?s)^(?!(?:test[^\-\|a-z])).*?$'])
 
-        p1, p2 = fnmatch.translate(fnmatch.fnsplit('test[]][!][][]', flags=flags | fnmatch.F), flags=flags | fnmatch.F)
+        p1, p2 = self.split_translate('test[]][!][][]', flags | fnmatch.F)
         if util.PY36:
             self.assertEqual(p1, [r'^(?s:test[\]][^\][]\[\])$'])
             self.assertEqual(p2, [])
@@ -225,7 +282,7 @@ class TestFnMatch(unittest.TestCase):
             self.assertEqual(p1, [r'(?s)^(?:test[\]][^\][]\[\])$'])
             self.assertEqual(p2, [])
 
-        p1, p2 = fnmatch.translate(fnmatch.fnsplit('test[!]', flags=flags), flags=flags)
+        p1, p2 = self.split_translate('test[!]', flags)
         if util.PY37:
             self.assertEqual(p1, [r'^(?s:test\[!\])$'])
             self.assertEqual(p2, [])
@@ -236,7 +293,7 @@ class TestFnMatch(unittest.TestCase):
             self.assertEqual(p1, [r'(?s)^(?:test\[\!\])$'])
             self.assertEqual(p2, [])
 
-        p1, p2 = fnmatch.translate(fnmatch.fnsplit('|test|', flags=flags), flags=flags)
+        p1, p2 = self.split_translate('|test|', flags)
         if util.PY36:
             self.assertEqual(p1, [r'^(?s:)$', r'^(?s:test)$', r'^(?s:)$'])
             self.assertEqual(p2, [])
@@ -244,9 +301,7 @@ class TestFnMatch(unittest.TestCase):
             self.assertEqual(p1, [r'(?s)^(?:)$', r'(?s)^(?:test)$', r'(?s)^(?:)$'])
             self.assertEqual(p2, [])
 
-        p1, p2 = fnmatch.translate(
-            fnmatch.fnsplit('-|-test|-', flags=flags | fnmatch.N | fnmatch.M), flags=flags | fnmatch.N | fnmatch.M
-        )
+        p1, p2 = self.split_translate('-|-test|-', flags=flags | fnmatch.N | fnmatch.M)
         if util.PY36:
             self.assertEqual(p1, [])
             self.assertEqual(p2, [r'^(?!(?s:)).*?$', r'^(?!(?s:test)).*?$', r'^(?!(?s:)).*?$'])
@@ -254,7 +309,7 @@ class TestFnMatch(unittest.TestCase):
             self.assertEqual(p1, [])
             self.assertEqual(p2, [r'(?s)^(?!(?:)).*?$', r'(?s)^(?!(?:test)).*?$', r'(?s)^(?!(?:)).*?$'])
 
-        p1, p2 = fnmatch.translate(fnmatch.fnsplit('test[^chars]', flags=flags), flags=flags)
+        p1, p2 = self.split_translate('test[^chars]', flags)
         if util.PY36:
             self.assertEqual(p1, [r'^(?s:test[^chars])$'])
             self.assertEqual(p2, [])
@@ -262,19 +317,19 @@ class TestFnMatch(unittest.TestCase):
             self.assertEqual(p1, [r'(?s)^(?:test[^chars])$'])
             self.assertEqual(p2, [])
 
-        p1 = fnmatch.translate(fnmatch.fnsplit(r'test[^\\-\\&]', flags=flags), flags=flags)[0]
+        p1 = self.split_translate(r'test[^\\-\\&]', flags=flags)[0]
         if util.PY36:
             self.assertEqual(p1, [r'^(?s:test[^\\-\\\&])$'])
         else:
             self.assertEqual(p1, [r'(?s)^(?:test[^\\-\\\&])$'])
 
-        p1 = fnmatch.translate(fnmatch.fnsplit(r'\\*\\?\\|\\[\\]', flags=flags), flags=flags)[0]
+        p1 = self.split_translate(r'\\*\\?\\|\\[\\]', flags=flags)[0]
         if util.PY36:
             self.assertEqual(p1, [r'^(?s:\\.*?\\.\\)$', r'^(?s:\\[\\])$'])
         else:
             self.assertEqual(p1, [r'(?s)^(?:\\.*?\\.\\)$', r'(?s)^(?:\\[\\])$'])
 
-        p1 = fnmatch.translate(fnmatch.fnsplit(r'\\u0300', flags=flags | fnmatch.R), flags=flags | fnmatch.R)[0]
+        p1 = self.split_translate(r'\\u0300', flags=flags | fnmatch.R)[0]
         if util.PY36:
             self.assertEqual(p1, [r'^(?s:\\u0300)$'])
         else:
@@ -294,19 +349,6 @@ class TestFnMatch(unittest.TestCase):
             self.assertEqual(p, (['^(?s:[a\\-\x00-\x7f\\-z])$'], []))
         else:
             self.assertEqual(p, (['(?s)^(?:[a\\-\x00-\x7f\\-z])$'], []))
-
-    def test_filter(self):
-        """Test filter."""
-
-        self.assertEqual(
-            fnmatch.filter(['testm', 'test\\3', 'testa'], fnmatch.fnsplit(r'te\st[ma]'), flags=self.flags | fnmatch.I),
-            ['testm', 'testa']
-        )
-
-        self.assertEqual(
-            fnmatch.filter(['testm', 'test\\3', 'testa'], fnmatch.fnsplit(r'te\st[ma]'), flags=self.flags | fnmatch.F),
-            ['testm', 'testa']
-        )
 
     @mock.patch('wcmatch.util.is_case_sensitive')
     def test_special_escapes(self, mock__iscase_sensitive):
