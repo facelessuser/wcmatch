@@ -193,7 +193,7 @@ class TestFnMatchFilter(unittest.TestCase):
         [
             '*.p*',
             ['Test.py', 'Test.rb', 'Test.PL'],
-            (['Test.py', 'Test.PL'] if not util.is_case_sensitive() else ['Test.PL']),
+            (['Test.py', 'Test.PL'] if not util.is_case_sensitive() else ['Test.py']),
             0
         ],
         [
