@@ -12,7 +12,6 @@ class TestFnMatch(unittest.TestCase):
     """
     Test fnmatch.
 
-
     Each entry in `cases` is run through the `fnmatch`.  They are also run through
     `fnsplit` and then `fnmatch` as a separate operation to ensure `fnsplit` adds
     no unintended side effects.
