@@ -7,26 +7,71 @@ import wcmatch._wcparse as _wcparse
 import wcmatch.util as util
 
 
-class TestGlob(unittest.TestCase):
-    """Test globbing.
+class GlobFiles():
+    """List of glob files."""
 
-    Including a flag(s) in the rules below will set a flag,
-    but by default, we enable glob.NEGATE | glob.GLOBSTAR | glob.EXTGLOB | glob.BRACE,
-    so if these are set, it will do the opposite and disable those flags. This is because
-    the test suite we ripped these tests from defaulted the above flags, while we do not.
+    def __init__(self, filelist, append=False):
+        """File list object."""
+
+        self.filelist = filelist
+        self.append = append
+
+
+class Options():
+    """Test options."""
+
+    def __init__(self, **kwargs):
+        """Initialize."""
+
+        self._options = kwargs
+
+    def get(self, key, default=None):
+        """Get option vallue."""
+
+        return self._options.get(key, default)
+
+
+class TestGlobFilter(unittest.TestCase):
+    """Test matchtes against `globfilter`.
+
+    Each list entry in `cases` is run through the `globsplit` and then `globfilter`.
+    Entries are run through `globsplit` ensure it does not add any unintended side effects.
+
+    There are a couple special types that can be inserted in the case list that can alter
+    the behavior of the cases that follow.
+
+    * Strings: These will be printed and then the next case will be processed.
+    * Options: This object takes keyword parameters that are used to alter the next tests options:
+        * skip_split: If set to `True`, this will cause the next tests to be skipped when we are processing
+            cases with `globsplit`.
+    * GlobFiles: This object takes a list of file paths and will set them as the current file list to
+        compare against.  If `append` is set to `True`, it will extend the test's filelist instead of
+        replacing.
+
+    Each test case entry (list) is an array of up to 4 parameters (2 minimum).
+
+    * Pattern
+    * Expected result (filenames matched by the pattern)
+    * Flags
+    * List of files that will temporarily override the current main filelist just for this specific case.
+
+    The default flags are: NEGATE | GLOBSTAR | EXTGLOB | BRACE. If any of these flags are provided in
+    a test case, they will disable the default of the same name. All other flags will enable flags as expected.
+
     """
 
-    FILES = [
-        'a', 'b', 'c', 'd', 'abc',
-        'abd', 'abe', 'bb', 'bcd',
-        'ca', 'cb', 'dd', 'de',
-        'bdir/', 'bdir/cfile'
-    ]
+    cases = [
+        Options(skip_split=False),
 
-    # Initial tests gathered from https://github.com/isaacs/minimatch/blob/master/test/patterns
-    # One was altered as it appeared to frankly be wrong. Others omitted as we do not support
-    # the functionality currently, or have no interest to support it moving forward.
-    file_filter = [
+        GlobFiles(
+            [
+                'a', 'b', 'c', 'd', 'abc',
+                'abd', 'abe', 'bb', 'bcd',
+                'ca', 'cb', 'dd', 'de',
+                'bdir/', 'bdir/cfile'
+            ]
+        ),
+
         'http://www.bashcookbook.com/bashinfo/source/bash-1.14.7/tests/glob-test',
         ['a*', ['a', 'abc', 'abd', 'abe']],
 
@@ -41,7 +86,15 @@ class TestGlob(unittest.TestCase):
 
         ['b*/', ['bdir/']],
         ['c*', ['c', 'ca', 'cb']],
-        ['**', FILES[:]],
+        [
+            '**',
+            [
+                'a', 'b', 'c', 'd', 'abc',
+                'abd', 'abe', 'bb', 'bcd',
+                'ca', 'cb', 'dd', 'de',
+                'bdir/', 'bdir/cfile'
+            ]
+        ],
 
         [r'\\.\\./*/', []],
         [r's/\\..*//', []],
@@ -54,11 +107,12 @@ class TestGlob(unittest.TestCase):
         ['[a-c]b*', ['abc', 'abd', 'abe', 'bb', 'cb']],
         ['[a-y]*[^c]', ['abd', 'abe', 'bb', 'bcd', 'bdir/', 'ca', 'cb', 'dd', 'de']],
         ['a*[^c]', ['abd', 'abe']],
-        lambda self: self.files.extend(['a-b', 'aXb']),
+
+        GlobFiles(['a-b', 'aXb'], append=True),
         ['a[X-]b', ['a-b', 'aXb']],
-        lambda self: self.files.extend(['.x', '.y']),
+        GlobFiles(['.x', '.y'], append=True),
         ['[^a-c]*', ['d', 'dd', 'de']],
-        lambda self: self.files.extend(['a*b/', 'a*b/ooo']),
+        GlobFiles(['a*b/', 'a*b/ooo'], append=True),
         ['a\\*b/*', ['a*b/ooo']],
         ['a\\*?/*', ['a*b/ooo']],
         ['*\\\\!*', [], 0, ['echo !7']],
@@ -71,7 +125,7 @@ class TestGlob(unittest.TestCase):
         ['', [''], 0, ['']],
 
         'http://www.opensource.apple.com/source/bash/bash-23/bash/tests/glob-test',
-        lambda self: self.files.extend(['man/', 'man/man1/', 'man/man1/bash.1']),
+        GlobFiles(['man/', 'man/man1/', 'man/man1/bash.1'], append=True),
         ['*/man*/bash.*', ['man/man1/bash.1']],
         ['man/man1/bash.1', ['man/man1/bash.1']],
         ['a***c', ['abc'], 0, ['abc']],
@@ -138,8 +192,7 @@ class TestGlob(unittest.TestCase):
 
         # .. and . can only match patterns starting with .,
         # even when options.dot is set.
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(['a/./b', 'a/../b', 'a/c/b', 'a/.d/b']),
+        GlobFiles(['a/./b', 'a/../b', 'a/c/b', 'a/.d/b']),
         ['a/*/b', ['a/c/b', 'a/.d/b'], glob.D],
         ['a/.*/b', ['a/./b', 'a/../b', 'a/.d/b'], glob.D],
         ['a/*/b', ['a/c/b'], 0],
@@ -182,7 +235,7 @@ class TestGlob(unittest.TestCase):
         # The following tests have `|` not included in things like +(...) etc.
         # We run these tests through normally and through glob.globsplit which splits
         # patterns on unenclosed `|`, so disable these few tests during split tests.
-        lambda self: self.set_skip_split(True),
+        Options(skip_split=True),
         # like: {a,b|c\\,d\\\|e} except it's unclosed, so it has to be escaped.
         # NOTE: I don't know what the original test was doing because it was matching
         # something crazy. Multimatch regex expanded to escapes to like a 50.
@@ -195,8 +248,7 @@ class TestGlob(unittest.TestCase):
         ],
 
         # crazy nested {,,} and *(||) tests.
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(
+        GlobFiles(
             [
                 'a', 'b', 'c', 'd', 'ab', 'ac', 'ad', 'bc', 'cb', 'bc,d',
                 'c,db', 'c,d', 'd)', '(b|c', '*(b|c', 'b|c', 'b|cc', 'cb|c',
@@ -218,7 +270,7 @@ class TestGlob(unittest.TestCase):
             glob.E
         ],
 
-        lambda self: self.set_skip_split(False),
+        Options(skip_split=True),
         # test extglob nested in extglob
         [
             '@(a@(c|d)|c@(b|,d))',
@@ -237,8 +289,7 @@ class TestGlob(unittest.TestCase):
         # begin channelling Boole and deMorgan...
         # NOTE: We changed these to `-` since our negation dosn't use `!`.
         'negation tests',
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(['d', 'e', '!ab', '!abc', 'a!b', '\\!a']),
+        GlobFiles(['d', 'e', '!ab', '!abc', 'a!b', '\\!a']),
 
         # anything that is NOT a* matches.
         ['!a*', ['\\!a', 'd', 'e', '!ab', '!abc']],
@@ -254,8 +305,7 @@ class TestGlob(unittest.TestCase):
         ['!\\!a*', ['a!b', 'd', 'e', '\\!a']],
 
         # negation nestled within a pattern
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(
+        GlobFiles(
             [
                 'foo.js',
                 'foo.bar',
@@ -270,8 +320,7 @@ class TestGlob(unittest.TestCase):
         ['*.!(js)', ['foo.bar', 'foo.', 'boo.js.boo', 'foo.js.js']],
 
         'https://github.com/isaacs/minimatch/issues/5',
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(
+        GlobFiles(
             [
                 'a/b/.x/c', 'a/b/.x/c/d', 'a/b/.x/c/d/e', 'a/b/.x', 'a/b/.x/',
                 'a/.x/b', '.x', '.x/', '.x/a', '.x/a/b', 'a/.x/b/.x/c', '.x/.x'
@@ -291,8 +340,7 @@ class TestGlob(unittest.TestCase):
         ['[a-0][a-\u0100]', []],
 
         'Consecutive slashes.',
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(
+        GlobFiles(
             [
                 'a/b/c', 'd/e/f', 'a/e/c'
             ]
@@ -301,8 +349,7 @@ class TestGlob(unittest.TestCase):
         [r'*//\e///*', ['d/e/f', 'a/e/c']],
 
         'Backslash trailing cases',
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(
+        GlobFiles(
             [
                 'a/b/c/', 'd/e/f/', 'a/e/c/'
             ]
@@ -310,8 +357,7 @@ class TestGlob(unittest.TestCase):
         ['**\\', [] if util.is_case_sensitive() else ['a/b/c/', 'd/e/f/', 'a/e/c/']],
 
         'Invalid extglob groups',
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(
+        GlobFiles(
             [
                 '@([test', '@([test\\', '@(test\\', 'test['
             ]
@@ -322,8 +368,7 @@ class TestGlob(unittest.TestCase):
         ['@(test[)', ['test[']],
 
         'Inverse dot tests',
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(
+        GlobFiles(
             [
                 '.', '..', '.abc', 'abc'
             ]
@@ -336,8 +381,7 @@ class TestGlob(unittest.TestCase):
         ['.!(test)', ['.', '..', '.abc'], glob.D | glob.M],
 
         "Slash exclusion",
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(
+        GlobFiles(
             [
                 'test/test', 'test\\/test'
             ]
@@ -350,7 +394,96 @@ class TestGlob(unittest.TestCase):
         [r'test[\/]test', [], glob.F]
     ]
 
-    matches = {
+    def setUp(self):
+        """Setup the tests."""
+
+        self.files = []
+        # The tests we scraped were written with this assumed.
+        self.flags = glob.NEGATE | glob.GLOBSTAR | glob.EXTGLOB | glob.BRACE
+        self.skip_split = False
+
+    def norm_files(self, files, flags):
+        """Normalize files."""
+
+        flags = glob._flag_transform(flags)
+        unix = _wcparse.is_unix_style(flags)
+
+        return [(util.norm_slash(x) if not unix else x) for x in files]
+
+    def _filter(self, p, split=False):
+        """Filter with glob pattern."""
+
+        if isinstance(p, GlobFiles):
+            if p.append:
+                self.files.extend(p.filelist)
+            else:
+                self.files.clear()
+                self.files.extend(p.filelist)
+        elif isinstance(p, Options):
+            self.skip_split = p.get('skip_split', False)
+        elif isinstance(p, str):
+            print(">>> ", p, '<<<\n')
+        else:
+            files = self.files if len(p) < 4 else p[3]
+            flags = 0 if len(p) < 3 else p[2]
+            flags = self.flags ^ flags
+            pat = p[0] if isinstance(p[0], list) else [p[0]]
+            if split and self.skip_split:
+                return
+            if split:
+                new_pat = []
+                for x in pat:
+                    new_pat.extend(list(glob.globsplit(x, flags=flags)))
+                pat = new_pat
+            print("PATTERN: ", p[0])
+            print("FILES: ", files)
+            print("FLAGS: ", bin(flags)[2:])
+            result = sorted(
+                glob.globfilter(
+                    files,
+                    pat,
+                    flags=flags
+                )
+            )
+            source = sorted(self.norm_files(p[1], flags))
+            print("TEST: ", result, '<==>', source, '\n')
+            self.assertEqual(result, source)
+
+    def test_glob_filter(self):
+        """Test wildcard parsing."""
+
+        _wcparse._compile.cache_clear()
+
+        for p in self.cases:
+            self._filter(p)
+
+    def test_glob_split_filter(self):
+        """Test wildcard parsing by first splitting on `|`."""
+
+        _wcparse._compile.cache_clear()
+
+        for p in self.cases:
+            self._filter(p, split=True)
+
+
+class TestGlobMatch(unittest.TestCase):
+    """
+    Tests that are performed against globmatch.
+
+    Each entry in `cases` is run through the `globmatch`.
+    Each case is a dictionary:
+
+    * Key: file name to compare against:
+    * Value: dictionary of matches to apply agianst the provided file name/path.
+
+        * Key: Glob pattern
+        * Value: Expected result (boolean of whether pattern matched filename)
+
+    The default flags are: NEGATE | GLOBSTAR | EXTGLOB | BRACE.
+
+    """
+
+    cases = {
         'bar.min.js': {
             '*.!(js|css)': True,
             '!*.+(js|css)': False,
@@ -444,91 +577,36 @@ class TestGlob(unittest.TestCase):
             '@(*.json|!(*.js))': True,
             '?(*.json|!(*.js))': True
         }
-
     }
 
     def setUp(self):
-        """Setup the tests."""
-        self.files = self.FILES[:]
+        """Setup default flag options."""
+
         # The tests we scraped were written with this assumed.
         self.flags = glob.NEGATE | glob.GLOBSTAR | glob.EXTGLOB | glob.BRACE
-        self.skip_split = False
 
-    def set_skip_split(self, value):
-        """Set skip split."""
-
-        self.skip_split = value
-
-    def norm_files(self, files, flags):
-        """Normalize files."""
-
-        flags = glob._flag_transform(flags)
-        unix = _wcparse.is_unix_style(flags)
-
-        return [(util.norm_slash(x) if not unix else x) for x in files]
-
-    def _filter(self, p, split=False):
-        """Filter with glob pattern."""
-
-        if callable(p):
-            p(self)
-        elif isinstance(p, str):
-            print(">>> ", p, '<<<\n')
-        else:
-            files = self.files if len(p) < 4 else p[3]
-            flags = 0 if len(p) < 3 else p[2]
-            flags = self.flags ^ flags
-            pat = p[0] if isinstance(p[0], list) else [p[0]]
-            if split and self.skip_split:
-                return
-            if split:
-                new_pat = []
-                for x in pat:
-                    new_pat.extend(list(glob.globsplit(x, flags=flags)))
-                pat = new_pat
-            print("PATTERN: ", p[0])
-            print("FILES: ", files)
-            print("FLAGS: ", bin(flags)[2:])
-            result = sorted(
-                glob.globfilter(
-                    files,
-                    pat,
-                    flags=flags
-                )
-            )
-            source = sorted(self.norm_files(p[1], flags))
-            print("TEST: ", result, '<==>', source, '\n')
-            self.assertEqual(result, source)
-
-    def test_glob_filter(self):
-        """Test wildcard parsing."""
-
-        _wcparse._compile.cache_clear()
-
-        for p in self.file_filter:
-            self._filter(p)
-
-    def test_glob_split_filter(self):
-        """Test wildcard parsing with split."""
-
-        _wcparse._compile.cache_clear()
-
-        for p in self.file_filter:
-            self._filter(p, split=True)
-
-    def test_ignore_cases(self):
+    def test_cases(self):
         """Test ignore cases."""
 
         flags = self.flags
         flags ^= glob.NEGATE
 
-        for filename, tests in self.matches.items():
+        for filename, tests in self.cases.items():
             for pattern, goal in tests.items():
                 print("PATTERN: ", pattern)
                 print("FILE: ", filename)
                 print("GOAL: ", goal)
 
                 self.assertTrue(glob.globmatch(filename, pattern, flags=flags) == goal)
+
+
+class TestGlobMatchSpecial(unittest.TestCase):
+    """Test special cases that cannot easily be covered in earlier tests."""
+
+    def setUp(self):
+        """Setup default flag options."""
+
+        self.flags = glob.NEGATE | glob.GLOBSTAR | glob.EXTGLOB | glob.BRACE
 
     def test_unfinished_ext(self):
         """Test unfinished ext."""
