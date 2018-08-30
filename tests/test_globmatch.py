@@ -270,7 +270,7 @@ class TestGlobFilter(unittest.TestCase):
             glob.E
         ],
 
-        Options(skip_split=True),
+        Options(skip_split=False),
         # test extglob nested in extglob
         [
             '@(a@(c|d)|c@(b|,d))',
