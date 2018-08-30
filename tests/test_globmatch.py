@@ -470,114 +470,82 @@ class TestGlobMatch(unittest.TestCase):
     """
     Tests that are performed against globmatch.
 
-    Each entry in `cases` is run through the `globmatch`.
-    Each case is a dictionary:
+    Each case entry is a list of 4 parameters.
 
-    * Key: file name to compare against:
-    * Value: dictionary of matches to apply agianst the provided file name/path.
+    * Pattern
+    * Filename
+    * Expected result (boolean of whether pattern matched filename)
+    * Flags
 
-        * Key: Glob pattern
-        * Value: Expected result (boolean of whether pattern matched filename)
-
-    The default flags are: NEGATE | GLOBSTAR | EXTGLOB | BRACE.
+    The default flags are NEGATE | GLOBSTAR | EXTGLOB | BRACE. Any flags passed through via entry are XORed.
+    So if any of the default flags are passed via an entry, they will be disabled. All other flags will
+    enable the feature.
 
     """
 
-    cases = {
-        'bar.min.js': {
-            '*.!(js|css)': True,
-            '!*.+(js|css)': False,
-            '*.+(js|css)': True
-        },
+    cases = [
+        ['*.!(js|css)', 'bar.min.js', True, glob.N],
+        ['!*.+(js|css)', 'bar.min.js', False, glob.N],
+        ['*.+(js|css)', 'bar.min.js', True, glob.N],
 
-        'a-integration-test.js': {
-            '*.!(j)': True,
-            '!(*-integration-test.js)': False,
-            '*-!(integration-)test.js': True,
-            '*-!(integration)-test.js': False,
-            '*!(-integration)-test.js': True,
-            '*!(-integration-)test.js': True,
-            '*!(integration)-test.js': True,
-            '*!(integration-test).js': True,
-            '*-!(integration-test).js': True,
-            '*-!(integration-test.js)': True,
-            '*-!(integra)tion-test.js': False,
-            '*-integr!(ation)-test.js': False,
-            '*-integr!(ation-t)est.js': False,
-            '*-i!(ntegration-)test.js': False,
-            '*i!(ntegration-)test.js': True,
-            '*te!(gration-te)st.js': True,
-            '*-!(integration)?test.js': False,
-            '*?!(integration)?test.js': True
-        },
+        ['*.!(j)', 'a-integration-test.js', True, glob.N],
+        ['!(*-integration-test.js)', 'a-integration-test.js', False, glob.N],
+        ['*-!(integration-)test.js', 'a-integration-test.js', True, glob.N],
+        ['*-!(integration)-test.js', 'a-integration-test.js', False, glob.N],
+        ['*!(-integration)-test.js', 'a-integration-test.js', True, glob.N],
+        ['*!(-integration-)test.js', 'a-integration-test.js', True, glob.N],
+        ['*!(integration)-test.js', 'a-integration-test.js', True, glob.N],
+        ['*!(integration-test).js', 'a-integration-test.js', True, glob.N],
+        ['*-!(integration-test).js', 'a-integration-test.js', True, glob.N],
+        ['*-!(integration-test.js)', 'a-integration-test.js', True, glob.N],
+        ['*-!(integra)tion-test.js', 'a-integration-test.js', False, glob.N],
+        ['*-integr!(ation)-test.js', 'a-integration-test.js', False, glob.N],
+        ['*-integr!(ation-t)est.js', 'a-integration-test.js', False, glob.N],
+        ['*-i!(ntegration-)test.js', 'a-integration-test.js', False, glob.N],
+        ['*i!(ntegration-)test.js', 'a-integration-test.js', True, glob.N],
+        ['*te!(gration-te)st.js', 'a-integration-test.js', True, glob.N],
+        ['*-!(integration)?test.js', 'a-integration-test.js', False, glob.N],
+        ['*?!(integration)?test.js', 'a-integration-test.js', True, glob.N],
 
-        'foo-integration-test.js': {
-            'foo-integration-test.js': True,
-            '!(*-integration-test.js)': False
-        },
+        ['foo-integration-test.js', 'foo-integration-test.js', True, glob.N],
+        ['!(*-integration-test.js)', 'foo-integration-test.js', False, glob.N],
 
-        'foo.jszzz.js': {
-            '*.!(js).js': True
-        },
+        ['*.!(js).js', 'foo.jszzz.js', True, glob.N],
 
-        'asd.jss': {
-            '*.!(js)': True
-        },
+        ['*.!(js)', 'asd.jss', True, glob.N],
 
-        'asd.jss.xyz': {
-            '*.!(js).!(xy)': True
-        },
+        ['*.!(js).!(xy)', 'asd.jss.xyz', True, glob.N],
 
-        'asd.jss.xy': {
-            '*.!(js).!(xy)': False
-        },
+        ['*.!(js).!(xy)', 'asd.jss.xy', False, glob.N],
 
-        'asd.js.xyz': {
-            '*.!(js).!(xy)': False
-        },
+        ['*.!(js).!(xy)', 'asd.js.xyz', False, glob.N],
 
-        'asd.js.xy': {
-            '*.!(js).!(xy)': False
-        },
+        ['*.!(js).!(xy)', 'asd.js.xy', False, glob.N],
 
-        'asd.sjs.zxy': {
-            '*.!(js).!(xy)': True
-        },
+        ['*.!(js).!(xy)', 'asd.sjs.zxy', True, glob.N],
 
-        'asd..xyz': {
-            '*.!(js).!(xy)': True
-        },
+        ['*.!(js).!(xy)', 'asd..xyz', True, glob.N],
 
-        'asd..xy': {
-            '*.!(js).!(xy)': False,
-            '*.!(js|x).!(xy)': False
-        },
+        ['*.!(js).!(xy)', 'asd..xy', False, glob.N],
+        ['*.!(js|x).!(xy)', 'asd..xy', False, glob.N],
 
-        'foo.js.js': {
-            '*.!(js)': True
-        },
+        ['*.!(js)', 'foo.js.js', True, glob.N],
 
-        'testjson.json': {
-            '*(*.json|!(*.js))': True,
-            '+(*.json|!(*.js))': True,
-            '@(*.json|!(*.js))': True,
-            '?(*.json|!(*.js))': True
-        },
+        ['*(*.json|!(*.js))', 'testjson.json', True, glob.N],
+        ['+(*.json|!(*.js))', 'testjson.json', True, glob.N],
+        ['@(*.json|!(*.js))', 'testjson.json', True, glob.N],
+        ['?(*.json|!(*.js))', 'testjson.json', True, glob.N],
 
-        'foojs.js': {
-            '*(*.json|!(*.js))': False,  # XXX bash 4.3 disagrees!
-            '+(*.json|!(*.js))': False,  # XXX bash 4.3 disagrees!
-            '@(*.json|!(*.js))': False,
-            '?(*.json|!(*.js))': False
-        },
+        ['*(*.json|!(*.js))', 'foojs.js', False, glob.N],  # XXX bash 4.3 disagrees!
+        ['+(*.json|!(*.js))', 'foojs.js', False, glob.N],  # XXX bash 4.3 disagrees!
+        ['@(*.json|!(*.js))', 'foojs.js', False, glob.N],
+        ['?(*.json|!(*.js))', 'foojs.js', False, glob.N],
 
-        'other.bar': {
-            '*(*.json|!(*.js))': True,
-            '+(*.json|!(*.js))': True,
-            '@(*.json|!(*.js))': True,
-            '?(*.json|!(*.js))': True
-        }
-    }
+        ['*(*.json|!(*.js))', 'other.bar', True, glob.N],
+        ['+(*.json|!(*.js))', 'other.bar', True, glob.N],
+        ['@(*.json|!(*.js))', 'other.bar', True, glob.N],
+        ['?(*.json|!(*.js))', 'other.bar', True, glob.N]
+    ]
 
     def setUp(self):
         """Setup default flag options."""
@@ -588,16 +556,20 @@ class TestGlobMatch(unittest.TestCase):
     def test_cases(self):
         """Test ignore cases."""
 
-        flags = self.flags
-        flags ^= glob.NEGATE
+        for case in self.cases:
+            pattern = case[0]
+            filename = case[1]
+            goal = case[2]
+            flags = self.flags
+            if len(case) > 3:
+                flags ^= case[3]
 
-        for filename, tests in self.cases.items():
-            for pattern, goal in tests.items():
-                print("PATTERN: ", pattern)
-                print("FILE: ", filename)
-                print("GOAL: ", goal)
+            print("PATTERN: ", pattern)
+            print("FILE: ", filename)
+            print("GOAL: ", goal)
+            print("FLAGS: ", bin(flags))
 
-                self.assertTrue(glob.globmatch(filename, pattern, flags=flags) == goal)
+            self.assertTrue(glob.globmatch(filename, pattern, flags=flags) == goal)
 
 
 class TestGlobMatchSpecial(unittest.TestCase):
