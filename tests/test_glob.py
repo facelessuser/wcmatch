@@ -105,11 +105,37 @@ class Options():
 
 
 class _TestGlob(unittest.TestCase):
-    """General glob tests."""
+    """
+    Test glob.
+
+    Each list entry in `cases` is run through the `glob`, then the pattern and results are converted
+    to bytes and run trough `glob` again. Results are checked against the provided result list.
+
+    There are a couple special types that can be inserted in the case list that can alter
+    the behavior of the cases that follow.
+
+    * Strings: These will be printed and then the next case will be processed.
+    * Options: This object takes keyword parameters that are used to alter the next tests options:
+        * absolute: When joining path parts, due not append to the tempdir.
+        * skip: Skip tests when this is enabled.
+        * cwd_temp: Switch the current working directory to the temp directory instead of having to prepend
+            the temp direcotry to patterns and results.
+
+    Each test case entry (list) is an array of up to 3 parameters (2 minimum).
+
+    * Pattern: a list of path parts that are to be joined with the current OS separator.
+    * Expected result (filenames matched by the pattern): a list of sublists where each sublist contains
+        path parts that are to be joined with the current OS separator.
+        Each path represents a full file path ot match.
+    * Flags
+
+    The default flags are: GLOBSTAR | EXTGLOB | BRACE. If any of these flags are provided in
+    a test case, they will disable the default of the same name. All other flags will enable flags as expected.
+    """
 
     DEFAULT_FLAGS = glob.BRACE | glob.EXTGLOB | glob.GLOBSTAR
 
-    cases=[]
+    cases = []
 
     def norm(self, *parts):
         """Normalizes file path (in relation to temp dir)."""
@@ -286,7 +312,11 @@ class _TestGlob(unittest.TestCase):
 
 
 class Testglob(_TestGlob):
-    """Test glob."""
+    """
+    Test glob.
+
+    See `_TestGlob` class for more information in regards to test case format.
+    """
 
     cases = [
         "Test literal.",
@@ -692,7 +722,11 @@ class Testglob(_TestGlob):
 
 
 class TestGlobCornerCase(_TestGlob):
-    """Some tests that need a very specific file set to test against for corner cases."""
+    """
+    Some tests that need a very specific file set to test against for corner cases.
+
+    See _TestGlob class for more information in regards to test case format.
+    """
 
     cases = [
         "Test very specific, special cases.",
