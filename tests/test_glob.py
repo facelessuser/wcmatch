@@ -140,15 +140,12 @@ class _TestGlob(unittest.TestCase):
     def norm(self, *parts):
         """Normalizes file path (in relation to temp dir)."""
 
-        if len(parts) and isinstance(parts[0], bytes):
-            return os.path.join(os.fsencode(self.tempdir), *[os.fsencode(x) for x in parts])
-        else:
-            return os.path.join(self.tempdir, *parts)
+        return os.path.join(self.tempdir, *parts)
 
     def globjoin(self, *parts):
         """Joins glob path."""
 
-        sep = os.fsencode(self.globsep) if len(parts) and isinstance(parts[0], bytes) else self.globsep
+        sep = self.globsep
         return sep.join(list(parts))
 
     def mktemp(self, *parts):
@@ -172,6 +169,7 @@ class _TestGlob(unittest.TestCase):
         self.absolute = False
         self.skip = False
         self.cwd_temp = False
+        self.just_negative = False
         if os.sep == '/':
             self.globsep = os.sep
         else:
@@ -196,7 +194,6 @@ class _TestGlob(unittest.TestCase):
     def glob(self, *parts, **kwargs):
         """Perform a glob with validation."""
 
-        is_bytes = len(parts) and isinstance(parts[0], bytes)
         if parts:
             if len(parts) == 1:
                 p = parts[0]
@@ -205,7 +202,7 @@ class _TestGlob(unittest.TestCase):
             if not self.absolute:
                 p = self.globjoin(self.tempdir, p)
         else:
-            p = os.fsencode(self.tempdir) if is_bytes else self.tempdir
+            p = self.tempdir
 
         res = glob.glob(p, **kwargs)
         if res:
@@ -222,7 +219,6 @@ class _TestGlob(unittest.TestCase):
     def nglob(self, *parts, **kwargs):
         """Perform a glob with validation."""
 
-        is_bytes = len(parts) and isinstance(parts[0], bytes)
         if parts:
             if len(parts) == 1:
                 p = parts[0]
@@ -231,13 +227,16 @@ class _TestGlob(unittest.TestCase):
             if not self.absolute:
                 p = self.globjoin(self.tempdir, p)
         else:
-            p = os.fsencode(self.tempdir) if is_bytes else self.tempdir
+            p = self.tempdir
 
-        p = (b'!' if is_bytes else '!') + p
-        if not self.absolute:
-            p = [self.globjoin(self.tempdir, (b'**' if is_bytes else '**')), p]
+        p = '!' + p
+        if not self.just_negative:
+            if not self.absolute:
+                p = [self.globjoin(self.tempdir, '**'), p]
+            else:
+                p = ['**', p]
         else:
-            p = [b'**' if is_bytes else '**', p]
+            p = [p]
         res = glob.glob(p, **kwargs)
         if res:
             self.assertEqual({type(r) for r in res}, {str})
@@ -275,6 +274,9 @@ class _TestGlob(unittest.TestCase):
                 cwd_temp = case.get('cwd_temp')
                 if cwd_temp is not None:
                     self.cwd_temp = cwd_temp
+                just_negative = case.get('just_negative')
+                if just_negative is not None:
+                    self.just_negative = just_negative
                 continue
             if isinstance(case, str):
                 print(case)
@@ -686,6 +688,7 @@ class Testglob(_TestGlob):
             ('**', 'EF'),
             [('a', 'bcd', 'EF'), ('EF',)] if not can_symlink() else [('a', 'bcd', 'EF'), ('EF',), ('sym3', 'EF')]
         ],
+        Options(just_negative=True),
         [
             ('a*',),
             [
@@ -696,7 +699,7 @@ class Testglob(_TestGlob):
             ],
             glob.N
         ],
-        Options(cwd_temp=False, absolute=False),
+        Options(just_negative=False, cwd_temp=False, absolute=False),
 
         "Test the file directly -- without magic.",
         [[], [[]]]
