@@ -205,6 +205,7 @@ class _TestGlob(unittest.TestCase):
             p = self.tempdir
 
         res = glob.glob(p, **kwargs)
+        print("RESULTS: ", res)
         if res:
             self.assertEqual({type(r) for r in res}, {str})
         self.assertCountEqual(glob.iglob(p, **kwargs), res)
@@ -238,6 +239,7 @@ class _TestGlob(unittest.TestCase):
         else:
             p = [p]
         res = glob.glob(p, **kwargs)
+        print("RESULTS: ", res)
         if res:
             self.assertEqual({type(r) for r in res}, {str})
         self.assertCountEqual(glob.iglob(p, **kwargs), res)
@@ -308,7 +310,6 @@ class _TestGlob(unittest.TestCase):
             else:
                 res = self.nglob(*pattern, flags=flags) if negative else self.glob(*pattern, flags=flags)
             if results is not None:
-                print("RESULTS: ", res)
                 eq(res, results)
             print('\n')
 
