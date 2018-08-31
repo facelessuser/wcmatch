@@ -157,10 +157,10 @@ class GlobTests(unittest.TestCase):
 
         "Test glob magic in drive name.",
         Options(absolute=True, skip=sys.platform != "win32"),
-        ['*:', []],
-        ['?:', []],
-        [r'\\\\?\\c:\\', [('\\\\?\\c:\\',)]],
-        [r'\\\\*\\*\\', []],
+        [('*:',), []],
+        [('?:',), []],
+        [(r'\\\\?\\c:\\',), [('\\\\?\\c:\\',)]],
+        [(r'\\\\*\\*\\',), []],
         Options(absolute=False, skip=False),
 
         Options(skip=not can_symlink()),
@@ -168,6 +168,12 @@ class GlobTests(unittest.TestCase):
         [('sym*',), [('sym1',), ('sym2',), ('sym3',)]],
         [('sym1',), [('sym1',)]],
         [('sym2',), [('sym2',)]],
+
+        "Test glob symlinks.",
+        [('sym3',), [('sym3',)]],
+        [('sym3', '*'), [('sym3', 'EF'), ('sym3', 'efg')]],
+        [('sym3', ''), [('sym3', '')]],
+        [('*', '*F'), [('aaa', 'zzzF'), ('aab', 'F'), ('sym3', 'EF')]],
         Options(skip=False),
 
         "Test only directories",
@@ -197,7 +203,110 @@ class GlobTests(unittest.TestCase):
         [('[a]',), [('a',)]],
         [('[!b]',), [('a',)]],
         [('[^b]',), [('a',)]],
-        [(r'@([\a]|\aaa)',), [('a',), ('aaa',)]]
+        [(r'@([\a]|\aaa)',), [('a',), ('aaa',)]],
+
+        Options(absolute=True),
+        "Test empty.",
+        [('',), []],
+        Options(absolute=False),
+
+        "Patterns ending with a slash shouldn't match non-dirs.",
+        [('Z*Z', ''), []],
+        [('ZZZ', ''), []],
+        [('aa*', ''), [('aaa', ''), ('aab', '')]],
+
+        # eq(self.glob('**', flags=self.DEFAULT_FLAGS), self.joins(('',), *full))
+        # eq(self.glob('**', '**', flags=self.DEFAULT_FLAGS), self.joins(('',), *full))
+        # eq(self.glob(os.curdir, '**'),
+        #     self.joins((os.curdir, ''), *((os.curdir,) + i for i in full)))
+
+        [
+            ('**',),
+            [
+                ('',),
+                ('EF',), ('ZZZ',),
+                ('a',), ('a', 'D'),
+                ('a', 'bcd'),
+                ('a', 'bcd', 'EF'),
+                ('a', 'bcd', 'efg'),
+                ('a', 'bcd', 'efg', 'ha'),
+                ('aaa',), ('aaa', 'zzzF'),
+                ('aab',), ('aab', 'F')
+            ] if not can_symlink() else [
+                ('',),
+                ('EF',), ('ZZZ',),
+                ('a',), ('a', 'D'),
+                ('a', 'bcd'),
+                ('a', 'bcd', 'EF'),
+                ('a', 'bcd', 'efg'),
+                ('a', 'bcd', 'efg', 'ha'),
+                ('aaa',), ('aaa', 'zzzF'),
+                ('aab',), ('aab', 'F'),
+                ('sym1',), ('sym2',),
+                ('sym3',),
+                ('sym3', 'EF'),
+                ('sym3', 'efg'),
+                ('sym3', 'efg', 'ha')
+            ]
+        ],
+        [
+            ('**', '**'),
+            [
+                ('',),
+                ('EF',), ('ZZZ',),
+                ('a',), ('a', 'D'),
+                ('a', 'bcd'),
+                ('a', 'bcd', 'EF'),
+                ('a', 'bcd', 'efg'),
+                ('a', 'bcd', 'efg', 'ha'),
+                ('aaa',), ('aaa', 'zzzF'),
+                ('aab',), ('aab', 'F'),
+            ] if not can_symlink() else [
+                ('',),
+                ('EF',), ('ZZZ',),
+                ('a',), ('a', 'D'),
+                ('a', 'bcd'),
+                ('a', 'bcd', 'EF'),
+                ('a', 'bcd', 'efg'),
+                ('a', 'bcd', 'efg', 'ha'),
+                ('aaa',), ('aaa', 'zzzF'),
+                ('aab',), ('aab', 'F'),
+                ('sym1',), ('sym2',),
+                ('sym3',),
+                ('sym3', 'EF'),
+                ('sym3', 'efg'),
+                ('sym3', 'efg', 'ha')
+            ]
+        ],
+        [
+            ('.', '**'),
+            [
+                ('.', ''),
+                ('.', 'EF'), ('.', 'ZZZ'),
+                ('.', 'a'), ('.', 'a', 'D'),
+                ('.', 'a', 'bcd'),
+                ('.', 'a', 'bcd', 'EF'),
+                ('.', 'a', 'bcd', 'efg'),
+                ('.', 'a', 'bcd', 'efg', 'ha'),
+                ('.', 'aaa'), ('.', 'aaa', 'zzzF'),
+                ('.', 'aab'), ('.', 'aab', 'F'),
+            ] if not can_symlink() else [
+                ('.', ''),
+                ('.', 'EF'), ('.', 'ZZZ'),
+                ('.', 'a'), ('.', 'a', 'D'),
+                ('.', 'a', 'bcd'),
+                ('.', 'a', 'bcd', 'EF'),
+                ('.', 'a', 'bcd', 'efg'),
+                ('.', 'a', 'bcd', 'efg', 'ha'),
+                ('.', 'aaa'), ('.', 'aaa', 'zzzF'),
+                ('.', 'aab'), ('.', 'aab', 'F'),
+                ('.', 'sym1'), ('.', 'sym2'),
+                ('.', 'sym3'),
+                ('.', 'sym3', 'EF'),
+                ('.', 'sym3', 'efg'),
+                ('.', 'sym3', 'efg', 'ha')
+            ]
+        ]
     ]
 
     def norm(self, *parts):
@@ -413,65 +522,6 @@ class GlobTests(unittest.TestCase):
         eq = self.assertSequencesEqual_noorder
         eq(self.glob(flags=self.DEFAULT_FLAGS), [self.tempdir])
 
-    def test_empty(self):
-        """Test empty."""
-
-        eq = self.assertSequencesEqual_noorder
-        eq(glob.glob('', flags=self.DEFAULT_FLAGS), [])
-
-    def test_glob_directory_with_trailing_slash(self):
-        """Patterns ending with a slash shouldn't match non-dirs."""
-
-        res = glob.glob(self.globnorm('Z*Z') + self.globsep, flags=self.DEFAULT_FLAGS)
-        self.assertEqual(res, [])
-        res = glob.glob(self.globnorm('ZZZ') + self.globsep, flags=self.DEFAULT_FLAGS)
-        self.assertEqual(res, [])
-        # When there is a wildcard pattern which ends with os.sep, glob()
-        # doesn't blow up.
-        res = glob.glob(self.globnorm('aa*') + self.globsep, flags=self.DEFAULT_FLAGS)
-        self.assertEqual(len(res), 2)
-        # either of these results is reasonable
-        self.assertIn(set(res), [
-                      {self.norm('aaa'), self.norm('aab')},
-                      {self.norm('aaa') + os.sep, self.norm('aab') + os.sep},
-                      ])
-
-    def test_glob_bytes_directory_with_trailing_slash(self):
-        """
-        Test glob byte directory with trailing slash.
-
-        Same as test_glob_directory_with_trailing_slash, but with a
-        bytes argument.
-        """
-
-        res = glob.glob(os.fsencode(self.globnorm('Z*Z') + self.globsep), flags=self.DEFAULT_FLAGS)
-        self.assertEqual(res, [])
-        res = glob.glob(os.fsencode(self.globnorm('ZZZ') + self.globsep), flags=self.DEFAULT_FLAGS)
-        self.assertEqual(res, [])
-        res = glob.glob(os.fsencode(self.globnorm('aa*') + self.globsep), flags=self.DEFAULT_FLAGS)
-        self.assertEqual(len(res), 2)
-        # either of these results is reasonable
-        self.assertIn(set(res), [
-                      {os.fsencode(self.norm('aaa')),
-                       os.fsencode(self.norm('aab'))},
-                      {os.fsencode(self.norm('aaa') + os.sep),
-                       os.fsencode(self.norm('aab') + os.sep)},
-                      ])
-
-    @skip_unless_symlink
-    def test_glob_symlinks(self):
-        """Test glob symlinks."""
-
-        eq = self.assertSequencesEqual_noorder
-        eq(self.glob('sym3', flags=self.DEFAULT_FLAGS), [self.norm('sym3')])
-        eq(self.glob('sym3', '*', flags=self.DEFAULT_FLAGS), [self.norm('sym3', 'EF'),
-                                                              self.norm('sym3', 'efg')])
-        self.assertIn(self.glob('sym3' + self.globsep, flags=self.DEFAULT_FLAGS),
-                      [[self.norm('sym3')], [self.norm('sym3') + os.sep]])
-        eq(self.glob('*', '*F', flags=self.DEFAULT_FLAGS),
-           [self.norm('aaa', 'zzzF'),
-            self.norm('aab', 'F'), self.norm('sym3', 'EF')])
-
     def check_escape(self, arg, expected, raw=False):
         """Verify escapes."""
 
@@ -538,10 +588,7 @@ class GlobTests(unittest.TestCase):
                 ('sym3', 'efg'),
                 ('sym3', 'efg', 'ha'),
             ]
-        eq(self.glob('**', flags=self.DEFAULT_FLAGS), self.joins(('',), *full))
-        eq(self.glob('**', '**', flags=self.DEFAULT_FLAGS), self.joins(('',), *full))
-        eq(self.glob(os.curdir, '**'),
-            self.joins((os.curdir, ''), *((os.curdir,) + i for i in full)))
+
         dirs = [('a', ''), ('a', 'bcd', ''), ('a', 'bcd', 'efg', ''),
                 ('aaa', ''), ('aab', '')]
         if can_symlink():
