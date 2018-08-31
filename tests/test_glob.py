@@ -735,6 +735,7 @@ class TestGlobCornerCase(_TestGlob):
         [('@(a[/]b)',), []],
         [('test[',), [('test[',)]],
         [(r'a\/b',), [('a', 'b')] if not util.is_case_sensitive() else []],
+        [(r'a[\/]b',), [('a[', ']b')] if not util.is_case_sensitive() else []],
 
         Options(skip=util.is_case_sensitive()),
         [('a[\\',), [('a[', '')]],
