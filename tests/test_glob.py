@@ -215,11 +215,7 @@ class GlobTests(unittest.TestCase):
         [('ZZZ', ''), []],
         [('aa*', ''), [('aaa', ''), ('aab', '')]],
 
-        # eq(self.glob('**', flags=self.DEFAULT_FLAGS), self.joins(('',), *full))
-        # eq(self.glob('**', '**', flags=self.DEFAULT_FLAGS), self.joins(('',), *full))
-        # eq(self.glob(os.curdir, '**'),
-        #     self.joins((os.curdir, ''), *((os.curdir,) + i for i in full)))
-
+        "Test recurision.",
         [
             ('**',),
             [
@@ -522,50 +518,6 @@ class GlobTests(unittest.TestCase):
         eq = self.assertSequencesEqual_noorder
         eq(self.glob(flags=self.DEFAULT_FLAGS), [self.tempdir])
 
-    def check_escape(self, arg, expected, raw=False):
-        """Verify escapes."""
-
-        if raw:
-            self.assertEqual(glob.raw_escape(arg), expected)
-            self.assertEqual(glob.raw_escape(os.fsencode(arg)), os.fsencode(expected))
-        else:
-            self.assertEqual(glob.escape(arg), expected)
-            self.assertEqual(glob.escape(os.fsencode(arg)), os.fsencode(expected))
-
-    def test_escape(self):
-        """Test path escapes."""
-
-        check = self.check_escape
-        check('abc', 'abc')
-        check('[', r'\[')
-        check('?', r'\?')
-        check('*', r'\*')
-        check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_]]')
-        check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_]]/')
-
-    def test_raw_escape(self):
-        """Test path escapes."""
-
-        check = self.check_escape
-        check('abc', 'abc', raw=True)
-        check('[', r'\[', raw=True)
-        check('?', r'\?', raw=True)
-        check('*', r'\*', raw=True)
-        check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_]]', raw=True)
-        check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_]]/', raw=True)
-        check(r'\x3f', r'\?', raw=True)
-
-    @unittest.skipUnless(sys.platform == "win32", "Win32 specific test")
-    def test_escape_windows(self):
-        """Test windows escapes."""
-        check = self.check_escape
-        check('a:\\?', r'a:\\\?')
-        check('b:\\*', r'b:\\\*')
-        check(r'\\\\?\\c:\\?', r'\\\\?\\c:\\\?')
-        check(r'\\\\*\\*\\*', r'\\\\*\\*\\\*')
-        check('//?/c:/?', r'//?/c:/\?')
-        check('//*/*/*', r'//*/*/\*')
-
     def test_recursive_glob(self):
         """Test recurision."""
 
@@ -632,6 +584,54 @@ class GlobTests(unittest.TestCase):
             if can_symlink():
                 expect += [join('sym3', 'EF')]
             eq(glob.glob(self.globjoin('**', 'EF'), flags=self.DEFAULT_FLAGS), expect)
+
+
+class TestGlobEscapes(unittest.TestCase):
+    """Test escaping."""
+
+    def check_escape(self, arg, expected, raw=False):
+        """Verify escapes."""
+
+        if raw:
+            self.assertEqual(glob.raw_escape(arg), expected)
+            self.assertEqual(glob.raw_escape(os.fsencode(arg)), os.fsencode(expected))
+        else:
+            self.assertEqual(glob.escape(arg), expected)
+            self.assertEqual(glob.escape(os.fsencode(arg)), os.fsencode(expected))
+
+    def test_escape(self):
+        """Test path escapes."""
+
+        check = self.check_escape
+        check('abc', 'abc')
+        check('[', r'\[')
+        check('?', r'\?')
+        check('*', r'\*')
+        check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_]]')
+        check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_]]/')
+
+    def test_raw_escape(self):
+        """Test path escapes."""
+
+        check = self.check_escape
+        check('abc', 'abc', raw=True)
+        check('[', r'\[', raw=True)
+        check('?', r'\?', raw=True)
+        check('*', r'\*', raw=True)
+        check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_]]', raw=True)
+        check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_]]/', raw=True)
+        check(r'\x3f', r'\?', raw=True)
+
+    @unittest.skipUnless(sys.platform == "win32", "Win32 specific test")
+    def test_escape_windows(self):
+        """Test windows escapes."""
+        check = self.check_escape
+        check('a:\\?', r'a:\\\?')
+        check('b:\\*', r'b:\\\*')
+        check(r'\\\\?\\c:\\?', r'\\\\?\\c:\\\?')
+        check(r'\\\\*\\*\\*', r'\\\\*\\*\\\*')
+        check('//?/c:/?', r'//?/c:/\?')
+        check('//*/*/*', r'//*/*/\*')
 
 
 class GlobCornerCaseTests(unittest.TestCase):
