@@ -188,6 +188,7 @@ class GlobTests(unittest.TestCase):
                 ('aab', ''), ('aaa', ''), ('a', ''), ('sym3', '')
             ]
         ],
+        Options(skip=False),
 
         "Test extglob.",
         [('@(a|aa*(a|b))',), [('aab',), ('aaa',), ('a',)]],
