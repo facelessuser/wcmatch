@@ -302,7 +302,44 @@ class GlobTests(unittest.TestCase):
                 ('.', 'sym3', 'efg'),
                 ('.', 'sym3', 'efg', 'ha')
             ]
-        ]
+        ],
+        [
+            ('**', ''),
+            # Dirs
+            [
+                ('',),
+                ('a', ''), ('a', 'bcd', ''), ('a', 'bcd', 'efg', ''),
+                ('aaa', ''), ('aab', '')
+            ] if not can_symlink() else [
+                ('',),
+                ('a', ''), ('a', 'bcd', ''), ('a', 'bcd', 'efg', ''),
+                ('aaa', ''), ('aab', ''),
+                ('sym3', ''), ('sym3', 'efg', '')
+            ]
+        ],
+        [
+            ('a', '**'),
+            [('a', ''), ('a', 'D'), ('a', 'bcd'), ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg'), ('a', 'bcd', 'efg', 'ha')]
+        ],
+        [('a**',), [('a',), ('aaa',), ('aab',)]],
+        [
+            ('**', 'EF'),
+            [('a', 'bcd', 'EF'), ('EF',)] if not can_symlink() else [('a', 'bcd', 'EF'), ('EF',), ('sym3', 'EF')]
+        ],
+        [
+            ('**', '*F'),
+            [
+                ('a', 'bcd', 'EF'), ('aaa', 'zzzF'), ('aab', 'F'), ('EF',)
+            ] if not can_symlink() else [
+                ('a', 'bcd', 'EF'), ('aaa', 'zzzF'), ('aab', 'F'), ('EF',), ('sym3', 'EF')
+            ]
+        ],
+        [('**', '*F', ''), []],
+        [('**', 'bcd', '*'), [('a', 'bcd', 'EF'), ('a', 'bcd', 'efg')]],
+        [('a', '**', 'bcd'), [('a', 'bcd')]],
+
+        "Test the file directly -- without magic.",
+        [[], [[]]]
     ]
 
     def norm(self, *parts):
@@ -512,12 +549,6 @@ class GlobTests(unittest.TestCase):
                 map(lambda x: self.norm(*x), nfiles)
             )
 
-    def test_glob_file_direct(self):
-        """Test the file directly -- without magic."""
-
-        eq = self.assertSequencesEqual_noorder
-        eq(self.glob(flags=self.DEFAULT_FLAGS), [self.tempdir])
-
     def test_recursive_glob(self):
         """Test recurision."""
 
@@ -545,24 +576,6 @@ class GlobTests(unittest.TestCase):
                 ('aaa', ''), ('aab', '')]
         if can_symlink():
             dirs += [('sym3', ''), ('sym3', 'efg', '')]
-        eq(self.glob('**', '', flags=self.DEFAULT_FLAGS), self.joins(('',), *dirs))
-
-        eq(self.glob('a', '**', flags=self.DEFAULT_FLAGS), self.joins(
-            ('a', ''), ('a', 'D'), ('a', 'bcd'), ('a', 'bcd', 'EF'),
-            ('a', 'bcd', 'efg'), ('a', 'bcd', 'efg', 'ha')))
-        eq(self.glob('a**', flags=self.DEFAULT_FLAGS), self.joins(('a',), ('aaa',), ('aab',)))
-        expect = [('a', 'bcd', 'EF'), ('EF',)]
-        if can_symlink():
-            expect += [('sym3', 'EF')]
-        eq(self.glob('**', 'EF', flags=self.DEFAULT_FLAGS), self.joins(*expect))
-        expect = [('a', 'bcd', 'EF'), ('aaa', 'zzzF'), ('aab', 'F'), ('EF',)]
-        if can_symlink():
-            expect += [('sym3', 'EF')]
-        eq(self.glob('**', '*F', flags=self.DEFAULT_FLAGS), self.joins(*expect))
-        eq(self.glob('**', '*F', '', flags=self.DEFAULT_FLAGS), [])
-        eq(self.glob('**', 'bcd', '*', flags=self.DEFAULT_FLAGS), self.joins(
-            ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg')))
-        eq(self.glob('a', '**', 'bcd', flags=self.DEFAULT_FLAGS), self.joins(('a', 'bcd')))
 
         with change_cwd(self.tempdir):
             join = os.path.join
