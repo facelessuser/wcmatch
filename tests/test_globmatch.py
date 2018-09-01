@@ -437,7 +437,7 @@ class TestGlobFilter(unittest.TestCase):
                 pat = new_pat
             print("PATTERN: ", p[0])
             print("FILES: ", files)
-            print("FLAGS: ", bin(flags)[2:])
+            print("FLAGS: ", bin(flags))
             result = sorted(
                 glob.globfilter(
                     files,
