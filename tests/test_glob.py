@@ -208,14 +208,14 @@ class _TestGlob(object):
     def assertEqual(self, a, b):
         """Assert equal."""
 
-        assert a == b, "%s != %s" % (a, b)
+        assert a == b, "Comparison between objects yielded false."
 
     def assertCountEqual(self, a, b):
         """Assert count equal."""
 
         c1 = len(list(a)) if isinstance(a, types.GeneratorType) else len(a)
         c2 = len(list(b)) if isinstance(b, types.GeneratorType) else len(b)
-        assert c1 == c2, "Lenght of %d does not equal %d" % (c1, c2)
+        assert c1 == c2, "Length of %d does not equal %d" % (c1, c2)
 
     def glob(self, *parts, **kwargs):
         """Perform a glob with validation."""
