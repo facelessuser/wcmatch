@@ -12,6 +12,8 @@ made difference in implementation.
 import contextlib
 from wcmatch import glob
 from wcmatch import util
+import types
+import pytest
 import os
 import shutil
 import sys
@@ -104,7 +106,7 @@ class Options():
         return self._options.get(key, default)
 
 
-class _TestGlob(unittest.TestCase):
+class _TestGlob(object):
     """
     Test glob.
 
@@ -137,21 +139,24 @@ class _TestGlob(unittest.TestCase):
 
     cases = []
 
-    def norm(self, *parts):
+    @classmethod
+    def norm(cls, *parts):
         """Normalizes file path (in relation to temp dir)."""
 
-        return os.path.join(self.tempdir, *parts)
+        return os.path.join(cls.tempdir, *parts)
 
-    def globjoin(self, *parts):
+    @classmethod
+    def globjoin(cls, *parts):
         """Joins glob path."""
 
-        sep = self.globsep
+        sep = cls.globsep
         return sep.join(list(parts))
 
-    def mktemp(self, *parts):
+    @classmethod
+    def mktemp(cls, *parts):
         """Make temp directory."""
 
-        filename = self.norm(*parts)
+        filename = cls.norm(*parts)
         base, file = os.path.split(filename)
         if not os.path.exists(base):
             retry = 3
@@ -163,33 +168,54 @@ class _TestGlob(unittest.TestCase):
                     retry -= 1
         create_empty_file(filename)
 
-    def setUp(self):
+    @classmethod
+    def setup_class(cls):
         """Setup."""
 
-        self.absolute = False
-        self.skip = False
-        self.cwd_temp = False
-        self.just_negative = False
+        cls.absolute = False
+        cls.skip = False
+        cls.cwd_temp = False
+        cls.just_negative = False
         if os.sep == '/':
-            self.globsep = os.sep
+            cls.globsep = os.sep
         else:
-            self.globsep = r'\\'
-        self.tempdir = TESTFN + "_dir"
-        self.setup_fs()
+            cls.globsep = r'\\'
+        cls.tempdir = TESTFN + "_dir"
+        cls.setup_fs()
 
-    def setup_fs(self):
+    @classmethod
+    def setup_fs(cls):
         """Setup filesystem."""
 
-    def tearDown(self):
+    @classmethod
+    def teardown_class(cls):
         """Cleanup."""
 
         retry = 3
         while retry:
             try:
-                shutil.rmtree(self.tempdir)
+                shutil.rmtree(cls.tempdir)
                 retry = 0
             except Exception:
                 retry -= 1
+
+    @classmethod
+    def get_class(cls):
+        """Get class."""
+
+        return cls
+
+    def assertEqual(self, a, b):
+        """Assert equal."""
+
+        assert a == b, "%s != %s" % (a, b)
+
+    def assertCountEqual(self, a, b):
+        """Assert count equal."""
+
+        c1 = len(list(a)) if isinstance(a, types.GeneratorType) else len(a)
+        c2 = len(list(b)) if isinstance(b, types.GeneratorType) else len(b)
+        assert c1 == c2, "Lenght of %d does not equal %d" % (c1, c2)
 
     def glob(self, *parts, **kwargs):
         """Perform a glob with validation."""
@@ -220,6 +246,8 @@ class _TestGlob(unittest.TestCase):
     def nglob(self, *parts, **kwargs):
         """Perform a glob with validation."""
 
+        cls = self.get_class()
+
         if parts:
             if len(parts) == 1:
                 p = parts[0]
@@ -231,7 +259,7 @@ class _TestGlob(unittest.TestCase):
             p = self.tempdir
 
         p = '!' + p
-        if not self.just_negative:
+        if not cls.just_negative:
             if not self.absolute:
                 p = [self.globjoin(self.tempdir, '**'), p]
             else:
@@ -259,59 +287,57 @@ class _TestGlob(unittest.TestCase):
         self.assertEqual(set(l1), set(l2))
         self.assertEqual(sorted(l1), sorted(l2))
 
-    def test_glob_cases(self):
-        """Test glob cases."""
+    def eval_glob_cases(self, case):
+        """Eval glob cases."""
 
         eq = self.assertSequencesEqual_noorder
+        cls = self.get_class()
 
-        for case in self.cases:
+        # for case in self.cases:
 
-            if isinstance(case, Options):
-                absolute = case.get('absolute')
-                if absolute is not None:
-                    self.absolute = absolute
-                skip = case.get('skip')
-                if skip is not None:
-                    self.skip = skip
-                cwd_temp = case.get('cwd_temp')
-                if cwd_temp is not None:
-                    self.cwd_temp = cwd_temp
-                just_negative = case.get('just_negative')
-                if just_negative is not None:
-                    self.just_negative = just_negative
-                continue
-            if isinstance(case, str):
-                print(case)
-                continue
+        if isinstance(case, Options):
+            absolute = case.get('absolute')
+            if absolute is not None:
+                cls.absolute = absolute
+            skip = case.get('skip')
+            if skip is not None:
+                cls.skip = skip
+            cwd_temp = case.get('cwd_temp')
+            if cwd_temp is not None:
+                cls.cwd_temp = cwd_temp
+            just_negative = case.get('just_negative')
+            if just_negative is not None:
+                cls.just_negative = just_negative
+            pytest.skip("Change Options")
 
-            if self.skip:
-                continue
+        if cls.skip:
+            pytest.skip("Skipped")
 
-            pattern = case[0]
-            if not self.absolute:
-                results = [self.norm(*x) for x in case[1]] if case[1] is not None else None
-            else:
-                results = [os.path.join(*list(x)) for x in case[1]] if case[1] is not None else None
-            flags = self.DEFAULT_FLAGS
+        pattern = case[0]
+        if not cls.absolute:
+            results = [self.norm(*x) for x in case[1]] if case[1] is not None else None
+        else:
+            results = [os.path.join(*list(x)) for x in case[1]] if case[1] is not None else None
+        flags = self.DEFAULT_FLAGS
 
-            if len(case) > 2:
-                flags ^= case[2]
+        if len(case) > 2:
+            flags ^= case[2]
 
-            negative = flags & glob.N
+        negative = flags & glob.N
 
-            print("PATTERN: ", pattern)
-            print("FLAGS: ", bin(flags))
-            print("NEGATIVE: ", bin(negative))
-            print("EXPECTED: ", results)
+        print("PATTERN: ", pattern)
+        print("FLAGS: ", bin(flags))
+        print("NEGATIVE: ", bin(negative))
+        print("EXPECTED: ", results)
 
-            if self.cwd_temp:
-                with change_cwd(self.tempdir):
-                    res = self.nglob(*pattern, flags=flags) if negative else self.glob(*pattern, flags=flags)
-            else:
+        if cls.cwd_temp:
+            with change_cwd(self.tempdir):
                 res = self.nglob(*pattern, flags=flags) if negative else self.glob(*pattern, flags=flags)
-            if results is not None:
-                eq(res, results)
-            print('\n')
+        else:
+            res = self.nglob(*pattern, flags=flags) if negative else self.glob(*pattern, flags=flags)
+        if results is not None:
+            eq(res, results)
+        print('\n')
 
 
 class Testglob(_TestGlob):
@@ -322,7 +348,7 @@ class Testglob(_TestGlob):
     """
 
     cases = [
-        "Test literal.",
+        # Test literal.
         [('a',), [('a',)]],
         [('a', 'D'), [('a', 'D')]],
         [('aab',), [('aab',)]],
@@ -332,7 +358,7 @@ class Testglob(_TestGlob):
         [[os.curdir, '*'], None],
         Options(absolute=False),
 
-        "Glob one directory",
+        # Glob one directory
         [('a*',), [('a',), ('aab',), ('aaa',)]],
         [('*a',), [('a',), ('aaa',)]],
         [('.*',), [('.',), ('..',), ('.aa',), ('.bb',)]],
@@ -341,7 +367,7 @@ class Testglob(_TestGlob):
         [('aa[ab]',), [('aaa',), ('aab',)]],
         [('*q',), []],
 
-        "Glob inverse",
+        # Glob inverse
         [
             ('a*',),
             [
@@ -353,20 +379,20 @@ class Testglob(_TestGlob):
             glob.N
         ],
 
-        "Test nested glob directory",
+        # Test nested glob directory
         [
             ('a', 'bcd', 'E*'),
             [('a', 'bcd', 'EF')] if util.is_case_sensitive() else [('a', 'bcd', 'EF'), ('a', 'bcd', 'efg')]
         ],
         [('a', 'bcd', '*g'), [('a', 'bcd', 'efg')]],
 
-        "Test glob directory names.",
+        # Test glob directory names.
         [('*', 'D'), [('a', 'D')]],
         [('*', '*a'), []],
         [('a', '*', '*', '*a'), [('a', 'bcd', 'efg', 'ha')]],
         [('?a?', '*F'), [('aaa', 'zzzF'), ('aab', 'F')]],
 
-        "Test glob magic in drive name.",
+        # Test glob magic in drive name.
         Options(absolute=True, skip=sys.platform != "win32"),
         [('*:',), []],
         [('?:',), []],
@@ -375,19 +401,19 @@ class Testglob(_TestGlob):
         Options(absolute=False, skip=False),
 
         Options(skip=not can_symlink()),
-        "Test broken symlinks",
+        # Test broken symlinks
         [('sym*',), [('sym1',), ('sym2',), ('sym3',)]],
         [('sym1',), [('sym1',)]],
         [('sym2',), [('sym2',)]],
 
-        "Test glob symlinks.",
+        # Test glob symlinks.,
         [('sym3',), [('sym3',)]],
         [('sym3', '*'), [('sym3', 'EF'), ('sym3', 'efg')]],
         [('sym3', ''), [('sym3', '')]],
         [('*', '*F'), [('aaa', 'zzzF'), ('aab', 'F'), ('sym3', 'EF')]],
         Options(skip=False),
 
-        "Test only directories",
+        # Test only directories
         [
             ('*', ''),
             [
@@ -407,26 +433,26 @@ class Testglob(_TestGlob):
         ],
         Options(skip=False),
 
-        "Test extglob.",
+        # Test extglob.
         [('@(a|aa*(a|b))',), [('aab',), ('aaa',), ('a',)]],
 
-        "Test sequences.",
+        # Test sequences.
         [('[a]',), [('a',)]],
         [('[!b]',), [('a',)]],
         [('[^b]',), [('a',)]],
         [(r'@([\a]|\aaa)',), [('a',), ('aaa',)]],
 
         Options(absolute=True),
-        "Test empty.",
+        # Test empty.
         [('',), []],
         Options(absolute=False),
 
-        "Patterns ending with a slash shouldn't match non-dirs.",
+        # Patterns ending with a slash shouldn't match non-dirs.
         [('Z*Z', ''), []],
         [('ZZZ', ''), []],
         [('aa*', ''), [('aaa', ''), ('aab', '')]],
 
-        "Test recurision.",
+        # Test recurision.
         [
             ('**',),
             [
@@ -702,27 +728,34 @@ class Testglob(_TestGlob):
         ],
         Options(just_negative=False, cwd_temp=False, absolute=False),
 
-        "Test the file directly -- without magic.",
+        # Test the file directly -- without magic.
         [[], [[]]]
     ]
 
-    def setup_fs(self):
+    @classmethod
+    def setup_fs(cls):
         """Setup filesystem."""
 
-        self.mktemp('a', 'D')
-        self.mktemp('aab', 'F')
-        self.mktemp('.aa', 'G')
-        self.mktemp('.bb', 'H')
-        self.mktemp('aaa', 'zzzF')
-        self.mktemp('ZZZ')
-        self.mktemp('EF')
-        self.mktemp('a', 'bcd', 'EF')
-        self.mktemp('a', 'bcd', 'efg', 'ha')
-        self.can_symlink = can_symlink()
-        if self.can_symlink:
-            os.symlink(self.norm('broken'), self.norm('sym1'))
-            os.symlink('broken', self.norm('sym2'))
-            os.symlink(os.path.join('a', 'bcd'), self.norm('sym3'))
+        cls.mktemp('a', 'D')
+        cls.mktemp('aab', 'F')
+        cls.mktemp('.aa', 'G')
+        cls.mktemp('.bb', 'H')
+        cls.mktemp('aaa', 'zzzF')
+        cls.mktemp('ZZZ')
+        cls.mktemp('EF')
+        cls.mktemp('a', 'bcd', 'EF')
+        cls.mktemp('a', 'bcd', 'efg', 'ha')
+        cls.can_symlink = can_symlink()
+        if cls.can_symlink:
+            os.symlink(cls.norm('broken'), cls.norm('sym1'))
+            os.symlink('broken', cls.norm('sym2'))
+            os.symlink(os.path.join('a', 'bcd'), cls.norm('sym3'))
+
+    @pytest.mark.parametrize("case", cases)
+    def test_glob_cases(self, case):
+        """Test glob cases."""
+
+        self.eval_glob_cases(case)
 
 
 class TestGlobCornerCase(_TestGlob):
@@ -733,7 +766,7 @@ class TestGlobCornerCase(_TestGlob):
     """
 
     cases = [
-        "Test very specific, special cases.",
+        # Test very specific, special cases.
         [('a[/]b',), [('a[', ']b',)]],
         [('@(a/b)',), []],
         [('@(a[/]b)',), []],
@@ -747,15 +780,22 @@ class TestGlobCornerCase(_TestGlob):
         Options(skip=False)
     ]
 
-    def setup_fs(self):
+    @classmethod
+    def setup_fs(cls):
         """Setup filesystem."""
 
-        self.mktemp('test[')
-        self.mktemp('a', 'b')
-        self.mktemp('a[', ']b')
-        self.mktemp('@(a', 'b)')
-        self.mktemp('@(a[', ']b)')
-        self.can_symlink = can_symlink()
+        cls.mktemp('test[')
+        cls.mktemp('a', 'b')
+        cls.mktemp('a[', ']b')
+        cls.mktemp('@(a', 'b)')
+        cls.mktemp('@(a[', ']b)')
+        cls.can_symlink = can_symlink()
+
+    @pytest.mark.parametrize("case", cases)
+    def test_glob_cases(self, case):
+        """Test glob cases."""
+
+        self.eval_glob_cases(case)
 
 
 class TestGlobEscapes(unittest.TestCase):
