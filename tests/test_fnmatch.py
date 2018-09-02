@@ -160,7 +160,7 @@ class TestFnMatch:
 
     @classmethod
     def evaluate(cls, case):
-        """evaluate matches."""
+        """Evaluate matches."""
 
         flags = case[3]
         flags = cls.flags ^ flags
@@ -241,7 +241,7 @@ class TestFnMatchFilter:
 
     @classmethod
     def evaluate(cls, case):
-        """evaluate matches."""
+        """Evaluate matches."""
 
         flags = case[3]
         flags = cls.flags ^ flags
