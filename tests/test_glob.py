@@ -106,7 +106,7 @@ class Options():
         return self._options.get(key, default)
 
 
-class _TestGlob(object):
+class _TestGlob:
     """
     Test glob.
 
@@ -199,69 +199,65 @@ class _TestGlob(object):
             except Exception:
                 retry -= 1
 
-    @classmethod
-    def get_class(cls):
-        """Get class."""
-
-        return cls
-
-    def assertEqual(self, a, b):
+    @staticmethod
+    def assert_equal(a, b):
         """Assert equal."""
 
         assert a == b, "Comparison between objects yielded false."
 
-    def assertCountEqual(self, a, b):
+    @staticmethod
+    def assert_count_equal(a, b):
         """Assert count equal."""
 
         c1 = len(list(a)) if isinstance(a, types.GeneratorType) else len(a)
         c2 = len(list(b)) if isinstance(b, types.GeneratorType) else len(b)
         assert c1 == c2, "Length of %d does not equal %d" % (c1, c2)
 
-    def glob(self, *parts, **kwargs):
+    @classmethod
+    def glob(cls, *parts, **kwargs):
         """Perform a glob with validation."""
 
         if parts:
             if len(parts) == 1:
                 p = parts[0]
             else:
-                p = self.globjoin(*parts)
-            if not self.absolute:
-                p = self.globjoin(self.tempdir, p)
+                p = cls.globjoin(*parts)
+            if not cls.absolute:
+                p = cls.globjoin(cls.tempdir, p)
         else:
-            p = self.tempdir
+            p = cls.tempdir
 
         res = glob.glob(p, **kwargs)
         print("RESULTS: ", res)
         if res:
-            self.assertEqual({type(r) for r in res}, {str})
-        self.assertCountEqual(glob.iglob(p, **kwargs), res)
+            cls.assert_equal({type(r) for r in res}, {str})
+        cls.assert_count_equal(glob.iglob(p, **kwargs), res)
 
         bres = [os.fsencode(x) for x in res]
-        self.assertCountEqual(glob.glob(os.fsencode(p), **kwargs), bres)
-        self.assertCountEqual(glob.iglob(os.fsencode(p), **kwargs), bres)
+        cls.assert_count_equal(glob.glob(os.fsencode(p), **kwargs), bres)
+        cls.assert_count_equal(glob.iglob(os.fsencode(p), **kwargs), bres)
         if bres:
-            self.assertEqual({type(r) for r in bres}, {bytes})
+            cls.assert_equal({type(r) for r in bres}, {bytes})
         return res
 
-    def nglob(self, *parts, **kwargs):
+    @classmethod
+    def nglob(cls, *parts, **kwargs):
         """Perform a glob with validation."""
-
-        cls = self.get_class()
 
         if parts:
             if len(parts) == 1:
                 p = parts[0]
             else:
-                p = self.globjoin(*parts)
-            if not self.absolute:
-                p = self.globjoin(self.tempdir, p)
+                p = cls.globjoin(*parts)
+            if not cls.absolute:
+                p = cls.globjoin(cls.tempdir, p)
         else:
-            p = self.tempdir
+            p = cls.tempdir
 
         p = '!' + p
         if not cls.just_negative:
-            if not self.absolute:
-                p = [self.globjoin(self.tempdir, '**'), p]
+            if not cls.absolute:
+                p = [cls.globjoin(cls.tempdir, '**'), p]
             else:
                 p = ['**', p]
         else:
@@ -269,29 +265,30 @@ class _TestGlob(object):
         res = glob.glob(p, **kwargs)
         print("RESULTS: ", res)
         if res:
-            self.assertEqual({type(r) for r in res}, {str})
-        self.assertCountEqual(glob.iglob(p, **kwargs), res)
+            cls.assert_equal({type(r) for r in res}, {str})
+        cls.assert_count_equal(glob.iglob(p, **kwargs), res)
 
         bres = [os.fsencode(x) for x in res]
-        self.assertCountEqual(glob.glob([os.fsencode(x) for x in p], **kwargs), bres)
-        self.assertCountEqual(glob.iglob([os.fsencode(x) for x in p], **kwargs), bres)
+        cls.assert_count_equal(glob.glob([os.fsencode(x) for x in p], **kwargs), bres)
+        cls.assert_count_equal(glob.iglob([os.fsencode(x) for x in p], **kwargs), bres)
         if bres:
-            self.assertEqual({type(r) for r in bres}, {bytes})
+            cls.assert_equal({type(r) for r in bres}, {bytes})
         return res
 
-    def assertSequencesEqual_noorder(self, l1, l2):
+    @classmethod
+    def assertSequencesEqual_noorder(cls, l1, l2):
         """Verify lists match (unordered)."""
 
         l1 = list(l1)
         l2 = list(l2)
-        self.assertEqual(set(l1), set(l2))
-        self.assertEqual(sorted(l1), sorted(l2))
+        cls.assert_equal(set(l1), set(l2))
+        cls.assert_equal(sorted(l1), sorted(l2))
 
-    def eval_glob_cases(self, case):
+    @classmethod
+    def eval_glob_cases(cls, case):
         """Eval glob cases."""
 
-        eq = self.assertSequencesEqual_noorder
-        cls = self.get_class()
+        eq = cls.assertSequencesEqual_noorder
 
         # for case in self.cases:
 
@@ -315,10 +312,10 @@ class _TestGlob(object):
 
         pattern = case[0]
         if not cls.absolute:
-            results = [self.norm(*x) for x in case[1]] if case[1] is not None else None
+            results = [cls.norm(*x) for x in case[1]] if case[1] is not None else None
         else:
             results = [os.path.join(*list(x)) for x in case[1]] if case[1] is not None else None
-        flags = self.DEFAULT_FLAGS
+        flags = cls.DEFAULT_FLAGS
 
         if len(case) > 2:
             flags ^= case[2]
@@ -331,10 +328,10 @@ class _TestGlob(object):
         print("EXPECTED: ", results)
 
         if cls.cwd_temp:
-            with change_cwd(self.tempdir):
-                res = self.nglob(*pattern, flags=flags) if negative else self.glob(*pattern, flags=flags)
+            with change_cwd(cls.tempdir):
+                res = cls.nglob(*pattern, flags=flags) if negative else cls.glob(*pattern, flags=flags)
         else:
-            res = self.nglob(*pattern, flags=flags) if negative else self.glob(*pattern, flags=flags)
+            res = cls.nglob(*pattern, flags=flags) if negative else cls.glob(*pattern, flags=flags)
         if results is not None:
             eq(res, results)
         print('\n')

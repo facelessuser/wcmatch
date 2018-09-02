@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for rumcore."""
 import unittest
+import pytest
 import mock
 import wcmatch.glob as glob
 import wcmatch._wcparse as _wcparse
@@ -31,7 +32,7 @@ class Options():
         return self._options.get(key, default)
 
 
-class TestGlobFilter(unittest.TestCase):
+class TestGlobFilter:
     """Test matchtes against `globfilter`.
 
     Each list entry in `cases` is run through the `globsplit` and then `globfilter`.
@@ -72,7 +73,7 @@ class TestGlobFilter(unittest.TestCase):
             ]
         ),
 
-        'http://www.bashcookbook.com/bashinfo/source/bash-1.14.7/tests/glob-test',
+        # http://www.bashcookbook.com/bashinfo/source/bash-1.14.7/tests/glob-test
         ['a*', ['a', 'abc', 'abd', 'abe']],
 
         ['X*', []],
@@ -99,11 +100,11 @@ class TestGlobFilter(unittest.TestCase):
         [r'\\.\\./*/', []],
         [r's/\\..*//', []],
 
-        'legendary larry crashes bashes',
+        # legendary larry crashes bashes
         ['/^root:/{s/^[^:]*:[^:]*:\\([^:]*\\).*$/\\1/', []],
         ['/^root:/{s/^[^:]*:[^:]*:\\([^:]*\\).*$/\u0001/', []],
 
-        'character classes',
+        # character classes
         ['[a-c]b*', ['abc', 'abd', 'abe', 'bb', 'cb']],
         ['[a-y]*[^c]', ['abd', 'abe', 'bb', 'bcd', 'bdir/', 'ca', 'cb', 'dd', 'de']],
         ['a*[^c]', ['abd', 'abe']],
@@ -124,7 +125,7 @@ class TestGlobFilter(unittest.TestCase):
         ['a\\*c', [], 0, ['abc']],
         ['', [''], 0, ['']],
 
-        'http://www.opensource.apple.com/source/bash/bash-23/bash/tests/glob-test',
+        # http://www.opensource.apple.com/source/bash/bash-23/bash/tests/glob-test
         GlobFiles(['man/', 'man/man1/', 'man/man1/bash.1'], append=True),
         ['*/man*/bash.*', ['man/man1/bash.1']],
         ['man/man1/bash.1', ['man/man1/bash.1']],
@@ -152,9 +153,9 @@ class TestGlobFilter(unittest.TestCase):
         ['[', ['['], 0, ['[']],
         ['[*', ['[abc'], 0, ['[abc']],
 
-        'a right bracket shall lose its special meaning and\n'
-        'represent itself in a bracket expression if it occurs\n'
-        'first in the list.  -- POSIX.2 2.8.3.2',
+        # a right bracket shall lose its special meaning and\
+        # represent itself in a bracket expression if it occurs\
+        # first in the list.  -- POSIX.2 2.8.3.2
         ['[]]', [']'], 0, [']']],
         ['[]-]', [']'], 0, [']']],
         ['[a-\\z]', ['p'], 0, ['p']],
@@ -167,7 +168,7 @@ class TestGlobFilter(unittest.TestCase):
         ['[]', [], 0, ['a']],
         ['[abc', [], 0, ['[']],
 
-        'nocase tests',
+        # nocase tests
         ['XYZ', ['xYz'], glob.I, ['xYz', 'ABC', 'IjK']],
         [
             'ab*',
@@ -183,11 +184,11 @@ class TestGlobFilter(unittest.TestCase):
         ],
 
         # [ pattern, [matches], MM opts, files, TAP opts]
-        'onestar/twostar',
+        # onestar/twostar
         ['{/*,*}', [], 0, ['/asdf/asdf/asdf']],
         ['{/?,*}', ['/a', 'bb'], 0, ['/a', '/b/b', '/a/b/c', 'bb']],
 
-        'dots should not match unless requested',
+        # dots should not match unless requested
         ['**', ['a/b'], 0, ['a/b', 'a/.d', '.a/.d']],
 
         # .. and . can only match patterns starting with .,
@@ -208,7 +209,7 @@ class TestGlobFilter(unittest.TestCase):
             ['.a/.d', 'a/.d', 'a/b']
         ],
 
-        'paren sets cannot contain slashes',
+        # paren sets cannot contain slashes
         ['*(a/b)', [], 0, ['a/b']],
 
         # brace sets trump all else.
@@ -288,7 +289,7 @@ class TestGlobFilter(unittest.TestCase):
 
         # begin channelling Boole and deMorgan...
         # NOTE: We changed these to `-` since our negation dosn't use `!`.
-        'negation tests',
+        # negation tests
         GlobFiles(['d', 'e', '!ab', '!abc', 'a!b', '\\!a']),
 
         # anything that is NOT a* matches.
@@ -319,7 +320,7 @@ class TestGlobFilter(unittest.TestCase):
         # copy bash 4.3 behavior on this.
         ['*.!(js)', ['foo.bar', 'foo.', 'boo.js.boo', 'foo.js.js']],
 
-        'https://github.com/isaacs/minimatch/issues/5',
+        # https://github.com/isaacs/minimatch/issues/5
         GlobFiles(
             [
                 'a/b/.x/c', 'a/b/.x/c/d', 'a/b/.x/c/d/e', 'a/b/.x', 'a/b/.x/',
@@ -334,12 +335,12 @@ class TestGlobFilter(unittest.TestCase):
             ]
         ],
 
-        'https://github.com/isaacs/minimatch/issues/59',
+        # https://github.com/isaacs/minimatch/issues/59
         ['[z-a]', []],
         ['a/[2015-03-10T00:23:08.647Z]/z', []],
         ['[a-0][a-\u0100]', []],
 
-        'Consecutive slashes.',
+        # Consecutive slashes.
         GlobFiles(
             [
                 'a/b/c', 'd/e/f', 'a/e/c'
@@ -348,7 +349,7 @@ class TestGlobFilter(unittest.TestCase):
         ['*//e///*', ['d/e/f', 'a/e/c']],
         [r'*//\e///*', ['d/e/f', 'a/e/c']],
 
-        'Backslash trailing cases',
+        # Backslash trailing cases
         GlobFiles(
             [
                 'a/b/c/', 'd/e/f/', 'a/e/c/'
@@ -356,7 +357,7 @@ class TestGlobFilter(unittest.TestCase):
         ),
         ['**\\', [] if util.is_case_sensitive() else ['a/b/c/', 'd/e/f/', 'a/e/c/']],
 
-        'Invalid extglob groups',
+        # Invalid extglob groups
         GlobFiles(
             [
                 '@([test', '@([test\\', '@(test\\', 'test['
@@ -367,7 +368,7 @@ class TestGlobFilter(unittest.TestCase):
         ['@(test\\', ['@(test\\']],
         ['@(test[)', ['test[']],
 
-        'Inverse dot tests',
+        # Inverse dot tests
         GlobFiles(
             [
                 '.', '..', '.abc', 'abc'
@@ -380,7 +381,7 @@ class TestGlobFilter(unittest.TestCase):
         ['.!(test)', ['.', '..', '.abc'], glob.M],
         ['.!(test)', ['.', '..', '.abc'], glob.D | glob.M],
 
-        "Slash exclusion",
+        # Slash exclusion
         GlobFiles(
             [
                 'test/test', 'test\\/test'
@@ -394,15 +395,17 @@ class TestGlobFilter(unittest.TestCase):
         [r'test[\/]test', [], glob.F]
     ]
 
-    def setUp(self):
+    @classmethod
+    def setup_class(cls):
         """Setup the tests."""
 
-        self.files = []
+        cls.files = []
         # The tests we scraped were written with this assumed.
-        self.flags = glob.NEGATE | glob.GLOBSTAR | glob.EXTGLOB | glob.BRACE
-        self.skip_split = False
+        cls.flags = glob.NEGATE | glob.GLOBSTAR | glob.EXTGLOB | glob.BRACE
+        cls.skip_split = False
 
-    def norm_files(self, files, flags):
+    @staticmethod
+    def norm_files(files, flags):
         """Normalize files."""
 
         flags = glob._flag_transform(flags)
@@ -410,63 +413,74 @@ class TestGlobFilter(unittest.TestCase):
 
         return [(util.norm_slash(x) if not unix else x) for x in files]
 
-    def _filter(self, p, split=False):
+    @staticmethod
+    def assert_equal(a, b):
+        """Assert equal."""
+
+        assert a == b, "Comparison between objects yielded False."
+
+    @classmethod
+    def _filter(cls, case, split=False):
         """Filter with glob pattern."""
 
-        if isinstance(p, GlobFiles):
-            if p.append:
-                self.files.extend(p.filelist)
+        if isinstance(case, GlobFiles):
+            if case.append:
+                cls.files.extend(case.filelist)
             else:
-                self.files.clear()
-                self.files.extend(p.filelist)
-        elif isinstance(p, Options):
-            self.skip_split = p.get('skip_split', False)
-        elif isinstance(p, str):
-            print(">>> ", p, '<<<\n')
-        else:
-            files = self.files if len(p) < 4 else p[3]
-            flags = 0 if len(p) < 3 else p[2]
-            flags = self.flags ^ flags
-            pat = p[0] if isinstance(p[0], list) else [p[0]]
-            if split and self.skip_split:
-                return
-            if split:
-                new_pat = []
-                for x in pat:
-                    new_pat.extend(list(glob.globsplit(x, flags=flags)))
-                pat = new_pat
-            print("PATTERN: ", p[0])
-            print("FILES: ", files)
-            print("FLAGS: ", bin(flags))
-            result = sorted(
-                glob.globfilter(
-                    files,
-                    pat,
-                    flags=flags
-                )
-            )
-            source = sorted(self.norm_files(p[1], flags))
-            print("TEST: ", result, '<==>', source, '\n')
-            self.assertEqual(result, source)
+                cls.files.clear()
+                cls.files.extend(case.filelist)
+            pytest.skip("Update file list")
+        elif isinstance(case, Options):
+            cls.skip_split = case.get('skip_split', False)
+            pytest.skip("Change Options")
 
-    def test_glob_filter(self):
+        files = cls.files if len(case) < 4 else case[3]
+        flags = 0 if len(case) < 3 else case[2]
+
+        print('Flags?')
+        print(case)
+        print(flags, cls.flags)
+        flags = cls.flags ^ flags
+        pat = case[0] if isinstance(case[0], list) else [case[0]]
+        if split and cls.skip_split:
+            return
+        if split:
+            new_pat = []
+            for x in pat:
+                new_pat.extend(list(glob.globsplit(x, flags=flags)))
+            pat = new_pat
+        print("PATTERN: ", case[0])
+        print("FILES: ", files)
+        print("FLAGS: ", bin(flags))
+        result = sorted(
+            glob.globfilter(
+                files,
+                pat,
+                flags=flags
+            )
+        )
+        source = sorted(cls.norm_files(case[1], flags))
+        print("TEST: ", result, '<==>', source, '\n')
+        cls.assert_equal(result, source)
+
+    @pytest.mark.parametrize("case", cases)
+    def test_glob_filter(self, case):
         """Test wildcard parsing."""
 
         _wcparse._compile.cache_clear()
 
-        for p in self.cases:
-            self._filter(p)
+        self._filter(case)
 
-    def test_glob_split_filter(self):
+    @pytest.mark.parametrize("case", cases)
+    def test_glob_split_filter(self, case):
         """Test wildcard parsing by first splitting on `|`."""
 
         _wcparse._compile.cache_clear()
 
-        for p in self.cases:
-            self._filter(p, split=True)
+        self._filter(case, split=True)
 
 
-class TestGlobMatch(unittest.TestCase):
+class TestGlobMatch:
     """
     Tests that are performed against globmatch.
 
@@ -547,29 +561,36 @@ class TestGlobMatch(unittest.TestCase):
         ['?(*.json|!(*.js))', 'other.bar', True, glob.N]
     ]
 
-    def setUp(self):
+    @classmethod
+    def setup_class(cls):
         """Setup default flag options."""
 
         # The tests we scraped were written with this assumed.
-        self.flags = glob.NEGATE | glob.GLOBSTAR | glob.EXTGLOB | glob.BRACE
+        cls.flags = glob.NEGATE | glob.GLOBSTAR | glob.EXTGLOB | glob.BRACE
 
-    def test_cases(self):
+    @classmethod
+    def evaluate(cls, case):
+        """Evaluate case."""
+
+        pattern = case[0]
+        filename = case[1]
+        goal = case[2]
+        flags = cls.flags
+        if len(case) > 3:
+            flags ^= case[3]
+
+        print("PATTERN: ", pattern)
+        print("FILE: ", filename)
+        print("GOAL: ", goal)
+        print("FLAGS: ", bin(flags))
+
+        assert glob.globmatch(filename, pattern, flags=flags) == goal, "Expression did not evaluate as %s" % goal
+
+    @pytest.mark.parametrize("case", cases)
+    def test_cases(self, case):
         """Test ignore cases."""
 
-        for case in self.cases:
-            pattern = case[0]
-            filename = case[1]
-            goal = case[2]
-            flags = self.flags
-            if len(case) > 3:
-                flags ^= case[3]
-
-            print("PATTERN: ", pattern)
-            print("FILE: ", filename)
-            print("GOAL: ", goal)
-            print("FLAGS: ", bin(flags))
-
-            self.assertTrue(glob.globmatch(filename, pattern, flags=flags) == goal)
+        self.evaluate(case)
 
 
 class TestGlobMatchSpecial(unittest.TestCase):

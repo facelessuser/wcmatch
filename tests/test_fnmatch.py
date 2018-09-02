@@ -8,7 +8,7 @@ from wcmatch import util
 import wcmatch._wcparse as _wcparse
 
 
-class TestFnMatch(unittest.TestCase):
+class TestFnMatch:
     """
     Test fnmatch.
 
@@ -54,7 +54,7 @@ class TestFnMatch(unittest.TestCase):
         ['foo*', '\nfoo', False, 0],
         ['*', '\n', True, 0],
 
-        "Force Case",
+        # Force Case
         ['abc', 'abc', True, fnmatch.F],
         ['abc', 'AbC', False, fnmatch.F],
         ['AbC', 'abc', False, fnmatch.F],
@@ -69,7 +69,7 @@ class TestFnMatch(unittest.TestCase):
         [b'te*\xff', b'test\xff', True, 0],
         [b'foo*', b'foo\nbar', True, 0],
 
-        "OS Case",
+        # OS Case
         ['abc', 'abc', True, 0],
         ['abc', 'AbC', not util.is_case_sensitive(), 0],
         ['AbC', 'abc', not util.is_case_sensitive(), 0],
@@ -100,7 +100,7 @@ class TestFnMatch(unittest.TestCase):
         ['!(test)', 'abc', True, fnmatch.D | fnmatch.E],
         ['!(test)', '.abc', True, fnmatch.E],
 
-        "Period",
+        # Period
         ['.abc', '.abc', True, fnmatch.D],
         [r'\.abc', '.abc', True, fnmatch.D],
         ['?abc', '.abc', False, fnmatch.D],
@@ -121,7 +121,7 @@ class TestFnMatch(unittest.TestCase):
         ['a*(?|.)bc', 'a.bc', True, fnmatch.E | fnmatch.D],
         ['a*(?|*)bc', 'a.bc', True, fnmatch.E | fnmatch.D],
 
-        "POSIX style character classes",
+        # POSIX style character classes
         ['[[:alnum:]]bc', 'zbc', True, 0],
         ['[[:alnum:]]bc', '1bc', True, 0],
         ['[a[:alnum:]]bc', 'zbc', True, 0],
@@ -134,43 +134,53 @@ class TestFnMatch(unittest.TestCase):
         ['[![:alnum:]]bc', '!bc', True, 0],
         ['[^[:alnum:]]bc', '!bc', True, 0],
 
-        "Backwards ranges",
+        # Backwards ranges
         ['[a-z]', 'a', True, 0],
         ['[z-a]', 'a', False, 0],
         ['[!z-a]', 'a', True, 0],
         ['[!a-z]', 'a', False, 0],
         ['[9--]', '9', False, 0],
 
-        "Escaped slash",
+        # Escaped slash
         # Escaped slashes are just slashes as they aren't treated special beyond normalization.
         [r'a\/b', ('a/b' if util.is_case_sensitive() else 'a\\\\b'), True, 0]
     ]
 
-    def setUp(self):
+    @classmethod
+    def setup_class(cls):
         """Setup the tests."""
 
-        self.flags = fnmatch.DOTMATCH
+        cls.flags = fnmatch.DOTMATCH
 
-    def test_matches(self):
-        """Test matches."""
+    @staticmethod
+    def assert_equal(a, b):
+        """Assert equal."""
 
-        for case in self.cases:
-            if isinstance(case, str):
-                print(case, '\n')
-            else:
-                flags = case[3]
-                flags = self.flags ^ flags
-                print("PATTERN: ", case[0])
-                print("FILE: ", case[1])
-                print("FLAGS: ", bin(flags))
-                print("TEST: ", case[2], '\n')
-                self.assertEqual(fnmatch.fnmatch(case[1], case[0], flags=flags), case[2])
-                self.assertEqual(
-                    fnmatch.fnmatch(case[1], fnmatch.fnsplit(case[0], flags=flags), flags=flags), case[2]
-                )
+        assert a == b, "Comparison between objects yielded False."
+
+    @classmethod
+    def evaluate(cls, case):
+        """evaluate matches."""
+
+        flags = case[3]
+        flags = cls.flags ^ flags
+        print("PATTERN: ", case[0])
+        print("FILE: ", case[1])
+        print("FLAGS: ", bin(flags))
+        print("TEST: ", case[2], '\n')
+        cls.assert_equal(fnmatch.fnmatch(case[1], case[0], flags=flags), case[2])
+        cls.assert_equal(
+            fnmatch.fnmatch(case[1], fnmatch.fnsplit(case[0], flags=flags), flags=flags), case[2]
+        )
+
+    @pytest.mark.parametrize("case", cases)
+    def test_cases(self, case):
+        """Test case."""
+
+        self.evaluate(case)
 
 
-class TestFnMatchFilter(unittest.TestCase):
+class TestFnMatchFilter:
     """
     Test filter.
 
@@ -217,26 +227,36 @@ class TestFnMatchFilter(unittest.TestCase):
         [r'te\st[ma]', ['testm', 'test\\3', 'testa'], ['testm', 'testa'], fnmatch.F]
     ]
 
-    def setUp(self):
+    @classmethod
+    def setup_class(cls):
         """Setup the tests."""
 
-        self.flags = fnmatch.DOTMATCH
+        cls.flags = fnmatch.DOTMATCH
 
-    def test_filters(self):
-        """Test filters."""
+    @staticmethod
+    def assert_equal(a, b):
+        """Assert equal."""
 
-        for case in self.cases:
-            if isinstance(case, str):
-                print(case, '\n')
-            else:
-                flags = case[3]
-                flags = self.flags ^ flags
-                print("PATTERN: ", case[0])
-                print("FILES: ", case[1])
-                print("FLAGS: ", bin(flags))
-                value = fnmatch.filter(case[1], case[0], flags=flags)
-                print("TEST: ", value, '<=>', case[2], '\n')
-                self.assertEqual(value, case[2])
+        assert a == b, "Comparison between objects yielded False."
+
+    @classmethod
+    def evaluate(cls, case):
+        """evaluate matches."""
+
+        flags = case[3]
+        flags = cls.flags ^ flags
+        print("PATTERN: ", case[0])
+        print("FILES: ", case[1])
+        print("FLAGS: ", bin(flags))
+        value = fnmatch.filter(case[1], case[0], flags=flags)
+        print("TEST: ", value, '<=>', case[2], '\n')
+        cls.assert_equal(value, case[2])
+
+    @pytest.mark.parametrize("case", cases)
+    def test_cases(self, case):
+        """Test case."""
+
+        self.evaluate(case)
 
 
 class TestFnMatchTranslate(unittest.TestCase):
