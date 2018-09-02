@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 """Tests for rumcore."""
 import unittest
-# import pytest
 import re
 import copy
-# import mock
-# from wcmatch import util
 import wcmatch._wcparse as _wcparse
 
 
-class TestFnMatch(unittest.TestCase):
-    """Test fnmatch."""
+class TestWcparse(unittest.TestCase):
+    """Test wcparse."""
 
     def test_hash(self):
         """Test hashing of search."""

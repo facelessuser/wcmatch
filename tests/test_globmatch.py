@@ -1,33 +1,79 @@
 # -*- coding: utf-8 -*-
 """Tests for rumcore."""
 import unittest
+import pytest
 import mock
 import wcmatch.glob as glob
 import wcmatch._wcparse as _wcparse
 import wcmatch.util as util
 
 
-class TestGlob(unittest.TestCase):
-    """Test globbing.
+class GlobFiles():
+    """List of glob files."""
 
-    Including a flag(s) in the rules below will set a flag,
-    but by default, we enable glob.NEGATE | glob.GLOBSTAR | glob.EXTGLOB | glob.BRACE,
-    so if these are set, it will do the opposite and disable those flags. This is because
-    the test suite we ripped these tests from defaulted the above flags, while we do not.
+    def __init__(self, filelist, append=False):
+        """File list object."""
+
+        self.filelist = filelist
+        self.append = append
+
+
+class Options():
+    """Test options."""
+
+    def __init__(self, **kwargs):
+        """Initialize."""
+
+        self._options = kwargs
+
+    def get(self, key, default=None):
+        """Get option vallue."""
+
+        return self._options.get(key, default)
+
+
+class TestGlobFilter:
+    """Test matchtes against `globfilter`.
+
+    Each list entry in `cases` is run through the `globsplit` and then `globfilter`.
+    Entries are run through `globsplit` ensure it does not add any unintended side effects.
+
+    There are a couple special types that can be inserted in the case list that can alter
+    the behavior of the cases that follow.
+
+    * Strings: These will be printed and then the next case will be processed.
+    * Options: This object takes keyword parameters that are used to alter the next tests options:
+        * skip_split: If set to `True`, this will cause the next tests to be skipped when we are processing
+            cases with `globsplit`.
+    * GlobFiles: This object takes a list of file paths and will set them as the current file list to
+        compare against.  If `append` is set to `True`, it will extend the test's filelist instead of
+        replacing.
+
+    Each test case entry (list) is an array of up to 4 parameters (2 minimum).
+
+    * Pattern
+    * Expected result (filenames matched by the pattern)
+    * Flags
+    * List of files that will temporarily override the current main filelist just for this specific case.
+
+    The default flags are: NEGATE | GLOBSTAR | EXTGLOB | BRACE. If any of these flags are provided in
+    a test case, they will disable the default of the same name. All other flags will enable flags as expected.
+
     """
 
-    FILES = [
-        'a', 'b', 'c', 'd', 'abc',
-        'abd', 'abe', 'bb', 'bcd',
-        'ca', 'cb', 'dd', 'de',
-        'bdir/', 'bdir/cfile'
-    ]
+    cases = [
+        Options(skip_split=False),
 
-    # Initial tests gathered from https://github.com/isaacs/minimatch/blob/master/test/patterns
-    # One was altered as it appeared to frankly be wrong. Others omitted as we do not support
-    # the functionality currently, or have no interest to support it moving forward.
-    file_filter = [
-        'http://www.bashcookbook.com/bashinfo/source/bash-1.14.7/tests/glob-test',
+        GlobFiles(
+            [
+                'a', 'b', 'c', 'd', 'abc',
+                'abd', 'abe', 'bb', 'bcd',
+                'ca', 'cb', 'dd', 'de',
+                'bdir/', 'bdir/cfile'
+            ]
+        ),
+
+        # http://www.bashcookbook.com/bashinfo/source/bash-1.14.7/tests/glob-test
         ['a*', ['a', 'abc', 'abd', 'abe']],
 
         ['X*', []],
@@ -41,24 +87,33 @@ class TestGlob(unittest.TestCase):
 
         ['b*/', ['bdir/']],
         ['c*', ['c', 'ca', 'cb']],
-        ['**', FILES[:]],
+        [
+            '**',
+            [
+                'a', 'b', 'c', 'd', 'abc',
+                'abd', 'abe', 'bb', 'bcd',
+                'ca', 'cb', 'dd', 'de',
+                'bdir/', 'bdir/cfile'
+            ]
+        ],
 
         [r'\\.\\./*/', []],
         [r's/\\..*//', []],
 
-        'legendary larry crashes bashes',
+        # legendary larry crashes bashes
         ['/^root:/{s/^[^:]*:[^:]*:\\([^:]*\\).*$/\\1/', []],
         ['/^root:/{s/^[^:]*:[^:]*:\\([^:]*\\).*$/\u0001/', []],
 
-        'character classes',
+        # character classes
         ['[a-c]b*', ['abc', 'abd', 'abe', 'bb', 'cb']],
         ['[a-y]*[^c]', ['abd', 'abe', 'bb', 'bcd', 'bdir/', 'ca', 'cb', 'dd', 'de']],
         ['a*[^c]', ['abd', 'abe']],
-        lambda self: self.files.extend(['a-b', 'aXb']),
+
+        GlobFiles(['a-b', 'aXb'], append=True),
         ['a[X-]b', ['a-b', 'aXb']],
-        lambda self: self.files.extend(['.x', '.y']),
+        GlobFiles(['.x', '.y'], append=True),
         ['[^a-c]*', ['d', 'dd', 'de']],
-        lambda self: self.files.extend(['a*b/', 'a*b/ooo']),
+        GlobFiles(['a*b/', 'a*b/ooo'], append=True),
         ['a\\*b/*', ['a*b/ooo']],
         ['a\\*?/*', ['a*b/ooo']],
         ['*\\\\!*', [], 0, ['echo !7']],
@@ -70,8 +125,8 @@ class TestGlob(unittest.TestCase):
         ['a\\*c', [], 0, ['abc']],
         ['', [''], 0, ['']],
 
-        'http://www.opensource.apple.com/source/bash/bash-23/bash/tests/glob-test',
-        lambda self: self.files.extend(['man/', 'man/man1/', 'man/man1/bash.1']),
+        # http://www.opensource.apple.com/source/bash/bash-23/bash/tests/glob-test
+        GlobFiles(['man/', 'man/man1/', 'man/man1/bash.1'], append=True),
         ['*/man*/bash.*', ['man/man1/bash.1']],
         ['man/man1/bash.1', ['man/man1/bash.1']],
         ['a***c', ['abc'], 0, ['abc']],
@@ -98,9 +153,9 @@ class TestGlob(unittest.TestCase):
         ['[', ['['], 0, ['[']],
         ['[*', ['[abc'], 0, ['[abc']],
 
-        'a right bracket shall lose its special meaning and\n'
-        'represent itself in a bracket expression if it occurs\n'
-        'first in the list.  -- POSIX.2 2.8.3.2',
+        # a right bracket shall lose its special meaning and\
+        # represent itself in a bracket expression if it occurs\
+        # first in the list.  -- POSIX.2 2.8.3.2
         ['[]]', [']'], 0, [']']],
         ['[]-]', [']'], 0, [']']],
         ['[a-\\z]', ['p'], 0, ['p']],
@@ -113,7 +168,7 @@ class TestGlob(unittest.TestCase):
         ['[]', [], 0, ['a']],
         ['[abc', [], 0, ['[']],
 
-        'nocase tests',
+        # nocase tests
         ['XYZ', ['xYz'], glob.I, ['xYz', 'ABC', 'IjK']],
         [
             'ab*',
@@ -129,17 +184,16 @@ class TestGlob(unittest.TestCase):
         ],
 
         # [ pattern, [matches], MM opts, files, TAP opts]
-        'onestar/twostar',
+        # onestar/twostar
         ['{/*,*}', [], 0, ['/asdf/asdf/asdf']],
         ['{/?,*}', ['/a', 'bb'], 0, ['/a', '/b/b', '/a/b/c', 'bb']],
 
-        'dots should not match unless requested',
+        # dots should not match unless requested
         ['**', ['a/b'], 0, ['a/b', 'a/.d', '.a/.d']],
 
         # .. and . can only match patterns starting with .,
         # even when options.dot is set.
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(['a/./b', 'a/../b', 'a/c/b', 'a/.d/b']),
+        GlobFiles(['a/./b', 'a/../b', 'a/c/b', 'a/.d/b']),
         ['a/*/b', ['a/c/b', 'a/.d/b'], glob.D],
         ['a/.*/b', ['a/./b', 'a/../b', 'a/.d/b'], glob.D],
         ['a/*/b', ['a/c/b'], 0],
@@ -155,7 +209,7 @@ class TestGlob(unittest.TestCase):
             ['.a/.d', 'a/.d', 'a/b']
         ],
 
-        'paren sets cannot contain slashes',
+        # paren sets cannot contain slashes
         ['*(a/b)', [], 0, ['a/b']],
 
         # brace sets trump all else.
@@ -182,7 +236,7 @@ class TestGlob(unittest.TestCase):
         # The following tests have `|` not included in things like +(...) etc.
         # We run these tests through normally and through glob.globsplit which splits
         # patterns on unenclosed `|`, so disable these few tests during split tests.
-        lambda self: self.set_skip_split(True),
+        Options(skip_split=True),
         # like: {a,b|c\\,d\\\|e} except it's unclosed, so it has to be escaped.
         # NOTE: I don't know what the original test was doing because it was matching
         # something crazy. Multimatch regex expanded to escapes to like a 50.
@@ -195,8 +249,7 @@ class TestGlob(unittest.TestCase):
         ],
 
         # crazy nested {,,} and *(||) tests.
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(
+        GlobFiles(
             [
                 'a', 'b', 'c', 'd', 'ab', 'ac', 'ad', 'bc', 'cb', 'bc,d',
                 'c,db', 'c,d', 'd)', '(b|c', '*(b|c', 'b|c', 'b|cc', 'cb|c',
@@ -218,7 +271,7 @@ class TestGlob(unittest.TestCase):
             glob.E
         ],
 
-        lambda self: self.set_skip_split(False),
+        Options(skip_split=False),
         # test extglob nested in extglob
         [
             '@(a@(c|d)|c@(b|,d))',
@@ -236,9 +289,8 @@ class TestGlob(unittest.TestCase):
 
         # begin channelling Boole and deMorgan...
         # NOTE: We changed these to `-` since our negation dosn't use `!`.
-        'negation tests',
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(['d', 'e', '!ab', '!abc', 'a!b', '\\!a']),
+        # negation tests
+        GlobFiles(['d', 'e', '!ab', '!abc', 'a!b', '\\!a']),
 
         # anything that is NOT a* matches.
         ['!a*', ['\\!a', 'd', 'e', '!ab', '!abc']],
@@ -254,8 +306,7 @@ class TestGlob(unittest.TestCase):
         ['!\\!a*', ['a!b', 'd', 'e', '\\!a']],
 
         # negation nestled within a pattern
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(
+        GlobFiles(
             [
                 'foo.js',
                 'foo.bar',
@@ -269,9 +320,8 @@ class TestGlob(unittest.TestCase):
         # copy bash 4.3 behavior on this.
         ['*.!(js)', ['foo.bar', 'foo.', 'boo.js.boo', 'foo.js.js']],
 
-        'https://github.com/isaacs/minimatch/issues/5',
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(
+        # https://github.com/isaacs/minimatch/issues/5
+        GlobFiles(
             [
                 'a/b/.x/c', 'a/b/.x/c/d', 'a/b/.x/c/d/e', 'a/b/.x', 'a/b/.x/',
                 'a/.x/b', '.x', '.x/', '.x/a', '.x/a/b', 'a/.x/b/.x/c', '.x/.x'
@@ -285,14 +335,13 @@ class TestGlob(unittest.TestCase):
             ]
         ],
 
-        'https://github.com/isaacs/minimatch/issues/59',
+        # https://github.com/isaacs/minimatch/issues/59
         ['[z-a]', []],
         ['a/[2015-03-10T00:23:08.647Z]/z', []],
         ['[a-0][a-\u0100]', []],
 
-        'Consecutive slashes.',
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(
+        # Consecutive slashes.
+        GlobFiles(
             [
                 'a/b/c', 'd/e/f', 'a/e/c'
             ]
@@ -300,18 +349,16 @@ class TestGlob(unittest.TestCase):
         ['*//e///*', ['d/e/f', 'a/e/c']],
         [r'*//\e///*', ['d/e/f', 'a/e/c']],
 
-        'Backslash trailing cases',
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(
+        # Backslash trailing cases
+        GlobFiles(
             [
                 'a/b/c/', 'd/e/f/', 'a/e/c/'
             ]
         ),
         ['**\\', [] if util.is_case_sensitive() else ['a/b/c/', 'd/e/f/', 'a/e/c/']],
 
-        'Invalid extglob groups',
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(
+        # Invalid extglob groups
+        GlobFiles(
             [
                 '@([test', '@([test\\', '@(test\\', 'test['
             ]
@@ -321,9 +368,8 @@ class TestGlob(unittest.TestCase):
         ['@(test\\', ['@(test\\']],
         ['@(test[)', ['test[']],
 
-        'Inverse dot tests',
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(
+        # Inverse dot tests
+        GlobFiles(
             [
                 '.', '..', '.abc', 'abc'
             ]
@@ -335,9 +381,8 @@ class TestGlob(unittest.TestCase):
         ['.!(test)', ['.', '..', '.abc'], glob.M],
         ['.!(test)', ['.', '..', '.abc'], glob.D | glob.M],
 
-        "Slash exclusion",
-        lambda self: self.files.clear(),
-        lambda self: self.files.extend(
+        # Slash exclusion
+        GlobFiles(
             [
                 'test/test', 'test\\/test'
             ]
@@ -350,116 +395,17 @@ class TestGlob(unittest.TestCase):
         [r'test[\/]test', [], glob.F]
     ]
 
-    matches = {
-        'bar.min.js': {
-            '*.!(js|css)': True,
-            '!*.+(js|css)': False,
-            '*.+(js|css)': True
-        },
-
-        'a-integration-test.js': {
-            '*.!(j)': True,
-            '!(*-integration-test.js)': False,
-            '*-!(integration-)test.js': True,
-            '*-!(integration)-test.js': False,
-            '*!(-integration)-test.js': True,
-            '*!(-integration-)test.js': True,
-            '*!(integration)-test.js': True,
-            '*!(integration-test).js': True,
-            '*-!(integration-test).js': True,
-            '*-!(integration-test.js)': True,
-            '*-!(integra)tion-test.js': False,
-            '*-integr!(ation)-test.js': False,
-            '*-integr!(ation-t)est.js': False,
-            '*-i!(ntegration-)test.js': False,
-            '*i!(ntegration-)test.js': True,
-            '*te!(gration-te)st.js': True,
-            '*-!(integration)?test.js': False,
-            '*?!(integration)?test.js': True
-        },
-
-        'foo-integration-test.js': {
-            'foo-integration-test.js': True,
-            '!(*-integration-test.js)': False
-        },
-
-        'foo.jszzz.js': {
-            '*.!(js).js': True
-        },
-
-        'asd.jss': {
-            '*.!(js)': True
-        },
-
-        'asd.jss.xyz': {
-            '*.!(js).!(xy)': True
-        },
-
-        'asd.jss.xy': {
-            '*.!(js).!(xy)': False
-        },
-
-        'asd.js.xyz': {
-            '*.!(js).!(xy)': False
-        },
-
-        'asd.js.xy': {
-            '*.!(js).!(xy)': False
-        },
-
-        'asd.sjs.zxy': {
-            '*.!(js).!(xy)': True
-        },
-
-        'asd..xyz': {
-            '*.!(js).!(xy)': True
-        },
-
-        'asd..xy': {
-            '*.!(js).!(xy)': False,
-            '*.!(js|x).!(xy)': False
-        },
-
-        'foo.js.js': {
-            '*.!(js)': True
-        },
-
-        'testjson.json': {
-            '*(*.json|!(*.js))': True,
-            '+(*.json|!(*.js))': True,
-            '@(*.json|!(*.js))': True,
-            '?(*.json|!(*.js))': True
-        },
-
-        'foojs.js': {
-            '*(*.json|!(*.js))': False,  # XXX bash 4.3 disagrees!
-            '+(*.json|!(*.js))': False,  # XXX bash 4.3 disagrees!
-            '@(*.json|!(*.js))': False,
-            '?(*.json|!(*.js))': False
-        },
-
-        'other.bar': {
-            '*(*.json|!(*.js))': True,
-            '+(*.json|!(*.js))': True,
-            '@(*.json|!(*.js))': True,
-            '?(*.json|!(*.js))': True
-        }
-
-    }
-
-    def setUp(self):
+    @classmethod
+    def setup_class(cls):
         """Setup the tests."""
-        self.files = self.FILES[:]
+
+        cls.files = []
         # The tests we scraped were written with this assumed.
-        self.flags = glob.NEGATE | glob.GLOBSTAR | glob.EXTGLOB | glob.BRACE
-        self.skip_split = False
+        cls.flags = glob.NEGATE | glob.GLOBSTAR | glob.EXTGLOB | glob.BRACE
+        cls.skip_split = False
 
-    def set_skip_split(self, value):
-        """Set skip split."""
-
-        self.skip_split = value
-
-    def norm_files(self, files, flags):
+    @staticmethod
+    def norm_files(files, flags):
         """Normalize files."""
 
         flags = glob._flag_transform(flags)
@@ -467,68 +413,193 @@ class TestGlob(unittest.TestCase):
 
         return [(util.norm_slash(x) if not unix else x) for x in files]
 
-    def _filter(self, p, split=False):
+    @staticmethod
+    def assert_equal(a, b):
+        """Assert equal."""
+
+        assert a == b, "Comparison between objects yielded False."
+
+    @classmethod
+    def _filter(cls, case, split=False):
         """Filter with glob pattern."""
 
-        if callable(p):
-            p(self)
-        elif isinstance(p, str):
-            print(">>> ", p, '<<<\n')
-        else:
-            files = self.files if len(p) < 4 else p[3]
-            flags = 0 if len(p) < 3 else p[2]
-            flags = self.flags ^ flags
-            pat = p[0] if isinstance(p[0], list) else [p[0]]
-            if split and self.skip_split:
-                return
-            if split:
-                new_pat = []
-                for x in pat:
-                    new_pat.extend(list(glob.globsplit(x, flags=flags)))
-                pat = new_pat
-            print("PATTERN: ", p[0])
-            print("FILES: ", files)
-            print("FLAGS: ", bin(flags)[2:])
-            result = sorted(
-                glob.globfilter(
-                    files,
-                    pat,
-                    flags=flags
-                )
-            )
-            source = sorted(self.norm_files(p[1], flags))
-            print("TEST: ", result, '<==>', source, '\n')
-            self.assertEqual(result, source)
+        if isinstance(case, GlobFiles):
+            if case.append:
+                cls.files.extend(case.filelist)
+            else:
+                cls.files.clear()
+                cls.files.extend(case.filelist)
+            pytest.skip("Update file list")
+        elif isinstance(case, Options):
+            cls.skip_split = case.get('skip_split', False)
+            pytest.skip("Change Options")
 
-    def test_glob_filter(self):
+        files = cls.files if len(case) < 4 else case[3]
+        flags = 0 if len(case) < 3 else case[2]
+
+        print('Flags?')
+        print(case)
+        print(flags, cls.flags)
+        flags = cls.flags ^ flags
+        pat = case[0] if isinstance(case[0], list) else [case[0]]
+        if split and cls.skip_split:
+            return
+        if split:
+            new_pat = []
+            for x in pat:
+                new_pat.extend(list(glob.globsplit(x, flags=flags)))
+            pat = new_pat
+        print("PATTERN: ", case[0])
+        print("FILES: ", files)
+        print("FLAGS: ", bin(flags))
+        result = sorted(
+            glob.globfilter(
+                files,
+                pat,
+                flags=flags
+            )
+        )
+        source = sorted(cls.norm_files(case[1], flags))
+        print("TEST: ", result, '<==>', source, '\n')
+        cls.assert_equal(result, source)
+
+    @pytest.mark.parametrize("case", cases)
+    def test_glob_filter(self, case):
         """Test wildcard parsing."""
 
         _wcparse._compile.cache_clear()
 
-        for p in self.file_filter:
-            self._filter(p)
+        self._filter(case)
 
-    def test_glob_split_filter(self):
-        """Test wildcard parsing with split."""
+    @pytest.mark.parametrize("case", cases)
+    def test_glob_split_filter(self, case):
+        """Test wildcard parsing by first splitting on `|`."""
 
         _wcparse._compile.cache_clear()
 
-        for p in self.file_filter:
-            self._filter(p, split=True)
+        self._filter(case, split=True)
 
-    def test_ignore_cases(self):
+
+class TestGlobMatch:
+    """
+    Tests that are performed against globmatch.
+
+    Each case entry is a list of 4 parameters.
+
+    * Pattern
+    * Filename
+    * Expected result (boolean of whether pattern matched filename)
+    * Flags
+
+    The default flags are NEGATE | GLOBSTAR | EXTGLOB | BRACE. Any flags passed through via entry are XORed.
+    So if any of the default flags are passed via an entry, they will be disabled. All other flags will
+    enable the feature.
+
+    """
+
+    cases = [
+        ['*.!(js|css)', 'bar.min.js', True, glob.N],
+        ['!*.+(js|css)', 'bar.min.js', False, glob.N],
+        ['*.+(js|css)', 'bar.min.js', True, glob.N],
+
+        ['*.!(j)', 'a-integration-test.js', True, glob.N],
+        ['!(*-integration-test.js)', 'a-integration-test.js', False, glob.N],
+        ['*-!(integration-)test.js', 'a-integration-test.js', True, glob.N],
+        ['*-!(integration)-test.js', 'a-integration-test.js', False, glob.N],
+        ['*!(-integration)-test.js', 'a-integration-test.js', True, glob.N],
+        ['*!(-integration-)test.js', 'a-integration-test.js', True, glob.N],
+        ['*!(integration)-test.js', 'a-integration-test.js', True, glob.N],
+        ['*!(integration-test).js', 'a-integration-test.js', True, glob.N],
+        ['*-!(integration-test).js', 'a-integration-test.js', True, glob.N],
+        ['*-!(integration-test.js)', 'a-integration-test.js', True, glob.N],
+        ['*-!(integra)tion-test.js', 'a-integration-test.js', False, glob.N],
+        ['*-integr!(ation)-test.js', 'a-integration-test.js', False, glob.N],
+        ['*-integr!(ation-t)est.js', 'a-integration-test.js', False, glob.N],
+        ['*-i!(ntegration-)test.js', 'a-integration-test.js', False, glob.N],
+        ['*i!(ntegration-)test.js', 'a-integration-test.js', True, glob.N],
+        ['*te!(gration-te)st.js', 'a-integration-test.js', True, glob.N],
+        ['*-!(integration)?test.js', 'a-integration-test.js', False, glob.N],
+        ['*?!(integration)?test.js', 'a-integration-test.js', True, glob.N],
+
+        ['foo-integration-test.js', 'foo-integration-test.js', True, glob.N],
+        ['!(*-integration-test.js)', 'foo-integration-test.js', False, glob.N],
+
+        ['*.!(js).js', 'foo.jszzz.js', True, glob.N],
+
+        ['*.!(js)', 'asd.jss', True, glob.N],
+
+        ['*.!(js).!(xy)', 'asd.jss.xyz', True, glob.N],
+
+        ['*.!(js).!(xy)', 'asd.jss.xy', False, glob.N],
+
+        ['*.!(js).!(xy)', 'asd.js.xyz', False, glob.N],
+
+        ['*.!(js).!(xy)', 'asd.js.xy', False, glob.N],
+
+        ['*.!(js).!(xy)', 'asd.sjs.zxy', True, glob.N],
+
+        ['*.!(js).!(xy)', 'asd..xyz', True, glob.N],
+
+        ['*.!(js).!(xy)', 'asd..xy', False, glob.N],
+        ['*.!(js|x).!(xy)', 'asd..xy', False, glob.N],
+
+        ['*.!(js)', 'foo.js.js', True, glob.N],
+
+        ['*(*.json|!(*.js))', 'testjson.json', True, glob.N],
+        ['+(*.json|!(*.js))', 'testjson.json', True, glob.N],
+        ['@(*.json|!(*.js))', 'testjson.json', True, glob.N],
+        ['?(*.json|!(*.js))', 'testjson.json', True, glob.N],
+
+        ['*(*.json|!(*.js))', 'foojs.js', False, glob.N],  # XXX bash 4.3 disagrees!
+        ['+(*.json|!(*.js))', 'foojs.js', False, glob.N],  # XXX bash 4.3 disagrees!
+        ['@(*.json|!(*.js))', 'foojs.js', False, glob.N],
+        ['?(*.json|!(*.js))', 'foojs.js', False, glob.N],
+
+        ['*(*.json|!(*.js))', 'other.bar', True, glob.N],
+        ['+(*.json|!(*.js))', 'other.bar', True, glob.N],
+        ['@(*.json|!(*.js))', 'other.bar', True, glob.N],
+        ['?(*.json|!(*.js))', 'other.bar', True, glob.N]
+    ]
+
+    @classmethod
+    def setup_class(cls):
+        """Setup default flag options."""
+
+        # The tests we scraped were written with this assumed.
+        cls.flags = glob.NEGATE | glob.GLOBSTAR | glob.EXTGLOB | glob.BRACE
+
+    @classmethod
+    def evaluate(cls, case):
+        """Evaluate case."""
+
+        pattern = case[0]
+        filename = case[1]
+        goal = case[2]
+        flags = cls.flags
+        if len(case) > 3:
+            flags ^= case[3]
+
+        print("PATTERN: ", pattern)
+        print("FILE: ", filename)
+        print("GOAL: ", goal)
+        print("FLAGS: ", bin(flags))
+
+        assert glob.globmatch(filename, pattern, flags=flags) == goal, "Expression did not evaluate as %s" % goal
+
+    @pytest.mark.parametrize("case", cases)
+    def test_cases(self, case):
         """Test ignore cases."""
 
-        flags = self.flags
-        flags ^= glob.NEGATE
+        self.evaluate(case)
 
-        for filename, tests in self.matches.items():
-            for pattern, goal in tests.items():
-                print("PATTERN: ", pattern)
-                print("FILE: ", filename)
-                print("GOAL: ", goal)
 
-                self.assertTrue(glob.globmatch(filename, pattern, flags=flags) == goal)
+class TestGlobMatchSpecial(unittest.TestCase):
+    """Test special cases that cannot easily be covered in earlier tests."""
+
+    def setUp(self):
+        """Setup default flag options."""
+
+        self.flags = glob.NEGATE | glob.GLOBSTAR | glob.EXTGLOB | glob.BRACE
 
     def test_unfinished_ext(self):
         """Test unfinished ext."""
