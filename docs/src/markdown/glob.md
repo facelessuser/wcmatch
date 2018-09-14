@@ -6,7 +6,7 @@ from wcmatch import glob
 
 ## Syntax
 
-The `glob` library provides methods for traversing the file system and returning files that matched a defined set of glob patterns.  The library also provides functions for matching file paths which is similar to [`fnmatch`](fnmatch#fnmatchfnmatch), but for paths. In short, [`globmatch`](#globglobmatch) matches what [`glob`](#globglob) globs :slight_smile:. `globmatch`'s features are similar to `fnmatch`'s, but the flags and what features that are enabled by default varies.
+The `glob` library provides methods for traversing the file system and returning files that matched a defined set of glob patterns.  The library also provides functions for matching file paths which is similar to [`fnmatch`](fnmatch#fnmatchfnmatch), but for paths. In short, [`globmatch`](#globglobmatch) matches what [`glob`](#globglob) globs :slight_smile:. `globmatch`'s features are similar to `fnmatch`'s.
 
 !!! tip
     When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a character `#!py3 r'\?'`.  If you want to represent a literal backslash, you must use two: `#!py3 r'some\\path'`.
