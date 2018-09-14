@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.1
+
+-**FIX**: Can't install due to requirements being assigned to setup opposed to install.
+
 ## 2.0.0
 
 !!! danger "Breaking Changes"

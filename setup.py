@@ -60,7 +60,7 @@ setup(
     author_email='Isaac.Muse@gmail.com',
     url='https://github.com/facelessuser/wcmatch',
     packages=find_packages(exclude=['tests', 'tools']),
-    setup_requires=get_requirements("requirements/setup.txt"),
+    install_requires=get_requirements("requirements/setup.txt"),
     license='MIT License',
     classifiers=[
         'Development Status :: %s' % DEVSTATUS,
