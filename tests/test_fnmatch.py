@@ -28,6 +28,7 @@ class TestFnMatch:
     """
 
     cases = [
+        # Basic test of traditional features
         ['abc', 'abc', True, 0],
         ['?*?', 'abc', True, 0],
         ['???*', 'abc', True, 0],
@@ -40,7 +41,7 @@ class TestFnMatch:
         ['??', 'a', False, 0],
         ['b', 'a', False, 0],
 
-        # these test that '\' is handled correctly in character sets;
+        # Test that '\' is handled correctly in character sets;
         [r'[\]', '\\', False, 0],
         [r'[!\]', 'a', False, 0],
         [r'[!\]', '\\', False, 0],
@@ -48,38 +49,44 @@ class TestFnMatch:
         [r'[!\\]', 'a', True, 0],
         [r'[!\\]', '\\', False, 0],
 
-        # test that filenames with newlines in them are handled correctly.
+        # Test that filenames with newlines in them are handled correctly.
         ['foo*', 'foo\nbar', True, 0],
         ['foo*', 'foo\nbar\n', True, 0],
         ['foo*', '\nfoo', False, 0],
         ['*', '\n', True, 0],
 
-        # Force Case
+        # Force case: General
         ['abc', 'abc', True, fnmatch.F],
         ['abc', 'AbC', False, fnmatch.F],
         ['AbC', 'abc', False, fnmatch.F],
         ['AbC', 'AbC', True, fnmatch.F],
 
+        # Force case: slash conventions
         ['usr/bin', 'usr/bin', True, fnmatch.F],
         ['usr/bin', 'usr\\bin', False, fnmatch.F],
         [r'usr\\bin', 'usr/bin', False, fnmatch.F],
         [r'usr\\bin', 'usr\\bin', True, fnmatch.F],
 
+        # Wildcard tests
         [b'te*', b'test', True, 0],
         [b'te*\xff', b'test\xff', True, 0],
         [b'foo*', b'foo\nbar', True, 0],
 
-        # OS Case
+        # OS specific case behavior
         ['abc', 'abc', True, 0],
         ['abc', 'AbC', not util.is_case_sensitive(), 0],
         ['AbC', 'abc', not util.is_case_sensitive(), 0],
         ['AbC', 'AbC', True, 0],
 
+        # OS specific slash behavior
         ['usr/bin', 'usr/bin', True, 0],
         ['usr/bin', 'usr\\bin', not util.is_case_sensitive(), 0],
         [r'usr\\bin', 'usr/bin', not util.is_case_sensitive(), 0],
         [r'usr\\bin', 'usr\\bin', True, 0],
 
+        # Ensure that we don't fail on regular expression related symbols
+        # such as &&, ||, ~~, --, or [.  Currently re doesn't do anything with
+        # && etc., but they are handled special in re as there are plans to utilize them.
         ['[[]', '[', True, 0],
         ['[a&&b]', '&', True, 0],
         ['[a||b]', '|', True, 0],
@@ -87,6 +94,7 @@ class TestFnMatch:
         ['[a-z+--A-Z]', ',', True, 0],
         ['[a-z--/A-Z]', '.', True, 0],
 
+        # Dotmatch cases
         ['.abc', '.abc', True, 0],
         [r'\.abc', '.abc', True, 0],
         ['?abc', '.abc', True, 0],
@@ -96,11 +104,9 @@ class TestFnMatch:
         ['*(?)abc', '.abc', True, fnmatch.E],
         ['*(?|.)abc', '.abc', True, fnmatch.E],
         ['*(?|*)abc', '.abc', True, fnmatch.E],
-        ['!(test)', '.abc', False, fnmatch.D | fnmatch.E],
-        ['!(test)', 'abc', True, fnmatch.D | fnmatch.E],
         ['!(test)', '.abc', True, fnmatch.E],
 
-        # Period
+        # Turn off dotmatch cases
         ['.abc', '.abc', True, fnmatch.D],
         [r'\.abc', '.abc', True, fnmatch.D],
         ['?abc', '.abc', False, fnmatch.D],
@@ -120,16 +126,20 @@ class TestFnMatch:
         ['a*(?)bc', 'a.bc', True, fnmatch.E | fnmatch.D],
         ['a*(?|.)bc', 'a.bc', True, fnmatch.E | fnmatch.D],
         ['a*(?|*)bc', 'a.bc', True, fnmatch.E | fnmatch.D],
+        ['!(test)', '.abc', False, fnmatch.D | fnmatch.E],
+        ['!(test)', 'abc', True, fnmatch.D | fnmatch.E],
 
         # POSIX style character classes
         ['[[:alnum:]]bc', 'zbc', True, 0],
         ['[[:alnum:]]bc', '1bc', True, 0],
         ['[a[:alnum:]]bc', 'zbc', True, 0],
         ['[[:alnum:][:blank:]]bc', ' bc', True, 0],
+
         # We can't use a character class as a range.
         ['[-[:alnum:]]bc', '-bc', True, 0],
         ['[a-[:alnum:]]bc', '-bc', True, 0],
         ['[[:alnum:]-z]bc', '-bc', True, 0],
+
         # Negation
         ['[![:alnum:]]bc', '!bc', True, 0],
         ['[^[:alnum:]]bc', '!bc', True, 0],
@@ -141,7 +151,6 @@ class TestFnMatch:
         ['[!a-z]', 'a', False, 0],
         ['[9--]', '9', False, 0],
 
-        # Escaped slash
         # Escaped slashes are just slashes as they aren't treated special beyond normalization.
         [r'a\/b', ('a/b' if util.is_case_sensitive() else 'a\\\\b'), True, 0]
     ]
