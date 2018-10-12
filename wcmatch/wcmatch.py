@@ -208,7 +208,7 @@ class WcMatch(object):
                 except Exception:
                     dirs.remove(name)
                     value = self.on_error(base, name)
-                    if value:  # pragma: no cover
+                    if value is not None:  # pragma: no cover
                         yield value
 
                 if self._abort:
@@ -223,7 +223,7 @@ class WcMatch(object):
                     except Exception:
                         valid = False
                         value = self.on_error(base, name)
-                        if value:
+                        if value is not None:
                             yield value
 
                     if valid:
@@ -231,7 +231,7 @@ class WcMatch(object):
                     else:
                         self._skipped += 1
                         value = self.on_skip(base, name)
-                        if value:
+                        if value is not None:
                             yield value
 
                     if self._abort:

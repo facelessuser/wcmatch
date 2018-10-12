@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.2
+
+- **FIX**: `wcmatch` override events (`on_error` and `on_skip`) should verify the return  is **not None** and not **not falsy**.
+
 ## 2.0.1
 
 -**FIX**: Can't install due to requirements being assigned to setup opposed to install.
