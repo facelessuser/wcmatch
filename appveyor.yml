@@ -26,7 +26,7 @@ test_script:
   - virtualenv --version
   - tox --version
   - tox
-after_test:
+on_finish:
   - if not ("%TOXENV%" == "lint") codecov
 matrix:
   fast_finish: true
