@@ -2,7 +2,7 @@
 
 ## 2.0.3
 
-- **FIX**: In `glob`, Properly handle files in the current working directory when give a literal pattern that matches it.
+- **FIX**: In `glob`, properly handle files in the current working directory when give a literal pattern that matches it.
 
 ## 2.0.2
 

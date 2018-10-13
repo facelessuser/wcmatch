@@ -133,7 +133,7 @@ def translate(patterns, *, flags=0):
 
 #### fnmatch.RAWCHARS, fnmatch.R {: #fnmatchrawchars}
 
-`RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will handled standard string escapes and Unicode including `#!py3 r'\N{CHAR NAME}'`.
+`RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will handle standard string escapes and Unicode including `#!py3 r'\N{CHAR NAME}'`.
 
 #### fnmatch.NEGATE, fnmatch.N {: #fnmatchnegate}
 
