@@ -361,9 +361,11 @@ class Glob(object):
                     # on a case sensitive file system may return more than
                     # one starting location.
                     results = [curdir] if this.is_drive else self._get_starting_paths(curdir)
-                    if not results:  # pragma: no cover
-                        # Nothing to do.
-                        # Do we need this?
+                    if not results:
+                        if not dir_only and os.path.lexists(curdir):
+                            # There is no directory with this name,
+                            # but we have a file and no directory restriction
+                            yield curdir
                         return
 
                     if this.dir_only:
