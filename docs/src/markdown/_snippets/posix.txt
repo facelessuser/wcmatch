@@ -3,7 +3,7 @@
 A number of POSIX style character classes are available in the form `[:posix:]`. They must be used inside sequences: `[[:posix:]]`. For byte strings, the `C` locale is used, and the values will for each character class are found in the table below under `ASCII`. When used in a Unicode string, Unicode properties will be used.
 
 
-\[:posix:] | \\p\{Posix} | ASCII                                             | Unicode
+\[:posix:] | \\p\{posix} | ASCII                                             | Unicode
 ---------- | ----------- | ------------------------------------------------- | -------
 `alnum`    | `Alnum`     | `[a-zA-Z0-9]`                                     | `[\p{L&}\p{Nd}]`
 `alpha`    | `Alpha`     | `[a-zA-Z]`                                        | `[\p{L&}]`

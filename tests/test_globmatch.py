@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for rumcore."""
+"""Tests for `globmatch`."""
 import unittest
 import pytest
 import mock
@@ -27,13 +27,13 @@ class Options():
         self._options = kwargs
 
     def get(self, key, default=None):
-        """Get option vallue."""
+        """Get option value."""
 
         return self._options.get(key, default)
 
 
 class TestGlobFilter:
-    """Test matchtes against `globfilter`.
+    """Test matches against `globfilter`.
 
     Each list entry in `cases` is run through the `globsplit` and then `globfilter`.
     Entries are run through `globsplit` ensure it does not add any unintended side effects.
@@ -41,12 +41,12 @@ class TestGlobFilter:
     There are a couple special types that can be inserted in the case list that can alter
     the behavior of the cases that follow.
 
-    * Strings: These will be printed and then the next case will be processed.
-    * Options: This object takes keyword parameters that are used to alter the next tests options:
+    * `Strings`: These will be printed and then the next case will be processed.
+    * `Options`: This object takes keyword parameters that are used to alter the next tests options:
         * skip_split: If set to `True`, this will cause the next tests to be skipped when we are processing
             cases with `globsplit`.
-    * GlobFiles: This object takes a list of file paths and will set them as the current file list to
-        compare against.  If `append` is set to `True`, it will extend the test's filelist instead of
+    * `GlobFiles`: This object takes a list of file paths and will set them as the current file list to
+        compare against.  If `append` is set to `True`, it will extend the test's file list instead of
         replacing.
 
     Each test case entry (list) is an array of up to 4 parameters (2 minimum).
@@ -54,9 +54,9 @@ class TestGlobFilter:
     * Pattern
     * Expected result (filenames matched by the pattern)
     * Flags
-    * List of files that will temporarily override the current main filelist just for this specific case.
+    * List of files that will temporarily override the current main file list just for this specific case.
 
-    The default flags are: NEGATE | GLOBSTAR | EXTGLOB | BRACE. If any of these flags are provided in
+    The default flags are: `NEGATE` | `GLOBSTAR` | `EXTGLOB` | `BRACE`. If any of these flags are provided in
     a test case, they will disable the default of the same name. All other flags will enable flags as expected.
 
     """
@@ -482,16 +482,16 @@ class TestGlobFilter:
 
 class TestGlobMatch:
     """
-    Tests that are performed against globmatch.
+    Tests that are performed against `globmatch`.
 
     Each case entry is a list of 4 parameters.
 
     * Pattern
-    * Filename
-    * Expected result (boolean of whether pattern matched filename)
+    * File name
+    * Expected result (boolean of whether pattern matched file name)
     * Flags
 
-    The default flags are NEGATE | GLOBSTAR | EXTGLOB | BRACE. Any flags passed through via entry are XORed.
+    The default flags are `NEGATE` | `GLOBSTAR` | `EXTGLOB` | `BRACE`. Any flags passed through via entry are XORed.
     So if any of the default flags are passed via an entry, they will be disabled. All other flags will
     enable the feature.
 
@@ -708,7 +708,7 @@ class TestGlobMatchSpecial(unittest.TestCase):
 
     @mock.patch('wcmatch.util.is_case_sensitive')
     def test_glob_translate(self, mock__iscase_sensitive):
-        """Test glob transaltion."""
+        """Test glob translation."""
 
         mock__iscase_sensitive.return_value = True
         _wcparse._compile.cache_clear()
@@ -787,7 +787,7 @@ class TestGlobMatchSpecial(unittest.TestCase):
         )
 
     def test_glob_integrity(self):
-        """Globmatch must match what glob globs."""
+        """`globmatch` must match what glob globs."""
 
         # Number of slashes is inconsequential
         # Glob really looks at what is in between. Multiple slashes are the same as one separator.

@@ -1,7 +1,7 @@
 """
 Wild Card Match.
 
-A custom implementation of fnmatch.
+A custom implementation of `fnmatch` and `glob`.
 
 Licensed under MIT
 Copyright (c) 2018 Isaac Muse <isaacmuse@gmail.com>

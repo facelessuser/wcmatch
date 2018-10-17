@@ -52,7 +52,7 @@ else:
 
 
 def _test(fn):  # pragma: no cover
-    """Test if osx hidden is working."""
+    """Test if macOS hidden is working."""
 
     path = os.path.expanduser("~/Library")
     is_osx_hidden(path)
@@ -101,7 +101,7 @@ if util.platform() == "osx" and _OSX_FOUNDATION_METHOD == _OSX_FOUNDATION_NOT_LO
                     cf.CFRelease(obj)
 
         def is_osx_hidden_bytes(path):
-            """OSX platform is_hidden."""
+            """Check if bytes hidden for macOS."""
 
             # Convert file name to bytes
 
@@ -120,7 +120,7 @@ if util.platform() == "osx" and _OSX_FOUNDATION_METHOD == _OSX_FOUNDATION_NOT_LO
                 raise OSError('CFURLCopyResourcePropertyForKey failed')
 
         def is_osx_hidden(path):
-            """OSX platform is_hidden (bytes)."""
+            """Check if hidden for macOS."""
 
             return is_osx_hidden_bytes(os.fsencode(path))
 

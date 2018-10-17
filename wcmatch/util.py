@@ -58,7 +58,7 @@ else:
 
 
 def platform():
-    """Get Platform."""
+    """Get platform."""
 
     return _PLATFORM
 
@@ -91,7 +91,7 @@ def norm_pattern(pattern, normalize, is_raw_chars):
     - For windows systems we want to normalize slashes to \.
     - If raw string chars is enabled, we want to also convert
       encoded string chars to literal characters.
-    - If pathname is enabled, take care to convert \/ to \\\\.
+    - If `normalize` is enabled, take care to convert \/ to \\\\.
     """
 
     is_bytes = isinstance(pattern, bytes)

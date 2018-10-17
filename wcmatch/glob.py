@@ -1,7 +1,7 @@
 """
 Wild Card Match.
 
-A custom implementation of glob.
+A custom implementation of `glob`.
 
 Licensed under MIT
 Copyright (c) 2018 Isaac Muse <isaacmuse@gmail.com>
@@ -73,7 +73,7 @@ class Glob(object):
     """Glob patterns."""
 
     def __init__(self, pattern, flags=0):
-        """Init the directory walker object."""
+        """Initialize the directory walker object."""
 
         self.flags = _flag_transform(flags)
         self.dot = bool(self.flags & DOTMATCH)
@@ -240,8 +240,8 @@ class Glob(object):
         - File name pattern (magic).
         - Directory.
         - Directory name pattern (magic).
-        - Extra slashes ////.
-        - Lastyl globstar `**`.
+        - Extra slashes `////`.
+        - `globstar` `**`.
         """
 
         is_magic = this.is_magic
@@ -422,7 +422,7 @@ def globmatch(filename, patterns, *, flags=0):
     """
     Check if filename matches pattern.
 
-    By default case sensitivity is determined by the filesystem,
+    By default case sensitivity is determined by the file system,
     but if `case_sensitive` is set, respect that instead.
     """
 

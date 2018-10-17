@@ -1,5 +1,5 @@
 """
-These test cases are taken straight from cpython to ensure our glob works as good as the builtin.
+These test cases are taken straight from `cpython` to ensure our glob works as good as the builtin.
 
 Matches close to the normal glob implementation, but there are a few consciously
 made difference in implementation.
@@ -101,7 +101,7 @@ class Options():
         self._options = kwargs
 
     def get(self, key, default=None):
-        """Get option vallue."""
+        """Get option value."""
 
         return self._options.get(key, default)
 
@@ -116,22 +116,22 @@ class _TestGlob:
     There are a couple special types that can be inserted in the case list that can alter
     the behavior of the cases that follow.
 
-    * Strings: These will be printed and then the next case will be processed.
-    * Options: This object takes keyword parameters that are used to alter the next tests options:
-        * absolute: When joining path parts, due not append to the tempdir.
-        * skip: Skip tests when this is enabled.
-        * cwd_temp: Switch the current working directory to the temp directory instead of having to prepend
-            the temp direcotry to patterns and results.
+    * `Strings`: These will be printed and then the next case will be processed.
+    * `Options`: This object takes keyword parameters that are used to alter the next tests options:
+        * `absolute`: When joining path parts, due not append to the temporary directory.
+        * `skip`: Skip tests when this is enabled.
+        * `cwd_temp`: Switch the current working directory to the temp directory instead of having to prepend
+            the temp directory to patterns and results.
 
     Each test case entry (list) is an array of up to 3 parameters (2 minimum).
 
     * Pattern: a list of path parts that are to be joined with the current OS separator.
-    * Expected result (filenames matched by the pattern): a list of sublists where each sublist contains
+    * Expected result (file names matched by the pattern): a list of sub-lists where each sub-list contains
         path parts that are to be joined with the current OS separator.
-        Each path represents a full file path ot match.
+        Each path represents a full file path to match.
     * Flags
 
-    The default flags are: GLOBSTAR | EXTGLOB | BRACE. If any of these flags are provided in
+    The default flags are: `GLOBSTAR` | `EXTGLOB` | `BRACE`. If any of these flags are provided in
     a test case, they will disable the default of the same name. All other flags will enable flags as expected.
     """
 
@@ -141,7 +141,7 @@ class _TestGlob:
 
     @classmethod
     def norm(cls, *parts):
-        """Normalizes file path (in relation to temp dir)."""
+        """Normalizes file path (in relation to temp directory)."""
 
         return os.path.join(cls.tempdir, *parts)
 
@@ -185,7 +185,7 @@ class _TestGlob:
 
     @classmethod
     def setup_fs(cls):
-        """Setup filesystem."""
+        """Setup file system."""
 
     @classmethod
     def teardown_class(cls):
@@ -286,7 +286,7 @@ class _TestGlob:
 
     @classmethod
     def eval_glob_cases(cls, case):
-        """Eval glob cases."""
+        """Evaluate glob cases."""
 
         eq = cls.assertSequencesEqual_noorder
 
@@ -731,7 +731,7 @@ class Testglob(_TestGlob):
 
     @classmethod
     def setup_fs(cls):
-        """Setup filesystem."""
+        """Setup file system."""
 
         cls.mktemp('a', 'D')
         cls.mktemp('aab', 'F')
@@ -760,7 +760,7 @@ class TestCWD(_TestGlob):
 
     @classmethod
     def setup_fs(cls):
-        """Setup filesystem."""
+        """Setup file system."""
 
         cls.mktemp('a', 'D')
         cls.mktemp('aab', 'F')
@@ -788,7 +788,7 @@ class TestGlobCornerCase(_TestGlob):
     """
     Some tests that need a very specific file set to test against for corner cases.
 
-    See _TestGlob class for more information in regards to test case format.
+    See `_TestGlob` class for more information in regards to test case format.
     """
 
     cases = [
@@ -808,7 +808,7 @@ class TestGlobCornerCase(_TestGlob):
 
     @classmethod
     def setup_fs(cls):
-        """Setup filesystem."""
+        """Setup file system."""
 
         cls.mktemp('test[')
         cls.mktemp('a', 'b')

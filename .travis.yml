@@ -29,11 +29,11 @@ matrix:
   allow_failures:
     - python: 3.8-dev
 
-# addons:
-#   apt:
-#     packages:
-#       - aspell
-#       - aspell-en
+addons:
+  apt:
+    packages:
+      - aspell
+      - aspell-en
 
 install:
   - pip install tox
@@ -43,7 +43,7 @@ script:
   - tox
 
 after_success:
-  - codecov
+  - if [ $TOXENV != "py38" ]; then codecov; fi
 
 deploy:
   - provider: pypi

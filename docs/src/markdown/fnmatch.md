@@ -1,4 +1,4 @@
-# wcmatch.fnmatch
+# `wcmatch.fnmatch`
 
 ```py3
 from wcmatch import fnmatch
@@ -6,7 +6,7 @@ from wcmatch import fnmatch
 
 ## Syntax
 
-The `fnmatch` library is similar to the builtin `fnmatch`, but with some enhancements and some differences. It is mainly used for matching file names with glob patterns. For pathnames, Wildcard Match's [`globmatch`](glob#globglobmatch) is a more appropriate choice. Not all of the features listed below are enabled by default. See [flags](#flags) for more information.
+The `fnmatch` library is similar to the builtin `fnmatch`, but with some enhancements and some differences. It is mainly used for matching file names with glob patterns. For path names, Wildcard Match's [`globmatch`](glob#globglobmatch) is a more appropriate choice. Not all of the features listed below are enabled by default. See [flags](#flags) for more information.
 
 !!! tip
     When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a character `#!py3 r'\?'`.  If you want to represent a literal backslash, you must use two: `#!py3 r'some\\path'`.
@@ -35,7 +35,7 @@ Pattern           | Meaning
 
 ## API
 
-#### fnmatch.fnmatch
+#### `fnmatch.fnmatch`
 
 ```py3
 def fnmatch(filename, patterns, *, flags=0)
@@ -77,7 +77,7 @@ True
 False
 ```
 
-#### fnmatch.filter
+#### `fnmatch.filter`
 
 ```py3
 def filter(filenames, patterns, *, flags=0):
@@ -91,7 +91,7 @@ def filter(filenames, patterns, *, flags=0):
 ['a.txt', 'b.txt']
 ```
 
-#### fnmatch.split
+#### `fnmatch.split`
 
 ```py3
 def fnsplit(pattern, *, flags=0):
@@ -105,7 +105,7 @@ def fnsplit(pattern, *, flags=0):
 ('*.txt', '*(some|file).py')
 ```
 
-#### fnmatch.translate
+#### `fnmatch.translate`
 
 ```py3
 def translate(patterns, *, flags=0):
@@ -123,35 +123,35 @@ def translate(patterns, *, flags=0):
 
 ## Flags
 
-#### fnmatch.FORCECASE, fnmatch.F {: #fnmatchforcecase}
+#### `fnmatch.FORCECASE, fnmatch.F` {: #fnmatchforcecase}
 
 `FORCECASE` forces case sensitivity. On Windows, this will force paths to be treated like Linux/Unix paths, and slashes will not be normalized. `FORCECASE` has higher priority than [`IGNORECASE`](#fnmatchignorecase).
 
-#### fnmatch.IGNORECASE, fnmatch.I {: #fnmatchignorecase}
+#### `fnmatch.IGNORECASE, fnmatch.I` {: #fnmatchignorecase}
 
 `IGNORECASE` forces case insensitivity. [`FORCECASE`](#fnmatchforecase) has higher priority than `IGNORECASE`.
 
-#### fnmatch.RAWCHARS, fnmatch.R {: #fnmatchrawchars}
+#### `fnmatch.RAWCHARS, fnmatch.R` {: #fnmatchrawchars}
 
 `RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will handle standard string escapes and Unicode including `#!py3 r'\N{CHAR NAME}'`.
 
-#### fnmatch.NEGATE, fnmatch.N {: #fnmatchnegate}
+#### `fnmatch.NEGATE, fnmatch.N` {: #fnmatchnegate}
 
-`NEGATE` causes patterns that start with `!` to be treated as inverse matches. A pattern of `!*.py` would match any file but Python files. If used with [`EXTMATCH`](#fnmatchextmatch), patterns like `!(inverse|pattern)` will be mistakenly parsed as an inverse pattern instead of an inverse extmatch group.  See [`MINUSNEGATE`](#fnmatchminusnegate) for an alternative syntax that plays nice with `EXTMATCH`.
+`NEGATE` causes patterns that start with `!` to be treated as inverse matches. A pattern of `!*.py` would match any file but Python files. If used with [`EXTMATCH`](#fnmatchextmatch), patterns like `!(inverse|pattern)` will be mistakenly parsed as an inverse pattern instead of an inverse `extmatch` group.  See [`MINUSNEGATE`](#fnmatchminusnegate) for an alternative syntax that plays nice with `EXTMATCH`.
 
-#### fnmatch.MINUSNEGATE, fnmatch.M {: #fnmatchminusnegate}
+#### `fnmatch.MINUSNEGATE, fnmatch.M` {: #fnmatchminusnegate}
 
 When `MINUSNEGATE` is used with [`NEGATE`](#fnmatchnegate), negate patterns are recognized by a pattern starting with `-` instead of `!`. This plays nice with the [`EXTMATCH`](#fnmatchextmatch) option.
 
-#### fnmatch.DOTMATCH, fnmatch.D {: #fnmatchdotmatch}
+#### `fnmatch.DOTMATCH, fnmatch.D` {: #fnmatchdotmatch}
 
 By default, [`glob`](#fnmatchfnmatch) and related functions will not match file or directory names that start with dot `.` unless matched with a literal dot. `DOTMATCH` allows the meta characters (such as `*`) to match dots like any other character. Dots will not be matched in `[]`, `*`, `?`, or extended patterns like `+(...)`.
 
-#### fnmatch.EXTMATCH, fnmatch.E {: #fnmatchextmatch}
+#### `fnmatch.EXTMATCH, fnmatch.E` {: #fnmatchextmatch}
 
 `EXTMATCH` enables extended pattern matching. This includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc. See the [syntax overview](#syntax) for more information.
 
-#### fnmatch.BRACE, fnmatch.B {: #fnmatchbrace}
+#### `fnmatch.BRACE, fnmatch.B` {: #fnmatchbrace}
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 

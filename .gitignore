@@ -103,3 +103,5 @@ ENV/
 
 # patch
 *.patch
+
+docs/src/dictionary/hunspell
