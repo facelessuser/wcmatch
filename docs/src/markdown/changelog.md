@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.3
+
+- **FIX**: In `glob`, properly handle files in the current working directory when give a literal pattern that matches it.
+
 ## 2.0.2
 
 - **FIX**: `wcmatch` override events (`on_error` and `on_skip`) should verify the return  is **not None** and not **not falsy**.

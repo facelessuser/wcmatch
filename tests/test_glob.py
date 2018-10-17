@@ -755,6 +755,35 @@ class Testglob(_TestGlob):
         self.eval_glob_cases(case)
 
 
+class TestCWD(_TestGlob):
+    """Test files in the current working directory."""
+
+    @classmethod
+    def setup_fs(cls):
+        """Setup filesystem."""
+
+        cls.mktemp('a', 'D')
+        cls.mktemp('aab', 'F')
+        cls.mktemp('.aa', 'G')
+        cls.mktemp('.bb', 'H')
+        cls.mktemp('aaa', 'zzzF')
+        cls.mktemp('ZZZ')
+        cls.mktemp('EF')
+        cls.mktemp('a', 'bcd', 'EF')
+        cls.mktemp('a', 'bcd', 'efg', 'ha')
+        cls.can_symlink = can_symlink()
+        if cls.can_symlink:
+            os.symlink(cls.norm('broken'), cls.norm('sym1'))
+            os.symlink('broken', cls.norm('sym2'))
+            os.symlink(os.path.join('a', 'bcd'), cls.norm('sym3'))
+
+    def test_cwd(self):
+        """Test glob cases."""
+
+        with change_cwd(self.tempdir):
+            self.assert_equal(glob.glob('EF'), ['EF'])
+
+
 class TestGlobCornerCase(_TestGlob):
     """
     Some tests that need a very specific file set to test against for corner cases.
