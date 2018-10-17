@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for rumcore."""
+"""Tests for `fnmatch`."""
 import unittest
 import pytest
 import mock
@@ -10,7 +10,7 @@ import wcmatch._wcparse as _wcparse
 
 class TestFnMatch:
     """
-    Test fnmatch.
+    Test `fnmatch`.
 
     Each entry in `cases` is run through the `fnmatch`.  They are also run through
     `fnsplit` and then `fnmatch` as a separate operation to ensure `fnsplit` adds
@@ -19,12 +19,12 @@ class TestFnMatch:
     Each case entry is an array of 4 parameters.
 
     * Pattern
-    * Filename
-    * Expected result (boolean of whether pattern matched filename)
+    * File name
+    * Expected result (boolean of whether pattern matched file name)
     * Flags
 
-    The default flags are DOTMATCH. Any flags passed through via entry are XORed.
-    So if DOTMATCH is passed via an entry, it will actually disable the default DOTMATCH.
+    The default flags are `DOTMATCH`. Any flags passed through via entry are XORed.
+    So if `DOTMATCH` is passed via an entry, it will actually disable the default `DOTMATCH`.
     """
 
     cases = [
@@ -194,15 +194,15 @@ class TestFnMatchFilter:
     Test filter.
 
     `cases` is used in conjunction with the `filter` command
-    which takes a list of filenames and returns only those which match.
+    which takes a list of file names and returns only those which match.
 
     * Pattern
     * List of filenames
     * Expected result (list of filenames that matched the pattern)
     * Flags
 
-    The default flags are DOTMATCH. Any flags passed through via entry are XORed.
-    So if DOTMATCH is passed via an entry, it will actually disable the default DOTMATCH.
+    The default flags are `DOTMATCH`. Any flags passed through via entry are XORed.
+    So if `DOTMATCH` is passed via an entry, it will actually disable the default `DOTMATCH`.
     """
 
     cases = [
@@ -272,7 +272,7 @@ class TestFnMatchTranslate(unittest.TestCase):
     """
     Test translation cases.
 
-    All these cases assume DOTMATCH is enabled.
+    All these cases assume `DOTMATCH` is enabled.
     """
 
     def setUp(self):

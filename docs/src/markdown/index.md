@@ -24,9 +24,9 @@ pip install wcmatch
 
 ## Libraries
 
-- [fnmatch](fnmatch): A file name matching library.
-- [glob](glob): A file system searching and file path matching library.
-- [wcmatch](wcmatch): An alternative file search library built on `fnmatch` and `globmatch`.
+- [`fnmatch`](fnmatch): A file name matching library.
+- [`glob`](glob): A file system searching and file path matching library.
+- [`wcmatch`](wcmatch): An alternative file search library built on `fnmatch` and `globmatch`.
 
 --8<--
 refs.txt

@@ -1,7 +1,7 @@
 """
 Wild Card Match.
 
-A custom implementation of fnmatch.
+A custom implementation of `fnmatch`.
 
 Licensed under MIT
 Copyright (c) 2018 Isaac Muse <isaacmuse@gmail.com>
@@ -280,7 +280,7 @@ class WcPathSplit(object):
         return self.re_magic.search(name) is not None
 
     def _sequence(self, i):
-        """Handle fnmatch character group."""
+        """Handle character group."""
 
         c = next(i)
         if c == '!':
@@ -453,7 +453,7 @@ class WcSplit(object):
         self.bslash_abort = not self.unix
 
     def _sequence(self, i):
-        """Handle fnmatch character group."""
+        """Handle character group."""
 
         c = next(i)
         if c == '!':
@@ -623,14 +623,14 @@ class WcParse(object):
         self.after_start = False
 
     def reset_dir_track(self):
-        """Reset dir tracker."""
+        """Reset directory tracker."""
 
         self.dir_start = False
         self.after_start = False
 
     def update_dir_state(self):
         """
-        Update the dir state.
+        Update the directory state.
 
         If we are at the directory start,
         update to after start state (the character right after).
@@ -657,7 +657,7 @@ class WcParse(object):
         """
         If range backwards, remove it.
 
-        A bad range will cause the regular expresion to fail,
+        A bad range will cause the regular expression to fail,
         so we need to remove it, but return that we removed it
         so the caller can know the sequence wasn't empty.
         Caller will have to craft a sequence that makes sense
@@ -695,7 +695,7 @@ class WcParse(object):
         return last_posix
 
     def _sequence(self, i):
-        """Handle fnmatch character group."""
+        """Handle character group."""
 
         result = ['[']
         end_range = 0
@@ -932,7 +932,7 @@ class WcParse(object):
         that comes after the negative group. `!(this|that)other` --> `(?:(?!(?:this|that)other))[^/]*?)`.
 
         We have to update the list before | in nested cases: *(!(...)|stuff). Before we close a parent
-        extmatch: `*(!(...))`. And of course on path separators (when path mode is on): `!(...)/stuff`.
+        `extmatch`: `*(!(...))`. And of course on path separators (when path mode is on): `!(...)/stuff`.
         Lastly we make sure all is accounted for when finishing the pattern at the end.  If there is nothing
         to store, we store `$`: `(?:(?!(?:this|that)$))[^/]*?)`.
         """

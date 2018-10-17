@@ -1,7 +1,7 @@
 """
 Wild Card Match.
 
-A custom implementation of glob.
+A module for performing wild card matches.
 
 Licensed under MIT
 Copyright (c) 2018 Isaac Muse <isaacmuse@gmail.com>
@@ -64,7 +64,7 @@ class WcMatch(object):
     """Finds files by wildcard."""
 
     def __init__(self, *args, **kwargs):
-        """Init the directory walker object."""
+        """Initialize the directory walker object."""
 
         args = list(args)
         self._skipped = 0
@@ -157,7 +157,7 @@ class WcMatch(object):
         return self.on_validate_directory(base, name) if valid else valid
 
     def on_init(self, *args, **kwargs):
-        """Handle custom init."""
+        """Handle custom initialization."""
 
     def on_validate_directory(self, base, name):
         """Validate folder override."""

@@ -1,4 +1,4 @@
-# wcmatch.wcmatch
+# `wcmatch.wcmatch`
 
 ```py3
 from wcmatch import wcmatch
@@ -8,7 +8,7 @@ from wcmatch import wcmatch
 
 `wcmatch.WcMatch` was originally written to provide a simple user interface for searching specific files in [Rummage](https://github.com/facelessuser/Rummage). A class was needed to facilitate a user interface where a user could select a base path, define one or more file patterns they wanted to search for, and provide folders to exclude if needed. It needed to be aware of hidden files on different systems, not just ignoring files that start with `.`. It also needed to be extendable so we could further filter returned files by size, creation date, or whatever else was decided. While `glob` is a fantastic file and folder search tool, it just didn't make sense for such a user interface.
 
-## wcmatch.WcMatch
+## `wcmatch.WcMatch`
 
 `WcMatch` is an extendable file search class. It allows you to specify a base path, file patterns, and optional folder exclude patterns. You can specify whether you want to see hidden files and whether the search should be recursive. You can also derive from the class and tap into specific hooks to change what is returned or done when a file is matched, skipped, or when there is an error. There are also hooks where you can inject additional, custom filtering.
 
@@ -86,7 +86,7 @@ Enabling hidden files:
 
 ## Methods
 
-#### WcMatch.match
+#### `WcMatch.match`
 
 Perform match returning files that match the patterns.
 
@@ -96,7 +96,7 @@ Perform match returning files that match the patterns.
 ['./LICENSE.md', './README.md']
 ```
 
-#### WcMatch.imatch
+#### `WcMatch.imatch`
 
 Perform match returning an iterator of files that match the patterns.
 
@@ -106,7 +106,7 @@ Perform match returning an iterator of files that match the patterns.
 ['./LICENSE.md', './README.md']
 ```
 
-#### WcMatch.kill
+#### `WcMatch.kill`
 
 If searching with `imatch`, this provides a way to kill the internal searching.
 
@@ -120,7 +120,7 @@ If searching with `imatch`, this provides a way to kill the internal searching.
 ./LICENSE.md
 ```
 
-#### WcMatch.reset
+#### `WcMatch.reset`
 
 Resets the abort state after running `kill`.
 
@@ -137,7 +137,7 @@ Resets the abort state after running `kill`.
 ['./LICENSE.md', './README.md']
 ```
 
-#### WcMatch.get_skipped
+#### `WcMatch.get_skipped`
 
 Returns the number of skipped files. Files in skipped folders are not included in the count.
 
@@ -152,7 +152,7 @@ Returns the number of skipped files. Files in skipped folders are not included i
 
 ## Hooks
 
-#### WcMatch.on_init
+#### `WcMatch.on_init`
 
 ```py3
    def on_init(self, *args, **kwargs):
@@ -161,7 +161,7 @@ Returns the number of skipped files. Files in skipped folders are not included i
 
 Any arguments or keyword arguments not processed by the main initializer are sent to `on_init`. This allows you to specify additional arguments when deriving from `WcMatch`.
 
-#### WcMatch.on_validate_directory
+#### `WcMatch.on_validate_directory`
 
 ```py3
     def on_validate_directory(self, base, name):
@@ -172,7 +172,7 @@ Any arguments or keyword arguments not processed by the main initializer are sen
 
 When validating a directory, if the directory passes validation, it will be sent to `on_validate_directory` which can be overridden to provide additional validation if required.
 
-#### WcMatch.on_validate_file
+#### `WcMatch.on_validate_file`
 
 ```py3
     def on_validate_file(self, base, name):
@@ -183,7 +183,7 @@ When validating a directory, if the directory passes validation, it will be sent
 
 When validating a file, if the file passes validation, it will be sent to `on_validate_file` which can be overridden to provide additional validation if required.
 
-#### WcMatch.on_skip
+#### `WcMatch.on_skip`
 
 ```py3
     def on_skip(self, base, name):
@@ -194,7 +194,7 @@ When validating a file, if the file passes validation, it will be sent to `on_va
 
 When a file that must be skipped is encountered (a file that doesn't pass validation), it is sent to `on_skip`. Here you could abort the search, store away information, or even create a special skip record to return. It is advised to create a special type for skip returns so that you can identify them when they are returned via `match` or `imatch`.
 
-#### WcMatch.on_error
+#### `WcMatch.on_error`
 
 ```py3
     def on_error(self, base, name):
@@ -205,7 +205,7 @@ When a file that must be skipped is encountered (a file that doesn't pass valida
 
 When accessing or processing a file throws an error, it is sent to `on_error`. Here you could abort the search, store away information, or even create a special error record to return. It is advised to create a special type for error returns so that you can identify them when they are returned via `match` or `imatch`.
 
-#### WcMatch.on_match
+#### `WcMatch.on_match`
 
 ```py3
     def on_match(self, base, name):
@@ -218,23 +218,23 @@ On match returns the path of the matched file.  You can override `on_match` and 
 
 ## Flags
 
-#### wcmatch.FORCECASE, wcmatch.F {: #wcmatchforcecase}
+#### `wcmatch.FORCECASE, wcmatch.F` {: #wcmatchforcecase}
 
 `FORCECASE` forces cased searches. `FORCECASE` has higher priority than [`IGNORECASE`](#wcmatchignorecase). This does **not** affect path normalization. All paths are normalized for the host as it is required to properly access the file system.
 
-#### wcmatch.IGNORECASE, wcmatch.I {: #wcmatchignorecase}
+#### `wcmatch.IGNORECASE, wcmatch.I` {: #wcmatchignorecase}
 
 `IGNORECASE` forces case insensitive searches. `FORCECASE` has higher priority than [`IGNORECASE`](#wcmatchignorecase).
 
-#### wcmatch.RAWCHARS, wcmatch.R {: #wcmatchrawchars}
+#### `wcmatch.RAWCHARS, wcmatch.R` {: #wcmatchrawchars}
 
 `RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will handled standard string escapes and Unicode (including `#!py3 r'\N{CHAR NAME}'`).
 
-#### wcmatch.EXTMATCH, wcmatch.E {: #wcmatchextmatch}
+#### `wcmatch.EXTMATCH, wcmatch.E` {: #wcmatchextmatch}
 
 `EXTMATCH` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc.
 
-#### wcmatch.BRACE, wcmatch.B {: #wcmatchbrace}
+#### `wcmatch.BRACE, wcmatch.B` {: #wcmatchbrace}
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
@@ -242,11 +242,11 @@ For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch
 
 Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of patterns.
 
-#### wcmatch.MINUSNEGATE, wcmatch.M {: #wcmatchminusnegate}
+#### `wcmatch.MINUSNEGATE, wcmatch.M` {: #wcmatchminusnegate}
 
 `MINUSNEGATE` requires negation patterns to use `-` instead of `!`.
 
-#### wcmatch.DIRPATHNAME, wcmatch.DP {: #wcmatchdirpathname}
+#### `wcmatch.DIRPATHNAME, wcmatch.DP` {: #wcmatchdirpathname}
 
 `DIRPATHNAME` will enable path name searching for excluded folder patterns, but it will not apply to file patterns. This is mainly provided for cases where you may have multiple folders with the same name, but you want to target a specific folder to exclude. The path name compared will be the entire path relative to the base path.  So if the provided base folder was `.`, and the folder under evaluation is `./some/folder`, `some/folder` will be matched against the pattern.
 
@@ -256,7 +256,7 @@ Be careful with patterns such as `{1..100}` which would generate one hundred pat
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
-#### wcmatch.FILEPATHNAME, wcmatch.FP {: #wcmatchfilepathname}
+#### `wcmatch.FILEPATHNAME, wcmatch.FP` {: #wcmatchfilepathname}
 
 `FILEPATHNAME` will enable path name searching for the file patterns, but it will not apply to directory exclude patterns. The path name compared will be the entire path relative to the base path.  So if the provided base folder was `.`, and the file under evaluation is `./some/file.txt`, `some/file.txt` will be matched against the pattern.
 
@@ -266,13 +266,13 @@ Be careful with patterns such as `{1..100}` which would generate one hundred pat
 ['./LICENSE.md', './README.md', './docs/src/markdown/changelog.md', './docs/src/markdown/fnmatch.md', './docs/src/markdown/glob.md', './docs/src/markdown/index.md', './docs/src/markdown/license.md', './docs/src/markdown/wcmatch.md']
 ```
 
-#### wcmatch.PATHNAME, wcmatch.P {: #wcmatchpathname}
+#### `wcmatch.PATHNAME, wcmatch.P` {: #wcmatchpathname}
 
 `PATHNAME` enables both [`DIRPATHNAME`](#wcmatchdirpathname) and [`FILEPATHNAME`](#wcmathfilepathname). It is provided for convenience.
 
-#### wcmatch.GLOBSTAR, wcmatch.G {: #wcmatchglobstar}
+#### `wcmatch.GLOBSTAR, wcmatch.G` {: #wcmatchglobstar}
 
-When the [`PATHNAME`](#wcmatchpathname) flag is provided, you can also enable `GLOBSTAR` to enable the recursive directory pattern matches wth `**`.
+When the [`PATHNAME`](#wcmatchpathname) flag is provided, you can also enable `GLOBSTAR` to enable the recursive directory pattern matches with `**`.
 
 ```pycon3
 >>> from wcmatch import wcmatch

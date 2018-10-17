@@ -24,7 +24,7 @@ def create_empty_file(filename):
 
 
 class TestWcmatch(unittest.TestCase):
-    """Test the WcMatch class."""
+    """Test the `WcMatch` class."""
 
     def mktemp(self, *parts):
         """Make temp directory."""
@@ -47,7 +47,7 @@ class TestWcmatch(unittest.TestCase):
         raise TypeError
 
     def norm(self, *parts):
-        """Normalizes file path (in relation to temp dir)."""
+        """Normalizes file path (in relation to temp directory)."""
         tempdir = os.fsencode(self.tempdir) if isinstance(parts[0], bytes) else self.tempdir
         return os.path.join(tempdir, *parts)
 

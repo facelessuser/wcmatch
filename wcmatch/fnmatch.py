@@ -1,7 +1,7 @@
 """
 Wild Card Match.
 
-A custom implementation of fnmatch.
+A custom implementation of `fnmatch`.
 
 Licensed under MIT
 Copyright (c) 2018 Isaac Muse <isaacmuse@gmail.com>
@@ -65,7 +65,7 @@ def fnsplit(pattern, *, flags=0):
 
 
 def translate(patterns, *, flags=0):
-    """Translate fnmatch pattern."""
+    """Translate `fnmatch` pattern."""
 
     return _wcparse.translate(patterns, _flag_transform(flags))
 
@@ -74,7 +74,7 @@ def fnmatch(filename, patterns, *, flags=0):
     """
     Check if filename matches pattern.
 
-    By default case sensitivity is determined by the filesystem,
+    By default case sensitivity is determined by the file system,
     but if `case_sensitive` is set, respect that instead.
     """
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for rumcore."""
+"""Tests for `wcparse`."""
 import unittest
 import re
 import copy
@@ -7,7 +7,7 @@ import wcmatch._wcparse as _wcparse
 
 
 class TestWcparse(unittest.TestCase):
-    """Test wcparse."""
+    """Test `wcparse`."""
 
     def test_hash(self):
         """Test hashing of search."""
