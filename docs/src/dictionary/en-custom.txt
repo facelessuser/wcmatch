@@ -1,3 +1,4 @@
+API
 Changelog
 EmojiOne
 Fnmatch
@@ -11,11 +12,15 @@ Preprocess
 Symlink
 UNC
 Wcmatch
+Wildcard
 XORed
 amongst
 boolean
+builtin
 centric
 falsy
+filename
+filenames
 globbing
 initializer
 lookaheads
@@ -25,7 +30,9 @@ matcher
 posix
 pre
 prepend
+regex
 sortable
 sublicense
 symlink
 unordered
+wildcard
