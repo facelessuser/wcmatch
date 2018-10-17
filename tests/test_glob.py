@@ -760,7 +760,7 @@ class TestCWD(_TestGlob):
 
     @classmethod
     def setup_fs(cls):
-        """Setup filesystem."""
+        """Setup files ystem."""
 
         cls.mktemp('a', 'D')
         cls.mktemp('aab', 'F')
