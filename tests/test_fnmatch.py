@@ -94,7 +94,7 @@ class TestFnMatch:
         ['[a-z+--A-Z]', ',', True, 0],
         ['[a-z--/A-Z]', '.', True, 0],
 
-        # Dotmatch cases
+        # `Dotmatch` cases
         ['.abc', '.abc', True, 0],
         [r'\.abc', '.abc', True, 0],
         ['?abc', '.abc', True, 0],
@@ -106,7 +106,7 @@ class TestFnMatch:
         ['*(?|*)abc', '.abc', True, fnmatch.E],
         ['!(test)', '.abc', True, fnmatch.E],
 
-        # Turn off dotmatch cases
+        # Turn off `dotmatch` cases
         ['.abc', '.abc', True, fnmatch.D],
         [r'\.abc', '.abc', True, fnmatch.D],
         ['?abc', '.abc', False, fnmatch.D],

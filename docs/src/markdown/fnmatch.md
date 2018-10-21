@@ -91,7 +91,7 @@ def filter(filenames, patterns, *, flags=0):
 ['a.txt', 'b.txt']
 ```
 
-#### `fnmatch.split`
+#### `fnmatch.fnsplit`
 
 ```py3
 def fnsplit(pattern, *, flags=0):

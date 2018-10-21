@@ -80,17 +80,17 @@ _STAR = r'.*?'
 _PATH_TRAIL = r'[%s]*?'
 # Disallow . and .. (usually applied right after path separator when needed)
 _NO_DIR = r'(?!(?:\.{1,2})(?:$|%(sep)s))'
-# Star for PATHNAME
+# Star for `PATHNAME`
 _PATH_STAR = r'[^%(sep)s]*?'
-# Star when at start of filename during dotmatch
+# Star when at start of filename during `DOTMATCH`
 # (allow dot, but don't allow directory match /./ or /../)
 _PATH_STAR_DOTMATCH = _NO_DIR + _PATH_STAR
-# Star for PATHNAME when dotmatch is disabled and start is at start of file.
+# Star for `PATHNAME` when `DOTMATCH` is disabled and start is at start of file.
 # Disallow . and .. and don't allow match to start with a dot.
 _PATH_STAR_NO_DOTMATCH = _NO_DIR + (r'(?:(?!\.)%s)?' % _PATH_STAR)
-# GLOBSTAR during dotmatch. Avoid directory match /./ or /../
+# `GLOBSTAR` during `DOTMATCH`. Avoid directory match /./ or /../
 _PATH_GSTAR_DOTMATCH = r'(?:(?!(?:%(sep)s|^)(?:\.{1,2})($|%(sep)s)).)*?'
-# GLOBSTAR with dotmatch disabled. Don't allow a dot to follow /
+# `GLOBSTAR` with `DOTMATCH` disabled. Don't allow a dot to follow /
 _PATH_GSTAR_NO_DOTMATCH = r'(?:(?!(?:%(sep)s|^)\.).)*?'
 # Next char cannot be a dot
 _NO_DOT = r'(?![.])'
@@ -102,7 +102,7 @@ _PATH_NO_SLASH = r'(?![%(sep)s])'
 _ONE_OR_MORE = r'+'
 # End of pattern
 _EOP = r'$'
-# Divider between globstar. Can match start or end of pattern
+# Divider between `globstar`. Can match start or end of pattern
 # in addition to slashes.
 _GLOBSTAR_DIV = r'(?:^|$|%s)+'
 # Lookahead to see there is one character.
@@ -154,7 +154,7 @@ def expand_braces(patterns, flags):
             try:
                 yield from bracex.iexpand(p, keep_escapes=True)
             except Exception:  # pragma: no cover
-                # We will probably never hit this as bracex
+                # We will probably never hit this as `bracex`
                 # doesn't throw any specific exceptions and
                 # should normally always parse, but just in case.
                 yield p
@@ -270,7 +270,7 @@ class WcPathSplit(object):
             self.bslash_abort = False
             self.sep = '/'
         # Once split, Windows file names will never have `\\` in them,
-        # so we can use the unix matgic detect
+        # so we can use the Unix magic detect
         self.re_magic = RE_MAGIC if not self.is_bytes else RE_BMAGIC
         self.magic = False
 
@@ -699,7 +699,7 @@ class WcParse(object):
 
         result = ['[']
         end_range = 0
-        escape_hypen = -1
+        escape_hyphen = -1
         removed = False
         last_posix = False
 
@@ -722,14 +722,14 @@ class WcParse(object):
                 if last_posix:
                     result.append('\\' + c)
                     last_posix = False
-                elif i.index - 1 > escape_hypen:
+                elif i.index - 1 > escape_hyphen:
                     # Found a range delimiter.
-                    # Mark the next two characters as needing to be escaped if hypens.
+                    # Mark the next two characters as needing to be escaped if hyphens.
                     # The next character would be the end char range (s-e),
                     # and the one after that would be the potential start char range
                     # of a new range (s-es-e), so neither can be legitimate range delimiters.
                     result.append(c)
-                    escape_hypen = i.index + 1
+                    escape_hyphen = i.index + 1
                     end_range = i.index
                 elif end_range and i.index - 1 >= end_range:
                     if self._sequence_range_check(result, '\\' + c):
@@ -906,7 +906,7 @@ class WcParse(object):
         self.reset_dir_track()
         if value == globstar:
             sep = _GLOBSTAR_DIV % self.get_path_sep()
-            # Check if the last entry was a globstar
+            # Check if the last entry was a `globstar`
             # If so, don't bother adding another.
             if current[-1] != sep:
                 if current[-1] == '':
@@ -997,7 +997,7 @@ class WcParse(object):
                         extended.append(self._references(i))
                     except StopIteration:
                         # We've reached the end.
-                        # Do nothing because this is going to abort the extmatch anyways.
+                        # Do nothing because this is going to abort the `extmatch` anyways.
                         pass
                 elif c == '[':
                     subindex = i.index

@@ -78,7 +78,7 @@ class TestGlobFilter:
 
         ['X*', []],
 
-        # isaacs: Slightly different than bash/sh/ksh
+        # Slightly different than `bash/sh/ksh`
         # \\* is not un-escaped to literal "*" in a failed match,
         # but it does make it get treated as a literal star
         ['\\*', []],
@@ -100,7 +100,7 @@ class TestGlobFilter:
         [r'\\.\\./*/', []],
         [r's/\\..*//', []],
 
-        # legendary larry crashes bashes
+        # legendary Larry crashes bashes
         ['/^root:/{s/^[^:]*:[^:]*:\\([^:]*\\).*$/\\1/', []],
         ['/^root:/{s/^[^:]*:[^:]*:\\([^:]*\\).*$/\u0001/', []],
 
@@ -168,7 +168,7 @@ class TestGlobFilter:
         ['[]', [], 0, ['a']],
         ['[abc', [], 0, ['[']],
 
-        # nocase tests
+        # No case tests
         ['XYZ', ['xYz'], glob.I, ['xYz', 'ABC', 'IjK']],
         [
             'ab*',
@@ -184,7 +184,7 @@ class TestGlobFilter:
         ],
 
         # [ pattern, [matches], MM opts, files, TAP opts]
-        # onestar/twostar
+        # one star/two star
         ['{/*,*}', [], 0, ['/asdf/asdf/asdf']],
         ['{/?,*}', ['/a', 'bb'], 0, ['/a', '/b/b', '/a/b/c', 'bb']],
 
@@ -214,16 +214,16 @@ class TestGlobFilter:
 
         # brace sets trump all else.
         #
-        # invalid glob pattern.  fails on bash4 and bsdglob.
+        # invalid glob pattern.  fails on bash4 and `bsdglob`.
         # however, in this implementation, it's easier just
         # to do the intuitive thing, and let brace-expansion
-        # actually come before parsing any extglob patterns,
+        # actually come before parsing any `extglob` patterns,
         # like the documentation seems to say.
         #
         # XXX: if anyone complains about this, either fix it
         # or tell them to grow up and stop complaining.
         #
-        # bash/bsdglob says this:
+        # `bash/bsdglob` says this:
         # , ["*(a|{b),c)}", ["*(a|{b),c)}"], {}, ["a", "ab", "ac", "ad"]]
         # but we do this instead:
         ['*(a|{b),c)}', ['a', 'ab', 'ac'], 0, ['a', 'ab', 'ac', 'ad']],
@@ -234,12 +234,12 @@ class TestGlobFilter:
         ['[#a*', ['[#ab'], 0, ['[#ab', '[ab']],
 
         # The following tests have `|` not included in things like +(...) etc.
-        # We run these tests through normally and through glob.globsplit which splits
+        # We run these tests through normally and through `glob.globsplit` which splits
         # patterns on unenclosed `|`, so disable these few tests during split tests.
         Options(skip_split=True),
         # like: {a,b|c\\,d\\\|e} except it's unclosed, so it has to be escaped.
         # NOTE: I don't know what the original test was doing because it was matching
-        # something crazy. Multimatch regex expanded to escapes to like a 50.
+        # something crazy. `Multimatch` regex expanded to escapes to like a 50.
         # I think ours expands them proper, so the original test has been altered.
         [
             '+(a|*\\|c\\\\|d\\\\\\|e\\\\\\\\|f\\\\\\\\\\|g',
@@ -272,23 +272,25 @@ class TestGlobFilter:
         ],
 
         Options(skip_split=False),
-        # test extglob nested in extglob
+        # test `extglob` nested in `extglob`
         [
             '@(a@(c|d)|c@(b|,d))',
             ['ac', 'ad', 'cb', 'c,d']
         ],
 
         # NOTE: We don't currently support the base match option
+        # ~~~
         # [
         #   'a?b',
         #   ['x/y/acb', 'acb/'],
         #   {matchBase: True},
         #   ['x/y/acb', 'acb/', 'acb/d/e', 'x/y/acb/d']
         # ],
+        # ~~~
         ['#*', ['#a', '#b'], 0, ['#a', '#b', 'c#d']],
 
         # begin channelling Boole and deMorgan...
-        # NOTE: We changed these to `-` since our negation dosn't use `!`.
+        # NOTE: We changed these to `-` since our negation doesn't use `!`.
         # negation tests
         GlobFiles(['d', 'e', '!ab', '!abc', 'a!b', '\\!a']),
 
@@ -316,7 +318,7 @@ class TestGlobFilter:
                 'boo.js.boo'
             ]
         ),
-        # last one is tricky! * matches foo, . matches ., and 'js.js' != 'js'
+        # last one is tricky! * matches foo, . matches ., and `'js.js' != 'js'`
         # copy bash 4.3 behavior on this.
         ['*.!(js)', ['foo.bar', 'foo.', 'boo.js.boo', 'foo.js.js']],
 
@@ -357,7 +359,7 @@ class TestGlobFilter:
         ),
         ['**\\', [] if util.is_case_sensitive() else ['a/b/c/', 'd/e/f/', 'a/e/c/']],
 
-        # Invalid extglob groups
+        # Invalid `extglob` groups
         GlobFiles(
             [
                 '@([test', '@([test\\', '@(test\\', 'test['

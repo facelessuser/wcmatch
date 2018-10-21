@@ -3,6 +3,7 @@ Changelog
 EmojiOne
 Fnmatch
 Glob
+Lookahead
 MERCHANTABILITY
 MacOS
 MkDocs
@@ -18,15 +19,18 @@ amongst
 boolean
 builtin
 centric
+deMorgan
 falsy
 filename
 filenames
 globbing
 initializer
+lookahead
 lookaheads
 lookbehinds
 macOS
 matcher
+paren
 posix
 pre
 prepend
@@ -34,5 +38,8 @@ regex
 sortable
 sublicense
 symlink
+symlinks
+un
+unclosed
 unordered
 wildcard
