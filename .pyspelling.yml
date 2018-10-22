@@ -7,7 +7,6 @@ matrix:
   aspell:
     lang: en
   dictionary:
-    lang: en
     wordlists:
     - docs/src/dictionary/en-custom.txt
     output: build/dictionary/mkdocs.dic
@@ -38,7 +37,6 @@ matrix:
   aspell:
     lang: en
   dictionary:
-    lang: en
     wordlists:
     - docs/src/dictionary/en-custom.txt
     output: build/dictionary/mkdocs.dic
@@ -62,7 +60,6 @@ matrix:
   aspell:
     lang: en
   dictionary:
-    lang: en
     wordlists:
     - docs/src/dictionary/en-custom.txt
     output: build/dictionary/python.dic
