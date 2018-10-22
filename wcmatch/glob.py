@@ -33,8 +33,8 @@ __all__ = (
     "iglob", "glob", "globsplit", "globmatch", "globfilter", "escape"
 )
 
-# We don't use util.platform only because we mock it in tests,
-# and scandir will not work with bytes on the wrong system.
+# We don't use `util.platform` only because we mock it in tests,
+# and `scandir` will not work with bytes on the wrong system.
 WIN = sys.platform.startswith('win')
 NO_SCANDIR_WORKAROUND = util.PY36
 
@@ -64,7 +64,7 @@ FLAG_MASK = (
 def _flag_transform(flags):
     """Transform flags to glob defaults."""
 
-    # Here we force PATHNAME and disable negation NEGATE
+    # Here we force `PATHNAME` and disable negation `NEGATE`
     flags = (flags & FLAG_MASK) | _wcparse.PATHNAME
     return flags
 
@@ -206,7 +206,7 @@ class Glob(object):
                 with os.scandir(scandir) as scan:
                     for f in scan:
                         try:
-                            # Quicker to just test this way than to run through fnmatch.
+                            # Quicker to just test this way than to run through `fnmatch`.
                             if self._is_hidden(f.name):
                                 continue
                             path = os.path.join(curdir, f.name)
@@ -218,7 +218,7 @@ class Glob(object):
                             pass
             else:
                 for f in os.listdir(scandir):
-                    # Quicker to just test this way than to run through fnmatch.
+                    # Quicker to just test this way than to run through `fnmatch`.
                     if self._is_hidden(f):
                         continue
                     path = os.path.join(curdir, f)
@@ -252,8 +252,8 @@ class Glob(object):
         if is_magic and is_globstar:
             # Glob star directory `**`.
 
-            # Throw away multiple consecutive globstars
-            # and acquire the pattern after the globstars if available.
+            # Throw away multiple consecutive `globstars`
+            # and acquire the pattern after the `globstars` if available.
             this = rest.pop(0) if rest else None
             globstar_end = this is None
             while this and not globstar_end:
@@ -281,7 +281,7 @@ class Glob(object):
             matcher = self._get_matcher(target)
 
             # If our pattern ends with `curdir/**`, but does not start with `**` it matches zero or more,
-            # so it should return `curdir/`, signifying curdir + no match.
+            # so it should return `curdir/`, signifying `curdir` + no match.
             # If a pattern follows `**/something`, we always get the appropriate
             # return already, so this isn't needed in that case.
             # There is one quirk though with Bash, if `curdir` had magic before `**`, Bash

@@ -20,12 +20,12 @@ import sys
 import unittest
 import warnings
 
-# Below is general helper stuff that Python uses in unittests.  As these
+# Below is general helper stuff that Python uses in `unittests`.  As these
 # not meant for users, and could change without notice, include them
 # ourselves so we aren't surprised later.
 TESTFN = '@test'
 
-# Disambiguate TESTFN for parallel testing, while letting it remain a valid
+# Disambiguate `TESTFN` for parallel testing, while letting it remain a valid
 # module name.
 TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
 
@@ -430,7 +430,7 @@ class Testglob(_TestGlob):
         ],
         Options(skip=False),
 
-        # Test extglob.
+        # Test `extglob`.
         [('@(a|aa*(a|b))',), [('aab',), ('aaa',), ('a',)]],
 
         # Test sequences.
@@ -444,12 +444,12 @@ class Testglob(_TestGlob):
         [('',), []],
         Options(absolute=False),
 
-        # Patterns ending with a slash shouldn't match non-dirs.
+        # Patterns ending with a slash shouldn't match non-directories.
         [('Z*Z', ''), []],
         [('ZZZ', ''), []],
         [('aa*', ''), [('aaa', ''), ('aab', '')]],
 
-        # Test recurision.
+        # Test recursion.
         [
             ('**',),
             [
@@ -539,7 +539,7 @@ class Testglob(_TestGlob):
         ],
         [
             ('**', ''),
-            # Dirs
+            # Directories
             [
                 ('',),
                 ('a', ''), ('a', 'bcd', ''), ('a', 'bcd', 'efg', ''),

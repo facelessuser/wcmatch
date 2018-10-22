@@ -41,10 +41,10 @@ G = GLOBSTAR = _wcparse.GLOBSTAR
 B = BRACE = _wcparse.BRACE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
 
-# Control PATHNAME individually for folder exclude and files
+# Control `PATHNAME` individually for folder exclude and files
 DP = DIRPATHNAME = 0x100000
 FP = FILEPATHNAME = 0x200000
-# Control PATHNAME for file and folder
+# Control `PATHNAME` for file and folder
 P = PATHNAME = DIRPATHNAME | FILEPATHNAME
 
 FLAG_MASK = (
@@ -214,9 +214,9 @@ class WcMatch(object):
                 if self._abort:
                     break
 
-            # Seach files if they were found
+            # Search files if they were found
             if len(files):
-                # Only search files that are in the inlcude rules
+                # Only search files that are in the include rules
                 for name in files:
                     try:
                         valid = self._valid_file(base, name)

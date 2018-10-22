@@ -56,15 +56,14 @@ def _test(fn):  # pragma: no cover
 
     path = os.path.expanduser("~/Library")
     is_osx_hidden(path)
-    # print "OSX Hidden Method: %d, Test Path: %s, Result: %s"  % (_OSX_FOUNDATION_METHOD, path, str(fn(path)))
 
 
 if util.platform() == "osx" and _OSX_FOUNDATION_METHOD == _OSX_FOUNDATION_NOT_LOADED:  # pragma: no cover
-    # Fallback to use ctypes to call the ObjC library CoreFoundation for OSX is_hidden
+    # Fallback to use `ctypes` to call the `ObjC` library `CoreFoundation` for macOS `is_hidden`
 
     # http://stackoverflow.com/questions/284115/cross-platform-hidden-file-detection
     try:
-        # Setup OSX access to CoreFoundatin for hidden file detection
+        # Setup macOS access to `CoreFoundatin` for hidden file detection
         cf = ctypes.cdll.LoadLibrary('/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation')
         cf.CFShow.argtypes = [ctypes.c_void_p]
         cf.CFShow.restype = None
@@ -87,7 +86,7 @@ if util.platform() == "osx" and _OSX_FOUNDATION_METHOD == _OSX_FOUNDATION_NOT_LO
         cf.CFBooleanGetValue.argtypes = [ctypes.c_void_p]
         cf.CFBooleanGetValue.restype = ctypes.c_int
 
-        # This one is a static CFStringRef.
+        # This one is a static `CFStringRef`.
         kCFURLIsHiddenKey = ctypes.c_void_p.in_dll(cf, 'kCFURLIsHiddenKey')
 
         @contextlib.contextmanager
