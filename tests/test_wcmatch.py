@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for rumcore."""
+"""Tests for `wcmatch`."""
 import unittest
 import os
 import wcmatch.wcmatch as wcmatch

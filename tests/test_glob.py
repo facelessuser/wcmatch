@@ -45,7 +45,7 @@ def change_cwd(path, quiet=False):
     saved_dir = os.getcwd()
     try:
         os.chdir(path)
-    except OSError as exc:
+    except OSError:
         if not quiet:
             raise
         warnings.warn('tests may fail, unable to change CWD to: ' + path,
