@@ -10,6 +10,7 @@ MkDocs
 NONINFRINGEMENT
 POSIX
 Preprocess
+PyPI
 Symlink
 UNC
 Wcmatch

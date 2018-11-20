@@ -1,7 +1,7 @@
 [![Unix Build Status][travis-image]][travis-link]
 [![Windows Build Status][appveyor-image]][appveyor-link]
 [![Coverage][codecov-image]][codecov-link]
-[![pypi-version][pypi-image]][pypi-link]
+[![PyPI Version][pypi-image]][pypi-link]
 ![License][license-image-mit]
 # Wildcard Match
 
