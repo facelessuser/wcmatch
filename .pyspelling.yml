@@ -17,17 +17,11 @@ matrix:
       - title
       - alt
       ignores:
-      - code
-      - pre
-      - a.magiclink-compare
-      - a.magiclink-commit
-      - span.keys
-      - .MathJax_Preview
-      - .md-nav__link
-      - .md-footer-custom-text
-      - .md-source__repository
-      - .headerlink
-      - .md-icon
+      - ':matches(code, pre)'
+      - 'a:matches(.magiclink-compare, .magiclink-commit, .magiclink-repository)'
+      - 'span.keys'
+      - ':matches(.MathJax_Preview, .md-nav__link, .md-footer-custom-text, .md-source__repository, .headerlink, .md-icon)'
+  - pyspelling.filters.url:
 
 - name: markdown
   sources:
@@ -50,6 +44,7 @@ matrix:
       ignores:
       - code
       - pre
+  - pyspelling.filters.url:
 
 - name: python
   sources:
@@ -73,16 +68,22 @@ matrix:
       context_visible_first: true
       delimiters:
       # Ignore lint (noqa) and coverage (pragma) as well as shebang (#!)
-      - open: ^(?:(?:noqa|pragma)\b|!)
-        close: $
+      - open: '^(?: *(?:noqa\b|pragma: no cover)|!)'
+        close: '$'
       # Ignore Python encoding string -*- encoding stuff -*-
-      - open: ^ *-\*-
-        close: -\*-$
+      - open: '^ *-\*-'
+        close: '-\*-$'
   - pyspelling.filters.context:
       context_visible_first: true
-      escapes: \\[\\`~]
+      escapes: '\\[\\`]'
       delimiters:
-        - open: (?P<open>`+)
-          close: (?P=open)
-        - open: (?s)^(?P<open>\s*~{3,})
-          close: ^(?P=open)$
+      # Ignore multiline content between fences (fences can have 3 or more back ticks)
+      # ```
+      # content
+      # ```
+      - open: '(?s)^(?P<open> *`{3,})$'
+        close: '^(?P=open)$'
+      # Ignore text between inline back ticks
+      - open: '(?P<open>`+)'
+        close: '(?P=open)'
+  - pyspelling.filters.url:

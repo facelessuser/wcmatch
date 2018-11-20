@@ -279,14 +279,14 @@ class TestGlobFilter:
         ],
 
         # NOTE: We don't currently support the base match option
-        # ~~~
+        # ```
         # [
         #   'a?b',
         #   ['x/y/acb', 'acb/'],
         #   {matchBase: True},
         #   ['x/y/acb', 'acb/', 'acb/d/e', 'x/y/acb/d']
         # ],
-        # ~~~
+        # ```
         ['#*', ['#a', '#b'], 0, ['#a', '#b', 'c#d']],
 
         # begin channelling Boole and deMorgan...
