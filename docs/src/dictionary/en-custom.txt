@@ -1,4 +1,5 @@
 API
+Accessors
 Changelog
 EmojiOne
 Fnmatch
@@ -16,11 +17,13 @@ UNC
 Wcmatch
 Wildcard
 XORed
+accessor
 amongst
 boolean
 builtin
 centric
 deMorgan
+deprecations
 falsy
 filename
 filenames
@@ -35,11 +38,14 @@ paren
 posix
 pre
 prepend
+prerelease
+prereleases
 regex
 sortable
 sublicense
 symlink
 symlinks
+tuple
 un
 unclosed
 unordered
