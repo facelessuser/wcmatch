@@ -1161,9 +1161,9 @@ class WcParse(object):
 
         case_flag = 'i' if not self.case_sensitive else ''
         if util.PY36:
-            pattern = (r'^(?!(?s%s:%s)).*?$' if negative else r'^(?s%s:%s)$') % (case_flag, ''.join(result))
+            pattern = (r'^(?!(?s%s:%s)$).*?$' if negative else r'^(?s%s:%s)$') % (case_flag, ''.join(result))
         else:
-            pattern = (r'(?s%s)^(?!(?:%s)).*?$' if negative else r'(?s%s)^(?:%s)$') % (case_flag, ''.join(result))
+            pattern = (r'(?s%s)^(?!(?:%s)$).*?$' if negative else r'(?s%s)^(?:%s)$') % (case_flag, ''.join(result))
 
         if self.is_bytes:
             pattern = pattern.encode('latin-1')

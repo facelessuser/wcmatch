@@ -297,10 +297,10 @@ class TestFnMatchTranslate(unittest.TestCase):
         p1, p2 = self.split_translate('*test[a-z]?|*test2[a-z]?|!test[!a-z]|!test[!-|a-z]', flags | fnmatch.N)
         if util.PY36:
             self.assertEqual(p1, [r'^(?s:(?=.).*?test[a-z].)$', r'^(?s:(?=.).*?test2[a-z].)$'])
-            self.assertEqual(p2, [r'^(?!(?s:test[^a-z])).*?$', r'^(?!(?s:test[^\-\|a-z])).*?$'])
+            self.assertEqual(p2, [r'^(?!(?s:test[^a-z])$).*?$', r'^(?!(?s:test[^\-\|a-z])$).*?$'])
         else:
             self.assertEqual(p1, [r'(?s)^(?:(?=.).*?test[a-z].)$', r'(?s)^(?:(?=.).*?test2[a-z].)$'])
-            self.assertEqual(p2, [r'(?s)^(?!(?:test[^a-z])).*?$', r'(?s)^(?!(?:test[^\-\|a-z])).*?$'])
+            self.assertEqual(p2, [r'(?s)^(?!(?:test[^a-z])$).*?$', r'(?s)^(?!(?:test[^\-\|a-z])$).*?$'])
 
         p1, p2 = self.split_translate('test[]][!][][]', flags | fnmatch.F)
         if util.PY36:
@@ -332,10 +332,10 @@ class TestFnMatchTranslate(unittest.TestCase):
         p1, p2 = self.split_translate('-|-test|-', flags=flags | fnmatch.N | fnmatch.M)
         if util.PY36:
             self.assertEqual(p1, [])
-            self.assertEqual(p2, [r'^(?!(?s:)).*?$', r'^(?!(?s:test)).*?$', r'^(?!(?s:)).*?$'])
+            self.assertEqual(p2, [r'^(?!(?s:)$).*?$', r'^(?!(?s:test)$).*?$', r'^(?!(?s:)$).*?$'])
         else:
             self.assertEqual(p1, [])
-            self.assertEqual(p2, [r'(?s)^(?!(?:)).*?$', r'(?s)^(?!(?:test)).*?$', r'(?s)^(?!(?:)).*?$'])
+            self.assertEqual(p2, [r'(?s)^(?!(?:)$).*?$', r'(?s)^(?!(?:test)$).*?$', r'(?s)^(?!(?:)$).*?$'])
 
         p1, p2 = self.split_translate('test[^chars]', flags)
         if util.PY36:
