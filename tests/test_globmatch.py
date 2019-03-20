@@ -394,7 +394,14 @@ class TestGlobFilter:
         ['@(test/test)', [], glob.F],
         [r'@(test\/test)', [], glob.F],
         ['test[/]test', [], glob.F],
-        [r'test[\/]test', [], glob.F]
+        [r'test[\/]test', [], glob.F],
+
+        # Issue #24
+        GlobFiles(
+            ["goo.cfg", "foo.bar", "foo.bar.cfg", "foo.cfg.bar"]
+        ),
+        ['*.bar', ["foo.bar", "foo.cfg.bar"]],
+        ['!*.bar', ["goo.cfg", "foo.bar.cfg"]]
     ]
 
     @classmethod

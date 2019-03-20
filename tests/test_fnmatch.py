@@ -233,7 +233,11 @@ class TestFnMatchFilter:
             0
         ],
         [r'te\st[ma]', ['testm', 'test\\3', 'testa'], ['testm', 'testa'], fnmatch.I],
-        [r'te\st[ma]', ['testm', 'test\\3', 'testa'], ['testm', 'testa'], fnmatch.F]
+        [r'te\st[ma]', ['testm', 'test\\3', 'testa'], ['testm', 'testa'], fnmatch.F],
+
+        # Issue #24
+        ['*.bar', ["goo.cfg", "foo.bar", "foo.bar.cfg", "foo.cfg.bar"], ["foo.bar", "foo.cfg.bar"], 0],
+        ['!*.bar', ["goo.cfg", "foo.bar", "foo.bar.cfg", "foo.cfg.bar"], ["goo.cfg", "foo.bar.cfg"], fnmatch.N]
     ]
 
     @classmethod
