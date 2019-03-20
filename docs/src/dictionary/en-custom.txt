@@ -1,8 +1,10 @@
 API
 Accessors
+Backport
 Changelog
 EmojiOne
 Fnmatch
+GitHub
 Glob
 Lookahead
 MERCHANTABILITY

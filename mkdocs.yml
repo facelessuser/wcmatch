@@ -4,8 +4,8 @@ repo_url: https://github.com/facelessuser/wcmatch
 edit_uri: tree/master/docs/src/markdown
 site_description: A wildcard file name matching library
 copyright: |
-  Copyright &copy; 2014 - 2018 <a href="https://github.com/facelessuser">Isaac Muse</a>
-  <br><span class="md-footer-custom-text">emoji provided free by </span><a href="http://www.emojione.com">EmojiOne</a>
+  Copyright &copy; 2014 - 2019 <a href="https://github.com/facelessuser">Isaac Muse</a>
+  <br><span class="md-footer-custom-text">emoji provided free by <a href="http://www.emojione.com">EmojiOne</a></span>
 
 docs_dir: docs/src/markdown
 theme:
@@ -86,6 +86,6 @@ extra:
     - type: github
       link: https://github.com/facelessuser
 extra_css:
-  - extra-83f68d2c59.css
+  - extra-30d8e6755c.css
 extra_javascript:
   - extra-0b9b22dd13.js
