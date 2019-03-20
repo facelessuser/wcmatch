@@ -107,6 +107,7 @@ _EOP = r'$'
 _GLOBSTAR_DIV = r'(?:^|$|%s)+'
 # Lookahead to see there is one character.
 _NEED_CHAR = r'(?=.)'
+_NEED_SEP = r'(?=%s)'
 # Group that matches one or none
 _QMARK_GROUP = r'(?:%s)?'
 # Group that matches Zero or more
@@ -914,7 +915,7 @@ class WcParse(object):
                     current[-1] = value
                 else:
                     # Replace the last path separator
-                    current[-1] = _NEED_CHAR
+                    current[-1] = _NEED_SEP % self.get_path_sep()
                     current.append(value)
                 self.consume_path_sep(i)
                 current.append(sep)
