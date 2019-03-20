@@ -1096,7 +1096,12 @@ class WcParse(object):
             m = RE_WIN_PATH.match(pattern)
             if m:
                 drive = m.group(0).replace('\\\\', '\\')
+                if drive.endswith('\\'):
+                    slash = True
+                drive = drive[:-1]
                 current.append(re.escape(drive))
+                if slash:
+                    current.append(self.get_path_sep() + _ONE_OR_MORE)
                 i.advance(m.end(0))
                 self.consume_path_sep(i)
 
