@@ -1,7 +1,8 @@
 # Changelog
 
-## 2.0.4
+## 2.1.0
 
+- **NEW**: Deprecate `version` and `version_info` in favor of the more standard `__version__` and `__version_info__`.
 - **FIX**: Fix issue where negated patterns would trigger before end of path.
 - **FIX**: Fix `GLOBSTAR` regular expression pattern issues.
 

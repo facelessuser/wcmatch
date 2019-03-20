@@ -1,0 +1,7 @@
+[run]
+omit=
+    backrefs/pep562.py
+
+[report]
+omit=
+    backrefs/pep562.py
