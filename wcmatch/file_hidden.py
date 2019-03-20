@@ -87,7 +87,7 @@ if util.platform() == "osx" and _OSX_FOUNDATION_METHOD == _OSX_FOUNDATION_NOT_LO
         cf.CFBooleanGetValue.restype = ctypes.c_int
 
         # This one is a static `CFStringRef`.
-        kCFURLIsHiddenKey = ctypes.c_void_p.in_dll(cf, 'kCFURLIsHiddenKey')
+        kCFURLIsHiddenKey = ctypes.c_void_p.in_dll(cf, 'kCFURLIsHiddenKey')  # noqa: N816
 
         @contextlib.contextmanager
         def cfreleasing(objects):

@@ -107,6 +107,7 @@ _EOP = r'$'
 _GLOBSTAR_DIV = r'(?:^|$|%s)+'
 # Lookahead to see there is one character.
 _NEED_CHAR = r'(?=.)'
+_NEED_SEP = r'(?=%s)'
 # Group that matches one or none
 _QMARK_GROUP = r'(?:%s)?'
 # Group that matches Zero or more
@@ -914,7 +915,7 @@ class WcParse(object):
                     current[-1] = value
                 else:
                     # Replace the last path separator
-                    current[-1] = _NEED_CHAR
+                    current[-1] = _NEED_SEP % self.get_path_sep()
                     current.append(value)
                 self.consume_path_sep(i)
                 current.append(sep)
@@ -1095,7 +1096,12 @@ class WcParse(object):
             m = RE_WIN_PATH.match(pattern)
             if m:
                 drive = m.group(0).replace('\\\\', '\\')
+                if drive.endswith('\\'):
+                    slash = True
+                drive = drive[:-1]
                 current.append(re.escape(drive))
+                if slash:
+                    current.append(self.get_path_sep() + _ONE_OR_MORE)
                 i.advance(m.end(0))
                 self.consume_path_sep(i)
 
@@ -1161,9 +1167,9 @@ class WcParse(object):
 
         case_flag = 'i' if not self.case_sensitive else ''
         if util.PY36:
-            pattern = (r'^(?!(?s%s:%s)).*?$' if negative else r'^(?s%s:%s)$') % (case_flag, ''.join(result))
+            pattern = (r'^(?!(?s%s:%s)$).*?$' if negative else r'^(?s%s:%s)$') % (case_flag, ''.join(result))
         else:
-            pattern = (r'(?s%s)^(?!(?:%s)).*?$' if negative else r'(?s%s)^(?:%s)$') % (case_flag, ''.join(result))
+            pattern = (r'(?s%s)^(?!(?:%s)$).*?$' if negative else r'(?s%s)^(?:%s)$') % (case_flag, ''.join(result))
 
         if self.is_bytes:
             pattern = pattern.encode('latin-1')

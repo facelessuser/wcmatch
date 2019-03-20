@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.4
+
+- **FIX**: Fix issue where negated patterns would trigger before end of path.
+- **FIX**: Fix `GLOBSTAR` regular expression pattern issues.
+
 ## 2.0.3
 
 - **FIX**: In `glob`, properly handle files in the current working directory when give a literal pattern that matches it.
