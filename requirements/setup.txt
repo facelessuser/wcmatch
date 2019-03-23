@@ -1,3 +1,2 @@
-bracex
-backrefs>=3.5.1
-pep562
+bracex>=1.2
+backrefs>=4.1
