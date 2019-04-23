@@ -660,8 +660,6 @@ class WcParse(object):
                 value = self.no_dir + value
         else:
             value = _NO_DOT if self.after_start and not self.dot else ""
-            if self.after_start:
-                value = self.no_dir + value
         self.reset_dir_track()
 
         return value
@@ -841,6 +839,10 @@ class WcParse(object):
         else:
             # \a, \b, \c, etc.
             value = re.escape(c)
+            if c == '.' and self.after_start and self.in_list:
+                self.allow_special_dir = True
+                self.reset_dir_track()
+
         return value
 
     def _handle_star(self, i, current):
@@ -970,7 +972,7 @@ class WcParse(object):
         temp_inv_ext = self.inv_ext
         self.in_list = True
         if reset_dot:
-            self.allow_dot = False
+            self.allow_special_dir = False
 
         # Start list parsing
         success = True
@@ -989,9 +991,9 @@ class WcParse(object):
                     pass
                 elif c == '*':
                     self._handle_star(i, extended)
-                elif c == '.' and not self.dot and self.after_start:
-                    self.allow_dot = True
+                elif c == '.' and self.after_start:
                     extended.append(re.escape(c))
+                    self.allow_special_dir = True
                     self.reset_dir_track()
                 elif c == '?':
                     extended.append(self._restrict_sequence() + _QMARK)
@@ -1037,14 +1039,14 @@ class WcParse(object):
                 # If pattern is at the end, anchor the match to the end.
                 current.append(_EXCLA_GROUP % ''.join(extended))
                 if self.pathname:
-                    if not temp_after_start or self.allow_dot:
+                    if not temp_after_start or self.allow_special_dir:
                         star = self.path_star
                     elif temp_after_start and not self.dot:
                         star = self.path_star_dot2
                     else:
                         star = self.path_star_dot1
                 else:
-                    if not temp_after_start or self.dot or self.allow_dot:
+                    if not temp_after_start or self.dot:
                         star = _STAR
                     else:
                         star = _NO_DOT + _STAR
