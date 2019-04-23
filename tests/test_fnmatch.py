@@ -92,7 +92,7 @@ class TestFnMatch:
         ['[a||b]', '|', True, 0],
         ['[a~~b]', '~', True, 0],
         ['[a-z+--A-Z]', ',', True, 0],
-        ['[a-z--/A-Z]', '.', True, 0],
+        ['[a-z--/A-Z]', '-', True, 0],
 
         # `Dotmatch` cases
         ['.abc', '.abc', True, 0],
@@ -371,16 +371,20 @@ class TestFnMatchTranslate(unittest.TestCase):
         """Test posix range."""
 
         p = fnmatch.translate(r'[[:ascii:]-z]', flags=self.flags | fnmatch.F)
-        if util.PY36:
-            self.assertEqual(p, (['^(?s:[\x00-\x7f\\-z])$'], []))
+        if util.PY37:
+            self.assertEqual(p, (['^(?s:(?!(?:\\.{1,2})(?:$|/))[\x00-\x7f\\-z])$'], []))
+        elif util.PY36:
+            self.assertEqual(p, (['^(?s:(?!(?:\\.{1,2})(?:$|\\/))[\x00-\x7f\\-z])$'], []))
         else:
-            self.assertEqual(p, (['(?s)^(?:[\x00-\x7f\\-z])$'], []))
+            self.assertEqual(p, (['(?s)^(?:(?!(?:\\.{1,2})(?:$|\\/))[\x00-\x7f\\-z])$'], []))
 
         p = fnmatch.translate(r'[a-[:ascii:]-z]', flags=self.flags | fnmatch.F)
-        if util.PY36:
-            self.assertEqual(p, (['^(?s:[a\\-\x00-\x7f\\-z])$'], []))
+        if util.PY37:
+            self.assertEqual(p, (['^(?s:(?!(?:\\.{1,2})(?:$|/))[a\\-\x00-\x7f\\-z])$'], []))
+        elif util.PY36:
+            self.assertEqual(p, (['^(?s:(?!(?:\\.{1,2})(?:$|\\/))[a\\-\x00-\x7f\\-z])$'], []))
         else:
-            self.assertEqual(p, (['(?s)^(?:[a\\-\x00-\x7f\\-z])$'], []))
+            self.assertEqual(p, (['(?s)^(?:(?!(?:\\.{1,2})(?:$|\\/))[a\\-\x00-\x7f\\-z])$'], []))
 
     @mock.patch('wcmatch.util.is_case_sensitive')
     def test_special_escapes(self, mock__iscase_sensitive):

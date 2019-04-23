@@ -102,7 +102,7 @@ _PATH_NO_SLASH = r'(?![%(sep)s])'
 _ONE_OR_MORE = r'+'
 # End of pattern
 _EOP = r'$'
-_PATH_EOP = r'(?:$|[%(sep)s])'
+_PATH_EOP = r'(?:$|%(sep)s)'
 # Divider between `globstar`. Can match start or end of pattern
 # in addition to slashes.
 _GLOBSTAR_DIV = r'(?:^|$|%s)+'
@@ -605,6 +605,7 @@ class WcParse(object):
             self.sep = '/'
         sep = {"sep": re.escape(self.sep)}
         self.path_eop = _PATH_EOP % sep
+        self.no_dir = _NO_DIR % sep
         self.seq_path = _PATH_NO_SLASH % sep
         self.seq_path_dot = _PATH_NO_SLASH_DOT % sep
         self.path_star = _PATH_STAR % sep
@@ -645,13 +646,22 @@ class WcParse(object):
         elif not self.dir_start and self.after_start:
             self.reset_dir_track()
 
+    def _restrict_extended_slash(self):
+        """Restrict extended slash."""
+
+        return self.seq_path if self.pathname else ''
+
     def _restrict_sequence(self):
         """Restrict sequence."""
 
         if self.pathname:
             value = self.seq_path_dot if self.after_start and not self.dot else self.seq_path
+            if self.after_start:
+                value = self.no_dir + value
         else:
             value = _NO_DOT if self.after_start and not self.dot else ""
+            if self.after_start:
+                value = self.no_dir + value
         self.reset_dir_track()
 
         return value
@@ -796,7 +806,7 @@ class WcParse(object):
             else:
                 result = [value]
 
-        if self.pathname or (self.after_start and not self.dot):
+        if self.pathname or self.after_start:
             return self._restrict_sequence() + ''.join(result)
 
         return ''.join(result)
@@ -816,7 +826,7 @@ class WcParse(object):
                     value = self.get_path_sep() + _ONE_OR_MORE
                     self.set_start_dir()
                 else:
-                    value = self._restrict_sequence() + value
+                    value = self._restrict_extended_slash() + value
         elif c == '/':
             # \/
             if sequence and self.pathname:
@@ -824,7 +834,7 @@ class WcParse(object):
             if self.pathname:
                 value = r'\\'
                 if self.in_list:
-                    value = self._restrict_sequence() + value
+                    value = self._restrict_extended_slash() + value
                 i.rewind(1)
             else:
                 value = re.escape(c)
@@ -987,7 +997,7 @@ class WcParse(object):
                     extended.append(self._restrict_sequence() + _QMARK)
                 elif c == '/':
                     if self.pathname:
-                        extended.append(self._restrict_sequence())
+                        extended.append(self._restrict_extended_slash())
                     extended.append(re.escape(c))
                 elif c == "|":
                     self.clean_up_inverse(extended)
