@@ -156,39 +156,8 @@ class Glob(object):
             matcher = target.match
         return matcher
 
-    def _glob_shallow(self, curdir, matcher, dir_only=False):
+    def _glob_dir(self, curdir, matcher, dir_only=False, deep=False):
         """Non recursive directory glob."""
-
-        scandir = self.current if not curdir else curdir
-
-        # Python will never return . or .., so fake it.
-        if os.path.isdir(scandir):
-            for special in self.specials:
-                if matcher(special):
-                    yield os.path.join(curdir, special)
-
-        try:
-            if NO_SCANDIR_WORKAROUND:
-                # Our current directory can be empty if the path starts with magic,
-                # But we don't want to return paths with '.', so just use it to list
-                # files, but use '' when constructing the path.
-                with os.scandir(scandir) as scan:
-                    for f in scan:
-                        try:
-                            if (not dir_only or f.is_dir()) and matcher(f.name):
-                                yield os.path.join(curdir, f.name)
-                        except OSError:  # pragma: no cover
-                            pass
-            else:
-                for f in os.listdir(scandir):
-                    is_dir = os.path.isdir(os.path.join(curdir, f))
-                    if (not dir_only or is_dir) and matcher(f):
-                        yield os.path.join(curdir, f)
-        except OSError:  # pragma: no cover
-            pass
-
-    def _glob_deep(self, curdir, matcher, dir_only=False):
-        """Recursive directory glob."""
 
         scandir = self.current if not curdir else curdir
 
@@ -207,26 +176,26 @@ class Glob(object):
                     for f in scan:
                         try:
                             # Quicker to just test this way than to run through `fnmatch`.
-                            if self._is_hidden(f.name):
+                            if deep and self._is_hidden(f.name):
                                 continue
                             path = os.path.join(curdir, f.name)
                             if (not dir_only or f.is_dir()) and (matcher is None or matcher(f.name)):
                                 yield path
-                            if f.is_dir():
-                                yield from self._glob_deep(path, matcher, dir_only)
+                            if deep and f.is_dir():
+                                yield from self._glob_dir(path, matcher, dir_only, deep)
                         except OSError:  # pragma: no cover
                             pass
             else:
                 for f in os.listdir(scandir):
                     # Quicker to just test this way than to run through `fnmatch`.
-                    if self._is_hidden(f):
+                    if deep and self._is_hidden(f):
                         continue
                     path = os.path.join(curdir, f)
                     is_dir = os.path.isdir(path)
                     if (not dir_only or is_dir) and (matcher is None or matcher(f)):
                         yield path
-                    if is_dir:
-                        yield from self._glob_deep(path, matcher, dir_only)
+                    if deep and is_dir:
+                        yield from self._glob_dir(path, matcher, dir_only, deep)
         except OSError:  # pragma: no cover
             pass
 
@@ -270,7 +239,7 @@ class Glob(object):
             if globstar_end:
                 target = None
 
-            # We match `**/next` during `_glob_deep`, so what ever comes back,
+            # We match `**/next` during a deep glob, so what ever comes back,
             # we will send back through `_glob` with pattern after `next` (`**/next/after`).
             # So grab `after` if available.
             this = rest.pop(0) if rest else None
@@ -290,7 +259,7 @@ class Glob(object):
                 yield os.path.join(curdir, self.empty)
 
             # Search
-            for path in self._glob_deep(curdir, matcher, dir_only):
+            for path in self._glob_dir(curdir, matcher, dir_only, deep=True):
                 if this:
                     yield from self._glob(path, this, rest[:])
                 else:
@@ -299,14 +268,14 @@ class Glob(object):
         elif not dir_only:
             # Files: no need to recursively search at this point as we are done.
             matcher = self._get_matcher(target)
-            yield from self._glob_shallow(curdir, matcher)
+            yield from self._glob_dir(curdir, matcher)
 
         else:
             # Directory: search current directory against pattern
             # and feed the results back through with the next pattern.
             this = rest.pop(0) if rest else None
             matcher = self._get_matcher(target)
-            for path in self._glob_shallow(curdir, matcher, True):
+            for path in self._glob_dir(curdir, matcher, True):
                 if this:
                     yield from self._glob(path, this, rest[:])
                 else:
@@ -330,7 +299,7 @@ class Glob(object):
             dirname = os.path.dirname(fullpath)
             if basename:
                 matcher = self._get_matcher(basename)
-                results = [os.path.basename(name) for name in self._glob_shallow(dirname, matcher, self)]
+                results = [os.path.basename(name) for name in self._glob_dir(dirname, matcher, self)]
 
         return results
 
