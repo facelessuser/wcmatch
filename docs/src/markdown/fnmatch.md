@@ -29,7 +29,7 @@ Pattern           | Meaning
 
 - Slashes are generally treated as normal characters, but on windows they will be normalized: `/` will become `\\`. There is no need to explicitly use `\\` in patterns on Windows, but if you do, it will be handled.  This applies to matching patterns and the file names the patterns are applied to.
 - If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern and file names will be treated as a Linux/Unix path.
-- By default, `.` is *not* matched by `*`, `?`, `[]`, and extended patterns such as `*(...)`. See the [`DOTMATCH`](#fnmatchdotmatch) flag to match `.` at the start of a filename without a literal `.`.
+- By default, `.` is *not* matched by `*`, `?`, and `[]`. See the [`DOTMATCH`](#fnmatchdotmatch) flag to match `.` at the start of a filename without a literal `.`.
 
 --8<-- "posix.txt"
 
@@ -145,7 +145,7 @@ When `MINUSNEGATE` is used with [`NEGATE`](#fnmatchnegate), negate patterns are 
 
 #### `fnmatch.DOTMATCH, fnmatch.D` {: #fnmatchdotmatch}
 
-By default, [`glob`](#fnmatchfnmatch) and related functions will not match file or directory names that start with dot `.` unless matched with a literal dot. `DOTMATCH` allows the meta characters (such as `*`) to match dots like any other character. Dots will not be matched in `[]`, `*`, `?`, or extended patterns like `+(...)`.
+By default, [`glob`](#fnmatchfnmatch) and related functions will not match file or directory names that start with dot `.` unless matched with a literal dot. `DOTMATCH` allows the meta characters (such as `*`) to match dots like any other character. Dots will not be matched in `[]`, `*`, or `?`.
 
 #### `fnmatch.EXTMATCH, fnmatch.E` {: #fnmatchextmatch}
 

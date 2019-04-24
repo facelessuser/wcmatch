@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.1
+
+- **FIX**: `EXTMATCH`/`EXTGLOB` should allow literal dots and should not treat dots like sequences do.
+- **FIX**: Fix `!(...)` extended match patterns in `glob` and `globmatch` so that they properly match `.` and `..` if their pattern starts with `.`.
+- **FIX**: Fix `!(...)` extended match patterns so that they handle path separators correctly.
+- **FIX**: Patterns such as `?` or `[.]` should not trigger matching directories `.` and `..` in `glob` and `globmatch`.
+
 ## 2.2.0
 
 - **NEW**: Officially support Python 3.8.

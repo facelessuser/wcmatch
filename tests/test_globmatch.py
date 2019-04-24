@@ -382,6 +382,46 @@ class TestGlobFilter:
         ['!(test)', ['.abc', 'abc'], glob.D | glob.M],
         ['.!(test)', ['.', '..', '.abc'], glob.M],
         ['.!(test)', ['.', '..', '.abc'], glob.D | glob.M],
+        ['!(.)', ['..', '.abc', 'abc'], glob.M],
+        [r'!(\.)', ['..', '.abc', 'abc'], glob.M],
+        [r'!(\x2e)', ['..', '.abc', 'abc'], glob.M | glob.R],
+        ['@(!(.))', ['..', '.abc', 'abc'], glob.M],
+        ['!(@(.))', ['..', '.abc', 'abc'], glob.M],
+        ['+(!(.))', ['..', '.abc', 'abc'], glob.M],
+        ['!(+(.))', ['.abc', 'abc'], glob.M],
+        ['!(?)', ['abc'], glob.M],
+        ['!(*)', [], glob.M],
+        ['!([.])', ['abc'], glob.M],
+        ['!(.)', ['..', '.abc', 'abc'], glob.M | glob.D],
+        [r'!(\.)', ['..', '.abc', 'abc'], glob.M | glob.D],
+        [r'!(\x2e)', ['..', '.abc', 'abc'], glob.M | glob.R | glob.D],
+        ['@(!(.))', ['..', '.abc', 'abc'], glob.M | glob.D],
+        ['!(@(.))', ['..', '.abc', 'abc'], glob.M | glob.D],
+        ['+(!(.))', ['..', '.abc', 'abc'], glob.M | glob.D],
+        ['!(+(.))', ['.abc', 'abc'], glob.M | glob.D],
+        ['!(?)', ['.abc', 'abc'], glob.M | glob.D],
+        ['!(*)', [], glob.M | glob.D],
+        ['!([.])', ['.abc', 'abc'], glob.M | glob.D],
+
+        # More extended pattern dot related tests
+        ['*(.)', ['.', '..']],
+        [r'*(\.)', ['.', '..']],
+        ['*([.])', []],
+        ['*(?)', ['abc']],
+        ['@(.?)', ['..']],
+        ['@(?.)', []],
+        ['*(.)', ['.', '..'], glob.D],
+        [r'*(\.)', ['.', '..'], glob.D],
+        ['*([.])', [], glob.D],
+        ['*(?)', ['.abc', 'abc'], glob.D],
+        ['@(.?)', ['..'], glob.D],
+        ['@(?.)', [], glob.D],
+
+        GlobFiles(['folder/abc', 'directory/abc', 'dir/abc']),
+        # Test that inverse works properly mid path.
+        ['!(folder)/*', ['directory/abc', 'dir/abc'], glob.M],
+        ['!(folder)dir/abc', ['dir/abc'], glob.M],
+        ['!(dir)/abc', ['directory/abc', 'folder/abc'], glob.M],
 
         # Slash exclusion
         GlobFiles(
@@ -725,7 +765,8 @@ class TestGlobMatchSpecial(unittest.TestCase):
         if util.PY37:
             value = (
                 [
-                    '^(?s:(?:(?!(?:/|^)\\.).)*?(?:^|$|/)+(?![/.])[\x00-\x7f]/+stuff/+(?=.)'
+                    '^(?s:(?:(?!(?:/|^)\\.).)*?(?:^|$|/)+'
+                    '(?!(?:\\.{1,2})(?:$|/))(?![/.])[\x00-\x7f]/+stuff/+(?=.)'
                     '(?!(?:\\.{1,2})(?:$|/))(?:(?!\\.)[^/]*?)?[/]*?)$'
                 ],
                 []
@@ -733,7 +774,8 @@ class TestGlobMatchSpecial(unittest.TestCase):
         elif util.PY36:
             value = (
                 [
-                    '^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=.)'
+                    '^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+'
+                    '(?!(?:\\.{1,2})(?:$|\\/))(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=.)'
                     '(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'
                 ],
                 []
@@ -741,7 +783,8 @@ class TestGlobMatchSpecial(unittest.TestCase):
         else:
             value = (
                 [
-                    '(?s)^(?:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=.)'
+                    '(?s)^(?:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+'
+                    '(?!(?:\\.{1,2})(?:$|\\/))(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=.)'
                     '(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'
                 ],
                 []

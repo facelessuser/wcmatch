@@ -34,7 +34,7 @@ Pattern           | Meaning
 - Windows drives are recognized as either `C:\\` or `\\\\Server\\mount\\` (or `C:/` and `//Server/mount/`).
 - Meta characters have no effect when inside a UNC path: `\\\\Server?\\mount*\\`.
 - If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern and paths will be treated as if on Linux/Unix. Also Windows drives are no longer handled special. One exception is when using the functions [`glob`](#globglob) or [`iglob`](#globiglob).  Since `glob` and `iglob` work on the actual file system of the host, it *must* normalize slashes and handle drives to work properly on the system.
-- By default, file and directory names starting with `.` are only matched with literal `.`.  The patterns `*`, `?`, `[]`, and extended patterns like `*(...)` will not match a leading `.`.  To alter this behavior, you can use the [`DOTGLOB`](#globdotglob) flab, but even with `DOTGLOB`, `*` and `**` will not match a directory `.` or `..`.  But a pattern like `.*` will match `.` and `..`.
+- By default, file and directory names starting with `.` are only matched with literal `.`.  The patterns `*`, `**`, `?`, and `[]` will not match a leading `.`.  To alter this behavior, you can use the [`DOTGLOB`](#globdotglob) flag, but even with `DOTGLOB` these special tokens will not match a special directory (`.` or `..`).  But when a literal `.` is used, for instance in the pattern `.*`, the pattern will match `.` and `..`.
 - Relative paths and patterns are supported.
 
     ```pycon3
@@ -268,7 +268,7 @@ When `MINUSNEGATE` is used with [`NEGATE`](#globnegate), negate patterns are rec
 
 #### `glob.DOTGLOB, glob.D` {: #globdotglob}
 
-By default, [`glob`](#globglob) and [`globmatch`](#globglobmatch) will not match file or directory names that start with dot `.` unless matched with a literal dot. `DOTGLOB` allows the meta characters (such as `*`) to glob dots like any other character. Dots will not be matched in `[]`, `*`, `?`, or extended patterns like `+(...)`.
+By default, [`glob`](#globglob) and [`globmatch`](#globglobmatch) will not match file or directory names that start with dot `.` unless matched with a literal dot. `DOTGLOB` allows the meta characters (such as `*`) to glob dots like any other character. Dots will not be matched in `[]`, `*`, or `?`.
 
 Alternatively `DOTMATCH` will also be accepted for consistency with the other provided libraries. Both flags are exactly the same and are provided as a convenience in case the user finds one more intuitive than the other since `DOTGLOB` is often the name used in Bash.
 
