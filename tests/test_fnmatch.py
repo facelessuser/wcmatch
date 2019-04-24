@@ -92,7 +92,7 @@ class TestFnMatch:
         ['[a||b]', '|', True, 0],
         ['[a~~b]', '~', True, 0],
         ['[a-z+--A-Z]', ',', True, 0],
-        ['[a-z--2A-Z]', '0', True, 0],
+        ['[a-z--/A-Z]', '.', True, 0],
 
         # `Dotmatch` cases
         ['.abc', '.abc', True, 0],
