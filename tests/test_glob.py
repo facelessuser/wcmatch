@@ -131,11 +131,11 @@ class _TestGlob:
         Each path represents a full file path to match.
     * Flags
 
-    The default flags are: `GLOBSTAR` | `EXTGLOB` | `BRACE`. If any of these flags are provided in
+    The default flags are: `GLOBSTAR` | `EXTGLOB` | `BRACE` | `FOLLOWLINKS`. If any of these flags are provided in
     a test case, they will disable the default of the same name. All other flags will enable flags as expected.
     """
 
-    DEFAULT_FLAGS = glob.BRACE | glob.EXTGLOB | glob.GLOBSTAR
+    DEFAULT_FLAGS = glob.BRACE | glob.EXTGLOB | glob.GLOBSTAR | glob.FOLLOWLINKS
 
     cases = []
 
@@ -881,7 +881,7 @@ class TestGlobEscapes(unittest.TestCase):
 class SymlinkLoopGlobTests(unittest.TestCase):
     """Symlink loop test case."""
 
-    DEFAULT_FLAGS = glob.BRACE | glob.EXTGLOB | glob.GLOBSTAR
+    DEFAULT_FLAGS = glob.BRACE | glob.EXTGLOB | glob.GLOBSTAR | glob.FOLLOWLINKS
 
     def globjoin(self, *parts):
         """Joins glob path."""

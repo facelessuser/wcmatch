@@ -53,7 +53,8 @@ GLOBSTAR = 0x0100
 BRACE = 0x0200
 
 # Internal flag
-_FORCEWIN = 0x10000
+_FORCEWIN = 0x100000
+_GLOBSTAR_CAPTURE = 0x200000
 
 FLAG_MASK = (
     FORCECASE |
@@ -66,7 +67,8 @@ FLAG_MASK = (
     EXTMATCH |
     GLOBSTAR |
     BRACE |
-    _FORCEWIN
+    _FORCEWIN |
+    _GLOBSTAR_CAPTURE
 )
 CASE_FLAGS = FORCECASE | IGNORECASE
 
@@ -586,6 +588,7 @@ class WcParse(object):
         self.pathname = bool(flags & PATHNAME)
         self.raw_chars = bool(flags & RAWCHARS)
         self.globstar = self.pathname and bool(flags & GLOBSTAR)
+        self.globstar_capture = bool(flags & _GLOBSTAR_CAPTURE)
         self.dot = bool(flags & DOTMATCH)
         self.extend = bool(flags & EXTMATCH)
         self.case_sensitive = get_case(flags)
@@ -858,6 +861,8 @@ class WcParse(object):
             else:
                 star = self.path_star
                 globstar = self.path_gstar_dot1
+            if self.globstar_capture:
+                globstar = '({})'.format(globstar)
         else:
             if self.after_start and not self.dot:
                 star = _NO_DOT + _STAR

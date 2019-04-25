@@ -47,6 +47,7 @@ G = GLOBSTAR = _wcparse.GLOBSTAR
 N = NEGATE = _wcparse.NEGATE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
 B = BRACE = _wcparse.BRACE
+L = FOLLOWLINKS = 0x10000
 
 FLAG_MASK = (
     FORCECASE |
@@ -57,7 +58,8 @@ FLAG_MASK = (
     GLOBSTAR |
     NEGATE |
     MINUSNEGATE |
-    BRACE
+    BRACE |
+    FOLLOWLINKS
 )
 
 
@@ -76,6 +78,7 @@ class Glob(object):
         """Initialize the directory walker object."""
 
         self.flags = _flag_transform(flags)
+        self.follow_links = bool(self.flags & FOLLOWLINKS)
         self.dot = bool(self.flags & DOTMATCH)
         self.negate = bool(self.flags & NEGATE)
         self.globstar = bool(self.flags & _wcparse.GLOBSTAR)
@@ -88,20 +91,19 @@ class Glob(object):
         self._parse_patterns(pattern)
         if util.platform() == "windows":
             self.flags |= _wcparse._FORCEWIN
-            self.sep = (b'\\', '\\')
+            self.sep = b'\\' if self.is_bytes else '\\'
         else:
-            self.sep = (b'/', '/')
+            self.sep = b'/' if self.is_bytes else '/'
 
     def _parse_patterns(self, pattern):
         """Parse patterns."""
 
         self.pattern = []
         self.npattern = []
+        nflags = (self.flags | _wcparse._GLOBSTAR_CAPTURE) & ~_wcparse.NEGATE
         for p in pattern:
             if _wcparse.is_negative(p, self.flags):
-                self.npattern.append(
-                    _wcparse.compile(list(_wcparse.expand_braces(p, self.flags)), self.flags)
-                )
+                self.npattern.extend(_wcparse.compile(list(_wcparse.expand_braces(p[1:], nflags)), nflags)._include)
             else:
                 self.pattern.extend(
                     _wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p, self.flags)
@@ -117,19 +119,51 @@ class Glob(object):
     def _is_this(self, name):
         """Check if "this" directory `.`."""
 
-        return name in (b'.', '.') or name in self.sep
+        return name in (b'.', '.') or name == self.sep
 
     def _is_parent(self, name):
         """Check if `..`."""
 
         return name in (b'..', '..')
 
+    def _match_exclude(self, pattern, filename):
+        """
+        Match path against negate patterns.
+
+        Since `globstar` doesn't match symlinks (unless `follow_links` is enabled), we must look for symlinks
+        we identify that we have a pattern to be ignored. If it improperly matches a symlink in `globstar`,
+        we can assume this is not an excluded pattern.
+        """
+
+        matched = False
+
+        base = None
+        m = pattern.fullmatch(filename)
+        if m:
+            matched = True
+            # Lets look at the captured `globstar` groups and see if that part of the path
+            # contains symlinks.
+            if not self.follow_links:
+                for i, star in enumerate(m.groups()):
+                    if star:
+                        parts = star.strip(self.sep).split(self.sep)
+                        if base is None:
+                            base = filename[:m.start(i)]
+                        for part in parts:
+                            base = os.path.join(base, part)
+                            if os.path.islink(base):
+                                matched = False
+                                break
+                    if matched:
+                        break
+        return matched
+
     def _is_excluded(self, path):
         """Check if file is excluded."""
 
         excluded = False
         for n in self.npattern:
-            excluded = not n.match(path)
+            excluded = self._match_exclude(n, path)
             if excluded:
                 break
         return excluded
@@ -179,6 +213,8 @@ class Glob(object):
                             if deep and self._is_hidden(f.name):
                                 continue
                             path = os.path.join(curdir, f.name)
+                            if deep and not self.follow_links and f.is_dir() and os.path.islink(path):
+                                continue
                             if (not dir_only or f.is_dir()) and (matcher is None or matcher(f.name)):
                                 yield path
                             if deep and f.is_dir():
@@ -192,6 +228,8 @@ class Glob(object):
                         continue
                     path = os.path.join(curdir, f)
                     is_dir = os.path.isdir(path)
+                    if deep and not self.follow_links and is_dir and os.path.islink(path):
+                        continue
                     if (not dir_only or is_dir) and (matcher is None or matcher(f)):
                         yield path
                     if deep and is_dir:
