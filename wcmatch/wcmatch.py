@@ -42,9 +42,11 @@ B = BRACE = _wcparse.BRACE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
 
 # Control `PATHNAME` individually for folder exclude and files
-L = FOLLOW = 0x10000
-DP = DIRPATHNAME = 0x20000
-FP = FILEPATHNAME = 0x40000
+DP = DIRPATHNAME = 0x10000
+FP = FILEPATHNAME = 0x20000
+SL = SYMLINKS = 0x40000
+HD = HIDDEN = 0x80000
+RV = RECURSIVE = 0x100000
 
 # Control `PATHNAME` for file and folder
 P = PATHNAME = DIRPATHNAME | FILEPATHNAME
@@ -59,7 +61,9 @@ FLAG_MASK = (
     MINUSNEGATE |
     DIRPATHNAME |
     FILEPATHNAME |
-    FOLLOW
+    SYMLINKS |
+    HIDDEN |
+    RECURSIVE
 )
 
 
@@ -89,16 +93,17 @@ class WcMatch(object):
                 (re.compile(br'^.*$', re.DOTALL),) if self.is_bytes else (re.compile(r'^.*$', re.DOTALL),)
             )
         self.exclude_pattern = args.pop(0) if args else kwargs.pop('exclude_pattern', b'' if self.is_bytes else '')
-        self.recursive = args.pop(0) if args else kwargs.pop('recursive', False)
-        self.show_hidden = args.pop(0) if args else kwargs.pop('show_hidden', False)
         self.flags = (args.pop(0) if args else kwargs.pop('flags', 0)) & FLAG_MASK
+        self.follow_links = (args.pop(0) if args else kwargs.pop('follow_symlinks', False))
         self.flags |= _wcparse.NEGATE | _wcparse.DOTMATCH
-        self.follow_links = bool(self.flags & FOLLOW)
+        self.follow_links = bool(self.flags & SYMLINKS)
+        self.show_hidden = bool(self.flags & HIDDEN)
+        self.recursive = bool(self.flags & RECURSIVE)
         self.dir_pathname = bool(self.flags & DIRPATHNAME)
         self.file_pathname = bool(self.flags & FILEPATHNAME)
         if util.platform() == "windows":
             self.flags |= _wcparse._FORCEWIN
-        self.flags = self.flags & (_wcparse.FLAG_MASK ^ FOLLOW)
+        self.flags = self.flags & (_wcparse.FLAG_MASK ^ (SYMLINKS | DIRPATHNAME | FILEPATHNAME | HIDDEN))
 
         self.on_init(*args, **kwargs)
         self.file_check, self.folder_exclude_check = self._compile(self.file_pattern, self.exclude_pattern)

@@ -47,7 +47,7 @@ G = GLOBSTAR = _wcparse.GLOBSTAR
 N = NEGATE = _wcparse.NEGATE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
 B = BRACE = _wcparse.BRACE
-L = FOLLOW = 0x10000
+FL = FOLLOW = 0x10000
 
 FLAG_MASK = (
     FORCECASE |
@@ -67,7 +67,7 @@ def _flag_transform(flags):
     """Transform flags to glob defaults."""
 
     # Here we force `PATHNAME` and disable negation `NEGATE`
-    flags = (flags & FLAG_MASK) | _wcparse.PATHNAME
+    flags = (flags & (FLAG_MASK ^ FOLLOW)) | _wcparse.PATHNAME
     return flags
 
 
@@ -77,13 +77,13 @@ class Glob(object):
     def __init__(self, pattern, flags=0):
         """Initialize the directory walker object."""
 
+        self.follow_links = bool(flags & FOLLOW)
+        self.dot = bool(flags & DOTMATCH)
+        self.negate = bool(flags & NEGATE)
+        self.globstar = bool(flags & _wcparse.GLOBSTAR)
+        self.braces = bool(flags & _wcparse.BRACE)
+        self.case_sensitive = _wcparse.get_case(flags) and not util.platform() == "windows"
         self.flags = _flag_transform(flags)
-        self.follow_links = bool(self.flags & FOLLOW)
-        self.dot = bool(self.flags & DOTMATCH)
-        self.negate = bool(self.flags & NEGATE)
-        self.globstar = bool(self.flags & _wcparse.GLOBSTAR)
-        self.braces = bool(self.flags & _wcparse.BRACE)
-        self.case_sensitive = _wcparse.get_case(self.flags) and not util.platform() == "windows"
         self.is_bytes = isinstance(pattern[0], bytes)
         self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
         self.empty = b'' if self.is_bytes else ''

@@ -41,6 +41,9 @@ NEGATIVE_SYM = frozenset((b'!', '!'))
 MINUS_NEGATIVE_SYM = frozenset((b'-', '-'))
 EXT_TYPES = frozenset(('*', '?', '+', '@', '!'))
 
+# Common flags are found between 0x0001 - 0xffff
+# Implementation specific (`glob` vs `fnmatch` vs `wcmatch`) are found between 0x00010000 - 0xFFFF0000
+# Internal special flags are found at 0x100000000 and above
 FORCECASE = 0x0001
 IGNORECASE = 0x0002
 RAWCHARS = 0x0004
@@ -53,8 +56,8 @@ GLOBSTAR = 0x0100
 BRACE = 0x0200
 
 # Internal flag
-_FORCEWIN = 0x100000
-_GLOBSTAR_CAPTURE = 0x200000
+_FORCEWIN = 0x100000000
+_GLOBSTAR_CAPTURE = 0x2000000000
 
 FLAG_MASK = (
     FORCECASE |
