@@ -67,7 +67,7 @@ class TestWcmatch(unittest.TestCase):
         self.mktemp('b.file')
         self.mktemp('c.txt.bak')
 
-        self.default_flags = wcmatch.R | wcmatch.I | wcmatch.M
+        self.default_flags = wcmatch.R | wcmatch.I | wcmatch.M | wcmatch.L
         self.errors = []
         self.skipped = 0
         self.skip_records = []

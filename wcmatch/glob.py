@@ -47,7 +47,7 @@ G = GLOBSTAR = _wcparse.GLOBSTAR
 N = NEGATE = _wcparse.NEGATE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
 B = BRACE = _wcparse.BRACE
-L = FOLLOWLINKS = 0x10000
+L = FOLLOW = 0x10000
 
 FLAG_MASK = (
     FORCECASE |
@@ -59,7 +59,7 @@ FLAG_MASK = (
     NEGATE |
     MINUSNEGATE |
     BRACE |
-    FOLLOWLINKS
+    FOLLOW
 )
 
 
@@ -78,7 +78,7 @@ class Glob(object):
         """Initialize the directory walker object."""
 
         self.flags = _flag_transform(flags)
-        self.follow_links = bool(self.flags & FOLLOWLINKS)
+        self.follow_links = bool(self.flags & FOLLOW)
         self.dot = bool(self.flags & DOTMATCH)
         self.negate = bool(self.flags & NEGATE)
         self.globstar = bool(self.flags & _wcparse.GLOBSTAR)
@@ -100,7 +100,9 @@ class Glob(object):
 
         self.pattern = []
         self.npattern = []
-        nflags = (self.flags | _wcparse._GLOBSTAR_CAPTURE) & ~_wcparse.NEGATE
+        nflags = (self.flags | _wcparse._GLOBSTAR_CAPTURE)
+        if self.negate:
+            nflags ^= _wcparse.NEGATE
         for p in pattern:
             if _wcparse.is_negative(p, self.flags):
                 self.npattern.extend(_wcparse.compile(list(_wcparse.expand_braces(p[1:], nflags)), nflags)._include)

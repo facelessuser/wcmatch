@@ -22,7 +22,7 @@ IN THE SOFTWARE.
 """
 import os
 import re
-from . import file_hidden
+from . import file_attrs
 from . import _wcparse
 from . import util
 
@@ -42,8 +42,10 @@ B = BRACE = _wcparse.BRACE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
 
 # Control `PATHNAME` individually for folder exclude and files
-DP = DIRPATHNAME = 0x100000
-FP = FILEPATHNAME = 0x200000
+L = FOLLOW = 0x10000
+DP = DIRPATHNAME = 0x20000
+FP = FILEPATHNAME = 0x40000
+
 # Control `PATHNAME` for file and folder
 P = PATHNAME = DIRPATHNAME | FILEPATHNAME
 
@@ -56,7 +58,8 @@ FLAG_MASK = (
     BRACE |
     MINUSNEGATE |
     DIRPATHNAME |
-    FILEPATHNAME
+    FILEPATHNAME |
+    FOLLOW
 )
 
 
@@ -90,11 +93,12 @@ class WcMatch(object):
         self.show_hidden = args.pop(0) if args else kwargs.pop('show_hidden', False)
         self.flags = (args.pop(0) if args else kwargs.pop('flags', 0)) & FLAG_MASK
         self.flags |= _wcparse.NEGATE | _wcparse.DOTMATCH
+        self.follow_links = bool(self.flags & FOLLOW)
         self.dir_pathname = bool(self.flags & DIRPATHNAME)
         self.file_pathname = bool(self.flags & FILEPATHNAME)
         if util.platform() == "windows":
             self.flags |= _wcparse._FORCEWIN
-        self.flags = self.flags & _wcparse.FLAG_MASK
+        self.flags = self.flags & (_wcparse.FLAG_MASK ^ FOLLOW)
 
         self.on_init(*args, **kwargs)
         self.file_check, self.folder_exclude_check = self._compile(self.file_pattern, self.exclude_pattern)
@@ -123,20 +127,20 @@ class WcMatch(object):
 
         return file_pattern, folder_exclude_pattern
 
-    def _is_hidden(self, path):
+    def _has_attributes(self, path, hidden=False, symlinks=False):
         """Check if file is hidden."""
 
         if self.is_bytes:
-            return file_hidden.is_hidden_bytes(path) if not self.show_hidden else False
+            return file_attrs.has_file_attributes_bytes(path, hidden, symlinks)
         else:
-            return file_hidden.is_hidden(path) if not self.show_hidden else False
+            return file_attrs.has_file_attributes(path, hidden, symlinks)
 
     def _valid_file(self, base, name):
         """Return whether a file can be searched."""
 
         valid = False
         fullpath = os.path.join(base, name)
-        if self.file_check is not None and not self._is_hidden(fullpath):
+        if self.file_check is not None and not self._has_attributes(fullpath, hidden=not self.show_hidden):
             valid = self.file_check.match(fullpath[self._base_len:] if self.file_pathname else name)
         return self.on_validate_file(base, name) if valid else valid
 
@@ -150,7 +154,7 @@ class WcMatch(object):
 
         valid = True
         fullpath = os.path.join(base, name)
-        if not self.recursive or self._is_hidden(fullpath):
+        if not self.recursive or self._has_attributes(fullpath, not self.show_hidden, not self.follow_links):
             valid = False
         elif self.folder_exclude_check is not None:
             valid = not self.folder_exclude_check.match(fullpath[self._base_len:] if self.dir_pathname else name)
