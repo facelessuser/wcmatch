@@ -266,6 +266,16 @@ When `MINUSNEGATE` is used with [`NEGATE`](#globnegate), negate patterns are rec
 
 `GLOBSTAR` enables the feature where `**` matches zero or more directories.
 
+!!! new "New 3.0"
+    `GLOBSTAR` will no longer match or traverse symlink directories. This models the recent behavior in Bash 5.0. To crawl symlink directories, the new [`FOLLOW`](#globfollow) flag must be enabled.
+
+#### `glob.FOLLOW, glob.FL` {: #globfollow}
+
+`FOLLOW` will cause `GLOBSTAR` patterns (`**`) to match and traverse symlink directories.
+
+!!! new "New 3.0"
+    `FOLLOW` was added in 3.0.
+
 #### `glob.DOTGLOB, glob.D` {: #globdotglob}
 
 By default, [`glob`](#globglob) and [`globmatch`](#globglobmatch) will not match file or directory names that start with dot `.` unless matched with a literal dot. `DOTGLOB` allows the meta characters (such as `*`) to glob dots like any other character. Dots will not be matched in `[]`, `*`, or `?`.

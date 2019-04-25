@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.0
+
+- **NEW**: `WcMatch` class no longer accepts the `recursive` or `show_hidden` parameter, instead the `RECURSIVE` or `HIDDEN` flag must be used.
+- **NEW**: `WcMatch` class now ignores symlink directories by default. Symlinks will be handled and traversed if the `SYMLINK` flag is used.
+- **NEW**: `glob` and `iglob` functions now behave like Bash 5.0 in regards to symlinks in `GLOBSTAR` (`**`). `GLOBSTAR` will ignore symlink directories. This does not affect `globmatch` and `globfilter` as these simply use regular expression to match file path strings and do not touch the file system.
+- **NEW**: New flag called `FOLLOW` was added to force `glob` and `iglob` to recognize and follow symlink directories to restore previous behavior if desired.
+
 ## 2.2.1
 
 - **FIX**: `EXTMATCH`/`EXTGLOB` should allow literal dots and should not treat dots like sequences do.

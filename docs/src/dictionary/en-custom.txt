@@ -44,6 +44,7 @@ prerelease
 prereleases
 regex
 sortable
+subdirectories
 sublicense
 symlink
 symlinks
