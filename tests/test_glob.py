@@ -391,7 +391,7 @@ class Testglob(_TestGlob):
             ] if not can_symlink() else [
                 ('sym3', 'EF')
             ],
-            glob.N | glob.FL
+            glob.N | glob.L
         ],
 
         [
@@ -412,7 +412,7 @@ class Testglob(_TestGlob):
             ] if not can_symlink() else [
                 ('EF',), ('ZZZ',), ('',), ('sym1',), ('sym2',)
             ],
-            glob.N | glob.FL
+            glob.N | glob.L
         ],
 
         # Test nested glob directory

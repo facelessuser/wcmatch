@@ -33,7 +33,7 @@ Pattern           | Meaning
 - On Windows, drives are treated special and must come at the beginning of the pattern and cannot be matched with `*`, `[]`, `?`, or even extended match patterns like `+(...)`.
 - Windows drives are recognized as either `C:\\` or `\\\\Server\\mount\\` (or `C:/` and `//Server/mount/`).
 - Meta characters have no effect when inside a UNC path: `\\\\Server?\\mount*\\`.
-- If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern and paths will be treated as if on Linux/Unix. Also Windows drives are no longer handled special. One exception is when using the functions [`glob`](#globglob) or [`iglob`](#globiglob).  Since `glob` and `iglob` work on the actual file system of the host, it *must* normalize slashes and handle drives to work properly on the system.
+- If [`FORCECASE`](#globforcecase) is applied on a Windows system, slashes will not be normalized and pattern and paths will be treated as if on Linux/Unix. Also Windows drives will no longer be handled special. Two exception is when using the functions [`glob`](#globglob) or [`iglob`](#globiglob) are used or when [`REALPATH`](#globrealpath) is enabled, as either of these cases will cause `FORCECASE` to be ignored.  Since `glob` and `iglob` work on the actual file system of the host, and `REALPATH` forces functions like [`globmatch`](#globglobmatch) and [`globfilter`](#globglobfilter) to work off the file system, slashes and drives *must* be normalized and handled properly on the system for good behavior. `FORECASE` has no meaningful results on a Windows when working off the actual file system, and should not be enabled in these cases.
 - By default, file and directory names starting with `.` are only matched with literal `.`.  The patterns `*`, `**`, `?`, and `[]` will not match a leading `.`.  To alter this behavior, you can use the [`DOTGLOB`](#globdotglob) flag, but even with `DOTGLOB` these special tokens will not match a special directory (`.` or `..`).  But when a literal `.` is used, for instance in the pattern `.*`, the pattern will match `.` and `..`.
 - Relative paths and patterns are supported.
 
@@ -158,6 +158,10 @@ True
 False
 ```
 
+By default, `globmatch` and `globfilter` do not operate on the file system. This is to allow you to process paths from any source, even paths that are not on your current system. So if you are trying to explicitly match a directory with a pattern such as `*/`, your path must end with a slash (`my_directory/`) to be recognized as a directory. It also won't be able to evaluate whether a directory is a symlink or not as it will have no way of checking.
+
+If you would like for `globmatch` (or `globfilter`) to operate on your current filesystem paths directly, simply pass in the [`REALPATH`](#globrealpath) flag, and the path to be matched analyzed, applying directory and symlink context and match the path the same way that `glob` or `iglob` would match the path.
+
 #### `glob.globfilter`
 
 ```py3
@@ -172,6 +176,8 @@ def globfilter(filenames, patterns, *, flags=0):
 ['some/path/a.txt', 'b.txt']
 ```
 
+Like [`globmatch`](#globglobmatch), `globfilter` does not operate directly on the file system, with all the caveats associated, but you can enable the [`REALPATH`](#globrealpath) flag analyze paths that are actually on your system and apply proper context to match the same way `glob` or `iglob` would.
+
 #### `glob.globsplit`
 
 ```py3
@@ -185,6 +191,9 @@ def globsplit(pattern, *, flags=0):
 >>> glob.globsplit(r'**/*.txt|source/*(some|file).py')
 ('**/*.txt', 'source/*(some|file).py')
 ```
+
+!!! warning "Flags affect splitting!"
+    Remember to pass the same flags you plan to pass into `glob`, `iglob`, `globmatch`, or `globfilter` as the flags may affect how the content is split. Specifically flags like `EXTGLOB`, `REALPATH`, `RAWCHARS`, and `FORCECASE` can potential affect pattern splitting.
 
 #### `glob.translate`
 
@@ -244,7 +253,9 @@ True
 
 #### `glob.FORCECASE, glob.F` {: #globforcecase}
 
-`FORCECASE` forces case sensitivity. On Windows, this will force paths to be treated like Linux/Unix paths, and slashes will not be normalized. Path normalization only relates to [`globmatch`](#globglobmatch) and not for [`glob`](#globglob) and [`iglob`](#globiglob). Paths must be normalized for `glob` and `iglob` in order to scan the file system. `FORCECASE` has higher priority than [`IGNORECASE`](#globignorecase).
+`FORCECASE` forces case sensitivity.
+
+On Windows, `FORCECASE` will also force paths to be treated like Linux/Unix paths in [`globmatch`](#globglobmatch) and [`globfilter`](#globfilter) when [`REALPATH`](#globrealpath) is not enabled. `iglob`, `glob`, and cases when `REALPATH` is enabled must normalize paths and use Windows logic as these operations are performed on the current file system of the host machine. File system operations should not enable `FORCECASE` on Windows as it provides no meaningful results. But, if you wish to evaluate Unix/Linux paths on a Windows machine, without touching the file system, then `FORCECASE` might be useful.
 
 #### `glob.IGNORECASE, glob.I` {: #globignorecase}
 
@@ -275,6 +286,19 @@ When `MINUSNEGATE` is used with [`NEGATE`](#globnegate), negate patterns are rec
 
 !!! new "New 3.0"
     `FOLLOW` was added in 3.0.
+
+#### `glob.REALPATH, glob.P` {: #globrealpath}
+
+In the past, only `glob` and `iglob` operated on the filesystem, but with `REALPATH`other functions will now operate on the filesystem as well: `globsplit`, `globmatch`, `globfilter`, etc.
+
+Traditionally, functions such as `globmatch` would simply match a path with regular expression and return the result. It was not concerned with whether the path existing or not. It didn't care if it was even valid for the operating system as `FORCECASE` would force Unix/Linux path logic on Windows. `REALPATH` forces `globmatch` (and others) to treat the string path as a real file path for the given system it is running on. When `REALPATH` a number of additional logic performed when evaluating a path:
+
+- Path must exist
+- Directories that are symlinks will not be matched by `GLOBSTAR` patterns (`**`) unless the `FOLLOW` flag is enabled.
+- `globmatch` and `globfilter` will properly retrieve context on path and will determine if it is a directory or a file, and it will apply suitable logic accordingly. Without `REALPATH`, `globmatch` required a path to end with a slash when a pattern was explicitly trying to match a directory.
+
+!!! new "NEW 3.0"
+    `REALPATH` was added in 3.0.
 
 #### `glob.DOTGLOB, glob.D` {: #globdotglob}
 

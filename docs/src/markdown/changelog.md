@@ -2,9 +2,10 @@
 
 ## 3.0.0
 
+- **NEW**: `globmatch` and `globfilter` will now parse a file path as real path if the new `REALPATH` flag is set. Also affects glob pattern splitting as well.
 - **NEW**: `WcMatch` class no longer accepts the `recursive` or `show_hidden` parameter, instead the `RECURSIVE` or `HIDDEN` flag must be used.
 - **NEW**: `WcMatch` class now can search symlink directories with the new `SYMLINK` flag.
-- **NEW**: `glob` and `iglob` functions now behave like Bash 5.0 in regards to symlinks in `GLOBSTAR` (`**`). `GLOBSTAR` will ignore symlink directories. This does not affect `globmatch` and `globfilter` as these simply use regular expression to match file path strings and do not touch the file system.
+- **NEW**: `glob` and `iglob` functions now behave like Bash 5.0 in regards to symlinks in `GLOBSTAR` (`**`). `GLOBSTAR` will ignore symlink directories. This affects other functions such as `globmatch` and `globfilter` when `REALPATH` flag is enabled.
 - **NEW**: New flag called `FOLLOW` was added to force `glob` and `iglob` to recognize and follow symlink directories to restore previous behavior if desired.
 - **FIX**: Fix `glob` regression where inverse patterns such as `**/test/**` would match a directory `base/test` when it should have excluded it.
 

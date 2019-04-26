@@ -54,8 +54,7 @@ FLAG_MASK = (
 def _flag_transform(flags):
     """Transform flags to glob defaults."""
 
-    flags = (flags & FLAG_MASK)
-    return flags
+    return (flags & FLAG_MASK)
 
 
 def fnsplit(pattern, *, flags=0):

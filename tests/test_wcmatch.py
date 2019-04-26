@@ -412,6 +412,7 @@ class TestWcmatch(_TestWcmatch):
         self.assertEqual(len(self.error_records), 2)
 
 
+@skip_unless_symlink
 class TestWcmatchSymlink(_TestWcmatch):
     """Test symlinks."""
 

@@ -29,7 +29,8 @@ from . import util
 __all__ = (
     "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
-    "F", "I", "R", "D", "E", "G", "N", "M",
+    "REALPATH", "FOLLOW",
+    "F", "I", "R", "D", "E", "G", "N", "M", "P", "L",
     "iglob", "glob", "globsplit", "globmatch", "globfilter", "escape"
 )
 
@@ -47,7 +48,8 @@ G = GLOBSTAR = _wcparse.GLOBSTAR
 N = NEGATE = _wcparse.NEGATE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
 B = BRACE = _wcparse.BRACE
-FL = FOLLOW = 0x10000
+P = REALPATH = _wcparse.REALPATH
+L = FOLLOW = _wcparse.FOLLOW
 
 FLAG_MASK = (
     FORCECASE |
@@ -59,6 +61,7 @@ FLAG_MASK = (
     NEGATE |
     MINUSNEGATE |
     BRACE |
+    REALPATH |
     FOLLOW
 )
 
@@ -66,8 +69,12 @@ FLAG_MASK = (
 def _flag_transform(flags):
     """Transform flags to glob defaults."""
 
-    # Here we force `PATHNAME` and disable negation `NEGATE`
-    flags = (flags & (FLAG_MASK ^ FOLLOW)) | _wcparse.PATHNAME
+    # Here we force `PATHNAME`.
+    flags = (flags & FLAG_MASK) | _wcparse.PATHNAME
+    if flags & _wcparse.REALPATH and util.platform() == "windows":
+        flags |= _wcparse._FORCEWIN
+        if flags & _wcparse.FORCECASE:
+            flags ^= _wcparse.FORCECASE
     return flags
 
 
@@ -77,20 +84,19 @@ class Glob(object):
     def __init__(self, pattern, flags=0):
         """Initialize the directory walker object."""
 
+        self.flags = _flag_transform(flags | _wcparse.REALPATH) ^ _wcparse.REALPATH
         self.follow_links = bool(flags & FOLLOW)
         self.dot = bool(flags & DOTMATCH)
         self.negate = bool(flags & NEGATE)
         self.globstar = bool(flags & _wcparse.GLOBSTAR)
         self.braces = bool(flags & _wcparse.BRACE)
-        self.case_sensitive = _wcparse.get_case(flags) and not util.platform() == "windows"
-        self.flags = _flag_transform(flags)
+        self.case_sensitive = _wcparse.get_case(flags)
         self.is_bytes = isinstance(pattern[0], bytes)
         self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
         self.empty = b'' if self.is_bytes else ''
         self.current = b'.' if self.is_bytes else '.'
         self._parse_patterns(pattern)
-        if util.platform() == "windows":
-            self.flags |= _wcparse._FORCEWIN
+        if self.flags & _wcparse._FORCEWIN:
             self.sep = b'\\' if self.is_bytes else '\\'
         else:
             self.sep = b'/' if self.is_bytes else '/'
@@ -99,18 +105,21 @@ class Glob(object):
         """Parse patterns."""
 
         self.pattern = []
-        self.npattern = []
-        nflags = (self.flags | _wcparse._GLOBSTAR_CAPTURE)
-        if self.negate:
-            nflags ^= _wcparse.NEGATE
+        self.npatterns = None
+        npattern = []
         for p in pattern:
             if _wcparse.is_negative(p, self.flags):
-                self.npattern.extend(_wcparse.compile(list(_wcparse.expand_braces(p[1:], nflags)), nflags)._include)
+                # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
+                # This is faster as compiled patterns usually compare the include patterns first,
+                # and then the exclude, but glob will already know it wants to include the file.
+                npattern.append(p[1:])
             else:
                 self.pattern.extend(
-                    _wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p, self.flags)
+                    [_wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p, self.flags)]
                 )
-        if not self.pattern and self.npattern:
+        if npattern:
+            self.npatterns = _wcparse.compile(npattern, self.flags ^ (_wcparse.NEGATE | _wcparse.REALPATH))
+        if not self.pattern and self.npatterns is not None:
             self.pattern.append(_wcparse.WcPathSplit((b'**' if self.is_bytes else '**'), self.flags).split())
 
     def _is_hidden(self, name):
@@ -128,50 +137,15 @@ class Glob(object):
 
         return name in (b'..', '..')
 
-    def _match_exclude(self, pattern, filename):
-        """
-        Match path against negate patterns.
+    def _match_excluded(self, filename, patterns):
+        """Call match real directly to skip unnecessary `exists` check."""
 
-        Since `globstar` doesn't match symlinks (unless `follow_links` is enabled), we must look for symlinks
-        we identify that we have a pattern to be ignored. If it improperly matches a symlink in `globstar`,
-        we can assume this is not an excluded pattern.
-        """
-
-        matched = False
-
-        base = None
-        m = pattern.fullmatch(filename)
-        if m:
-            matched = True
-            # Lets look at the captured `globstar` groups and see if that part of the path
-            # contains symlinks.
-            if not self.follow_links:
-                for i, star in enumerate(m.groups(), 1):
-                    if star:
-                        parts = star.strip(self.sep).split(self.sep)
-                        if base is None:
-                            base = filename[:m.start(i)]
-                        for part in parts:
-                            base = os.path.join(base, part)
-                            if os.path.islink(base):
-                                matched = False
-                                break
-                    if matched:
-                        break
-        return matched
+        return _wcparse._match_real(filename, patterns._include, patterns._exclude, patterns._follow)
 
     def _is_excluded(self, path, dir_only):
         """Check if file is excluded."""
 
-        excluded = False
-        if self.npattern:
-            if not path.endswith(self.sep) and (dir_only or os.path.isdir(path)):
-                path += self.sep
-        for n in self.npattern:
-            excluded = self._match_exclude(n, path)
-            if excluded:
-                break
-        return excluded
+        return self.npatterns and self._match_excluded(path, self.npatterns)
 
     def _match_literal(self, a, b=None):
         """Match two names."""
