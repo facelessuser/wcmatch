@@ -172,6 +172,7 @@ class _TestGlob:
     def setup_class(cls):
         """Setup."""
 
+        cls.default_negate = '**'
         cls.absolute = False
         cls.skip = False
         cls.cwd_temp = False
@@ -257,9 +258,9 @@ class _TestGlob:
         p = '!' + p
         if not cls.just_negative:
             if not cls.absolute:
-                p = [cls.globjoin(cls.tempdir, '**'), p]
+                p = [cls.globjoin(cls.tempdir, cls.default_negate), p]
             else:
-                p = ['**', p]
+                p = [cls.default_negate, p]
         else:
             p = [p]
         res = glob.glob(p, **kwargs)
@@ -305,6 +306,9 @@ class _TestGlob:
             just_negative = case.get('just_negative')
             if just_negative is not None:
                 cls.just_negative = just_negative
+            default_negate = case.get('default_negate')
+            if default_negate is not None:
+                cls.default_negate = default_negate
             pytest.skip("Change Options")
 
         if cls.skip:
@@ -379,6 +383,26 @@ class Testglob(_TestGlob):
             ],
             glob.N
         ],
+
+        Options(default_negate='sym3/EF'),
+        [
+            ('**', 'EF'),
+            [
+            ] if not can_symlink() else [
+                ('sym3', 'EF')
+            ],
+            glob.N | glob.FL
+        ],
+
+        [
+            ('**', 'EF'),
+            [
+            ] if not can_symlink() else [
+            ],
+            glob.N
+        ],
+
+        Options(default_negate='**'),
 
         # Disable symlinks
         [

@@ -146,7 +146,7 @@ class Glob(object):
             # Lets look at the captured `globstar` groups and see if that part of the path
             # contains symlinks.
             if not self.follow_links:
-                for i, star in enumerate(m.groups()):
+                for i, star in enumerate(m.groups(), 1):
                     if star:
                         parts = star.strip(self.sep).split(self.sep)
                         if base is None:
