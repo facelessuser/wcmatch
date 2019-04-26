@@ -94,7 +94,6 @@ class WcMatch(object):
             )
         self.exclude_pattern = args.pop(0) if args else kwargs.pop('exclude_pattern', b'' if self.is_bytes else '')
         self.flags = (args.pop(0) if args else kwargs.pop('flags', 0)) & FLAG_MASK
-        self.follow_links = (args.pop(0) if args else kwargs.pop('follow_symlinks', False))
         self.flags |= _wcparse.NEGATE | _wcparse.DOTMATCH
         self.follow_links = bool(self.flags & SYMLINKS)
         self.show_hidden = bool(self.flags & HIDDEN)
