@@ -23,7 +23,36 @@ def create_empty_file(filename):
     os.close(fd)
 
 
-class TestWcmatch(unittest.TestCase):
+_can_symlink = None
+
+
+def can_symlink():
+    """Check if we can symlink."""
+
+    global _can_symlink
+    if _can_symlink is not None:
+        return _can_symlink
+    symlink_path = TESTFN + "can_symlink"
+    try:
+        os.symlink(TESTFN, symlink_path)
+        can = True
+    except (OSError, NotImplementedError, AttributeError):
+        can = False
+    else:
+        os.remove(symlink_path)
+    _can_symlink = can
+    return can
+
+
+def skip_unless_symlink(test):
+    """Skip decorator for tests that require functional symlink."""
+
+    ok = can_symlink()
+    msg = "Requires functional symlink implementation"
+    return test if ok else unittest.skip(msg)(test)
+
+
+class _TestWcmatch(unittest.TestCase):
     """Test the `WcMatch` class."""
 
     def mktemp(self, *parts):
@@ -96,6 +125,28 @@ class TestWcmatch(unittest.TestCase):
             else:
                 self.files.append(f)
         self.skipped = walker.get_skipped()
+
+
+class TestWcmatch(_TestWcmatch):
+    """Test the `WcMatch` class."""
+
+    def setUp(self):
+        """Setup."""
+
+        self.tempdir = TESTFN + "_dir"
+        self.mktemp('.hidden', 'a.txt')
+        self.mktemp('.hidden', 'b.file')
+        self.mktemp('.hidden_file')
+        self.mktemp('a.txt')
+        self.mktemp('b.file')
+        self.mktemp('c.txt.bak')
+
+        self.default_flags = wcmatch.R | wcmatch.I | wcmatch.M | wcmatch.SL
+        self.errors = []
+        self.skipped = 0
+        self.skip_records = []
+        self.error_records = []
+        self.files = []
 
     def test_full_path_exclude(self):
         """Test full path exclude."""
@@ -359,3 +410,69 @@ class TestWcmatch(unittest.TestCase):
 
         self.crawl_files(walker)
         self.assertEqual(len(self.error_records), 2)
+
+
+class TestWcmatchSymlink(_TestWcmatch):
+    """Test symlinks."""
+
+    def mksymlink(self, original, link):
+        """Make symlink."""
+
+        if not os.path.lexists(link):
+            os.symlink(original, link)
+
+    def setUp(self):
+        """Setup."""
+
+        self.tempdir = TESTFN + "_dir"
+        self.mktemp('.hidden', 'a.txt')
+        self.mktemp('.hidden', 'b.file')
+        self.mktemp('.hidden_file')
+        self.mktemp('a.txt')
+        self.mktemp('b.file')
+        self.mktemp('c.txt.bak')
+        self.can_symlink = can_symlink()
+        if self.can_symlink:
+            self.mksymlink('.hidden', self.norm('sym1'))
+            self.mksymlink(os.path.join('.hidden', 'a.txt'), self.norm('sym2'))
+
+        self.default_flags = wcmatch.R | wcmatch.I | wcmatch.M
+        self.errors = []
+        self.skipped = 0
+        self.skip_records = []
+        self.error_records = []
+        self.files = []
+
+    def test_symlinks(self):
+        """Test symlinks."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            '*.txt', None,
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN | wcmatch.SYMLINKS
+        )
+
+        self.crawl_files(walker)
+        self.assertEqual(
+            sorted(self.files),
+            self.norm_list(
+                ['a.txt', '.hidden/a.txt', 'sym1/a.txt']
+            )
+        )
+
+    def test_avoid_symlinks(self):
+        """Test avoiding symlinks."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            '*.txt', None,
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
+        )
+
+        self.crawl_files(walker)
+        self.assertEqual(
+            sorted(self.files),
+            self.norm_list(
+                ['a.txt', '.hidden/a.txt']
+            )
+        )

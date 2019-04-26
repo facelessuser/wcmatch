@@ -85,8 +85,8 @@ class WcMatch(object):
                 curdir = os.curdir
         else:
             curdir = self._directory
-        sep = os.fsencode(os.sep) if self.is_bytes else os.sep
-        self.base = curdir if curdir.endswith(sep) else curdir + sep
+        self.sep = os.fsencode(os.sep) if self.is_bytes else os.sep
+        self.base = curdir if curdir.endswith(self.sep) else curdir + self.sep
         self.file_pattern = args.pop(0) if args else kwargs.pop('file_pattern', b'' if self.is_bytes else '')
         if not self.file_pattern:
             self.file_pattern = _wcparse.WcRegexp(
@@ -146,8 +146,13 @@ class WcMatch(object):
         valid = False
         fullpath = os.path.join(base, name)
         if self.file_check is not None and not self._has_attributes(fullpath, hidden=not self.show_hidden):
-            valid = self.file_check.match(fullpath[self._base_len:] if self.file_pathname else name)
+            valid = self.compare_file(fullpath[self._base_len:] if self.file_pathname else name)
         return self.on_validate_file(base, name) if valid else valid
+
+    def compare_file(self, filename):
+        """Compare filename."""
+
+        return self.file_check.match(filename)
 
     def on_validate_file(self, base, name):
         """Validate file override."""
@@ -162,8 +167,13 @@ class WcMatch(object):
         if not self.recursive or self._has_attributes(fullpath, not self.show_hidden, not self.follow_links):
             valid = False
         elif self.folder_exclude_check is not None:
-            valid = not self.folder_exclude_check.match(fullpath[self._base_len:] if self.dir_pathname else name)
+            valid = self.compare_directory(fullpath[self._base_len:] if self.dir_pathname else name)
         return self.on_validate_directory(base, name) if valid else valid
+
+    def compare_directory(self, directory):
+        """Compare folder."""
+
+        return not self.folder_exclude_check.match(directory + self.sep if self.dir_pathname else directory)
 
     def on_init(self, *args, **kwargs):
         """Handle custom initialization."""
@@ -208,7 +218,7 @@ class WcMatch(object):
 
         self._base_len = len(self.base)
 
-        for base, dirs, files in os.walk(self.base):
+        for base, dirs, files in os.walk(self.base, followlinks=self.follow_links):
             # Remove child folders based on exclude rules
             for name in dirs[:]:
                 try:

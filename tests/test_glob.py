@@ -372,12 +372,23 @@ class Testglob(_TestGlob):
         [
             ('a*', '**'),
             [
-                ('EF',), ('ZZZ',), ('',), ('a',), ('aaa', ), ('aab', )
+                ('EF',), ('ZZZ',), ('',)
             ] if not can_symlink() else [
                 ('EF',), ('ZZZ',), ('',), ('sym1',), ('sym3',), ('sym2',),
-                ('a',), ('aaa', ), ('aab', ), ('sym3', 'efg'), ('sym3', 'efg', 'ha'), ('sym3', 'EF')
+                ('sym3', 'efg'), ('sym3', 'efg', 'ha'), ('sym3', 'EF')
             ],
             glob.N
+        ],
+
+        # Disable symlinks
+        [
+            ('a*', '**'),
+            [
+                ('EF',), ('ZZZ',), ('',)
+            ] if not can_symlink() else [
+                ('EF',), ('ZZZ',), ('',), ('sym1',), ('sym2',)
+            ],
+            glob.N | glob.FL
         ],
 
         # Test nested glob directory
@@ -720,10 +731,10 @@ class Testglob(_TestGlob):
         [
             ('a*', '**'),
             [
-                ('EF',), ('ZZZ',), ('a',), ('aaa', ), ('aab', )
+                ('EF',), ('ZZZ',)
             ] if not can_symlink() else [
                 ('EF',), ('ZZZ',),
-                ('a',), ('aaa', ), ('aab', ), ('sym1',), ('sym3',), ('sym2',), ('sym3', 'efg'), ('sym3', 'efg', 'ha'),
+                ('sym1',), ('sym3',), ('sym2',), ('sym3', 'efg'), ('sym3', 'efg', 'ha'),
                 ('sym3', 'EF')
             ],
             glob.N

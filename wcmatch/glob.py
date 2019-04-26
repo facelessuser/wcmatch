@@ -160,10 +160,13 @@ class Glob(object):
                         break
         return matched
 
-    def _is_excluded(self, path):
+    def _is_excluded(self, path, dir_only):
         """Check if file is excluded."""
 
         excluded = False
+        if self.npattern:
+            if not path.endswith(self.sep) and (dir_only or os.path.isdir(path)):
+                path += self.sep
         for n in self.npattern:
             excluded = self._match_exclude(n, path)
             if excluded:
@@ -385,21 +388,21 @@ class Glob(object):
                                 if rest:
                                     this = rest.pop(0)
                                     for match in self._glob(curdir, this, rest):
-                                        if not self._is_excluded(match):
+                                        if not self._is_excluded(match, dir_only):
                                             yield os.path.join(match, self.empty) if dir_only else match
-                                elif not self._is_excluded(curdir):
+                                elif not self._is_excluded(curdir, dir_only):
                                     yield os.path.join(curdir, self.empty) if dir_only else curdir
                     else:
                         # Return the file(s) and finish.
                         for start in results:
-                            if os.path.lexists(start) and not self._is_excluded(start):
+                            if os.path.lexists(start) and not self._is_excluded(start, dir_only):
                                 yield os.path.join(start, self.empty) if dir_only else start
                 else:
                     # Path starts with a magic pattern, let's get globbing
                     rest = pattern[:]
                     this = rest.pop(0)
                     for match in self._glob(curdir if not curdir == self.current else self.empty, this, rest):
-                        if not self._is_excluded(match):
+                        if not self._is_excluded(match, dir_only):
                             yield os.path.join(match, self.empty) if dir_only else match
 
 
