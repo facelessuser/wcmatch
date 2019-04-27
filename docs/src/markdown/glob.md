@@ -6,7 +6,7 @@ from wcmatch import glob
 
 ## Syntax
 
-The `glob` library provides methods for traversing the file system and returning files that matched a defined set of glob patterns.  The library also provides functions for matching file paths which is similar to [`fnmatch`](fnmatch#fnmatchfnmatch), but for paths. In short, [`globmatch`](#globglobmatch) matches what [`glob`](#globglob) globs :slight_smile:. `globmatch`'s features are similar to `fnmatch`'s.
+The `glob` library provides methods for traversing the file system and returning files that matched a defined set of glob patterns.  The library also provides functions for matching file paths which is similar to [`fnmatch`](./fnmatch.md#fnmatchfnmatch), but for paths. In short, [`globmatch`](#globglobmatch) matches what [`glob`](#globglob) globs :slight_smile:. `globmatch`'s features are similar to `fnmatch`'s.
 
 !!! tip
     When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a character `#!py3 r'\?'`.  If you want to represent a literal backslash, you must use two: `#!py3 r'some\\path'`.
@@ -28,13 +28,13 @@ Pattern           | Meaning
 `!(pattern_list)` | The pattern matches if the input string cannot be matched with any of the patterns in the `pattern_list`.
 `{}`              | Bash style brace expansions.  This is applied to patterns before anything else.
 
-- Slashes are generally treated special in glob related methods. Slashes are not matched in `[]`, `*`, `?`, or extended patterns like `*(...)`. Slashes can be matched by `**` unless [`NOGLOBSTAR`](#globnoglobstar) is set.
+- Slashes are generally treated special in glob related methods. Slashes are not matched in `[]`, `*`, `?`, or extended patterns like `*(...)`. Slashes can be matched by `**` if [`GLOBSTAR`](#globglobstar) is set.
 - On Windows, slashes will be normalized in paths and patterns: `/` will become `\\`. There is no need to explicitly use `\\` in patterns on Windows, but if you do, it will be handled.
 - On Windows, drives are treated special and must come at the beginning of the pattern and cannot be matched with `*`, `[]`, `?`, or even extended match patterns like `+(...)`.
 - Windows drives are recognized as either `C:\\` or `\\\\Server\\mount\\` (or `C:/` and `//Server/mount/`).
 - Meta characters have no effect when inside a UNC path: `\\\\Server?\\mount*\\`.
-- If [`FORCECASE`](#globforcecase) is applied on a Windows system, slashes will not be normalized and pattern and paths will be treated as if on Linux/Unix. Also Windows drives will no longer be handled special. Two exception is when using the functions [`glob`](#globglob) or [`iglob`](#globiglob) are used or when [`REALPATH`](#globrealpath) is enabled, as either of these cases will cause `FORCECASE` to be ignored.  Since `glob` and `iglob` work on the actual file system of the host, and `REALPATH` forces functions like [`globmatch`](#globglobmatch) and [`globfilter`](#globglobfilter) to work off the file system, slashes and drives *must* be normalized and handled properly on the system for good behavior. `FORECASE` has no meaningful results on a Windows when working off the actual file system, and should not be enabled in these cases.
-- By default, file and directory names starting with `.` are only matched with literal `.`.  The patterns `*`, `**`, `?`, and `[]` will not match a leading `.`.  To alter this behavior, you can use the [`DOTGLOB`](#globdotglob) flag, but even with `DOTGLOB` these special tokens will not match a special directory (`.` or `..`).  But when a literal `.` is used, for instance in the pattern `.*`, the pattern will match `.` and `..`.
+- If [`FORCECASE`](#globforcecase) is applied on a Windows system, match and filter commands that do not touch the file system, will not have slashes normalized. In addition, drive letters will also not be handled. Essentially, paths will be treated as if on Linux/Unix. Commands on Windows that do touch the file system will ignore `FORCECASE`. [`glob`](#globglob) and [`iglob`](#globiglob) will ignore `FORCECASE` on Windows. [`globmatch`](#globglobmatch) and [`globfilter`](#globglobfilter), will also ignore `FORCECASE` if the [`REALPATH`](#globrealpath) flag is enabled.
+- By default, file and directory names starting with `.` are only matched with literal `.`.  The patterns `*`, `**`, `?`, and `[]` will not match a leading `.`.  To alter this behavior, you can use the [`DOTGLOB`](#globdotglob) flag, but even with `DOTGLOB` these special tokens will not match a special directory (`.` or `..`).  But when a literal `.` is used as the start of the filename, for instance in the pattern `.*`, `.` and `..` can potentially be matched.
 - Relative paths and patterns are supported.
 
     ```pycon3
@@ -43,7 +43,7 @@ Pattern           | Meaning
     ['./docs/src/../src', './docs/src/../theme']
     ```
 
-- In general, Wildcard Match's behavior is modeled off of Bash's, so unlike the Python's default `glob`, Wildcard Match's `glob` will match and return `.` and `..` in certain cases just like Bash does.
+- In general, Wildcard Match's behavior is modeled off of Bash's, so unlike Python's default `glob`, Wildcard Match's `glob` will match and return `.` and `..` in certain cases just like Bash does.
 
     Python's default:
 
@@ -160,7 +160,7 @@ False
 
 By default, `globmatch` and `globfilter` do not operate on the file system. This is to allow you to process paths from any source, even paths that are not on your current system. So if you are trying to explicitly match a directory with a pattern such as `*/`, your path must end with a slash (`my_directory/`) to be recognized as a directory. It also won't be able to evaluate whether a directory is a symlink or not as it will have no way of checking.
 
-If you would like for `globmatch` (or `globfilter`) to operate on your current filesystem paths directly, simply pass in the [`REALPATH`](#globrealpath) flag, and the path to be matched analyzed, applying directory and symlink context and match the path the same way that `glob` or `iglob` would match the path.
+If you would like for `globmatch` (or `globfilter`) to operate on your current filesystem directly, simply pass in the [`REALPATH`](#globrealpath) flag. When enabled, the path under consideration will be analyzed and will use that context to determine if the file exists, if it is a directory, or if it has symlinks that should not be matched by `GLOBSTAR`.
 
 #### `glob.globfilter`
 
@@ -176,7 +176,7 @@ def globfilter(filenames, patterns, *, flags=0):
 ['some/path/a.txt', 'b.txt']
 ```
 
-Like [`globmatch`](#globglobmatch), `globfilter` does not operate directly on the file system, with all the caveats associated, but you can enable the [`REALPATH`](#globrealpath) flag analyze paths that are actually on your system and apply proper context to match the same way `glob` or `iglob` would.
+Like [`globmatch`](#globglobmatch), `globfilter` does not operate directly on the file system, with all the caveats associated. But you can enable the [`REALPATH`](#globrealpath) flag and `globfilter` will use the filesystem to gain context such as: whether the file exists, whether it is a directory or not, or whether it has symlinks that should not be matched by `GLOBSTAR`.
 
 #### `glob.globsplit`
 
@@ -192,8 +192,8 @@ def globsplit(pattern, *, flags=0):
 ('**/*.txt', 'source/*(some|file).py')
 ```
 
-!!! warning "Flags affect splitting!"
-    Remember to pass the same flags you plan to pass into `glob`, `iglob`, `globmatch`, or `globfilter` as the flags may affect how the content is split. Specifically flags like `EXTGLOB`, `REALPATH`, `RAWCHARS`, and `FORCECASE` can potential affect pattern splitting.
+!!! warning "Deprecated 3.0"
+    `globsplit` has been deprecated in favor of using the [`SPLIT`](#globsplit) flag instead.
 
 #### `glob.translate`
 
@@ -289,13 +289,15 @@ When `MINUSNEGATE` is used with [`NEGATE`](#globnegate), negate patterns are rec
 
 #### `glob.REALPATH, glob.P` {: #globrealpath}
 
-In the past, only `glob` and `iglob` operated on the filesystem, but with `REALPATH`other functions will now operate on the filesystem as well: `globsplit`, `globmatch`, `globfilter`, etc.
+In the past, only `glob` and `iglob` operated on the filesystem, but with `REALPATH`, other functions will now operate on the filesystem as well: `globmatch` and `globfilter`.
 
-Traditionally, functions such as `globmatch` would simply match a path with regular expression and return the result. It was not concerned with whether the path existing or not. It didn't care if it was even valid for the operating system as `FORCECASE` would force Unix/Linux path logic on Windows. `REALPATH` forces `globmatch` (and others) to treat the string path as a real file path for the given system it is running on. When `REALPATH` a number of additional logic performed when evaluating a path:
+Traditionally, functions such as `globmatch` would simply match a path with regular expression and return the result. It was not concerned with whether the path existed or not. It didn't care if it was even valid for the operating system as `FORCECASE` would force Unix/Linux path logic on Windows.
 
-- Path must exist
+`REALPATH` forces `globmatch` and `globfilter` to treat the string path as a real file path for the given system it is running on. It will enable additional logic that the path must meet in order to match:
+
+- Path must exist.
 - Directories that are symlinks will not be matched by `GLOBSTAR` patterns (`**`) unless the `FOLLOW` flag is enabled.
-- `globmatch` and `globfilter` will properly retrieve context on path and will determine if it is a directory or a file, and it will apply suitable logic accordingly. Without `REALPATH`, `globmatch` required a path to end with a slash when a pattern was explicitly trying to match a directory.
+- When presented with a pattern where the match must be a directory, but the file path being compared doesn't indicate the file is a directory with a trailing slash, the command will look at the filesystem to determine if it is a directory.
 
 !!! new "NEW 3.0"
     `REALPATH` was added in 3.0.
@@ -319,6 +321,18 @@ Alternatively `EXTMATCH` will also be accepted for consistency with the other pr
 For simple patterns, it may make more sense to use [`EXTGLOB`](#globextglob) which will only generate a single pattern: `@(ab|ac|ad)`.
 
 Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of patterns.
+
+#### `glob.SPLIT, glob.S` {: #globsplit}
+
+`SPLIT` is used to take a string of multiple patterns that are delimited by `|` and split them into separate patterns. This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It takes into account things like sequences (`[]`) and extended patterns (`*(...)`) and will not parse `|` within them.  You can escape the delimiters if needed: `\|`.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.globmatch('test.txt', r'*.txt|*.py', flags=fnmatch.SPLIT)
+True
+>>> glob.globmatch('test.py', r'*.txt|*.py', flags=fnmatch.SPLIT)
+True
+```
 
 --8<--
 refs.txt

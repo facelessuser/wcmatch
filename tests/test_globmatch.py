@@ -835,6 +835,20 @@ class TestGlobMatchSpecial(unittest.TestCase):
             )
         )
 
+    def test_glob_match_real(self):
+        """Test real `globmatch` vs regular `globmatch`."""
+
+        # When there is no context from the file system,
+        # `globmatch` can't determine folder with no trailing slash.
+        self.assertFalse(glob.globmatch('docs/src', '**/src/**', flags=self.flags))
+        self.assertTrue(glob.globmatch('docs/src/', '**/src/**', flags=self.flags))
+        self.assertTrue(glob.globmatch('docs/src', '**/src/**', flags=self.flags | glob.REALPATH))
+        self.assertTrue(glob.globmatch('docs/src/', '**/src/**', flags=self.flags | glob.REALPATH))
+
+        # Missing files will only match in `globmatch` without context from file system.
+        self.assertTrue(glob.globmatch('bad/src/', '**/src/**', flags=self.flags))
+        self.assertFalse(glob.globmatch('bad/src/', '**/src/**', flags=self.flags | glob.REALPATH))
+
     def test_glob_integrity(self):
         """`globmatch` must match what glob globs."""
 
@@ -865,6 +879,76 @@ class TestGlobMatchSpecial(unittest.TestCase):
                     glob.globmatch(
                         x, './///**///./../*.py', flags=self.flags
                     ) for x in glob.glob('./**/.//////..////*.py', flags=self.flags)
+                ]
+            )
+        )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**', flags=self.flags
+                    ) for x in glob.glob('**/docs/**', flags=self.flags)
+                ]
+            )
+        )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT
+                    ) for x in glob.glob('**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT)
+                ]
+            )
+        )
+
+    def test_glob_integrity_real(self):
+        """`globmatch` must match what glob globs against the real file system."""
+
+        # Number of slashes is inconsequential
+        # Glob really looks at what is in between. Multiple slashes are the same as one separator.
+        # UNC mounts are special cases and it matters there.
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/../*.{md,py}', flags=self.flags | glob.REALPATH
+                    ) for x in glob.glob('**/../*.{md,py}', flags=self.flags)
+                ]
+            )
+        )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, './**/./../*.py', flags=self.flags | glob.REALPATH
+                    ) for x in glob.glob('./**/./../*.py', flags=self.flags)
+                ]
+            )
+        )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, './///**///./../*.py', flags=self.flags | glob.REALPATH
+                    ) for x in glob.glob('./**/.//////..////*.py', flags=self.flags)
+                ]
+            )
+        )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**', flags=self.flags | glob.REALPATH
+                    ) for x in glob.glob('**/docs/**', flags=self.flags)
+                ]
+            )
+        )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.REALPATH
+                    ) for x in glob.glob('**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT)
                 ]
             )
         )

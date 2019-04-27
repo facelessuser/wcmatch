@@ -2,12 +2,13 @@
 
 ## 3.0.0
 
-- **NEW**: `globmatch` and `globfilter` will now parse a file path as real path if the new `REALPATH` flag is set. Also affects glob pattern splitting as well.
+- **NEW**: `globsplit` and `fnsplit` have been deprecated. Users are encouraged to use the new `SPLIT` flag to allow functions to use multiple wildcard paths delimited by `|`.
+- **NEW**: `globmatch` and `globfilter` will now parse a file path as real path if the new `REALPATH` flag is set. This has the advantage of allowing the commands to be aware of symlinks and properly apply related logic (whether to follow the links or not). It also helps to clarify ambiguous cases where it isn't clear if a file path references a directory because the trailing slash was omitted.
 - **NEW**: `WcMatch` class no longer accepts the `recursive` or `show_hidden` parameter, instead the `RECURSIVE` or `HIDDEN` flag must be used.
 - **NEW**: `WcMatch` class now can search symlink directories with the new `SYMLINK` flag.
 - **NEW**: `glob` and `iglob` functions now behave like Bash 5.0 in regards to symlinks in `GLOBSTAR` (`**`). `GLOBSTAR` will ignore symlink directories. This affects other functions such as `globmatch` and `globfilter` when `REALPATH` flag is enabled.
-- **NEW**: New flag called `FOLLOW` was added to force `glob` and `iglob` to recognize and follow symlink directories to restore previous behavior if desired.
-- **FIX**: Fix `glob` regression where inverse patterns such as `**/test/**` would match a directory `base/test` when it should have excluded it.
+- **NEW**: New flag called `FOLLOW` was added to force related `glob` commands to recognize and follow symlink directories.
+- **FIX**: Fix `glob` regression where inverse patterns such as `!**/test/**` would allow a directory `base/test` to match when it should have excluded it due to the missing trailing `/`.
 
 ## 2.2.1
 

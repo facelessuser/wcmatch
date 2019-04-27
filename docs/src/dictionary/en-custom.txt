@@ -29,6 +29,7 @@ deprecations
 falsy
 filename
 filenames
+filesystem
 globbing
 initializer
 lookahead

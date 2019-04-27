@@ -6,7 +6,7 @@ from wcmatch import fnmatch
 
 ## Syntax
 
-The `fnmatch` library is similar to the builtin `fnmatch`, but with some enhancements and some differences. It is mainly used for matching file names with glob patterns. For path names, Wildcard Match's [`globmatch`](glob#globglobmatch) is a more appropriate choice. Not all of the features listed below are enabled by default. See [flags](#flags) for more information.
+The `fnmatch` library is similar to the builtin `fnmatch`, but with some enhancements and some differences. It is mainly used for matching filenames with glob patterns. For path names, Wildcard Match's [`globmatch`](glob#globglobmatch) is a more appropriate choice. Not all of the features listed below are enabled by default. See [flags](#flags) for more information.
 
 !!! tip
     When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a character `#!py3 r'\?'`.  If you want to represent a literal backslash, you must use two: `#!py3 r'some\\path'`.
@@ -27,8 +27,8 @@ Pattern           | Meaning
 `!(pattern_list)` | The pattern matches if the input string cannot be matched with any of the patterns in the `pattern_list`.
 `{}`              | Bash style brace expansions.  This is applied to patterns before anything else.
 
-- Slashes are generally treated as normal characters, but on windows they will be normalized: `/` will become `\\`. There is no need to explicitly use `\\` in patterns on Windows, but if you do, it will be handled.  This applies to matching patterns and the file names the patterns are applied to.
-- If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern and file names will be treated as a Linux/Unix path.
+- Slashes are generally treated as normal characters, but on windows they will be normalized: `/` will become `\\`. There is no need to explicitly use `\\` in patterns on Windows, but if you do, it will be handled.  This applies to matching patterns and the filenames the patterns are applied to.
+- If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern and filenames will be treated as a Linux/Unix filename.
 - By default, `.` is *not* matched by `*`, `?`, and `[]`. See the [`DOTMATCH`](#fnmatchdotmatch) flag to match `.` at the start of a filename without a literal `.`.
 
 --8<-- "posix.txt"
@@ -83,7 +83,7 @@ False
 def filter(filenames, patterns, *, flags=0):
 ```
 
-`filter` takes a list of file names, a pattern (or list of patterns), and flags. It returns a list of all files that matched the pattern(s). The same logic used for [`fnmatch`](#fnmatchfnmatch) is used for `filter`, albeit more efficient for processing multiple files.
+`filter` takes a list of filenames, a pattern (or list of patterns), and flags. It returns a list of all files that matched the pattern(s). The same logic used for [`fnmatch`](#fnmatchfnmatch) is used for `filter`, albeit more efficient for processing multiple files.
 
 ```pycon3
 >>> from wcmatch import fnmatch
@@ -104,6 +104,10 @@ def fnsplit(pattern, *, flags=0):
 >>> fnmatch.fnsplit(r'*.txt|*(some|file).py', flags=fnmatch.EXTMATCH)
 ('*.txt', '*(some|file).py')
 ```
+
+
+!!! warning "Deprecated 3.0"
+    `fnsplit` has been deprecated in favor of using the [`SPLIT`](#fnmatchsplit) flag instead.
 
 #### `fnmatch.translate`
 
@@ -158,6 +162,18 @@ By default, [`glob`](#fnmatchfnmatch) and related functions will not match file 
 For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch) which will only generate a single pattern: `@(ab|ac|ad)`.
 
 Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of patterns.
+
+#### `fnmatch.SPLIT, fnmatch.S` {: #fnmatchsplit}
+
+`SPLIT` is used to take a string of multiple patterns that are delimited by `|` and split them into separate patterns. This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It takes into account things like sequences (`[]`) and extended patterns (`*(...)`) and will not parse `|` within them.  You can escape the delimiters if needed: `\|`.
+
+```pycon3
+>>> from wcmatch import fnmatch
+>>> fnmatch.fnmatch('test.txt', r'*.txt|*.py', flags=fnmatch.SPLIT)
+True
+>>> fnmatch.fnmatch('test.py', r'*.txt|*.py', flags=fnmatch.SPLIT)
+True
+```
 
 --8<--
 refs.txt
