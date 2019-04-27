@@ -1223,7 +1223,7 @@ class WcParse(object):
         return pattern
 
 
-def _fs_match(pattern, filename, sep, follow):
+def _fs_match(pattern, filename, sep, follow, symlinks):
     """
     Match path against the pattern.
 
@@ -1247,15 +1247,21 @@ def _fs_match(pattern, filename, sep, follow):
                         base = filename[:m.start(i)]
                     for part in parts:
                         base = os.path.join(base, part)
-                        if os.path.islink(base):
-                            matched = False
+                        is_link = symlinks.get(base, None)
+                        if is_link is not None:
+                            matched = not is_link
+                        else:
+                            is_link = os.path.islink(base)
+                            symlinks[base] = is_link
+                            matched = not is_link
+                        if not matched:
                             break
                 if matched:
                     break
     return matched
 
 
-def _match_real(filename, include, exclude, follow):
+def _match_real(filename, include, exclude, follow, symlinks):
     """Match real filename includes and excludes."""
 
     sep = '\\' if util.platform() == "windows" else '/'
@@ -1266,7 +1272,7 @@ def _match_real(filename, include, exclude, follow):
 
     matched = False
     for pattern in include:
-        if _fs_match(pattern, filename, sep, follow):
+        if _fs_match(pattern, filename, sep, follow, symlinks):
             matched = True
             break
 
@@ -1277,7 +1283,7 @@ def _match_real(filename, include, exclude, follow):
         matched = True
         if exclude:
             for pattern in exclude:
-                if _fs_match(pattern, filename, sep, follow):
+                if _fs_match(pattern, filename, sep, follow, symlinks):
                     matched = False
                     break
     return matched
@@ -1287,10 +1293,11 @@ def _match_pattern(filename, include, exclude, real, path, follow):
     """Match includes and excludes."""
 
     if real:
+        symlinks = {}
         if not os.path.lexists(filename):
             return False
         if path:
-            return _match_real(filename, include, exclude, follow)
+            return _match_real(filename, include, exclude, follow, symlinks)
 
     matched = False
     for pattern in include:
@@ -1369,6 +1376,7 @@ class WcRegexp(util.Immutable):
     def match(self, filename):
         """Match filename."""
 
+        symlinks = set()
         return _match_pattern(filename, self._include, self._exclude, self._real, self._path, self._follow)
 
 

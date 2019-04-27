@@ -142,7 +142,9 @@ class Glob(object):
     def _match_excluded(self, filename, patterns):
         """Call match real directly to skip unnecessary `exists` check."""
 
-        return _wcparse._match_real(filename, patterns._include, patterns._exclude, patterns._follow)
+        return _wcparse._match_real(
+            filename, patterns._include, patterns._exclude, patterns._follow, self.symlinks
+        )
 
     def _is_excluded(self, path, dir_only):
         """Check if file is excluded."""
@@ -194,11 +196,18 @@ class Glob(object):
                             if deep and self._is_hidden(f.name):
                                 continue
                             path = os.path.join(curdir, f.name)
-                            if deep and not self.follow_links and f.is_dir() and f.is_symlink():
+                            is_dir = f.is_dir()
+                            if is_dir:
+                                is_link = f.is_symlink()
+                                self.symlinks[path] = is_link
+                            else:
+                                # We don't care if a file is a link
+                                is_link = False
+                            if deep and not self.follow_links and is_link:
                                 continue
-                            if (not dir_only or f.is_dir()) and (matcher is None or matcher(f.name)):
+                            if (not dir_only or is_dir) and (matcher is None or matcher(f.name)):
                                 yield path
-                            if deep and f.is_dir():
+                            if deep and is_dir:
                                 yield from self._glob_dir(path, matcher, dir_only, deep)
                         except OSError:  # pragma: no cover
                             pass
@@ -209,7 +218,12 @@ class Glob(object):
                         continue
                     path = os.path.join(curdir, f)
                     is_dir = os.path.isdir(path)
-                    if deep and not self.follow_links and is_dir and os.path.islink(path):
+                    if is_dir:
+                        is_link = os.path.islink(path)
+                        self.symlinks[path] = is_link
+                    else:
+                        is_link = False
+                    if deep and not self.follow_links and is_link:
                         continue
                     if (not dir_only or is_dir) and (matcher is None or matcher(f)):
                         yield path
@@ -325,6 +339,9 @@ class Glob(object):
     def glob(self):
         """Starts off the glob iterator."""
 
+        # Cached symlinks
+        self.symlinks = {}
+
         if self.is_bytes:
             curdir = bytes(os.curdir, 'ASCII')
         else:
@@ -342,7 +359,7 @@ class Glob(object):
 
                     curdir = this[0]
 
-                    if not os.path.isdir(curdir) and not os.path.lexists(curdir):
+                    if not os.path.lexists(curdir):
                         return
 
                     # Make sure case matches, but running case insensitive
@@ -350,7 +367,7 @@ class Glob(object):
                     # one starting location.
                     results = [curdir] if this.is_drive else self._get_starting_paths(curdir)
                     if not results:
-                        if not dir_only and os.path.lexists(curdir):
+                        if not dir_only:
                             # There is no directory with this name,
                             # but we have a file and no directory restriction
                             yield curdir
