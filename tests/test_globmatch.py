@@ -494,10 +494,7 @@ class TestGlobFilter:
         if split and cls.skip_split:
             return
         if split:
-            new_pat = []
-            for x in pat:
-                new_pat.extend(list(glob.globsplit(x, flags=flags)))
-            pat = new_pat
+            flags |= glob.SPLIT
         print("PATTERN: ", case[0])
         print("FILES: ", files)
         print("FLAGS: ", bin(flags))

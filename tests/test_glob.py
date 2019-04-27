@@ -977,3 +977,19 @@ class SymlinkLoopGlobTests(unittest.TestCase):
                 self.assertIn(path, results)
                 results.remove(path)
                 depth += 1
+
+
+class TestDeprecated(unittest.TestCase):
+    """Test deprecated."""
+
+    def test_split(self):
+        """Test split."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            patterns = glob.globsplit('test|test')
+            self.assertTrue(len(w) == 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
+            self.assertTrue(patterns, ['test', 'test'])

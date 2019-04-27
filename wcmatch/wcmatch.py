@@ -28,7 +28,7 @@ from . import util
 
 __all__ = (
     "FORCECASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME",
-    "EXTMATCH", "GLOBSTAR", "BRACE", "MINUSNEGATE", "SYMLINKS", "HIDDEN", "RECURSIVE"
+    "EXTMATCH", "GLOBSTAR", "BRACE", "MINUSNEGATE", "SYMLINKS", "HIDDEN", "RECURSIVE",
     "F", "I", "R", "P", "E", "G", "M", "DP", "FP", "SL", "HD", "RV",
     "WcMatch"
 )

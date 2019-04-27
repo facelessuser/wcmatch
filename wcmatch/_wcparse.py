@@ -57,6 +57,7 @@ GLOBSTAR = 0x0100
 BRACE = 0x0200
 REALPATH = 0x0400
 FOLLOW = 0x0800
+SPLIT = 0x1000
 
 # Internal flag
 _FORCEWIN = 0x100000000
@@ -210,6 +211,18 @@ def translate(patterns, flags):
             )
 
     return positive, negative
+
+
+def split(patterns, flags):
+    """Split patterns."""
+
+    if flags & SPLIT:
+        splitted = []
+        for pattern in ([patterns] if isinstance(patterns, (str, bytes)) else patterns):
+            splitted.extend(WcSplit(pattern, flags).split())
+        return splitted
+    else:
+        return patterns
 
 
 def compile(patterns, flags):  # noqa A001

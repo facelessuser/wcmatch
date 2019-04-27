@@ -50,6 +50,7 @@ M = MINUSNEGATE = _wcparse.MINUSNEGATE
 B = BRACE = _wcparse.BRACE
 P = REALPATH = _wcparse.REALPATH
 L = FOLLOW = _wcparse.FOLLOW
+S = SPLIT = _wcparse.SPLIT
 
 FLAG_MASK = (
     FORCECASE |
@@ -62,7 +63,8 @@ FLAG_MASK = (
     MINUSNEGATE |
     BRACE |
     REALPATH |
-    FOLLOW
+    FOLLOW |
+    SPLIT
 )
 
 
@@ -95,7 +97,7 @@ class Glob(object):
         self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
         self.empty = b'' if self.is_bytes else ''
         self.current = b'.' if self.is_bytes else '.'
-        self._parse_patterns(pattern)
+        self._parse_patterns(_wcparse.split(pattern, flags))
         if self.flags & _wcparse._FORCEWIN:
             self.sep = b'\\' if self.is_bytes else '\\'
         else:
@@ -392,6 +394,7 @@ def glob(patterns, *, flags=0):
     return list(iglob(util.to_tuple(patterns), flags=flags))
 
 
+@util.deprecated("Use the 'SPLIT' flag instead.")
 def globsplit(pattern, *, flags=0):
     """Split pattern by '|'."""
 
@@ -401,7 +404,8 @@ def globsplit(pattern, *, flags=0):
 def translate(patterns, *, flags=0):
     """Translate glob pattern."""
 
-    return _wcparse.translate(patterns, _flag_transform(flags))
+    flags = _flag_transform(flags)
+    return _wcparse.translate(_wcparse.split(patterns, flags), flags)
 
 
 def globmatch(filename, patterns, *, flags=0):
@@ -415,7 +419,7 @@ def globmatch(filename, patterns, *, flags=0):
     flags = _flag_transform(flags)
     if not _wcparse.is_unix_style(flags):
         filename = util.norm_slash(filename)
-    return _wcparse.compile(patterns, flags).match(filename)
+    return _wcparse.compile(_wcparse.split(patterns, flags), flags).match(filename)
 
 
 def globfilter(filenames, patterns, *, flags=0):
@@ -425,7 +429,7 @@ def globfilter(filenames, patterns, *, flags=0):
 
     flags = _flag_transform(flags)
     unix = _wcparse.is_unix_style(flags)
-    obj = _wcparse.compile(patterns, flags)
+    obj = _wcparse.compile(_wcparse.split(patterns, flags), flags)
 
     for filename in filenames:
         if not unix:

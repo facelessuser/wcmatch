@@ -6,6 +6,7 @@ import mock
 import wcmatch.fnmatch as fnmatch
 from wcmatch import util
 import wcmatch._wcparse as _wcparse
+import warnings
 
 
 class TestFnMatch:
@@ -179,7 +180,7 @@ class TestFnMatch:
         print("TEST: ", case[2], '\n')
         cls.assert_equal(fnmatch.fnmatch(case[1], case[0], flags=flags), case[2])
         cls.assert_equal(
-            fnmatch.fnmatch(case[1], fnmatch.fnsplit(case[0], flags=flags), flags=flags), case[2]
+            fnmatch.fnmatch(case[1], case[0], flags=flags | fnmatch.SPLIT), case[2]
         )
 
     @pytest.mark.parametrize("case", cases)
@@ -287,7 +288,7 @@ class TestFnMatchTranslate(unittest.TestCase):
     def split_translate(self, pattern, flags):
         """Translate pattern to regex after splitting."""
 
-        return fnmatch.translate(fnmatch.fnsplit(pattern, flags=flags), flags=flags)
+        return fnmatch.translate(pattern, flags=flags | fnmatch.SPLIT)
 
     @mock.patch('wcmatch.util.is_case_sensitive')
     def test_split_parsing(self, mock__iscase_sensitive):
@@ -469,3 +470,19 @@ class TestFnMatchTranslate(unittest.TestCase):
 
         with pytest.raises(SyntaxError):
             fnmatch.translate(r'test\N{', flags=self.flags | fnmatch.R)
+
+
+class TestDeprecated(unittest.TestCase):
+    """Test deprecated."""
+
+    def test_split(self):
+        """Test split."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            patterns = fnmatch.fnsplit('test|test')
+            self.assertTrue(len(w) == 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
+            self.assertTrue(patterns, ['test', 'test'])
