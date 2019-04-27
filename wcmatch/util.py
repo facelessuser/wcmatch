@@ -2,7 +2,9 @@
 from __future__ import unicode_literals
 import sys
 import os
+import stat
 import re
+import ctypes
 import unicodedata
 from functools import wraps
 import warnings
@@ -212,6 +214,33 @@ class Immutable(object):
         """Prevent mutability."""
 
         raise AttributeError('Class is immutable!')
+
+
+def is_hidden(path):
+    """Check if file is hidden."""
+
+    hidden = False
+    f = os.path.basename(path)
+    if f[:1] in ('.', b'.'):
+        # Count dot file as hidden on all systems
+        hidden = True
+    elif _PLATFORM == 'windows':
+        # On Windows, look for `FILE_ATTRIBUTE_HIDDEN`
+        if PY35:
+            FILE_ATTRIBUTE_HIDDEN = 0x2
+            results = os.lstat(path)
+            hidden = bool(results.st_file_attributes & FILE_ATTRIBUTE_HIDDEN)
+        else:
+            if isinstance(path, bytes):
+                attrs = ctypes.windll.kernel32.GetFileAttributesA(path)
+            else:
+                attrs = ctypes.windll.kernel32.GetFileAttributesW(path)
+            hidden = attrs != -1 and attrs & FILE_ATTRIBUTE_HIDDEN
+    elif _PLATFORM == "osx":  # pragma: no cover
+        # On macOS, look for `UF_HIDDEN`
+        results = os.lstat(path)
+        hidden = bool(results.st_flags & stat.UF_HIDDEN)
+    return hidden
 
 
 def deprecated(message, stacklevel=2):  # pragma: no cover

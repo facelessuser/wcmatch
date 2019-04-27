@@ -22,7 +22,6 @@ IN THE SOFTWARE.
 """
 import os
 import re
-from . import file_attrs
 from . import _wcparse
 from . import util
 
@@ -131,20 +130,12 @@ class WcMatch(object):
 
         return file_pattern, folder_exclude_pattern
 
-    def _has_attributes(self, path, hidden=False, symlinks=False):
-        """Check if file is hidden."""
-
-        if self.is_bytes:
-            return file_attrs.has_file_attributes_bytes(path, hidden, symlinks)
-        else:
-            return file_attrs.has_file_attributes(path, hidden, symlinks)
-
     def _valid_file(self, base, name):
         """Return whether a file can be searched."""
 
         valid = False
         fullpath = os.path.join(base, name)
-        if self.file_check is not None and not self._has_attributes(fullpath, hidden=not self.show_hidden):
+        if self.file_check is not None and not (not self.show_hidden and util.is_hidden(fullpath)):
             valid = self.compare_file(fullpath[self._base_len:] if self.file_pathname else name)
         return self.on_validate_file(base, name) if valid else valid
 
@@ -163,7 +154,7 @@ class WcMatch(object):
 
         valid = True
         fullpath = os.path.join(base, name)
-        if not self.recursive or self._has_attributes(fullpath, not self.show_hidden, not self.follow_links):
+        if not self.recursive or (not self.show_hidden and util.is_hidden(fullpath)):
             valid = False
         elif self.folder_exclude_check is not None:
             valid = self.compare_directory(fullpath[self._base_len:] if self.dir_pathname else name)
