@@ -194,7 +194,7 @@ class Glob(object):
                             if deep and self._is_hidden(f.name):
                                 continue
                             path = os.path.join(curdir, f.name)
-                            if deep and not self.follow_links and f.is_dir() and os.path.islink(path):
+                            if deep and not self.follow_links and f.is_dir() and f.is_symlink():
                                 continue
                             if (not dir_only or f.is_dir()) and (matcher is None or matcher(f.name)):
                                 yield path
