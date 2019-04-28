@@ -9,7 +9,7 @@
 - **NEW**: `glob` and `iglob` functions now behave like Bash 5.0 in regards to symlinks in `GLOBSTAR` (`**`). `GLOBSTAR` will ignore symlink directories. This affects other functions such as `globmatch` and `globfilter` when `REALPATH` flag is enabled.
 - **NEW**: New flag called `FOLLOW` was added to force related `glob` commands to recognize and follow symlink directories.
 - **FIX**: Fix `glob` regression where inverse patterns such as `!**/test/**` would allow a directory `base/test` to match when it should have excluded it due to the missing trailing `/`.
-- **FIX**: When `glob` is fed an ambiguous root path (`/some/path`), it should assume the current working directory drive.
+- **FIX**: `glob` should handle root paths (`/`) properly, and on Windows, it should assume the drive of the current working directory.
 
 ## 2.2.1
 

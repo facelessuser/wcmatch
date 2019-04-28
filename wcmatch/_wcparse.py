@@ -436,6 +436,10 @@ class WcPathSplit(object):
                 parts.append(WcGlob(b'\\' if self.is_bytes else '\\', False, False, True, True))
                 start = 1
                 i.advance(2)
+        elif not self.win_drive_detect and pattern.startswith('/'):
+            parts.append(WcGlob(b'/' if self.is_bytes else '/', False, False, True, True))
+            start = 1
+            i.advance(2)
 
         for c in i:
             if self.extend and c in EXT_TYPES and self.parse_extend(c, i):
