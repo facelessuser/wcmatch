@@ -1267,6 +1267,8 @@ def _fs_match(pattern, filename, sep, follow, symlinks):
         # Lets look at the captured `globstar` groups and see if that part of the path
         # contains symlinks.
         if not follow:
+            groups = m.groups()
+            last = len(groups)
             for i, star in enumerate(m.groups(), 1):
                 if star:
                     parts = star.strip(sep).split(sep)
@@ -1277,7 +1279,7 @@ def _fs_match(pattern, filename, sep, follow, symlinks):
                         is_link = symlinks.get(base, None)
                         if is_link is not None:
                             matched = not is_link
-                        else:
+                        elif i != last or os.path.isdir(base):
                             is_link = os.path.islink(base)
                             symlinks[base] = is_link
                             matched = not is_link
