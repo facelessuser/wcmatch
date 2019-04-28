@@ -343,7 +343,7 @@ class Glob(object):
         self.symlinks = {}
 
         if self.is_bytes:
-            curdir = bytes(os.curdir, 'ASCII')
+            curdir = os.fsencode(os.curdir)
         else:
             curdir = os.curdir
 

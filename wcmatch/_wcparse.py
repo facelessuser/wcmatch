@@ -1294,7 +1294,11 @@ def _match_pattern(filename, include, exclude, real, path, follow):
 
     if real:
         symlinks = {}
-        if not os.path.lexists(filename):
+        if isinstance(filename, bytes):
+            curdir = os.fsencode(os.curdir)
+        else:
+            curdir = os.curdir
+        if not os.path.lexists(os.path.join(filename)):
             return False
         if path:
             return _match_real(filename, include, exclude, follow, symlinks)
