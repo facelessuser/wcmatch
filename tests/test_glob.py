@@ -131,11 +131,11 @@ class _TestGlob:
         Each path represents a full file path to match.
     * Flags
 
-    The default flags are: `GLOBSTAR` | `EXTGLOB` | `BRACE`. If any of these flags are provided in
+    The default flags are: `GLOBSTAR` | `EXTGLOB` | `BRACE` | `FOLLOW`. If any of these flags are provided in
     a test case, they will disable the default of the same name. All other flags will enable flags as expected.
     """
 
-    DEFAULT_FLAGS = glob.BRACE | glob.EXTGLOB | glob.GLOBSTAR
+    DEFAULT_FLAGS = glob.BRACE | glob.EXTGLOB | glob.GLOBSTAR | glob.FOLLOW
 
     cases = []
 
@@ -172,6 +172,7 @@ class _TestGlob:
     def setup_class(cls):
         """Setup."""
 
+        cls.default_negate = '**'
         cls.absolute = False
         cls.skip = False
         cls.cwd_temp = False
@@ -257,9 +258,9 @@ class _TestGlob:
         p = '!' + p
         if not cls.just_negative:
             if not cls.absolute:
-                p = [cls.globjoin(cls.tempdir, '**'), p]
+                p = [cls.globjoin(cls.tempdir, cls.default_negate), p]
             else:
-                p = ['**', p]
+                p = [cls.default_negate, p]
         else:
             p = [p]
         res = glob.glob(p, **kwargs)
@@ -305,6 +306,9 @@ class _TestGlob:
             just_negative = case.get('just_negative')
             if just_negative is not None:
                 cls.just_negative = just_negative
+            default_negate = case.get('default_negate')
+            if default_negate is not None:
+                cls.default_negate = default_negate
             pytest.skip("Change Options")
 
         if cls.skip:
@@ -372,12 +376,43 @@ class Testglob(_TestGlob):
         [
             ('a*', '**'),
             [
-                ('EF',), ('ZZZ',), ('',), ('a',), ('aaa', ), ('aab', )
+                ('EF',), ('ZZZ',), ('',)
             ] if not can_symlink() else [
                 ('EF',), ('ZZZ',), ('',), ('sym1',), ('sym3',), ('sym2',),
-                ('a',), ('aaa', ), ('aab', ), ('sym3', 'efg'), ('sym3', 'efg', 'ha'), ('sym3', 'EF')
+                ('sym3', 'efg'), ('sym3', 'efg', 'ha'), ('sym3', 'EF')
             ],
             glob.N
+        ],
+
+        Options(default_negate='sym3/EF'),
+        [
+            ('**', 'EF'),
+            [
+            ] if not can_symlink() else [
+                ('sym3', 'EF')
+            ],
+            glob.N | glob.L
+        ],
+
+        [
+            ('**', 'EF'),
+            [
+            ] if not can_symlink() else [
+            ],
+            glob.N
+        ],
+
+        Options(default_negate='**'),
+
+        # Disable symlinks
+        [
+            ('a*', '**'),
+            [
+                ('EF',), ('ZZZ',), ('',)
+            ] if not can_symlink() else [
+                ('EF',), ('ZZZ',), ('',), ('sym1',), ('sym2',)
+            ],
+            glob.N | glob.L
         ],
 
         # Test nested glob directory
@@ -720,10 +755,10 @@ class Testglob(_TestGlob):
         [
             ('a*', '**'),
             [
-                ('EF',), ('ZZZ',), ('a',), ('aaa', ), ('aab', )
+                ('EF',), ('ZZZ',)
             ] if not can_symlink() else [
                 ('EF',), ('ZZZ',),
-                ('a',), ('aaa', ), ('aab', ), ('sym1',), ('sym3',), ('sym2',), ('sym3', 'efg'), ('sym3', 'efg', 'ha'),
+                ('sym1',), ('sym3',), ('sym2',), ('sym3', 'efg'), ('sym3', 'efg', 'ha'),
                 ('sym3', 'EF')
             ],
             glob.N
@@ -881,7 +916,7 @@ class TestGlobEscapes(unittest.TestCase):
 class SymlinkLoopGlobTests(unittest.TestCase):
     """Symlink loop test case."""
 
-    DEFAULT_FLAGS = glob.BRACE | glob.EXTGLOB | glob.GLOBSTAR
+    DEFAULT_FLAGS = glob.BRACE | glob.EXTGLOB | glob.GLOBSTAR | glob.FOLLOW
 
     def globjoin(self, *parts):
         """Joins glob path."""
@@ -942,3 +977,31 @@ class SymlinkLoopGlobTests(unittest.TestCase):
                 self.assertIn(path, results)
                 results.remove(path)
                 depth += 1
+
+
+class TestGlobRoot(unittest.TestCase):
+    """Test `glob` at root of mount."""
+
+    def test_root(self):
+        """Test that `glob` translates the root properly."""
+
+        # On Windows, this should translate to the current drive.
+        # On Linux/Unix, this should translate to the root.
+        # Basically, we should not return an empty set.
+        self.assertTrue(len(glob.glob('/*')) > 0)
+
+
+class TestDeprecated(unittest.TestCase):
+    """Test deprecated."""
+
+    def test_split(self):
+        """Test split."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            patterns = glob.globsplit('test|test')
+            self.assertTrue(len(w) == 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
+            self.assertTrue(patterns, ['test', 'test'])

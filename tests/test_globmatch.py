@@ -3,6 +3,7 @@
 import unittest
 import pytest
 import mock
+import os
 import wcmatch.glob as glob
 import wcmatch._wcparse as _wcparse
 import wcmatch.util as util
@@ -494,10 +495,7 @@ class TestGlobFilter:
         if split and cls.skip_split:
             return
         if split:
-            new_pat = []
-            for x in pat:
-                new_pat.extend(list(glob.globsplit(x, flags=flags)))
-            pat = new_pat
+            flags |= glob.SPLIT
         print("PATTERN: ", case[0])
         print("FILES: ", files)
         print("FLAGS: ", bin(flags))
@@ -838,6 +836,54 @@ class TestGlobMatchSpecial(unittest.TestCase):
             )
         )
 
+    def test_glob_translate_real_has_positive_default(self):
+        """Test that `REALPATH` translations provide a default positive pattern."""
+
+        pos, neg = glob.translate('!this', flags=self.flags)
+        self.assertTrue(len(pos) == 0)
+        self.assertTrue(len(neg) == 1)
+
+        pos, neg = glob.translate('!this', flags=self.flags | glob.REALPATH)
+        self.assertTrue(len(pos) == 1)
+        self.assertTrue(len(neg) == 1)
+
+    def test_glob_match_real(self):
+        """Test real `globmatch` vs regular `globmatch`."""
+
+        # When there is no context from the file system,
+        # `globmatch` can't determine folder with no trailing slash.
+        self.assertFalse(glob.globmatch('docs/src', '**/src/**', flags=self.flags))
+        self.assertTrue(glob.globmatch('docs/src/', '**/src/**', flags=self.flags))
+        self.assertTrue(glob.globmatch('docs/src', '**/src/**', flags=self.flags | glob.REALPATH))
+        self.assertTrue(glob.globmatch('docs/src/', '**/src/**', flags=self.flags | glob.REALPATH))
+
+        # Missing files will only match in `globmatch` without context from file system.
+        self.assertTrue(glob.globmatch('bad/src/', '**/src/**', flags=self.flags))
+        self.assertFalse(glob.globmatch('bad/src/', '**/src/**', flags=self.flags | glob.REALPATH))
+
+    def test_glob_match_real_bytes(self):
+        """Test real `globmatch` vs regular `globmatch` with bytes strings."""
+
+        # When there is no context from the file system,
+        # `globmatch` can't determine folder with no trailing slash.
+        self.assertFalse(glob.globmatch(b'docs/src', b'**/src/**', flags=self.flags))
+        self.assertTrue(glob.globmatch(b'docs/src/', b'**/src/**', flags=self.flags))
+        self.assertTrue(glob.globmatch(b'docs/src', b'**/src/**', flags=self.flags | glob.REALPATH))
+        self.assertTrue(glob.globmatch(b'docs/src/', b'**/src/**', flags=self.flags | glob.REALPATH))
+
+        # Missing files will only match in `globmatch` without context from file system.
+        self.assertTrue(glob.globmatch(b'bad/src/', b'**/src/**', flags=self.flags))
+        self.assertFalse(glob.globmatch(b'bad/src/', b'**/src/**', flags=self.flags | glob.REALPATH))
+
+    def test_glob_match_real_outside_curdir(self):
+        """Test that real `globmatch` will not allow match outside current directory unless using an absolute path."""
+
+        # Let's find something predictable for this cross platform test.
+        user_dir = os.path.expanduser('~')
+        glob_user = glob.escape(user_dir)
+        self.assertFalse(glob.globmatch(user_dir, '**', flags=self.flags | glob.REALPATH))
+        self.assertTrue(glob.globmatch(user_dir, glob_user + '/**', flags=self.flags | glob.REALPATH))
+
     def test_glob_integrity(self):
         """`globmatch` must match what glob globs."""
 
@@ -871,3 +917,116 @@ class TestGlobMatchSpecial(unittest.TestCase):
                 ]
             )
         )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**', flags=self.flags
+                    ) for x in glob.glob('**/docs/**', flags=self.flags)
+                ]
+            )
+        )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT
+                    ) for x in glob.glob('**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT)
+                ]
+            )
+        )
+
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '!**/*.md', flags=self.flags | glob.SPLIT
+                    ) for x in glob.glob('!**/*.md', flags=self.flags | glob.SPLIT)
+                ]
+            )
+        )
+        self.assertFalse(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT
+                    ) for x in glob.glob('**/docs/**', flags=self.flags | glob.SPLIT)
+                ]
+            )
+        )
+
+    def test_glob_integrity_real(self):
+        """`globmatch` must match what glob globs against the real file system."""
+
+        # Number of slashes is inconsequential
+        # Glob really looks at what is in between. Multiple slashes are the same as one separator.
+        # UNC mounts are special cases and it matters there.
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/../*.{md,py}', flags=self.flags | glob.REALPATH
+                    ) for x in glob.glob('**/../*.{md,py}', flags=self.flags)
+                ]
+            )
+        )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, './**/./../*.py', flags=self.flags | glob.REALPATH
+                    ) for x in glob.glob('./**/./../*.py', flags=self.flags)
+                ]
+            )
+        )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, './///**///./../*.py', flags=self.flags | glob.REALPATH
+                    ) for x in glob.glob('./**/.//////..////*.py', flags=self.flags)
+                ]
+            )
+        )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**', flags=self.flags | glob.REALPATH
+                    ) for x in glob.glob('**/docs/**', flags=self.flags)
+                ]
+            )
+        )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.REALPATH
+                    ) for x in glob.glob('**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT)
+                ]
+            )
+        )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '!**/*.md', flags=self.flags | glob.SPLIT | glob.REALPATH
+                    ) for x in glob.glob('!**/*.md', flags=self.flags | glob.SPLIT)
+                ]
+            )
+        )
+        self.assertFalse(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.REALPATH
+                    ) for x in glob.glob('**/docs/**', flags=self.flags | glob.SPLIT)
+                ]
+            )
+        )
+
+    def test_glob_match_real_ignore_forcecase(self):
+        """Ignore `FORCECASE` when using `globmatch` real."""
+
+        if util.platform() == "windows":
+            self.assertTrue(glob.globmatch('DOCS', '**/docs/**', flags=self.flags | glob.REALPATH | glob.FORCECASE))

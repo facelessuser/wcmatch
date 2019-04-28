@@ -24,23 +24,31 @@ import re
 import functools
 import copyreg
 import bracex
+import os
 from collections import namedtuple
 from . import util
 from backrefs import uniprops
 
-RE_WIN_PATH = re.compile(r'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)')
-RE_BWIN_PATH = re.compile(br'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)')
+RE_WIN_PATH = re.compile(r'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)', re.I)
+RE_BWIN_PATH = re.compile(br'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)', re.I)
 RE_WIN_MAGIC = re.compile(r'([-!*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
 RE_BWIN_MAGIC = re.compile(br'([-!*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
 RE_MAGIC = re.compile(r'([-!*?(\[|^{\\])')
 RE_BMAGIC = re.compile(br'([-!*?(\[|^{\\])')
 RE_POSIX = re.compile(r':(alnum|alpha|ascii|blank|cntrl|digit|graph|lower|print|punct|space|upper|xdigit):\]')
+RE_WIN_MOUNT = re.compile(r'\\|[a-z]:(?:\\|$)', re.I)
+RE_MOUNT = re.compile(r'/')
+RE_BWIN_MOUNT = re.compile(br'\\|[a-z]:(?:\\|$)', re.I)
+RE_BMOUNT = re.compile(br'/')
 
 SET_OPERATORS = frozenset(('&', '~', '|'))
 NEGATIVE_SYM = frozenset((b'!', '!'))
 MINUS_NEGATIVE_SYM = frozenset((b'-', '-'))
 EXT_TYPES = frozenset(('*', '?', '+', '@', '!'))
 
+# Common flags are found between `0x0001 - 0xffff`
+# Implementation specific (`glob` vs `fnmatch` vs `wcmatch`) are found between `0x00010000 - 0xffff0000`
+# Internal special flags are found at `0x100000000` and above
 FORCECASE = 0x0001
 IGNORECASE = 0x0002
 RAWCHARS = 0x0004
@@ -51,9 +59,13 @@ DOTMATCH = 0x0040
 EXTMATCH = 0x0080
 GLOBSTAR = 0x0100
 BRACE = 0x0200
+REALPATH = 0x0400
+FOLLOW = 0x0800
+SPLIT = 0x1000
 
 # Internal flag
-_FORCEWIN = 0x10000
+_FORCEWIN = 0x100000000
+_TRANSLATE = 0x200000000
 
 FLAG_MASK = (
     FORCECASE |
@@ -66,7 +78,10 @@ FLAG_MASK = (
     EXTMATCH |
     GLOBSTAR |
     BRACE |
-    _FORCEWIN
+    REALPATH |
+    FOLLOW |
+    _FORCEWIN |
+    _TRANSLATE
 )
 CASE_FLAGS = FORCECASE | IGNORECASE
 
@@ -125,6 +140,8 @@ _GROUP = r'(?:%s)'
 _EXCLA_GROUP = r'(?:(?!(?:%s)'
 # Closing for inverse group
 _EXCLA_GROUP_CLOSE = r')%s)'
+_NO_ROOT = r'(?!/)'
+_NO_WIN_ROOT = r'(?!(?:[\\/]|[a-zA-Z]:))'
 
 
 class InvPlaceholder(str):
@@ -180,7 +197,7 @@ def get_case(flags):
 def is_unix_style(flags):
     """Check if we should use Unix style."""
 
-    return util.platform() != "windows" or get_case(flags)
+    return (util.platform() != "windows" or (not bool(flags & REALPATH) and get_case(flags))) and not flags & _FORCEWIN
 
 
 def translate(patterns, flags):
@@ -191,13 +208,30 @@ def translate(patterns, flags):
     if isinstance(patterns, (str, bytes)):
         patterns = [patterns]
 
+    flags |= _TRANSLATE
+
     for pattern in patterns:
         for expanded in expand_braces(pattern, flags):
             (negative if is_negative(expanded, flags) else positive).append(
                 WcParse(expanded, flags & FLAG_MASK).parse()
             )
 
+    if patterns and flags & REALPATH and negative and not positive:
+        positive.append(_compile(b'**' if isinstance(patterns[0], bytes) else '**', flags))
+
     return positive, negative
+
+
+def split(patterns, flags):
+    """Split patterns."""
+
+    if flags & SPLIT:
+        splitted = []
+        for pattern in ([patterns] if isinstance(patterns, (str, bytes)) else patterns):
+            splitted.extend(WcSplit(pattern, flags).split())
+        return splitted
+    else:
+        return patterns
 
 
 def compile(patterns, flags):  # noqa A001
@@ -212,7 +246,10 @@ def compile(patterns, flags):  # noqa A001
         for expanded in expand_braces(pattern, flags):
             (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
 
-    return WcRegexp(tuple(positive), tuple(negative))
+    if patterns and flags & REALPATH and negative and not positive:
+        positive.append(_compile(b'**' if isinstance(patterns[0], bytes) else '**', flags))
+
+    return WcRegexp(tuple(positive), tuple(negative), flags & REALPATH, flags & PATHNAME, flags & FOLLOW)
 
 
 @functools.lru_cache(maxsize=256, typed=True)
@@ -250,7 +287,7 @@ class WcPathSplit(object):
     def __init__(self, pattern, flags):
         """Initialize."""
 
-        self.unix = is_unix_style(flags) and not flags & _FORCEWIN
+        self.unix = is_unix_style(flags)
         self.flags = flags
         self.pattern = util.norm_pattern(pattern, not self.unix, flags & RAWCHARS)
         if is_negative(self.pattern, flags):  # pragma: no cover
@@ -395,6 +432,14 @@ class WcPathSplit(object):
                 parts.append(WcGlob(drive, False, False, True, True))
                 start = m.end(0) - 1
                 i.advance(start + 1)
+            elif pattern.startswith('\\\\'):
+                parts.append(WcGlob(b'\\' if self.is_bytes else '\\', False, False, True, True))
+                start = 1
+                i.advance(2)
+        elif not self.win_drive_detect and pattern.startswith('/'):
+            parts.append(WcGlob(b'/' if self.is_bytes else '/', False, False, True, True))
+            start = 1
+            i.advance(2)
 
         for c in i:
             if self.extend and c in EXT_TYPES and self.parse_extend(c, i):
@@ -451,7 +496,7 @@ class WcSplit(object):
         self.is_bytes = isinstance(pattern, bytes)
         self.pathname = bool(flags & PATHNAME)
         self.extend = bool(flags & EXTMATCH)
-        self.unix = is_unix_style(flags) and not flags & _FORCEWIN
+        self.unix = is_unix_style(flags)
         self.bslash_abort = not self.unix
 
     def _sequence(self, i):
@@ -586,13 +631,15 @@ class WcParse(object):
         self.pathname = bool(flags & PATHNAME)
         self.raw_chars = bool(flags & RAWCHARS)
         self.globstar = self.pathname and bool(flags & GLOBSTAR)
+        self.realpath = bool(flags & REALPATH) and self.pathname
+        self.globstar_capture = self.realpath and not bool(flags & _TRANSLATE)
         self.dot = bool(flags & DOTMATCH)
         self.extend = bool(flags & EXTMATCH)
         self.case_sensitive = get_case(flags)
         self.in_list = False
         self.flags = flags
         self.inv_ext = 0
-        self.unix = is_unix_style(self.flags) and not self.flags & _FORCEWIN
+        self.unix = is_unix_style(self.flags)
         if not self.unix:
             self.win_drive_detect = self.pathname
             self.char_avoid = (ord('\\'), ord('/'), ord('.'))
@@ -858,6 +905,8 @@ class WcParse(object):
             else:
                 star = self.path_star
                 globstar = self.path_gstar_dot1
+            if self.globstar_capture:
+                globstar = '({})'.format(globstar)
         else:
             if self.after_start and not self.dot:
                 star = _NO_DOT + _STAR
@@ -1106,6 +1155,7 @@ class WcParse(object):
         self.set_after_start()
         i = util.StringIter(pattern)
         iter(i)
+        root_specified = False
         if self.win_drive_detect:
             m = RE_WIN_PATH.match(pattern)
             if m:
@@ -1118,6 +1168,15 @@ class WcParse(object):
                     current.append(self.get_path_sep() + _ONE_OR_MORE)
                 i.advance(m.end(0))
                 self.consume_path_sep(i)
+                root_specified = True
+            elif pattern.startswith('\\\\'):
+                root_specified = True
+        elif not self.win_drive_detect and self.pathname and pattern.startswith('/'):
+            root_specified = True
+
+        if not root_specified and self.realpath:
+            current.append(_NO_WIN_ROOT if self.win_drive_detect else _NO_ROOT)
+            current.append('')
 
         for c in i:
 
@@ -1181,9 +1240,13 @@ class WcParse(object):
 
         case_flag = 'i' if not self.case_sensitive else ''
         if util.PY36:
-            pattern = (r'^(?!(?s%s:%s)$).*?$' if negative else r'^(?s%s:%s)$') % (case_flag, ''.join(result))
+            pattern = (
+                r'^(?!(?s%s:%s)$).*?$' if negative and not self.globstar_capture else r'^(?s%s:%s)$'
+            ) % (case_flag, ''.join(result))
         else:
-            pattern = (r'(?s%s)^(?!(?:%s)$).*?$' if negative else r'(?s%s)^(?:%s)$') % (case_flag, ''.join(result))
+            pattern = (
+                r'(?s%s)^(?!(?:%s)$).*?$' if negative and not self.globstar_capture else r'(?s%s)^(?:%s)$'
+            ) % (case_flag, ''.join(result))
 
         if self.is_bytes:
             pattern = pattern.encode('latin-1')
@@ -1191,18 +1254,136 @@ class WcParse(object):
         return pattern
 
 
+def _fs_match(pattern, filename, sep, follow, symlinks):
+    """
+    Match path against the pattern.
+
+    Since `globstar` doesn't match symlinks (unless `FOLLOW` is enabled), we must look for symlinks.
+    If we identify a symlink in a `globstar` match, we know this result should not actually match.
+    """
+
+    matched = False
+
+    base = None
+    m = pattern.fullmatch(filename)
+    if m:
+        matched = True
+        # Lets look at the captured `globstar` groups and see if that part of the path
+        # contains symlinks.
+        if not follow:
+            groups = m.groups()
+            last = len(groups)
+            for i, star in enumerate(m.groups(), 1):
+                if star:
+                    parts = star.strip(sep).split(sep)
+                    if base is None:
+                        base = filename[:m.start(i)]
+                    for part in parts:
+                        base = os.path.join(base, part)
+                        is_link = symlinks.get(base, None)
+                        if is_link is not None:
+                            matched = not is_link
+                        elif i != last or os.path.isdir(base):
+                            is_link = os.path.islink(base)
+                            symlinks[base] = is_link
+                            matched = not is_link
+                        if not matched:
+                            break
+                if matched:
+                    break
+    return matched
+
+
+def _match_real(filename, include, exclude, follow, symlinks):
+    """Match real filename includes and excludes."""
+
+    sep = '\\' if util.platform() == "windows" else '/'
+    if isinstance(filename, bytes):
+        sep = os.fsencode(sep)
+    if not filename.endswith(sep) and os.path.isdir(filename):
+        filename += sep
+
+    matched = False
+    for pattern in include:
+        if _fs_match(pattern, filename, sep, follow, symlinks):
+            matched = True
+            break
+
+    if matched:
+        matched = True
+        if exclude:
+            for pattern in exclude:
+                if _fs_match(pattern, filename, sep, follow, symlinks):
+                    matched = False
+                    break
+    return matched
+
+
+def _match_pattern(filename, include, exclude, real, path, follow):
+    """Match includes and excludes."""
+
+    if real:
+        symlinks = {}
+        if isinstance(filename, bytes):
+            curdir = os.fsencode(os.curdir)
+            mount = RE_BWIN_MOUNT if util.platform() == "windows" else RE_BMOUNT
+        else:
+            curdir = os.curdir
+            mount = RE_WIN_MOUNT if util.platform() == "windows" else RE_MOUNT
+
+        if not mount.match(filename):
+            exists = os.path.lexists(os.path.join(curdir, filename))
+        else:
+            exists = os.path.lexists(filename)
+
+        if not exists:
+            return False
+        if path:
+            return _match_real(filename, include, exclude, follow, symlinks)
+
+    matched = False
+    for pattern in include:
+        if pattern.fullmatch(filename):
+            matched = True
+            break
+
+    if not include and exclude:
+        matched = True
+
+    if matched:
+        matched = True
+        if exclude:
+            for pattern in exclude:
+                if not pattern.fullmatch(filename):
+                    matched = False
+                    break
+    return matched
+
+
 class WcRegexp(util.Immutable):
     """File name match object."""
 
-    __slots__ = ("_include", "_exclude", "_hash")
+    __slots__ = ("_include", "_exclude", "_real", "_path", "_follow", "_hash")
 
-    def __init__(self, include, exclude=None):
+    def __init__(self, include, exclude=None, real=False, path=False, follow=False):
         """Initialization."""
 
         super(WcRegexp, self).__init__(
             _include=include,
             _exclude=exclude,
-            _hash=hash((type(self), type(include), include, type(exclude), exclude))
+            _real=real,
+            _path=path,
+            _follow=follow,
+            _hash=hash(
+                (
+                    type(self),
+                    type(include), include,
+                    type(exclude), exclude,
+                    type(real), real,
+                    type(path), path,
+                    type(follow), follow
+                )
+            )
         )
 
     def __hash__(self):
@@ -1216,7 +1397,10 @@ class WcRegexp(util.Immutable):
         return (
             isinstance(other, WcRegexp) and
             self._include == other._include and
-            self._exclude == other._exclude
+            self._exclude == other._exclude and
+            self._real == other._real and
+            self._path == other._path and
+            self._follow == other._follow
         )
 
     def __ne__(self, other):
@@ -1225,33 +1409,20 @@ class WcRegexp(util.Immutable):
         return (
             not isinstance(other, WcRegexp) or
             self._include != other._include or
-            self._exclude != other._exclude
+            self._exclude != other._exclude or
+            self._real != other._real or
+            self._path != other._path or
+            self._follow != other._follow
         )
 
     def match(self, filename):
         """Match filename."""
 
-        matched = False
-        for x in self._include:
-            if x.fullmatch(filename):
-                matched = True
-                break
-
-        if not self._include and self._exclude:
-            matched = True
-
-        if matched:
-            matched = True
-            if self._exclude:
-                for x in self._exclude:
-                    if not x.fullmatch(filename):
-                        matched = False
-                        break
-        return matched
+        return _match_pattern(filename, self._include, self._exclude, self._real, self._path, self._follow)
 
 
 def _pickle(p):
-    return WcRegexp, (p._include, p._exclude)
+    return WcRegexp, (p._include, p._exclude, p._real, p._path, p._follow)
 
 
 copyreg.pickle(WcRegexp, _pickle)

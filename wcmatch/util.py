@@ -2,8 +2,12 @@
 from __future__ import unicode_literals
 import sys
 import os
+import stat
 import re
+import ctypes
 import unicodedata
+from functools import wraps
+import warnings
 
 PY37 = (3, 7) <= sys.version_info
 PY36 = (3, 6) <= sys.version_info
@@ -210,3 +214,50 @@ class Immutable(object):
         """Prevent mutability."""
 
         raise AttributeError('Class is immutable!')
+
+
+def is_hidden(path):
+    """Check if file is hidden."""
+
+    hidden = False
+    f = os.path.basename(path)
+    if f[:1] in ('.', b'.'):
+        # Count dot file as hidden on all systems
+        hidden = True
+    elif _PLATFORM == 'windows':
+        # On Windows, look for `FILE_ATTRIBUTE_HIDDEN`
+        FILE_ATTRIBUTE_HIDDEN = 0x2
+        if PY35:
+            results = os.lstat(path)
+            hidden = bool(results.st_file_attributes & FILE_ATTRIBUTE_HIDDEN)
+        else:
+            if isinstance(path, bytes):
+                attrs = ctypes.windll.kernel32.GetFileAttributesA(path)
+            else:
+                attrs = ctypes.windll.kernel32.GetFileAttributesW(path)
+            hidden = attrs != -1 and attrs & FILE_ATTRIBUTE_HIDDEN
+    elif _PLATFORM == "osx":  # pragma: no cover
+        # On macOS, look for `UF_HIDDEN`
+        results = os.lstat(path)
+        hidden = bool(results.st_flags & stat.UF_HIDDEN)
+    return hidden
+
+
+def deprecated(message, stacklevel=2):  # pragma: no cover
+    """
+    Raise a `DeprecationWarning` when wrapped function/method is called.
+
+    Borrowed from https://stackoverflow.com/a/48632082/866026
+    """
+
+    def _decorator(func):
+        @wraps(func)
+        def _func(*args, **kwargs):
+            warnings.warn(
+                "'{}' is deprecated. {}".format(func.__name__, message),
+                category=DeprecationWarning,
+                stacklevel=stacklevel
+            )
+            return func(*args, **kwargs)
+        return _func
+    return _decorator

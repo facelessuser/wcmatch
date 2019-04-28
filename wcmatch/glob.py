@@ -29,7 +29,8 @@ from . import util
 __all__ = (
     "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
-    "F", "I", "R", "D", "E", "G", "N", "M",
+    "REALPATH", "FOLLOW",
+    "F", "I", "R", "D", "E", "G", "N", "M", "P", "L",
     "iglob", "glob", "globsplit", "globmatch", "globfilter", "escape"
 )
 
@@ -47,6 +48,9 @@ G = GLOBSTAR = _wcparse.GLOBSTAR
 N = NEGATE = _wcparse.NEGATE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
 B = BRACE = _wcparse.BRACE
+P = REALPATH = _wcparse.REALPATH
+L = FOLLOW = _wcparse.FOLLOW
+S = SPLIT = _wcparse.SPLIT
 
 FLAG_MASK = (
     FORCECASE |
@@ -57,15 +61,22 @@ FLAG_MASK = (
     GLOBSTAR |
     NEGATE |
     MINUSNEGATE |
-    BRACE
+    BRACE |
+    REALPATH |
+    FOLLOW |
+    SPLIT
 )
 
 
 def _flag_transform(flags):
     """Transform flags to glob defaults."""
 
-    # Here we force `PATHNAME` and disable negation `NEGATE`
+    # Here we force `PATHNAME`.
     flags = (flags & FLAG_MASK) | _wcparse.PATHNAME
+    if flags & _wcparse.REALPATH and util.platform() == "windows":
+        flags |= _wcparse._FORCEWIN
+        if flags & _wcparse.FORCECASE:
+            flags ^= _wcparse.FORCECASE
     return flags
 
 
@@ -75,38 +86,42 @@ class Glob(object):
     def __init__(self, pattern, flags=0):
         """Initialize the directory walker object."""
 
-        self.flags = _flag_transform(flags)
-        self.dot = bool(self.flags & DOTMATCH)
-        self.negate = bool(self.flags & NEGATE)
-        self.globstar = bool(self.flags & _wcparse.GLOBSTAR)
-        self.braces = bool(self.flags & _wcparse.BRACE)
-        self.case_sensitive = _wcparse.get_case(self.flags) and not util.platform() == "windows"
+        self.flags = _flag_transform(flags | _wcparse.REALPATH) ^ _wcparse.REALPATH
+        self.follow_links = bool(flags & FOLLOW)
+        self.dot = bool(flags & DOTMATCH)
+        self.negate = bool(flags & NEGATE)
+        self.globstar = bool(flags & _wcparse.GLOBSTAR)
+        self.braces = bool(flags & _wcparse.BRACE)
+        self.case_sensitive = _wcparse.get_case(flags)
         self.is_bytes = isinstance(pattern[0], bytes)
         self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
         self.empty = b'' if self.is_bytes else ''
         self.current = b'.' if self.is_bytes else '.'
-        self._parse_patterns(pattern)
-        if util.platform() == "windows":
-            self.flags |= _wcparse._FORCEWIN
-            self.sep = (b'\\', '\\')
+        self._parse_patterns(_wcparse.split(pattern, flags))
+        if self.flags & _wcparse._FORCEWIN:
+            self.sep = b'\\' if self.is_bytes else '\\'
         else:
-            self.sep = (b'/', '/')
+            self.sep = b'/' if self.is_bytes else '/'
 
     def _parse_patterns(self, pattern):
         """Parse patterns."""
 
         self.pattern = []
-        self.npattern = []
+        self.npatterns = None
+        npattern = []
         for p in pattern:
             if _wcparse.is_negative(p, self.flags):
-                self.npattern.append(
-                    _wcparse.compile(list(_wcparse.expand_braces(p, self.flags)), self.flags)
-                )
+                # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
+                # This is faster as compiled patterns usually compare the include patterns first,
+                # and then the exclude, but glob will already know it wants to include the file.
+                npattern.append(p[1:])
             else:
                 self.pattern.extend(
-                    _wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p, self.flags)
+                    [_wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p, self.flags)]
                 )
-        if not self.pattern and self.npattern:
+        if npattern:
+            self.npatterns = _wcparse.compile(npattern, self.flags ^ (_wcparse.NEGATE | _wcparse.REALPATH))
+        if not self.pattern and self.npatterns is not None:
             self.pattern.append(_wcparse.WcPathSplit((b'**' if self.is_bytes else '**'), self.flags).split())
 
     def _is_hidden(self, name):
@@ -117,22 +132,24 @@ class Glob(object):
     def _is_this(self, name):
         """Check if "this" directory `.`."""
 
-        return name in (b'.', '.') or name in self.sep
+        return name in (b'.', '.') or name == self.sep
 
     def _is_parent(self, name):
         """Check if `..`."""
 
         return name in (b'..', '..')
 
-    def _is_excluded(self, path):
+    def _match_excluded(self, filename, patterns):
+        """Call match real directly to skip unnecessary `exists` check."""
+
+        return _wcparse._match_real(
+            filename, patterns._include, patterns._exclude, patterns._follow, self.symlinks
+        )
+
+    def _is_excluded(self, path, dir_only):
         """Check if file is excluded."""
 
-        excluded = False
-        for n in self.npattern:
-            excluded = not n.match(path)
-            if excluded:
-                break
-        return excluded
+        return self.npatterns and self._match_excluded(path, self.npatterns)
 
     def _match_literal(self, a, b=None):
         """Match two names."""
@@ -179,9 +196,18 @@ class Glob(object):
                             if deep and self._is_hidden(f.name):
                                 continue
                             path = os.path.join(curdir, f.name)
-                            if (not dir_only or f.is_dir()) and (matcher is None or matcher(f.name)):
+                            is_dir = f.is_dir()
+                            if is_dir:
+                                is_link = f.is_symlink()
+                                self.symlinks[path] = is_link
+                            else:
+                                # We don't care if a file is a link
+                                is_link = False
+                            if deep and not self.follow_links and is_link:
+                                continue
+                            if (not dir_only or is_dir) and (matcher is None or matcher(f.name)):
                                 yield path
-                            if deep and f.is_dir():
+                            if deep and is_dir:
                                 yield from self._glob_dir(path, matcher, dir_only, deep)
                         except OSError:  # pragma: no cover
                             pass
@@ -192,6 +218,13 @@ class Glob(object):
                         continue
                     path = os.path.join(curdir, f)
                     is_dir = os.path.isdir(path)
+                    if is_dir:
+                        is_link = os.path.islink(path)
+                        self.symlinks[path] = is_link
+                    else:
+                        is_link = False
+                    if deep and not self.follow_links and is_link:
+                        continue
                     if (not dir_only or is_dir) and (matcher is None or matcher(f)):
                         yield path
                     if deep and is_dir:
@@ -306,8 +339,11 @@ class Glob(object):
     def glob(self):
         """Starts off the glob iterator."""
 
+        # Cached symlinks
+        self.symlinks = {}
+
         if self.is_bytes:
-            curdir = bytes(os.curdir, 'ASCII')
+            curdir = os.fsencode(os.curdir)
         else:
             curdir = os.curdir
 
@@ -323,7 +359,7 @@ class Glob(object):
 
                     curdir = this[0]
 
-                    if not os.path.isdir(curdir) and not os.path.lexists(curdir):
+                    if not os.path.lexists(curdir):
                         return
 
                     # Make sure case matches, but running case insensitive
@@ -331,7 +367,7 @@ class Glob(object):
                     # one starting location.
                     results = [curdir] if this.is_drive else self._get_starting_paths(curdir)
                     if not results:
-                        if not dir_only and os.path.lexists(curdir):
+                        if not dir_only:
                             # There is no directory with this name,
                             # but we have a file and no directory restriction
                             yield curdir
@@ -345,21 +381,21 @@ class Glob(object):
                                 if rest:
                                     this = rest.pop(0)
                                     for match in self._glob(curdir, this, rest):
-                                        if not self._is_excluded(match):
+                                        if not self._is_excluded(match, dir_only):
                                             yield os.path.join(match, self.empty) if dir_only else match
-                                elif not self._is_excluded(curdir):
+                                elif not self._is_excluded(curdir, dir_only):
                                     yield os.path.join(curdir, self.empty) if dir_only else curdir
                     else:
                         # Return the file(s) and finish.
                         for start in results:
-                            if os.path.lexists(start) and not self._is_excluded(start):
+                            if os.path.lexists(start) and not self._is_excluded(start, dir_only):
                                 yield os.path.join(start, self.empty) if dir_only else start
                 else:
                     # Path starts with a magic pattern, let's get globbing
                     rest = pattern[:]
                     this = rest.pop(0)
                     for match in self._glob(curdir if not curdir == self.current else self.empty, this, rest):
-                        if not self._is_excluded(match):
+                        if not self._is_excluded(match, dir_only):
                             yield os.path.join(match, self.empty) if dir_only else match
 
 
@@ -375,6 +411,7 @@ def glob(patterns, *, flags=0):
     return list(iglob(util.to_tuple(patterns), flags=flags))
 
 
+@util.deprecated("Use the 'SPLIT' flag instead.")
 def globsplit(pattern, *, flags=0):
     """Split pattern by '|'."""
 
@@ -384,7 +421,8 @@ def globsplit(pattern, *, flags=0):
 def translate(patterns, *, flags=0):
     """Translate glob pattern."""
 
-    return _wcparse.translate(patterns, _flag_transform(flags))
+    flags = _flag_transform(flags)
+    return _wcparse.translate(_wcparse.split(patterns, flags), flags)
 
 
 def globmatch(filename, patterns, *, flags=0):
@@ -398,7 +436,7 @@ def globmatch(filename, patterns, *, flags=0):
     flags = _flag_transform(flags)
     if not _wcparse.is_unix_style(flags):
         filename = util.norm_slash(filename)
-    return _wcparse.compile(patterns, flags).match(filename)
+    return _wcparse.compile(_wcparse.split(patterns, flags), flags).match(filename)
 
 
 def globfilter(filenames, patterns, *, flags=0):
@@ -408,7 +446,7 @@ def globfilter(filenames, patterns, *, flags=0):
 
     flags = _flag_transform(flags)
     unix = _wcparse.is_unix_style(flags)
-    obj = _wcparse.compile(patterns, flags)
+    obj = _wcparse.compile(_wcparse.split(patterns, flags), flags)
 
     for filename in filenames:
         if not unix:

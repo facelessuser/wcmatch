@@ -29,6 +29,8 @@ deprecations
 falsy
 filename
 filenames
+filepath
+filesystem
 globbing
 initializer
 lookahead
@@ -44,6 +46,7 @@ prerelease
 prereleases
 regex
 sortable
+subdirectories
 sublicense
 symlink
 symlinks

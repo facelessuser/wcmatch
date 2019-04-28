@@ -17,12 +17,13 @@ Parameter         | Default       | Description
 `directory`       |               | The base directory to search.
 `file_pattern`    | `#!py3 ''`    | One or more patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#wcmatchminusnegate) is set). The default is an empty string, but if an empty string is used, all files will be matched.
 `exclude_pattern` | `#!py3 ''`    | Zero or more folder exclude patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#wcmatchminusnegate) is set).
-`recursive`       | `#!py3 False` | Whether search should be recursive.
-`show_hidden`     | `#!py3 False` | Whether hidden files should be shown.
 `flags`           | `#!py3 0`     | Flags to alter behavior of folder and file matching. See [Flags](#flags) for more info.
 
 !!! note
-    Dots are not treated special. When `show_hidden` is disabled, dot files won't show up anyways, so it is expected that if `show_hidden` is enabled, that `*`, `?`, `[]`, etc. should match `.`.
+    Dots are not treated special in `wcmatch`. When the `HIDDEN` flag is not included, all hidden files (system and dot files) are excluded from the crawling processes, so there is no risk of `*` matching a dot file as it will not show up in the crawl. If the `HIDDEN` flag is included, `*`, `?`, and `[.]` will then match dot files.
+
+!!! danger "Removed in 3.0"
+    `show_hidden` and `recursive` were removed to provide a more consistent interface. Hidden files and recursion can be enabled via the [`HIDDEN`](#wcmatchhidden) and [`RECURSIVE`](#wcmatchrecursive) flag respectively.
 
 ### Examples
 
@@ -38,7 +39,7 @@ Recursively searching for files:
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '*.md|*.txt', recursive=True).match()
+>>> wcmatch.WcMatch('.', '*.md|*.txt', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './docs/src/markdown/changelog.md', './docs/src/markdown/fnmatch.md', './docs/src/markdown/glob.md', './docs/src/markdown/index.md', './docs/src/markdown/installation.md', './docs/src/markdown/license.md', './docs/src/markdown/wcmatch.md', './docs/src/markdown/_snippets/abbr.md', './docs/src/markdown/_snippets/links.md', './docs/src/markdown/_snippets/refs.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
@@ -46,7 +47,7 @@ Excluding directories:
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '*.md|*.txt', 'docs', recursive=True).match()
+>>> wcmatch.WcMatch('.', '*.md|*.txt', 'docs', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
@@ -54,7 +55,7 @@ Using file negation patterns:
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '*.md|*.txt|!README*', 'docs', recursive=True).match()
+>>> wcmatch.WcMatch('.', '*.md|*.txt|!README*', 'docs', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
@@ -62,7 +63,7 @@ You can also use negation patterns in directory exclude. Here we avoid all folde
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '*.md|*.txt', '*|!requirements', recursive=True).match()
+>>> wcmatch.WcMatch('.', '*.md|*.txt', '*|!requirements', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
@@ -70,7 +71,7 @@ Negative patterns can be given by themselves.
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '*.md|*.txt', '!requirements', recursive=True).match()
+>>> wcmatch.WcMatch('.', '*.md|*.txt', '!requirements', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
@@ -80,7 +81,7 @@ Enabling hidden files:
 >>> from wcmatch import wcmatch
 >>> wcmatch.WcMatch('.', '*.yml').match()
 ['./appveyor.yml', './mkdocs.yml']
->>> wcmatch.WcMatch('.', '*.yml', show_hidden=True).match()
+>>> wcmatch.WcMatch('.', '*.yml', flags=wcmatch.HIDDEN).match()
 ['./.codecov.yml', './.travis.yml', './appveyor.yml', './mkdocs.yml']
 ```
 
@@ -217,6 +218,27 @@ When accessing or processing a file throws an error, it is sent to `on_error`. H
 On match returns the path of the matched file.  You can override `on_match` and change what is returned.  You could return just the base, you could parse the file and return the content, or return a special match record with additional file meta data. `on_match` must return something, and all results will be returned via `match` or `imatch`.
 
 ## Flags
+
+#### `wcmatch.RECURSIVE, wcmatch.RV` {: #wcmatchrecursive}
+
+`RECURSIVE` forces a recursive search that will crawl all subdirectories.
+
+!!! new "New 3.0.0"
+    Added in 3.0 and must be used instead of the old `recursive` parameter which has also been removed as of 3.0.
+
+#### `wcmatch.HIDDEN, wcmatch.HD` {: #wcmatchhidden}
+
+`HIDDEN` enables the crawling of hidden directories and will return hidden files if the wildcard pattern matches. This enables not just dot files, but system hidden files as well.
+
+!!! new "New 3.0.0"
+    Added in 3.0 and must be used instead of the old `show_hidden` parameter which has also been removed as of 3.0.
+
+#### `wcmatch.SYMLINK, wcmatch.SL` {: #wcmatchsymlink}
+
+`SYMLINK` enables the crawling of symlink directories. By default, symlink directories are ignored during the file crawl.
+
+!!! new "New 3.0.0"
+    Added in 3.0. Additionally, symlinks are now ignored by default moving forward if `SYMLINK` is not enabled.
 
 #### `wcmatch.FORCECASE, wcmatch.F` {: #wcmatchforcecase}
 

@@ -38,6 +38,7 @@ M = MINUSNEGATE = _wcparse.MINUSNEGATE
 D = DOTMATCH = _wcparse.DOTMATCH
 E = EXTMATCH = _wcparse.EXTMATCH
 B = BRACE = _wcparse.BRACE
+S = SPLIT = _wcparse.SPLIT
 
 FLAG_MASK = (
     FORCECASE |
@@ -47,17 +48,18 @@ FLAG_MASK = (
     MINUSNEGATE |
     DOTMATCH |
     EXTMATCH |
-    BRACE
+    BRACE |
+    SPLIT
 )
 
 
 def _flag_transform(flags):
     """Transform flags to glob defaults."""
 
-    flags = (flags & FLAG_MASK)
-    return flags
+    return (flags & FLAG_MASK)
 
 
+@util.deprecated("Use the 'SPLIT' flag instead.")
 def fnsplit(pattern, *, flags=0):
     """Split pattern by '|'."""
 
@@ -67,7 +69,8 @@ def fnsplit(pattern, *, flags=0):
 def translate(patterns, *, flags=0):
     """Translate `fnmatch` pattern."""
 
-    return _wcparse.translate(patterns, _flag_transform(flags))
+    flags = _flag_transform(flags)
+    return _wcparse.translate(_wcparse.split(patterns, flags), flags)
 
 
 def fnmatch(filename, patterns, *, flags=0):
@@ -81,7 +84,7 @@ def fnmatch(filename, patterns, *, flags=0):
     flags = _flag_transform(flags)
     if not _wcparse.is_unix_style(flags):
         filename = util.norm_slash(filename)
-    return _wcparse.compile(patterns, flags).match(filename)
+    return _wcparse.compile(_wcparse.split(patterns, flags), flags).match(filename)
 
 
 def filter(filenames, patterns, *, flags=0):  # noqa A001
@@ -91,7 +94,7 @@ def filter(filenames, patterns, *, flags=0):  # noqa A001
 
     flags = _flag_transform(flags)
     unix = _wcparse.is_unix_style(flags)
-    obj = _wcparse.compile(patterns, flags)
+    obj = _wcparse.compile(_wcparse.split(patterns, flags), flags)
 
     for filename in filenames:
         if not unix:

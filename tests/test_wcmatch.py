@@ -23,7 +23,36 @@ def create_empty_file(filename):
     os.close(fd)
 
 
-class TestWcmatch(unittest.TestCase):
+_can_symlink = None
+
+
+def can_symlink():
+    """Check if we can symlink."""
+
+    global _can_symlink
+    if _can_symlink is not None:
+        return _can_symlink
+    symlink_path = TESTFN + "can_symlink"
+    try:
+        os.symlink(TESTFN, symlink_path)
+        can = True
+    except (OSError, NotImplementedError, AttributeError):
+        can = False
+    else:
+        os.remove(symlink_path)
+    _can_symlink = can
+    return can
+
+
+def skip_unless_symlink(test):
+    """Skip decorator for tests that require functional symlink."""
+
+    ok = can_symlink()
+    msg = "Requires functional symlink implementation"
+    return test if ok else unittest.skip(msg)(test)
+
+
+class _TestWcmatch(unittest.TestCase):
     """Test the `WcMatch` class."""
 
     def mktemp(self, *parts):
@@ -67,7 +96,7 @@ class TestWcmatch(unittest.TestCase):
         self.mktemp('b.file')
         self.mktemp('c.txt.bak')
 
-        self.default_flags = wcmatch.R | wcmatch.I | wcmatch.M
+        self.default_flags = wcmatch.R | wcmatch.I | wcmatch.M | wcmatch.SL
         self.errors = []
         self.skipped = 0
         self.skip_records = []
@@ -97,13 +126,35 @@ class TestWcmatch(unittest.TestCase):
                 self.files.append(f)
         self.skipped = walker.get_skipped()
 
+
+class TestWcmatch(_TestWcmatch):
+    """Test the `WcMatch` class."""
+
+    def setUp(self):
+        """Setup."""
+
+        self.tempdir = TESTFN + "_dir"
+        self.mktemp('.hidden', 'a.txt')
+        self.mktemp('.hidden', 'b.file')
+        self.mktemp('.hidden_file')
+        self.mktemp('a.txt')
+        self.mktemp('b.file')
+        self.mktemp('c.txt.bak')
+
+        self.default_flags = wcmatch.R | wcmatch.I | wcmatch.M | wcmatch.SL
+        self.errors = []
+        self.skipped = 0
+        self.skip_records = []
+        self.error_records = []
+        self.files = []
+
     def test_full_path_exclude(self):
         """Test full path exclude."""
 
         walker = wcmatch.WcMatch(
             self.tempdir,
             '*.txt', '**/.hidden',
-            True, True, self.default_flags | wcmatch.DIRPATHNAME | wcmatch.GLOBSTAR
+            self.default_flags | wcmatch.DIRPATHNAME | wcmatch.GLOBSTAR | wcmatch.RECURSIVE | wcmatch.HIDDEN
         )
 
         self.crawl_files(walker)
@@ -116,7 +167,7 @@ class TestWcmatch(unittest.TestCase):
         walker = wcmatch.WcMatch(
             self.tempdir,
             '**/*.txt|-**/.hidden/*', None,
-            True, True, self.default_flags | wcmatch.FILEPATHNAME | wcmatch.GLOBSTAR
+            self.default_flags | wcmatch.FILEPATHNAME | wcmatch.GLOBSTAR | wcmatch.RECURSIVE | wcmatch.HIDDEN
         )
 
         self.crawl_files(walker)
@@ -129,7 +180,7 @@ class TestWcmatch(unittest.TestCase):
         walker = wcmatch.WcMatch(
             self.tempdir,
             '*.txt', None,
-            False, False, self.default_flags
+            self.default_flags
         )
 
         self.crawl_files(walker)
@@ -142,7 +193,7 @@ class TestWcmatch(unittest.TestCase):
         walker = wcmatch.WcMatch(
             self.tempdir,
             '*.*|-*.file', None,
-            False, False, self.default_flags
+            self.default_flags
         )
 
         self.crawl_files(walker)
@@ -155,7 +206,7 @@ class TestWcmatch(unittest.TestCase):
         walker = wcmatch.WcMatch(
             self.tempdir,
             '*.txt', None,
-            True, False, self.default_flags
+            self.default_flags | wcmatch.RECURSIVE
         )
 
         self.crawl_files(walker)
@@ -168,7 +219,7 @@ class TestWcmatch(unittest.TestCase):
         walker = wcmatch.WcMatch(
             os.fsencode(self.tempdir),
             b'*.txt', None,
-            True, False, self.default_flags
+            self.default_flags | wcmatch.RECURSIVE
         )
 
         self.crawl_files(walker)
@@ -181,7 +232,7 @@ class TestWcmatch(unittest.TestCase):
         walker = wcmatch.WcMatch(
             self.tempdir,
             '*.txt', None,
-            True, True, self.default_flags
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
         )
 
         self.crawl_files(walker)
@@ -194,7 +245,7 @@ class TestWcmatch(unittest.TestCase):
         walker = wcmatch.WcMatch(
             os.fsencode(self.tempdir),
             b'*.txt', None,
-            True, True, self.default_flags
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
         )
 
         self.crawl_files(walker)
@@ -207,7 +258,7 @@ class TestWcmatch(unittest.TestCase):
         walker = wcmatch.WcMatch(
             self.tempdir,
             '*.txt', '.hidden',
-            True, True, self.default_flags
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
         )
 
         self.crawl_files(walker)
@@ -220,7 +271,7 @@ class TestWcmatch(unittest.TestCase):
         walker = wcmatch.WcMatch(
             self.tempdir,
             '*.txt', '*|-.hidden',
-            True, True, self.default_flags
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
         )
 
         self.crawl_files(walker)
@@ -233,7 +284,7 @@ class TestWcmatch(unittest.TestCase):
         walker = wcmatch.WcMatch(
             self.tempdir,
             '*.txt', None,
-            True, True, self.default_flags
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
         )
 
         records = 0
@@ -258,7 +309,7 @@ class TestWcmatch(unittest.TestCase):
         walker = wcmatch.WcMatch(
             self.tempdir,
             '*.txt*', None,
-            True, True, self.default_flags
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
         )
 
         walker.kill()
@@ -275,14 +326,14 @@ class TestWcmatch(unittest.TestCase):
         walker = wcmatch.WcMatch(
             '',
             '*.txt*', None,
-            True, True, self.default_flags
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
         )
         self.assertEqual(walker.base, target)
 
         walker = wcmatch.WcMatch(
             b'',
             b'*.txt*', None,
-            True, True, self.default_flags
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
         )
         self.assertEqual(walker.base, os.fsencode(target))
 
@@ -292,7 +343,7 @@ class TestWcmatch(unittest.TestCase):
         walker = wcmatch.WcMatch(
             self.tempdir,
             '', None,
-            True, True, self.default_flags
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
         )
         self.crawl_files(walker)
         self.assertEqual(
@@ -308,7 +359,7 @@ class TestWcmatch(unittest.TestCase):
         walker = wcmatch.WcMatch(
             self.tempdir,
             '*.txt', None,
-            True, True, self.default_flags
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
         )
 
         walker.on_skip = lambda base, name: '<SKIPPED>'
@@ -322,7 +373,7 @@ class TestWcmatch(unittest.TestCase):
         walker = wcmatch.WcMatch(
             self.tempdir,
             '*.txt', None,
-            True, True, self.default_flags
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
         )
 
         walker.on_validate_file = lambda base, name: self.force_err()
@@ -337,7 +388,7 @@ class TestWcmatch(unittest.TestCase):
         walker = wcmatch.WcMatch(
             self.tempdir,
             '*.txt', None,
-            True, True, self.default_flags
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
         )
 
         walker.on_validate_directory = lambda base, name: self.force_err()
@@ -351,7 +402,7 @@ class TestWcmatch(unittest.TestCase):
         walker = wcmatch.WcMatch(
             self.tempdir,
             '*.txt', None,
-            True, True, self.default_flags
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
         )
 
         walker.on_validate_file = lambda base, name: self.force_err()
@@ -359,3 +410,70 @@ class TestWcmatch(unittest.TestCase):
 
         self.crawl_files(walker)
         self.assertEqual(len(self.error_records), 2)
+
+
+@skip_unless_symlink
+class TestWcmatchSymlink(_TestWcmatch):
+    """Test symlinks."""
+
+    def mksymlink(self, original, link):
+        """Make symlink."""
+
+        if not os.path.lexists(link):
+            os.symlink(original, link)
+
+    def setUp(self):
+        """Setup."""
+
+        self.tempdir = TESTFN + "_dir"
+        self.mktemp('.hidden', 'a.txt')
+        self.mktemp('.hidden', 'b.file')
+        self.mktemp('.hidden_file')
+        self.mktemp('a.txt')
+        self.mktemp('b.file')
+        self.mktemp('c.txt.bak')
+        self.can_symlink = can_symlink()
+        if self.can_symlink:
+            self.mksymlink('.hidden', self.norm('sym1'))
+            self.mksymlink(os.path.join('.hidden', 'a.txt'), self.norm('sym2'))
+
+        self.default_flags = wcmatch.R | wcmatch.I | wcmatch.M
+        self.errors = []
+        self.skipped = 0
+        self.skip_records = []
+        self.error_records = []
+        self.files = []
+
+    def test_symlinks(self):
+        """Test symlinks."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            '*.txt', None,
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN | wcmatch.SYMLINKS
+        )
+
+        self.crawl_files(walker)
+        self.assertEqual(
+            sorted(self.files),
+            self.norm_list(
+                ['a.txt', '.hidden/a.txt', 'sym1/a.txt']
+            )
+        )
+
+    def test_avoid_symlinks(self):
+        """Test avoiding symlinks."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            '*.txt', None,
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
+        )
+
+        self.crawl_files(walker)
+        self.assertEqual(
+            sorted(self.files),
+            self.norm_list(
+                ['a.txt', '.hidden/a.txt']
+            )
+        )

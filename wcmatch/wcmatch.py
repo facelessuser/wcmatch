@@ -22,14 +22,13 @@ IN THE SOFTWARE.
 """
 import os
 import re
-from . import file_hidden
 from . import _wcparse
 from . import util
 
 __all__ = (
     "FORCECASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME",
-    "EXTMATCH", "GLOBSTAR", "BRACE", "MINUSNEGATE",
-    "F", "I", "R", "P", "E", "G", "M", "DP", "FP",
+    "EXTMATCH", "GLOBSTAR", "BRACE", "MINUSNEGATE", "SYMLINKS", "HIDDEN", "RECURSIVE",
+    "F", "I", "R", "P", "E", "G", "M", "DP", "FP", "SL", "HD", "RV",
     "WcMatch"
 )
 
@@ -42,8 +41,12 @@ B = BRACE = _wcparse.BRACE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
 
 # Control `PATHNAME` individually for folder exclude and files
-DP = DIRPATHNAME = 0x100000
-FP = FILEPATHNAME = 0x200000
+DP = DIRPATHNAME = 0x10000
+FP = FILEPATHNAME = 0x20000
+SL = SYMLINKS = 0x40000
+HD = HIDDEN = 0x80000
+RV = RECURSIVE = 0x100000
+
 # Control `PATHNAME` for file and folder
 P = PATHNAME = DIRPATHNAME | FILEPATHNAME
 
@@ -56,7 +59,10 @@ FLAG_MASK = (
     BRACE |
     MINUSNEGATE |
     DIRPATHNAME |
-    FILEPATHNAME
+    FILEPATHNAME |
+    SYMLINKS |
+    HIDDEN |
+    RECURSIVE
 )
 
 
@@ -78,23 +84,24 @@ class WcMatch(object):
                 curdir = os.curdir
         else:
             curdir = self._directory
-        sep = os.fsencode(os.sep) if self.is_bytes else os.sep
-        self.base = curdir if curdir.endswith(sep) else curdir + sep
+        self.sep = os.fsencode(os.sep) if self.is_bytes else os.sep
+        self.base = curdir if curdir.endswith(self.sep) else curdir + self.sep
         self.file_pattern = args.pop(0) if args else kwargs.pop('file_pattern', b'' if self.is_bytes else '')
         if not self.file_pattern:
             self.file_pattern = _wcparse.WcRegexp(
                 (re.compile(br'^.*$', re.DOTALL),) if self.is_bytes else (re.compile(r'^.*$', re.DOTALL),)
             )
         self.exclude_pattern = args.pop(0) if args else kwargs.pop('exclude_pattern', b'' if self.is_bytes else '')
-        self.recursive = args.pop(0) if args else kwargs.pop('recursive', False)
-        self.show_hidden = args.pop(0) if args else kwargs.pop('show_hidden', False)
         self.flags = (args.pop(0) if args else kwargs.pop('flags', 0)) & FLAG_MASK
         self.flags |= _wcparse.NEGATE | _wcparse.DOTMATCH
+        self.follow_links = bool(self.flags & SYMLINKS)
+        self.show_hidden = bool(self.flags & HIDDEN)
+        self.recursive = bool(self.flags & RECURSIVE)
         self.dir_pathname = bool(self.flags & DIRPATHNAME)
         self.file_pathname = bool(self.flags & FILEPATHNAME)
         if util.platform() == "windows":
             self.flags |= _wcparse._FORCEWIN
-        self.flags = self.flags & _wcparse.FLAG_MASK
+        self.flags = self.flags & (_wcparse.FLAG_MASK ^ (SYMLINKS | DIRPATHNAME | FILEPATHNAME | HIDDEN))
 
         self.on_init(*args, **kwargs)
         self.file_check, self.folder_exclude_check = self._compile(self.file_pattern, self.exclude_pattern)
@@ -123,22 +130,19 @@ class WcMatch(object):
 
         return file_pattern, folder_exclude_pattern
 
-    def _is_hidden(self, path):
-        """Check if file is hidden."""
-
-        if self.is_bytes:
-            return file_hidden.is_hidden_bytes(path) if not self.show_hidden else False
-        else:
-            return file_hidden.is_hidden(path) if not self.show_hidden else False
-
     def _valid_file(self, base, name):
         """Return whether a file can be searched."""
 
         valid = False
         fullpath = os.path.join(base, name)
-        if self.file_check is not None and not self._is_hidden(fullpath):
-            valid = self.file_check.match(fullpath[self._base_len:] if self.file_pathname else name)
+        if self.file_check is not None and not (not self.show_hidden and util.is_hidden(fullpath)):
+            valid = self.compare_file(fullpath[self._base_len:] if self.file_pathname else name)
         return self.on_validate_file(base, name) if valid else valid
+
+    def compare_file(self, filename):
+        """Compare filename."""
+
+        return self.file_check.match(filename)
 
     def on_validate_file(self, base, name):
         """Validate file override."""
@@ -150,11 +154,16 @@ class WcMatch(object):
 
         valid = True
         fullpath = os.path.join(base, name)
-        if not self.recursive or self._is_hidden(fullpath):
+        if not self.recursive or (not self.show_hidden and util.is_hidden(fullpath)):
             valid = False
         elif self.folder_exclude_check is not None:
-            valid = not self.folder_exclude_check.match(fullpath[self._base_len:] if self.dir_pathname else name)
+            valid = self.compare_directory(fullpath[self._base_len:] if self.dir_pathname else name)
         return self.on_validate_directory(base, name) if valid else valid
+
+    def compare_directory(self, directory):
+        """Compare folder."""
+
+        return not self.folder_exclude_check.match(directory + self.sep if self.dir_pathname else directory)
 
     def on_init(self, *args, **kwargs):
         """Handle custom initialization."""
@@ -199,7 +208,7 @@ class WcMatch(object):
 
         self._base_len = len(self.base)
 
-        for base, dirs, files in os.walk(self.base):
+        for base, dirs, files in os.walk(self.base, followlinks=self.follow_links):
             # Remove child folders based on exclude rules
             for name in dirs[:]:
                 try:
