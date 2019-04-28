@@ -216,6 +216,9 @@ def translate(patterns, flags):
                 WcParse(expanded, flags & FLAG_MASK).parse()
             )
 
+    if patterns and flags & REALPATH and negative and not positive:
+        positive.append(_compile(b'**' if isinstance(patterns[0], bytes) else '**', flags))
+
     return positive, negative
 
 
@@ -242,6 +245,9 @@ def compile(patterns, flags):  # noqa A001
     for pattern in patterns:
         for expanded in expand_braces(pattern, flags):
             (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
+
+    if patterns and flags & REALPATH and negative and not positive:
+        positive.append(_compile(b'**' if isinstance(patterns[0], bytes) else '**', flags))
 
     return WcRegexp(tuple(positive), tuple(negative), flags & REALPATH, flags & PATHNAME, flags & FOLLOW)
 
@@ -1292,9 +1298,6 @@ def _match_real(filename, include, exclude, follow, symlinks):
         if _fs_match(pattern, filename, sep, follow, symlinks):
             matched = True
             break
-
-    if not include and exclude:
-        matched = True
 
     if matched:
         matched = True

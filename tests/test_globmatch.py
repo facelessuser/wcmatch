@@ -3,6 +3,7 @@
 import unittest
 import pytest
 import mock
+import os
 import wcmatch.glob as glob
 import wcmatch._wcparse as _wcparse
 import wcmatch.util as util
@@ -863,6 +864,15 @@ class TestGlobMatchSpecial(unittest.TestCase):
         self.assertTrue(glob.globmatch(b'bad/src/', b'**/src/**', flags=self.flags))
         self.assertFalse(glob.globmatch(b'bad/src/', b'**/src/**', flags=self.flags | glob.REALPATH))
 
+    def test_glob_match_real_outside_curdir(self):
+        """Test that real `globmatch` will not allow match outside current directory unless using an absolute path."""
+
+        # Let's find something predictable for this cross platform test.
+        user_dir = os.path.expanduser('~')
+        glob_user = glob.escape(user_dir)
+        self.assertFalse(glob.globmatch(user_dir, '**', flags=self.flags | glob.REALPATH))
+        self.assertTrue(glob.globmatch(user_dir, glob_user + '/**', flags=self.flags | glob.REALPATH))
+
     def test_glob_integrity(self):
         """`globmatch` must match what glob globs."""
 
@@ -911,6 +921,25 @@ class TestGlobMatchSpecial(unittest.TestCase):
                     glob.globmatch(
                         x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT
                     ) for x in glob.glob('**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT)
+                ]
+            )
+        )
+
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '!**/*.md', flags=self.flags | glob.SPLIT
+                    ) for x in glob.glob('!**/*.md', flags=self.flags | glob.SPLIT)
+                ]
+            )
+        )
+        self.assertFalse(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT
+                    ) for x in glob.glob('**/docs/**', flags=self.flags | glob.SPLIT)
                 ]
             )
         )
@@ -966,3 +995,27 @@ class TestGlobMatchSpecial(unittest.TestCase):
                 ]
             )
         )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '!**/*.md', flags=self.flags | glob.SPLIT | glob.REALPATH
+                    ) for x in glob.glob('!**/*.md', flags=self.flags | glob.SPLIT)
+                ]
+            )
+        )
+        self.assertFalse(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.REALPATH
+                    ) for x in glob.glob('**/docs/**', flags=self.flags | glob.SPLIT)
+                ]
+            )
+        )
+
+    def test_glob_match_real_ignore_forcecase(self):
+        """Ignore `FORCECASE` when using `globmatch` real."""
+
+        if util.platform() == "windows":
+            self.assertTrue(glob.globmatch('DOCS', '**/docs/**', flags=self.flags | glob.REALPATH | glob.FORCECASE))
