@@ -979,6 +979,18 @@ class SymlinkLoopGlobTests(unittest.TestCase):
                 depth += 1
 
 
+class TestGlobRoot(unittest.TestCase):
+    """Test `glob` at root of mount."""
+
+    def test_root(self):
+        """Test that `glob` translates the root properly."""
+
+        # On Windows, this should translate to the current drive.
+        # On Linux/Unix, this should translate to the root.
+        # Basically, we should not return an empty set.
+        self.assertTrue(len(glob.glob('/*')) > 0)
+
+
 class TestDeprecated(unittest.TestCase):
     """Test deprecated."""
 
