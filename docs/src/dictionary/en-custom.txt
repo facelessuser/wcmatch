@@ -29,6 +29,7 @@ deprecations
 falsy
 filename
 filenames
+filepath
 filesystem
 globbing
 initializer
