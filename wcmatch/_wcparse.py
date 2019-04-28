@@ -29,13 +29,17 @@ from collections import namedtuple
 from . import util
 from backrefs import uniprops
 
-RE_WIN_PATH = re.compile(r'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)')
-RE_BWIN_PATH = re.compile(br'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)')
+RE_WIN_PATH = re.compile(r'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)', re.I)
+RE_BWIN_PATH = re.compile(br'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)', re.I)
 RE_WIN_MAGIC = re.compile(r'([-!*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
 RE_BWIN_MAGIC = re.compile(br'([-!*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
 RE_MAGIC = re.compile(r'([-!*?(\[|^{\\])')
 RE_BMAGIC = re.compile(br'([-!*?(\[|^{\\])')
 RE_POSIX = re.compile(r':(alnum|alpha|ascii|blank|cntrl|digit|graph|lower|print|punct|space|upper|xdigit):\]')
+RE_WIN_MOUNT = re.compile(r'\\|[a-z]:(?:\\|$)', re.I)
+RE_MOUNT = re.compile(r'/')
+RE_BWIN_MOUNT = re.compile(br'\\|[a-z]:(?:\\|$)', re.I)
+RE_BMOUNT = re.compile(br'/')
 
 SET_OPERATORS = frozenset(('&', '~', '|'))
 NEGATIVE_SYM = frozenset((b'!', '!'))
@@ -136,6 +140,8 @@ _GROUP = r'(?:%s)'
 _EXCLA_GROUP = r'(?:(?!(?:%s)'
 # Closing for inverse group
 _EXCLA_GROUP_CLOSE = r')%s)'
+_NO_ROOT = r'(?!/)'
+_NO_WIN_ROOT = r'(?!(?:[\\/]|[a-zA-Z]:))'
 
 
 class InvPlaceholder(str):
@@ -611,7 +617,8 @@ class WcParse(object):
         self.pathname = bool(flags & PATHNAME)
         self.raw_chars = bool(flags & RAWCHARS)
         self.globstar = self.pathname and bool(flags & GLOBSTAR)
-        self.globstar_capture = bool(flags & REALPATH) and not bool(flags & _TRANSLATE) and self.pathname
+        self.realpath = bool(flags & REALPATH) and self.pathname
+        self.globstar_capture = self.realpath and not bool(flags & _TRANSLATE)
         self.dot = bool(flags & DOTMATCH)
         self.extend = bool(flags & EXTMATCH)
         self.case_sensitive = get_case(flags)
@@ -1134,6 +1141,7 @@ class WcParse(object):
         self.set_after_start()
         i = util.StringIter(pattern)
         iter(i)
+        root_specified = False
         if self.win_drive_detect:
             m = RE_WIN_PATH.match(pattern)
             if m:
@@ -1146,6 +1154,15 @@ class WcParse(object):
                     current.append(self.get_path_sep() + _ONE_OR_MORE)
                 i.advance(m.end(0))
                 self.consume_path_sep(i)
+                root_specified = True
+            elif pattern.startswith('\\\\'):
+                root_specified = True
+        elif not self.win_drive_detect and self.pathname and pattern.startswith('/'):
+            root_specified = True
+
+        if not root_specified and self.realpath:
+            current.append(_NO_WIN_ROOT if self.win_drive_detect else _NO_ROOT)
+            current.append('')
 
         for c in i:
 
@@ -1296,9 +1313,17 @@ def _match_pattern(filename, include, exclude, real, path, follow):
         symlinks = {}
         if isinstance(filename, bytes):
             curdir = os.fsencode(os.curdir)
+            mount = RE_BWIN_MOUNT if util.platform() == "windows" else RE_BMOUNT
         else:
             curdir = os.curdir
-        if not os.path.lexists(os.path.join(curdir, filename)):
+            mount = RE_WIN_MOUNT if util.platform() == "windows" else RE_MOUNT
+
+        if not mount.match(filename):
+            exists = os.path.lexists(os.path.join(curdir, filename))
+        else:
+            exists = os.path.lexists(filename)
+
+        if not exists:
             return False
         if path:
             return _match_real(filename, include, exclude, follow, symlinks)
