@@ -219,7 +219,7 @@ class TestWcmatch(_TestWcmatch):
         walker = wcmatch.WcMatch(
             os.fsencode(self.tempdir),
             b'*.txt', None,
-            self.default_flags | wcmatch.HIDDEN
+            self.default_flags | wcmatch.RECURSIVE
         )
 
         self.crawl_files(walker)

@@ -849,6 +849,20 @@ class TestGlobMatchSpecial(unittest.TestCase):
         self.assertTrue(glob.globmatch('bad/src/', '**/src/**', flags=self.flags))
         self.assertFalse(glob.globmatch('bad/src/', '**/src/**', flags=self.flags | glob.REALPATH))
 
+    def test_glob_match_real_bytes(self):
+        """Test real `globmatch` vs regular `globmatch` with bytes strings."""
+
+        # When there is no context from the file system,
+        # `globmatch` can't determine folder with no trailing slash.
+        self.assertFalse(glob.globmatch(b'docs/src', b'**/src/**', flags=self.flags))
+        self.assertTrue(glob.globmatch(b'docs/src/', b'**/src/**', flags=self.flags))
+        self.assertTrue(glob.globmatch(b'docs/src', b'**/src/**', flags=self.flags | glob.REALPATH))
+        self.assertTrue(glob.globmatch(b'docs/src/', b'**/src/**', flags=self.flags | glob.REALPATH))
+
+        # Missing files will only match in `globmatch` without context from file system.
+        self.assertTrue(glob.globmatch(b'bad/src/', b'**/src/**', flags=self.flags))
+        self.assertFalse(glob.globmatch(b'bad/src/', b'**/src/**', flags=self.flags | glob.REALPATH))
+
     def test_glob_integrity(self):
         """`globmatch` must match what glob globs."""
 

@@ -1298,7 +1298,7 @@ def _match_pattern(filename, include, exclude, real, path, follow):
             curdir = os.fsencode(os.curdir)
         else:
             curdir = os.curdir
-        if not os.path.lexists(os.path.join(filename)):
+        if not os.path.lexists(os.path.join(curdir, filename)):
             return False
         if path:
             return _match_real(filename, include, exclude, follow, symlinks)
@@ -1380,7 +1380,6 @@ class WcRegexp(util.Immutable):
     def match(self, filename):
         """Match filename."""
 
-        symlinks = set()
         return _match_pattern(filename, self._include, self._exclude, self._real, self._path, self._follow)
 
 

@@ -226,8 +226,8 @@ def is_hidden(path):
         hidden = True
     elif _PLATFORM == 'windows':
         # On Windows, look for `FILE_ATTRIBUTE_HIDDEN`
+        FILE_ATTRIBUTE_HIDDEN = 0x2
         if PY35:
-            FILE_ATTRIBUTE_HIDDEN = 0x2
             results = os.lstat(path)
             hidden = bool(results.st_file_attributes & FILE_ATTRIBUTE_HIDDEN)
         else:
