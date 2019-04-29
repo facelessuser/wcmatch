@@ -135,8 +135,10 @@ class WcMatch(object):
 
         valid = False
         fullpath = os.path.join(base, name)
-        if self.file_check is not None and not (not self.show_hidden and util.is_hidden(fullpath)):
-            valid = self.compare_file(fullpath[self._base_len:] if self.file_pathname else name)
+        if self.file_check is not None and self.compare_file(fullpath[self._base_len:] if self.file_pathname else name):
+            valid = True
+        if valid and (not self.show_hidden and util.is_hidden(fullpath)):
+            valid = False
         return self.on_validate_file(base, name) if valid else valid
 
     def compare_file(self, filename):
@@ -154,10 +156,16 @@ class WcMatch(object):
 
         valid = True
         fullpath = os.path.join(base, name)
-        if not self.recursive or (not self.show_hidden and util.is_hidden(fullpath)):
+        if (
+            not self.recursive or
+            (
+                self.folder_exclude_check is not None and
+                not self.compare_directory(fullpath[self._base_len:] if self.dir_pathname else name)
+            )
+        ):
             valid = False
-        elif self.folder_exclude_check is not None:
-            valid = self.compare_directory(fullpath[self._base_len:] if self.dir_pathname else name)
+        if valid and (not self.show_hidden and util.is_hidden(fullpath)):
+            valid = False
         return self.on_validate_directory(base, name) if valid else valid
 
     def compare_directory(self, directory):

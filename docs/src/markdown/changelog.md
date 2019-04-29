@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.1
+
+- **FIX**: In the `WcMatch` class, defer hidden file check until after the file or directory is compared against patterns to potentially avoid calling hidden if the pattern doesn't match. The reduced `lstat` calls improve performance.
+
 ## 3.0.0
 
 - **NEW**: `globsplit` and `fnsplit` have been deprecated. Users are encouraged to use the new `SPLIT` flag to allow functions to use multiple wildcard paths delimited by `|`.
