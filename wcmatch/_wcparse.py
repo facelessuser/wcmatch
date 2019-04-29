@@ -290,6 +290,7 @@ class WcPathSplit(object):
         self.unix = is_unix_style(flags)
         self.flags = flags
         self.pattern = util.norm_pattern(pattern, not self.unix, flags & RAWCHARS)
+        self.globstar = bool(flags & GLOBSTAR)
         if is_negative(self.pattern, flags):  # pragma: no cover
             # This isn't really used, but we'll keep it around
             # in case we find a reason to directly send inverse patterns
@@ -404,7 +405,7 @@ class WcPathSplit(object):
         if l and value in (b'', ''):
             return
 
-        globstar = value in (b'**', '**')
+        globstar = value in (b'**', '**') and self.globstar
         magic = self.is_magic(value)
         if magic:
             value = compile(value, self.flags)
@@ -438,8 +439,8 @@ class WcPathSplit(object):
                 i.advance(2)
         elif not self.win_drive_detect and pattern.startswith('/'):
             parts.append(WcGlob(b'/' if self.is_bytes else '/', False, False, True, True))
-            start = 1
-            i.advance(2)
+            start = 0
+            i.advance(1)
 
         for c in i:
             if self.extend and c in EXT_TYPES and self.parse_extend(c, i):

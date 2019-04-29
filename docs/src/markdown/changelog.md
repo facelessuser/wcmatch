@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.2
+
+- **FIX**: Fix an offset issue when processing an absolute path pattern in `glob` on Linux or macOS.
+- **FIX**: Fix an issue where the `glob` command would use `GLOBSTAR` logic on `**` even when `GLOBSTAR` was disabled.
+
 ## 3.0.1
 
 - **FIX**: In the `WcMatch` class, defer hidden file check until after the file or directory is compared against patterns to potentially avoid calling hidden if the pattern doesn't match. The reduced `lstat` calls improve performance.
