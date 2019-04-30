@@ -51,6 +51,8 @@ B = BRACE = _wcparse.BRACE
 P = REALPATH = _wcparse.REALPATH
 L = FOLLOW = _wcparse.FOLLOW
 S = SPLIT = _wcparse.SPLIT
+MK = MARK = 0x10000
+
 
 FLAG_MASK = (
     FORCECASE |
@@ -86,6 +88,9 @@ class Glob(object):
     def __init__(self, pattern, flags=0):
         """Initialize the directory walker object."""
 
+        self.mark = bool(flags & MARK)
+        if self.mark:
+            flags ^= MARK
         self.flags = _flag_transform(flags | _wcparse.REALPATH) ^ _wcparse.REALPATH
         self.follow_links = bool(flags & FOLLOW)
         self.dot = bool(flags & DOTMATCH)
@@ -182,7 +187,7 @@ class Glob(object):
         if os.path.isdir(scandir) and matcher is not None:
             for special in self.specials:
                 if matcher(special):
-                    yield os.path.join(curdir, special)
+                    yield os.path.join(curdir, special), True
 
         try:
             if NO_SCANDIR_WORKAROUND:
@@ -206,7 +211,7 @@ class Glob(object):
                             if deep and not self.follow_links and is_link:
                                 continue
                             if (not dir_only or is_dir) and (matcher is None or matcher(f.name)):
-                                yield path
+                                yield path, is_dir
                             if deep and is_dir:
                                 yield from self._glob_dir(path, matcher, dir_only, deep)
                         except OSError:  # pragma: no cover
@@ -226,7 +231,7 @@ class Glob(object):
                     if deep and not self.follow_links and is_link:
                         continue
                     if (not dir_only or is_dir) and (matcher is None or matcher(f)):
-                        yield path
+                        yield path, is_dir
                     if deep and is_dir:
                         yield from self._glob_dir(path, matcher, dir_only, deep)
         except OSError:  # pragma: no cover
@@ -289,14 +294,14 @@ class Glob(object):
             # There is one quirk though with Bash, if `curdir` had magic before `**`, Bash
             # omits the trailing `/`. We don't worry about that.
             if globstar_end and curdir:
-                yield os.path.join(curdir, self.empty)
+                yield os.path.join(curdir, self.empty), True
 
             # Search
-            for path in self._glob_dir(curdir, matcher, dir_only, deep=True):
+            for path, is_dir in self._glob_dir(curdir, matcher, dir_only, deep=True):
                 if this:
                     yield from self._glob(path, this, rest[:])
                 else:
-                    yield path
+                    yield path, is_dir
 
         elif not dir_only:
             # Files: no need to recursively search at this point as we are done.
@@ -308,11 +313,11 @@ class Glob(object):
             # and feed the results back through with the next pattern.
             this = rest.pop(0) if rest else None
             matcher = self._get_matcher(target)
-            for path in self._glob_dir(curdir, matcher, True):
+            for path, is_dir in self._glob_dir(curdir, matcher, True):
                 if this:
                     yield from self._glob(path, this, rest[:])
                 else:
-                    yield path
+                    yield path, is_dir
 
     def _get_starting_paths(self, curdir):
         """
@@ -324,7 +329,7 @@ class Glob(object):
         the actual casing and then compare.
         """
 
-        results = [curdir]
+        results = [(curdir, True)]
 
         if not self._is_parent(curdir) and not self._is_this(curdir):
             fullpath = os.path.abspath(curdir)
@@ -332,9 +337,14 @@ class Glob(object):
             dirname = os.path.dirname(fullpath)
             if basename:
                 matcher = self._get_matcher(basename)
-                results = [os.path.basename(name) for name in self._glob_dir(dirname, matcher, self)]
+                results = [(os.path.basename(name), is_dir) for name, is_dir in self._glob_dir(dirname, matcher, self)]
 
         return results
+
+    def format_path(self, path, is_dir, dir_only):
+        """Format path."""
+
+        return os.path.join(path, self.empty) if dir_only or (self.mark and is_dir) else path
 
     def glob(self):
         """Starts off the glob iterator."""
@@ -365,38 +375,38 @@ class Glob(object):
                     # Make sure case matches, but running case insensitive
                     # on a case sensitive file system may return more than
                     # one starting location.
-                    results = [curdir] if this.is_drive else self._get_starting_paths(curdir)
+                    results = [(curdir, True)] if this.is_drive else self._get_starting_paths(curdir)
                     if not results:
                         if not dir_only:
                             # There is no directory with this name,
                             # but we have a file and no directory restriction
-                            yield curdir
+                            yield self.format_path(curdir, False, dir_only)
                         return
 
                     if this.dir_only:
                         # Glob these directories if they exists
-                        for start in results:
-                            if os.path.isdir(start):
+                        for start, is_dir in results:
+                            if is_dir:
                                 rest = pattern[1:]
                                 if rest:
                                     this = rest.pop(0)
-                                    for match in self._glob(curdir, this, rest):
+                                    for match, is_dir in self._glob(curdir, this, rest):
                                         if not self._is_excluded(match, dir_only):
-                                            yield os.path.join(match, self.empty) if dir_only else match
+                                            yield self.format_path(match, is_dir, dir_only)
                                 elif not self._is_excluded(curdir, dir_only):
-                                    yield os.path.join(curdir, self.empty) if dir_only else curdir
+                                    yield self.format_path(curdir, is_dir, dir_only)
                     else:
                         # Return the file(s) and finish.
-                        for start in results:
-                            if os.path.lexists(start) and not self._is_excluded(start, dir_only):
-                                yield os.path.join(start, self.empty) if dir_only else start
+                        for match, is_dir in results:
+                            if os.path.lexists(match) and not self._is_excluded(match, dir_only):
+                                yield self.format_path(match, is_dir, dir_only)
                 else:
                     # Path starts with a magic pattern, let's get globbing
                     rest = pattern[:]
                     this = rest.pop(0)
-                    for match in self._glob(curdir if not curdir == self.current else self.empty, this, rest):
+                    for match, is_dir in self._glob(curdir if not curdir == self.current else self.empty, this, rest):
                         if not self._is_excluded(match, dir_only):
-                            yield os.path.join(match, self.empty) if dir_only else match
+                            yield self.format_path(match, is_dir, dir_only)
 
 
 def iglob(patterns, *, flags=0):
