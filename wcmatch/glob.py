@@ -29,8 +29,8 @@ from . import util
 __all__ = (
     "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
-    "REALPATH", "FOLLOW",
-    "F", "I", "R", "D", "E", "G", "N", "M", "P", "L",
+    "REALPATH", "FOLLOW", "BASEMATCH",
+    "F", "I", "R", "D", "E", "G", "N", "M", "P", "L", "X",
     "iglob", "glob", "globsplit", "globmatch", "globfilter", "escape"
 )
 
@@ -51,8 +51,8 @@ B = BRACE = _wcparse.BRACE
 P = REALPATH = _wcparse.REALPATH
 L = FOLLOW = _wcparse.FOLLOW
 S = SPLIT = _wcparse.SPLIT
+X = BASEMATCH = _wcparse.BASEMATCH
 MK = MARK = 0x10000
-
 
 FLAG_MASK = (
     FORCECASE |
@@ -66,7 +66,8 @@ FLAG_MASK = (
     BRACE |
     REALPATH |
     FOLLOW |
-    SPLIT
+    SPLIT |
+    BASEMATCH
 )
 
 
@@ -97,6 +98,7 @@ class Glob(object):
         self.negate = bool(flags & NEGATE)
         self.globstar = bool(flags & _wcparse.GLOBSTAR)
         self.braces = bool(flags & _wcparse.BRACE)
+        self.basematch = bool(flags & _wcparse.BASEMATCH)
         self.case_sensitive = _wcparse.get_case(flags)
         self.is_bytes = isinstance(pattern[0], bytes)
         self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
