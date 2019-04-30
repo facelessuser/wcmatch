@@ -225,6 +225,9 @@ class WcMatch(object):
         self._base_len = len(self.base)
 
         for base, dirs, files in os.walk(self.base, followlinks=self.follow_links):
+            if self.is_aborted():
+                break
+
             # Remove child folders based on exclude rules
             for name in dirs[:]:
                 try:
@@ -236,7 +239,7 @@ class WcMatch(object):
                     if value is not None:  # pragma: no cover
                         yield value
 
-                if self._abort:
+                if self.is_aborted():
                     break
 
             # Search files if they were found
@@ -259,11 +262,8 @@ class WcMatch(object):
                         if value is not None:
                             yield value
 
-                    if self._abort:
+                    if self.is_aborted():
                         break
-
-            if self._abort:
-                break
 
     def match(self):
         """Run the directory walker."""

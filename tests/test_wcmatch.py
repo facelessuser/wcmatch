@@ -317,7 +317,7 @@ class TestWcmatch(_TestWcmatch):
         for f in walker.imatch():
             records += 1
 
-        self.assertTrue(records == 1 or walker.get_skipped() == 1)
+        self.assertTrue(records == 0 or walker.get_skipped() == 0)
 
     def test_empty_string_dir(self):
         """Test when directory is an empty string."""
