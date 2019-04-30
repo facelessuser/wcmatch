@@ -204,16 +204,13 @@ class WcMatch(object):
 
         return self._skipped
 
+    @util.deprecated("Please use builtin 'break' keyword to exit the loop instead.")
     def kill(self):
         """Abort process."""
 
         self._abort = True
 
-    def is_aborted(self):
-        """Check if an abort has been requested."""
-
-        return self._abort
-
+    @util.deprecated("Please use builtin 'break' keyword to exit the loop instead.")
     def reset(self):
         """Revive class from a killed state."""
 
@@ -225,7 +222,7 @@ class WcMatch(object):
         self._base_len = len(self.base)
 
         for base, dirs, files in os.walk(self.base, followlinks=self.follow_links):
-            if self.is_aborted():
+            if self._abort:
                 break
 
             # Remove child folders based on exclude rules
@@ -239,7 +236,7 @@ class WcMatch(object):
                     if value is not None:  # pragma: no cover
                         yield value
 
-                if self.is_aborted():
+                if self._abort:
                     break
 
             # Search files if they were found
@@ -262,7 +259,7 @@ class WcMatch(object):
                         if value is not None:
                             yield value
 
-                    if self.is_aborted():
+                    if self._abort:
                         break
 
     def match(self):

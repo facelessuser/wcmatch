@@ -123,12 +123,8 @@ If searching with `imatch`, this provides a way to gracefully kill the internal 
 
 Once a "kill" has been issued, the class will remain in an aborted state. To clear the "kill" state, you must call [`reset`](#wcmatchreset). This allows a process to define a `Wcmatch` class and reuse it. If a process receives an early kill and sets it before the match is started, when the match is started, it will immediately abort. This helps with race conditions depending on how you are using `WcMatch`.
 
-#### `WcMatch.is_aborted`
-
-If a [`kill`](#wcmatchkill) has been issued, `is_aborted` will be `True`. This can be used in custom functions to gracefully terminate logic if desired.
-
-!!! new "New 3.1"
-    `is_aborted` was added in 3.1. If needed prior to 3.1, you can use the internal `_abort` attribute.
+!!! warning "Deprecated 3.1"
+    `kill` has been deprecated in 3.1. `kill` is viewed as unnecessary. Please use a simple `break` within your loop to terminate file search.
 
 #### `WcMatch.reset`
 
@@ -146,6 +142,9 @@ Resets the abort state after running `kill`.
 >>> list(wcm.imatch())
 ['./LICENSE.md', './README.md']
 ```
+
+!!! warning "Deprecated 3.1"
+    `kill` has been deprecated in 3.1. `kill` is viewed as unnecessary. Please use a simple `break` within your loop to terminate file search.
 
 #### `WcMatch.get_skipped`
 
