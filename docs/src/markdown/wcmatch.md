@@ -109,7 +109,7 @@ Perform match returning an iterator of files that match the patterns.
 
 #### `WcMatch.kill`
 
-If searching with `imatch`, this provides a way to kill the internal searching.
+If searching with `imatch`, this provides a way to gracefully kill the internal searching. Internally, you can call `is_aborted` to check if a request to abort has been made. So if work on a file is being done in an `on_match`, you can check if there has been a request to kill the process, and tie up loose ends gracefully.
 
 ```pycon3
 >>> from wcmatch import wcmatch
@@ -120,6 +120,15 @@ If searching with `imatch`, this provides a way to kill the internal searching.
 ...
 ./LICENSE.md
 ```
+
+Once a "kill" has been issued, the class will remain in an aborted state. To clear the "kill" state, you must call [`reset`](#wcmatchreset). This allows a process to define a `Wcmatch` class and reuse it. If a process receives an early kill and sets it before the match is started, when the match is started, it will immediately abort. This helps with race conditions depending on how you are using `WcMatch`.
+
+#### `WcMatch.is_aborted`
+
+If a [`kill`](#wcmatchkill) has been issued, `is_aborted` will be `True`. This can be used in custom functions to gracefully terminate logic if desired.
+
+!!! new "New 3.1"
+    `is_aborted` was added in 3.1. If needed prior to 3.1, you can use the internal `_abort` attribute.
 
 #### `WcMatch.reset`
 
@@ -216,6 +225,20 @@ When accessing or processing a file throws an error, it is sent to `on_error`. H
 ```
 
 On match returns the path of the matched file.  You can override `on_match` and change what is returned.  You could return just the base, you could parse the file and return the content, or return a special match record with additional file meta data. `on_match` must return something, and all results will be returned via `match` or `imatch`.
+
+#### `WcMatch.on_reset`
+
+```py3
+    def on_reset(self):
+        """On reset."""
+        pass
+```
+
+`on_reset` is a hook to provide a way to reset any custom logic in classes that have derived from `WcMatch`. `on_reset`
+is called on every new `match` call.
+
+!!! new "New 3.1"
+    `on_reset` was added in 3.1.
 
 ## Flags
 

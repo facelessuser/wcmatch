@@ -72,9 +72,9 @@ class WcMatch(object):
     def __init__(self, *args, **kwargs):
         """Initialize the directory walker object."""
 
+        self._abort = False
         args = list(args)
         self._skipped = 0
-        self._abort = False
         self._directory = util.norm_slash(args.pop(0))
         self.is_bytes = isinstance(self._directory, bytes)
         if not self._directory:
@@ -196,6 +196,9 @@ class WcMatch(object):
 
         return os.path.join(base, name)
 
+    def on_reset(self):
+        """On reset."""
+
     def get_skipped(self):
         """Get number of skipped files."""
 
@@ -205,6 +208,11 @@ class WcMatch(object):
         """Abort process."""
 
         self._abort = True
+
+    def is_aborted(self):
+        """Check if an abort has been requested."""
+
+        return self._abort
 
     def reset(self):
         """Revive class from a killed state."""
@@ -265,6 +273,7 @@ class WcMatch(object):
     def imatch(self):
         """Run the directory walker as iterator."""
 
+        self.on_reset()
         self._skipped = 0
         for f in self._walk():
             yield f
