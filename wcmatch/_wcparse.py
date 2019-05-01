@@ -1268,7 +1268,7 @@ def _fs_match(pattern, filename, is_dir, sep, follow, symlinks):
     We know it's a directory if:
 
     1. If the base is a directory, all parts are directories.
-    2. If we are not the last part of the globstar, the part is a directory.
+    2. If we are not the last part of the `globstar`, the part is a directory.
     3. If the base is a file, but the part is not at the end, it is a directory.
 
     """
