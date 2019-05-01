@@ -4,6 +4,7 @@ import unittest
 import os
 import wcmatch.wcmatch as wcmatch
 import shutil
+import warnings
 
 
 # Below is general helper stuff that Python uses in `unittests`.  As these
@@ -317,7 +318,7 @@ class TestWcmatch(_TestWcmatch):
         for f in walker.imatch():
             records += 1
 
-        self.assertTrue(records == 1 or walker.get_skipped() == 1)
+        self.assertTrue(records == 0 or walker.get_skipped() == 0)
 
     def test_empty_string_dir(self):
         """Test when directory is an empty string."""
@@ -477,3 +478,31 @@ class TestWcmatchSymlink(_TestWcmatch):
                 ['a.txt', '.hidden/a.txt']
             )
         )
+
+
+class TestDeprecated(unittest.TestCase):
+    """Test deprecated."""
+
+    def test_reset(self):
+        """Test reset deprecation."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            wcmatch.WcMatch('.', '*.txt').reset()
+
+            self.assertTrue(len(w) == 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
+
+    def test_abort(self):
+        """Test kill deprecation."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            wcmatch.WcMatch('.', '*.txt').kill()
+
+            self.assertTrue(len(w) == 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
