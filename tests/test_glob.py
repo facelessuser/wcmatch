@@ -426,6 +426,30 @@ class Testglob(_TestGlob):
             glob.N | glob.L
         ],
 
+        Options(cwd_temp=True, absolute=True),
+        # Test base matching
+        [
+            ('*',),
+            [
+                ('EF',), ('ZZZ',), ('a',), ('a', 'D'), ('a', 'bcd'), ('a', 'bcd', 'EF'),
+                ('a', 'bcd', 'efg'), ('a', 'bcd', 'efg', 'ha'), ('aaa',), ('aaa', 'zzzF'), ('aab',),
+                ('aab', 'F')
+            ] if not can_symlink() else[
+                ('EF',), ('ZZZ',), ('a',), ('a', 'D'), ('a', 'bcd'), ('a', 'bcd', 'EF'),
+                ('a', 'bcd', 'efg'), ('a', 'bcd', 'efg', 'ha'), ('aaa',), ('aaa', 'zzzF'), ('aab',),
+                ('aab', 'F'), ('sym1',), ('sym2',)
+            ],
+            glob.L | glob.X
+        ],
+
+        # Test that base matching does not occur with a path pattern
+        [
+            ('aab', '*'),
+            [('aab', 'F')],
+            glob.L | glob.X
+        ],
+        Options(cwd_temp=False, absolute=False),
+
         # Test nested glob directory
         [
             ('a', 'bcd', 'E*'),

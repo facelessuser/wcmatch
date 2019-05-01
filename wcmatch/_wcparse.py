@@ -40,6 +40,8 @@ RE_WIN_MOUNT = re.compile(r'\\|[a-z]:(?:\\|$)', re.I)
 RE_MOUNT = re.compile(r'/')
 RE_BWIN_MOUNT = re.compile(br'\\|[a-z]:(?:\\|$)', re.I)
 RE_BMOUNT = re.compile(br'/')
+RE_ANCHOR = re.compile(r'^/+')
+RE_WIN_ANCHOR = re.compile(r'^(?:\\\\|/)+')
 
 SET_OPERATORS = frozenset(('&', '~', '|'))
 NEGATIVE_SYM = frozenset((b'!', '!'))
@@ -62,10 +64,12 @@ BRACE = 0x0200
 REALPATH = 0x0400
 FOLLOW = 0x0800
 SPLIT = 0x1000
+MATCHBASE = 0x2000
 
 # Internal flag
-_FORCEWIN = 0x100000000
-_TRANSLATE = 0x200000000
+_FORCEWIN = 0x100000000  # Forces Windows behavior (used to not assume Unix/Linux because of `FORCECASE` on Windows).
+_TRANSLATE = 0x200000000  # Lets us know we are performing a translation, and we just want the regex.
+_ANCHOR = 0x400000000  # The pattern, if it starts with a slash, is anchored to the working directory; strip the slash.
 
 FLAG_MASK = (
     FORCECASE |
@@ -80,8 +84,10 @@ FLAG_MASK = (
     BRACE |
     REALPATH |
     FOLLOW |
+    MATCHBASE |
     _FORCEWIN |
-    _TRANSLATE
+    _TRANSLATE |
+    _ANCHOR
 )
 CASE_FLAGS = FORCECASE | IGNORECASE
 
@@ -291,6 +297,7 @@ class WcPathSplit(object):
         self.flags = flags
         self.pattern = util.norm_pattern(pattern, not self.unix, flags & RAWCHARS)
         self.globstar = bool(flags & GLOBSTAR)
+        self.matchbase = bool(flags & MATCHBASE)
         if is_negative(self.pattern, flags):  # pragma: no cover
             # This isn't really used, but we'll keep it around
             # in case we find a reason to directly send inverse patterns
@@ -484,6 +491,10 @@ class WcPathSplit(object):
         if len(pattern) == 0:
             parts.append(WcGlob(pattern.encode('latin-1') if self.is_bytes else pattern, False, False, False, False))
 
+        if self.matchbase and len(parts) == 1 and not parts[0].dir_only:
+            self.globstar = True
+            parts.insert(0, WcGlob(b'**' if self.is_bytes else '**', True, True, True, False))
+
         return parts
 
 
@@ -636,6 +647,8 @@ class WcParse(object):
         self.globstar_capture = self.realpath and not bool(flags & _TRANSLATE)
         self.dot = bool(flags & DOTMATCH)
         self.extend = bool(flags & EXTMATCH)
+        self.matchbase = bool(flags & MATCHBASE)
+        self.anchor = bool(flags & _ANCHOR)
         self.case_sensitive = get_case(flags)
         self.in_list = False
         self.flags = flags
@@ -1175,6 +1188,9 @@ class WcParse(object):
         elif not self.win_drive_detect and self.pathname and pattern.startswith('/'):
             root_specified = True
 
+        if root_specified:
+            self.matchbase = False
+
         if not root_specified and self.realpath:
             current.append(_NO_WIN_ROOT if self.win_drive_detect else _NO_ROOT)
             current.append('')
@@ -1195,6 +1211,7 @@ class WcParse(object):
                     self.clean_up_inverse(current)
                     current.append(self.get_path_sep() + _ONE_OR_MORE)
                     self.consume_path_sep(i)
+                    self.matchbase = False
                 else:
                     current.append(re.escape(c))
             elif c == '\\':
@@ -1204,10 +1221,12 @@ class WcParse(object):
                     if self.dir_start:
                         self.clean_up_inverse(current)
                         self.consume_path_sep(i)
+                        self.matchbase = False
                     current.append(value)
                 except StopIteration:
                     i.rewind(i.index - index)
                     current.append(re.escape(c))
+                    self.matchbase = False
             elif c == '[':
                 index = i.index
                 try:
@@ -1228,6 +1247,7 @@ class WcParse(object):
         """Parse pattern list."""
 
         result = ['']
+        matchbase = ['']
         negative = False
 
         p = util.norm_pattern(self.pattern, not self.unix, self.raw_chars)
@@ -1237,7 +1257,21 @@ class WcParse(object):
             negative = True
             p = p[1:]
 
+        if self.anchor:
+            p, number = (RE_ANCHOR if not self.win_drive_detect else RE_WIN_ANCHOR).subn('', p)
+            if number:
+                self.matchbase = False
+
+        if self.matchbase:
+            globstar = self.globstar
+            self.globstar = True
+            self.root('**', matchbase)
+            self.globstar = globstar
+
         self.root(p, result)
+
+        if self.matchbase:
+            result = matchbase + result
 
         case_flag = 'i' if not self.case_sensitive else ''
         if util.PY36:

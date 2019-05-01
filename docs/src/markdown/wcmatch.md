@@ -314,6 +314,31 @@ Be careful with patterns such as `{1..100}` which would generate one hundred pat
 
 `PATHNAME` enables both [`DIRPATHNAME`](#wcmatchdirpathname) and [`FILEPATHNAME`](#wcmathfilepathname). It is provided for convenience.
 
+#### `wcmatch.MATCHBASE, wcmatch.X` {: #wcmatchmatchbase}
+
+When `FILEPATHNAME` or `DIRPATHNAME` is enabled, `MATCHBASE` will ensure that that the respective file or directory pattern, when there are no slashes in the pattern, seeks for any file anywhere in the tree with a matching basename. This is essentially the behavior when `FILEPATHNAME` and `DIRPATHNAME` is disabled, but with `MATCHBASE`, you can toggle the behavior by included slashes in your pattern.
+
+When we include no slashes:
+
+```pycon3
+>>> wcmatch.WcMatch('.', '*.md', flags=wcmatch.FILEPATHNAME | wcmatch.GLOBSTAR | wcmatch.MATCHBASE | wcmatch.RECURSIVE).match()
+['./LICENSE.md', './README.md', './docs/src/markdown/changelog.md', './docs/src/markdown/fnmatch.md', './docs/src/markdown/glob.md', './docs/src/markdown/index.md', './docs/src/markdown/license.md', './docs/src/markdown/wcmatch.md']
+```
+
+If we include slashes in the pattern, the path, not the basename, must match the pattern:
+
+```pycon3
+>>> wcmatch.WcMatch('.', 'docs/**/*.md', flags=wcmatch.FILEPATHNAME | wcmatch.GLOBSTAR | wcmatch.MATCHBASE | wcmatch.RECURSIVE).match()
+['./docs/src/markdown/changelog.md', './docs/src/markdown/fnmatch.md', './docs/src/markdown/glob.md', './docs/src/markdown/index.md', './docs/src/markdown/license.md', './docs/src/markdown/wcmatch.md']
+```
+
+If we have a leading slash, the pattern will not perform a match on the basename, but will instead be a normal path pattern that is anchored to the current base path, in this case `.`.
+
+```pycon3
+>>> wcmatch.WcMatch('.', '/*.md', flags=wcmatch.FILEPATHNAME | wcmatch.GLOBSTAR | wcmatch.MATCHBASE | wcmatch.RECURSIVE).match()
+['./LICENSE.md', './README.md']
+```
+
 #### `wcmatch.GLOBSTAR, wcmatch.G` {: #wcmatchglobstar}
 
 When the [`PATHNAME`](#wcmatchpathname) flag is provided, you can also enable `GLOBSTAR` to enable the recursive directory pattern matches with `**`.
