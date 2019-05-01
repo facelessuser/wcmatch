@@ -366,7 +366,7 @@ no trailing slash.
 ```pycon3
 >>> from wcmatch import glob
 >>> glob.glob('*', flags=glob.MARK)
-['appveyor.yml', 'base.patch', 'basematch.diff', 'docs\\', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'requirements\\', 'setup.cfg', 'setup.py', 'tests\\', 'tools\\', 'tox.ini', 'wcmatch\\']
+['appveyor.yml', 'base.patch', 'basematch.diff', 'docs/', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'requirements/', 'setup.cfg', 'setup.py', 'tests/', 'tools/', 'tox.ini', 'wcmatch/']
 >>> glob.glob('*')
 ['appveyor.yml', 'base.patch', 'basematch.diff', 'docs', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'requirements', 'setup.cfg', 'setup.py', 'tests', 'tools', 'tox.ini', 'wcmatch']
 ```
@@ -383,7 +383,7 @@ any file anywhere in the tree with a matching basename. When enabled for [`globf
 ```pycon3
 >>> from wcmatch import glob
 >>> glob.glob('*.txt', flags=glob.MATCHBASE)
-['docs\\src\\dictionary\\en-custom.txt', 'docs\\src\\markdown\\_snippets\\abbr.txt', 'docs\\src\\markdown\\_snippets\\links.txt', 'docs\\src\\markdown\\_snippets\\posix.txt', 'docs\\src\\markdown\\_snippets\\refs.txt', 'requirements\\docs.txt', 'requirements\\lint.txt', 'requirements\\setup.txt', 'requirements\\test.txt', 'requirements\\tools.txt'] 
+['docs/src/dictionary/en-custom.txt', 'docs/src/markdown/_snippets/abbr.txt', 'docs/src/markdown/_snippets/links.txt', 'docs/src/markdown/_snippets/posix.txt', 'docs/src/markdown/_snippets/refs.txt', 'requirements/docs.txt', 'requirements/lint.txt', 'requirements/setup.txt', 'requirements/test.txt', 'requirements/tools.txt'] 
 ```
 
 !!! new "New 3.1"

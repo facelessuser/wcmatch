@@ -412,6 +412,54 @@ class TestWcmatch(_TestWcmatch):
         self.crawl_files(walker)
         self.assertEqual(len(self.error_records), 2)
 
+    def test_match_base_filepath(self):
+        """Test `MATCHBASE` with filepath."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            '*.txt', None,
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN | wcmatch.FILEPATHNAME | wcmatch.MATCHBASE
+        )
+        self.crawl_files(walker)
+        self.assertEqual(
+            sorted(self.files),
+            self.norm_list(
+                ['a.txt', '.hidden/a.txt']
+            )
+        )
+
+    def test_match_base_absolute_filepath(self):
+        """Test `MATCHBASE` with filepath and an absolute path."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            '.hidden/*.txt', None,
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN | wcmatch.FILEPATHNAME | wcmatch.MATCHBASE
+        )
+        self.crawl_files(walker)
+        self.assertEqual(
+            sorted(self.files),
+            self.norm_list(
+                ['.hidden/a.txt']
+            )
+        )
+
+    def test_match_base_anchored_filepath(self):
+        """Test `MATCHBASE` with filepath and an anchored pattern."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            '/*.txt', None,
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN | wcmatch.FILEPATHNAME | wcmatch.MATCHBASE
+        )
+        self.crawl_files(walker)
+        self.assertEqual(
+            sorted(self.files),
+            self.norm_list(
+                ['a.txt']
+            )
+        )
+
 
 @skip_unless_symlink
 class TestWcmatchSymlink(_TestWcmatch):

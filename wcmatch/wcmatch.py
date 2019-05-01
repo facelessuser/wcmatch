@@ -39,6 +39,7 @@ E = EXTMATCH = _wcparse.EXTMATCH
 G = GLOBSTAR = _wcparse.GLOBSTAR
 B = BRACE = _wcparse.BRACE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
+X = MATCHBASE = _wcparse.MATCHBASE
 
 # Control `PATHNAME` individually for folder exclude and files
 DP = DIRPATHNAME = 0x10000
@@ -62,7 +63,8 @@ FLAG_MASK = (
     FILEPATHNAME |
     SYMLINKS |
     HIDDEN |
-    RECURSIVE
+    RECURSIVE |
+    MATCHBASE
 )
 
 
@@ -92,19 +94,24 @@ class WcMatch(object):
                 (re.compile(br'^.*$', re.DOTALL),) if self.is_bytes else (re.compile(r'^.*$', re.DOTALL),)
             )
         self.exclude_pattern = args.pop(0) if args else kwargs.pop('exclude_pattern', b'' if self.is_bytes else '')
-        self.flags = (args.pop(0) if args else kwargs.pop('flags', 0)) & FLAG_MASK
+        self._parse_flags(args.pop(0) if args else kwargs.pop('flags', 0))
+        self.on_init(*args, **kwargs)
+        self.file_check, self.folder_exclude_check = self._compile(self.file_pattern, self.exclude_pattern)
+
+    def _parse_flags(self, flags):
+        """Parse flags."""
+
+        self.flags = flags & FLAG_MASK
         self.flags |= _wcparse.NEGATE | _wcparse.DOTMATCH
         self.follow_links = bool(self.flags & SYMLINKS)
         self.show_hidden = bool(self.flags & HIDDEN)
         self.recursive = bool(self.flags & RECURSIVE)
         self.dir_pathname = bool(self.flags & DIRPATHNAME)
         self.file_pathname = bool(self.flags & FILEPATHNAME)
+        self.matchbase = bool(self.flags & MATCHBASE)
         if util.platform() == "windows":
             self.flags |= _wcparse._FORCEWIN
-        self.flags = self.flags & (_wcparse.FLAG_MASK ^ (SYMLINKS | DIRPATHNAME | FILEPATHNAME | HIDDEN))
-
-        self.on_init(*args, **kwargs)
-        self.file_check, self.folder_exclude_check = self._compile(self.file_pattern, self.exclude_pattern)
+        self.flags = self.flags & (_wcparse.FLAG_MASK ^ MATCHBASE)
 
     def _compile_wildcard(self, pattern, pathname=False):
         """Compile or format the wildcard inclusion/exclusion pattern."""
@@ -112,7 +119,9 @@ class WcMatch(object):
         patterns = None
         flags = self.flags
         if pathname:
-            flags |= _wcparse.PATHNAME
+            flags |= _wcparse.PATHNAME | _wcparse._ANCHOR
+            if self.matchbase:
+                flags |= _wcparse.MATCHBASE
         if pattern:
             patterns = _wcparse.WcSplit(pattern, flags=flags).split()
 

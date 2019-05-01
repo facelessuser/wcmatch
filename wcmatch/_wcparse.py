@@ -40,6 +40,8 @@ RE_WIN_MOUNT = re.compile(r'\\|[a-z]:(?:\\|$)', re.I)
 RE_MOUNT = re.compile(r'/')
 RE_BWIN_MOUNT = re.compile(br'\\|[a-z]:(?:\\|$)', re.I)
 RE_BMOUNT = re.compile(br'/')
+RE_ANCHOR = re.compile(r'^/+')
+RE_WIN_ANCHOR = re.compile(r'^(?:\\\\|/)+')
 
 SET_OPERATORS = frozenset(('&', '~', '|'))
 NEGATIVE_SYM = frozenset((b'!', '!'))
@@ -65,8 +67,9 @@ SPLIT = 0x1000
 MATCHBASE = 0x2000
 
 # Internal flag
-_FORCEWIN = 0x100000000
-_TRANSLATE = 0x200000000
+_FORCEWIN = 0x100000000  # Forces Windows behavior (used to not assume Unix/Linux because of `FORCECASE` on Windows).
+_TRANSLATE = 0x200000000  # Lets us know we are performing a translation, and we just want the regex.
+_ANCHOR = 0x400000000  # The pattern, if it starts with a slash, is anchored to the working directory; strip the slash.
 
 FLAG_MASK = (
     FORCECASE |
@@ -83,7 +86,8 @@ FLAG_MASK = (
     FOLLOW |
     MATCHBASE |
     _FORCEWIN |
-    _TRANSLATE
+    _TRANSLATE |
+    _ANCHOR
 )
 CASE_FLAGS = FORCECASE | IGNORECASE
 
@@ -644,6 +648,7 @@ class WcParse(object):
         self.dot = bool(flags & DOTMATCH)
         self.extend = bool(flags & EXTMATCH)
         self.matchbase = bool(flags & MATCHBASE)
+        self.anchor = bool(flags & _ANCHOR)
         self.case_sensitive = get_case(flags)
         self.in_list = False
         self.flags = flags
@@ -1251,6 +1256,11 @@ class WcParse(object):
         if is_negative(p, self.flags):
             negative = True
             p = p[1:]
+
+        if self.anchor:
+            p, number = (RE_ANCHOR if not self.win_drive_detect else RE_WIN_ANCHOR).subn('', p)
+            if number:
+                self.matchbase = False
 
         if self.matchbase:
             globstar = self.globstar
