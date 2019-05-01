@@ -245,7 +245,7 @@ class WcMatch(object):
                     if value is not None:  # pragma: no cover
                         yield value
 
-                if self._abort:
+                if self._abort:  # pragma: no cover
                     break
 
             # Search files if they were found
