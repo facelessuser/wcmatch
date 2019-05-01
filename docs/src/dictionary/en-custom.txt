@@ -21,6 +21,7 @@ Wildcard
 XORed
 accessor
 amongst
+basename
 boolean
 builtin
 centric
