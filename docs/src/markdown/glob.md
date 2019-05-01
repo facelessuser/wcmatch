@@ -351,6 +351,26 @@ True
 True
 ```
 
+#### `glob.MARK, glob.MK` {: #globmark}
+
+`MARK` ensures that [`glob`](#globglob) returns all directories with a trailing slash. This makes it very clear which
+paths are directories and allows you to save calling `os.path.isdir` as you can simply check for a path separator at the
+end of the path. This flag only applies to calls to `glob` or `iglob`.
+
+If you are passing the returned files from `glob` to [`globfilter`](#globglobfilter) or [`globmatch`](#globglobmatch),
+it is important to ensure directory paths have trailing slashes as these functions have no way of telling the path is a
+directory otherwise (except when [`REALPATH`](#globrealpath) is enabled). If you have `REALPATH` enabled, ensuring the
+files have trailing slashes can still save you a call to `os.path.isdir` as `REALPATH` resorts to calling it if there is
+no trailing slash.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob('*', flags=glob.MARK)
+['appveyor.yml', 'base.patch', 'basematch.diff', 'docs\\', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'requirements\\', 'setup.cfg', 'setup.py', 'tests\\', 'tools\\', 'tox.ini', 'wcmatch\\']
+>>> glob.glob('*')
+['appveyor.yml', 'base.patch', 'basematch.diff', 'docs', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'requirements', 'setup.cfg', 'setup.py', 'tests', 'tools', 'tox.ini', 'wcmatch']
+```
+
 --8<--
 refs.txt
 --8<--

@@ -146,6 +146,18 @@ class _TestGlob:
         return os.path.join(cls.tempdir, *parts)
 
     @classmethod
+    def res_norm(cls, *parts, absolute=False, mark=False):
+        """Normalize results adding a trailing slash if mark flag is enabled."""
+
+        if not absolute:
+            path = os.path.join(cls.tempdir, *parts)
+        else:
+            path = os.path.join(*parts)
+        if mark and os.path.isdir(os.path.join(cls.tempdir, *parts)):
+            path = os.path.join(path, b'' if isinstance(path, bytes) else '')
+        return path
+
+    @classmethod
     def globjoin(cls, *parts):
         """Joins glob path."""
 
@@ -315,16 +327,15 @@ class _TestGlob:
             pytest.skip("Skipped")
 
         pattern = case[0]
-        if not cls.absolute:
-            results = [cls.norm(*x) for x in case[1]] if case[1] is not None else None
-        else:
-            results = [os.path.join(*list(x)) for x in case[1]] if case[1] is not None else None
-        flags = cls.DEFAULT_FLAGS
 
+        flags = cls.DEFAULT_FLAGS
         if len(case) > 2:
             flags ^= case[2]
-
         negative = flags & glob.N
+
+        results = [
+            cls.res_norm(*x, absolute=cls.absolute, mark=flags & glob.MARK) for x in case[1]
+        ] if case[1] is not None else None
 
         print("PATTERN: ", pattern)
         print("FLAGS: ", bin(flags))
@@ -795,6 +806,12 @@ class Testglob(_TestGlob):
         self.eval_glob_cases(case)
 
 
+class TestGlobMarked(Testglob):
+    """Test glob marked."""
+
+    DEFAULT_FLAGS = glob.BRACE | glob.EXTGLOB | glob.GLOBSTAR | glob.FOLLOW | glob.MARK
+
+
 class TestCWD(_TestGlob):
     """Test files in the current working directory."""
 
@@ -862,6 +879,12 @@ class TestGlobCornerCase(_TestGlob):
         """Test glob cases."""
 
         self.eval_glob_cases(case)
+
+
+class TestGlobCornerCaseMarked(Testglob):
+    """Test glob marked."""
+
+    DEFAULT_FLAGS = glob.BRACE | glob.EXTGLOB | glob.GLOBSTAR | glob.FOLLOW | glob.MARK
 
 
 class TestGlobEscapes(unittest.TestCase):

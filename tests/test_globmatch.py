@@ -955,6 +955,50 @@ class TestGlobMatchSpecial(unittest.TestCase):
             )
         )
 
+    def test_glob_integrity_marked(self):
+        """`globmatch` must match what glob globs with marked directories."""
+
+        # Number of slashes is inconsequential
+        # Glob really looks at what is in between. Multiple slashes are the same as one separator.
+        # UNC mounts are special cases and it matters there.
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**', flags=self.flags | glob.MARK
+                    ) for x in glob.glob('**/docs/**', flags=self.flags | glob.MARK)
+                ]
+            )
+        )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.MARK
+                    ) for x in glob.glob('**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.MARK)
+                ]
+            )
+        )
+
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '!**/*.md', flags=self.flags | glob.SPLIT | glob.MARK
+                    ) for x in glob.glob('!**/*.md', flags=self.flags | glob.SPLIT | glob.MARK)
+                ]
+            )
+        )
+        self.assertFalse(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.MARK
+                    ) for x in glob.glob('**/docs/**', flags=self.flags | glob.SPLIT | glob.MARK)
+                ]
+            )
+        )
+
     def test_glob_integrity_real(self):
         """`globmatch` must match what glob globs against the real file system."""
 
@@ -1021,6 +1065,49 @@ class TestGlobMatchSpecial(unittest.TestCase):
                     glob.globmatch(
                         x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.REALPATH
                     ) for x in glob.glob('**/docs/**', flags=self.flags | glob.SPLIT)
+                ]
+            )
+        )
+
+    def test_glob_integrity_real_marked(self):
+        """`globmatch` must match what glob globs against the real file system and marked directories."""
+
+        # Number of slashes is inconsequential
+        # Glob really looks at what is in between. Multiple slashes are the same as one separator.
+        # UNC mounts are special cases and it matters there.
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**', flags=self.flags | glob.REALPATH | glob.MARK
+                    ) for x in glob.glob('**/docs/**', flags=self.flags | glob.MARK)
+                ]
+            )
+        )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.REALPATH | glob.MARK
+                    ) for x in glob.glob('**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.MARK)
+                ]
+            )
+        )
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, '!**/*.md', flags=self.flags | glob.SPLIT | glob.REALPATH | glob.MARK
+                    ) for x in glob.glob('!**/*.md', flags=self.flags | glob.SPLIT | glob.MARK)
+                ]
+            )
+        )
+        self.assertFalse(
+            all(
+                [
+                    glob.globmatch(
+                        x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.REALPATH | glob.MARK
+                    ) for x in glob.glob('**/docs/**', flags=self.flags | glob.SPLIT | glob.MARK)
                 ]
             )
         )

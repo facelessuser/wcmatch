@@ -3,6 +3,7 @@
 ## 3.1.0
 
 - **NEW**: Deprecated `WcMatch` class methods `kill` and `reset`. `WcMatch` should be broken with a simple `break` statement instead.
+- **NEW**: Add a new flag `MARK` to force `glob` to return directories with a trailing slash.
 
 ## 3.0.2
 
