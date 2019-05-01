@@ -1255,16 +1255,27 @@ class WcParse(object):
         return pattern
 
 
-def _fs_match(pattern, filename, sep, follow, symlinks):
+def _fs_match(pattern, filename, is_dir, sep, follow, symlinks):
     """
     Match path against the pattern.
 
     Since `globstar` doesn't match symlinks (unless `FOLLOW` is enabled), we must look for symlinks.
     If we identify a symlink in a `globstar` match, we know this result should not actually match.
+
+    We only check for the symlink if we know we are looking at a directory.
+    And we only call `lstat` if we can't find it in the cache.
+
+    We know it's a directory if:
+
+    1. If the base is a directory, all parts are directories.
+    2. If we are not the last part of the globstar, the part is a directory.
+    3. If the base is a file, but the part is not at the end, it is a directory.
+
     """
 
     matched = False
 
+    end = len(filename)
     base = None
     m = pattern.fullmatch(filename)
     if m:
@@ -1276,20 +1287,22 @@ def _fs_match(pattern, filename, sep, follow, symlinks):
             last = len(groups)
             for i, star in enumerate(m.groups(), 1):
                 if star:
+                    at_end = m.end(i) == end
                     parts = star.strip(sep).split(sep)
                     if base is None:
                         base = filename[:m.start(i)]
                     for part in parts:
                         base = os.path.join(base, part)
-                        is_link = symlinks.get(base, None)
-                        if is_link is not None:
-                            matched = not is_link
-                        elif i != last or os.path.isdir(base):
-                            is_link = os.path.islink(base)
-                            symlinks[base] = is_link
-                            matched = not is_link
-                        if not matched:
-                            break
+                        if is_dir or i != last or not at_end:
+                            is_link = symlinks.get(base, None)
+                            if is_link is not None:
+                                matched = not is_link
+                            else:
+                                is_link = os.path.islink(base)
+                                symlinks[base] = is_link
+                                matched = not is_link
+                            if not matched:
+                                break
                 if matched:
                     break
     return matched
@@ -1301,12 +1314,14 @@ def _match_real(filename, include, exclude, follow, symlinks):
     sep = '\\' if util.platform() == "windows" else '/'
     if isinstance(filename, bytes):
         sep = os.fsencode(sep)
-    if not filename.endswith(sep) and os.path.isdir(filename):
+    is_dir = filename.endswith(sep)
+    if not is_dir and os.path.isdir(filename):
+        is_dir = True
         filename += sep
 
     matched = False
     for pattern in include:
-        if _fs_match(pattern, filename, sep, follow, symlinks):
+        if _fs_match(pattern, filename, is_dir, sep, follow, symlinks):
             matched = True
             break
 
@@ -1314,7 +1329,7 @@ def _match_real(filename, include, exclude, follow, symlinks):
         matched = True
         if exclude:
             for pattern in exclude:
-                if _fs_match(pattern, filename, sep, follow, symlinks):
+                if _fs_match(pattern, filename, is_dir, sep, follow, symlinks):
                     matched = False
                     break
     return matched
