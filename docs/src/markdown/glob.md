@@ -351,11 +351,11 @@ True
 True
 ```
 
-#### `glob.MARK, glob.MK` {: #globmark}
+#### `glob.MARK, glob.K` {: #globmark}
 
-`MARK` ensures that [`glob`](#globglob) returns all directories with a trailing slash. This makes it very clear which
-paths are directories and allows you to save calling `os.path.isdir` as you can simply check for a path separator at the
-end of the path. This flag only applies to calls to `glob` or `iglob`.
+`MARK` ensures that [`glob`](#globglob) and [`iglob`](#globiglob) to return all directories with a trailing slash. This
+makes it very clear which paths are directories and allows you to save calling `os.path.isdir` as you can simply check
+for a path separator at the end of the path. This flag only applies to calls to `glob` or `iglob`.
 
 If you are passing the returned files from `glob` to [`globfilter`](#globglobfilter) or [`globmatch`](#globglobmatch),
 it is important to ensure directory paths have trailing slashes as these functions have no way of telling the path is a
@@ -370,6 +370,24 @@ no trailing slash.
 >>> glob.glob('*')
 ['appveyor.yml', 'base.patch', 'basematch.diff', 'docs', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'requirements', 'setup.cfg', 'setup.py', 'tests', 'tools', 'tox.ini', 'wcmatch']
 ```
+
+!!! new "New 3.1"
+    `MARK` added in 3.1.
+
+#### `glob.MATCHBASE, glob.X` {: #globmatchbase}
+
+`MATCHBASE`, when a pattern has no slashes in it, will cause [`glob`](#globglob) and [`iglob`](#globiglob) to seek for
+any file anywhere in the tree with a matching basename. When enabled for [`globfilter`](#globglobfilter) and
+[`globmatch`](#globglobmatch), they will match any basename in the tree.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob('*.txt', flags=glob.MATCHBASE)
+['docs\\src\\dictionary\\en-custom.txt', 'docs\\src\\markdown\\_snippets\\abbr.txt', 'docs\\src\\markdown\\_snippets\\links.txt', 'docs\\src\\markdown\\_snippets\\posix.txt', 'docs\\src\\markdown\\_snippets\\refs.txt', 'requirements\\docs.txt', 'requirements\\lint.txt', 'requirements\\setup.txt', 'requirements\\test.txt', 'requirements\\tools.txt'] 
+```
+
+!!! new "New 3.1"
+    `MATCHBASE` added in 3.1.
 
 --8<--
 refs.txt

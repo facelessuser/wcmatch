@@ -279,12 +279,12 @@ class TestGlobFilter:
             ['ac', 'ad', 'cb', 'c,d']
         ],
 
-        # Test `basematch`.
+        # Test `MATCHBASE`.
         [
-          'a?b',
-          ['x/y/acb', 'acb/'],
-          glob.X,
-          ['x/y/acb', 'acb/', 'acb/d/e', 'x/y/acb/d']
+            'a?b',
+            ['x/y/acb', 'acb/'],
+            glob.X,
+            ['x/y/acb', 'acb/', 'acb/d/e', 'x/y/acb/d']
         ],
 
         ['#*', ['#a', '#b'], 0, ['#a', '#b', 'c#d']],

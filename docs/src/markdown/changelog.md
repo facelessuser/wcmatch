@@ -4,6 +4,7 @@
 
 - **NEW**: Deprecated `WcMatch` class methods `kill` and `reset`. `WcMatch` should be broken with a simple `break` statement instead.
 - **NEW**: Add a new flag `MARK` to force `glob` to return directories with a trailing slash.
+- **NEW**: Add `MATCHBASE` that causes `glob`, when the pattern has no slashes in it, to seek for any file anywhere in the tree with a matching basename.
 
 ## 3.0.2
 
