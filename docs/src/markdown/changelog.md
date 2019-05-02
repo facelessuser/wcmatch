@@ -5,6 +5,8 @@
 - **NEW**: Deprecated `WcMatch` class methods `kill` and `reset`. `WcMatch` should be broken with a simple `break` statement instead.
 - **NEW**: Add a new flag `MARK` to force `glob` to return directories with a trailing slash.
 - **NEW**: Add `MATCHBASE` that causes `glob` and `WcMatch`, when the pattern has no slashes in it, to seek for any file anywhere in the tree with a matching basename.
+- **NEW**: Exclusion patterns (enabled with `NEGATE`) now always enable `DOTALL` in the exclusion patterns. They also will match symlinks in `**` patterns. Even when an exclusion pattern is specified by itself, a default regular pattern is always generated. Dot files and symlinks will always be handled properly in the regular portion, but the exclusion portion will allow dots and symlinks to make filtering easier.
+- **FIX**: Exclusion patterns should not use `**` as a default when no regular pattern is specified, they should use `*`.
 
 ## 3.0.2
 
@@ -40,7 +42,7 @@
 ## 2.1.0
 
 - **NEW**: Deprecate `version` and `version_info` in favor of the more standard `__version__` and `__version_info__`.
-- **FIX**: Fix issue where negated patterns would trigger before end of path.
+- **FIX**: Fix issue where exclusion patterns would trigger before end of path.
 - **FIX**: Fix `GLOBSTAR` regular expression pattern issues.
 
 ## 2.0.3

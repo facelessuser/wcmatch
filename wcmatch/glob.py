@@ -23,6 +23,7 @@ IN THE SOFTWARE.
 import os
 import sys
 import functools
+import re
 from . import _wcparse
 from . import util
 
@@ -114,22 +115,20 @@ class Glob(object):
         """Parse patterns."""
 
         self.pattern = []
-        self.npatterns = None
-        npattern = []
+        self.npatterns = []
+        nflags = self.flags | _wcparse.REALPATH | _wcparse._NO_TRANSLATE
         for p in pattern:
             if _wcparse.is_negative(p, self.flags):
                 # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
                 # This is faster as compiled patterns usually compare the include patterns first,
                 # and then the exclude, but glob will already know it wants to include the file.
-                npattern.append(p[1:])
+                self.npatterns.append(re.compile(_wcparse.translate(p, flags=nflags)[1][0]))
             else:
                 self.pattern.extend(
                     [_wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p, self.flags)]
                 )
-        if npattern:
-            self.npatterns = _wcparse.compile(npattern, self.flags ^ (_wcparse.NEGATE | _wcparse.REALPATH))
-        if not self.pattern and self.npatterns is not None:
-            self.pattern.append(_wcparse.WcPathSplit((b'**' if self.is_bytes else '**'), self.flags).split())
+        if not self.pattern and self.npatterns:
+            self.pattern.append(_wcparse.WcPathSplit((b'*' if self.is_bytes else '*'), self.flags).split())
 
     def _is_hidden(self, name):
         """Check if is file hidden."""
@@ -146,17 +145,24 @@ class Glob(object):
 
         return name in (b'..', '..')
 
-    def _match_excluded(self, filename, patterns):
-        """Call match real directly to skip unnecessary `exists` check."""
+    def _match_excluded(self, filename, is_dir):
+        """Check if file should be excluded."""
 
-        return _wcparse._match_real(
-            filename, patterns._include, patterns._exclude, patterns._follow, self.symlinks
-        )
+        if is_dir and not filename.endswith(self.sep):
+            filename += self.sep
 
-    def _is_excluded(self, path, dir_only):
+        matched = False
+        for pattern in self.npatterns:
+            if pattern.fullmatch(filename):
+                matched = True
+                break
+
+        return matched
+
+    def _is_excluded(self, path, is_dir):
         """Check if file is excluded."""
 
-        return self.npatterns and self._match_excluded(path, self.npatterns)
+        return self.npatterns and self._match_excluded(path, is_dir)
 
     def _match_literal(self, a, b=None):
         """Match two names."""
@@ -393,21 +399,21 @@ class Glob(object):
                                 if rest:
                                     this = rest.pop(0)
                                     for match, is_dir in self._glob(curdir, this, rest):
-                                        if not self._is_excluded(match, dir_only):
+                                        if not self._is_excluded(match, is_dir):
                                             yield self.format_path(match, is_dir, dir_only)
-                                elif not self._is_excluded(curdir, dir_only):
+                                elif not self._is_excluded(curdir, is_dir):
                                     yield self.format_path(curdir, is_dir, dir_only)
                     else:
                         # Return the file(s) and finish.
                         for match, is_dir in results:
-                            if os.path.lexists(match) and not self._is_excluded(match, dir_only):
+                            if os.path.lexists(match) and not self._is_excluded(match, is_dir):
                                 yield self.format_path(match, is_dir, dir_only)
                 else:
                     # Path starts with a magic pattern, let's get globbing
                     rest = pattern[:]
                     this = rest.pop(0)
                     for match, is_dir in self._glob(curdir if not curdir == self.current else self.empty, this, rest):
-                        if not self._is_excluded(match, dir_only):
+                        if not self._is_excluded(match, is_dir):
                             yield self.format_path(match, is_dir, dir_only)
 
 

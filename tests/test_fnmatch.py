@@ -336,10 +336,10 @@ class TestFnMatchTranslate(unittest.TestCase):
 
         p1, p2 = self.split_translate('-|-test|-', flags=flags | fnmatch.N | fnmatch.M)
         if util.PY36:
-            self.assertEqual(p1, [])
+            self.assertEqual(p1, [r'^(?s:(?=.).*?)$'])
             self.assertEqual(p2, [r'^(?!(?s:)$).*?$', r'^(?!(?s:test)$).*?$', r'^(?!(?s:)$).*?$'])
         else:
-            self.assertEqual(p1, [])
+            self.assertEqual(p1, [r'(?s)^(?:(?=.).*?)$'])
             self.assertEqual(p2, [r'(?s)^(?!(?:)$).*?$', r'(?s)^(?!(?:test)$).*?$', r'(?s)^(?!(?:)$).*?$'])
 
         p1, p2 = self.split_translate('test[^chars]', flags)

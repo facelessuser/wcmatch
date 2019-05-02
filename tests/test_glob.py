@@ -383,6 +383,7 @@ class Testglob(_TestGlob):
         [('[.a]',), [('a',)]],
         [('*.',), []],
 
+        Options(default_negate='**'),
         # Glob inverse
         [
             ('a*', '**'),
@@ -400,7 +401,6 @@ class Testglob(_TestGlob):
             ('**', 'EF'),
             [
             ] if not can_symlink() else [
-                ('sym3', 'EF')
             ],
             glob.N | glob.L
         ],
@@ -786,15 +786,14 @@ class Testglob(_TestGlob):
             ('**', 'EF'),
             [('a', 'bcd', 'EF'), ('EF',)] if not can_symlink() else [('a', 'bcd', 'EF'), ('EF',), ('sym3', 'EF')]
         ],
-        Options(just_negative=True),
+        Options(just_negative=True, default_negate='**'),
         [
             ('a*', '**'),
             [
                 ('EF',), ('ZZZ',)
             ] if not can_symlink() else [
                 ('EF',), ('ZZZ',),
-                ('sym1',), ('sym3',), ('sym2',), ('sym3', 'efg'), ('sym3', 'efg', 'ha'),
-                ('sym3', 'EF')
+                ('sym1',), ('sym3',), ('sym2',)
             ],
             glob.N
         ],
