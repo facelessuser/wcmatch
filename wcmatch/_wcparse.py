@@ -42,6 +42,10 @@ RE_BWIN_MOUNT = re.compile(br'\\|[a-z]:(?:\\|$)', re.I)
 RE_BMOUNT = re.compile(br'/')
 RE_ANCHOR = re.compile(r'^/+')
 RE_WIN_ANCHOR = re.compile(r'^(?:\\\\|/)+')
+RE_NO_DIR = re.compile(r'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$')
+RE_WIN_NO_DIR = re.compile(r'^(?:.*?(?:[\\/].{1,2}[\\/]*|[\\/])|.{1,2}[\\/]*)$')
+RE_BNO_DIR = re.compile(br'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$')
+RE_BWIN_NO_DIR = re.compile(br'^(?:.*?(?:[\\/]\.{1,2}[\\/]*|[\\/])|\.{1,2}[\\/]*)$')
 
 SET_OPERATORS = frozenset(('&', '~', '|'))
 NEGATIVE_SYM = frozenset((b'!', '!'))
@@ -65,6 +69,7 @@ REALPATH = 0x0400
 FOLLOW = 0x0800
 SPLIT = 0x1000
 MATCHBASE = 0x2000
+NODIR = 0x4000
 
 # Internal flag
 _FORCEWIN = 0x100000000  # Forces Windows behavior (used to not assume Unix/Linux because of `FORCECASE` on Windows).
@@ -152,6 +157,8 @@ _EXCLA_GROUP = r'(?:(?!(?:%s)'
 _EXCLA_GROUP_CLOSE = r')%s)'
 _NO_ROOT = r'(?!/)'
 _NO_WIN_ROOT = r'(?!(?:[\\/]|[a-zA-Z]:))'
+_NO_NIX_DIR = r'^(?!(?:.*?(?:/.{1,2}/*|/)|.{1,2}/*)$).*?$'
+_NO_WIN_DIR = r'^(?!(?:.*?(?:[\\/].{1,2}/*|[\\/])|.{1,2}[\\/]*)$).*?$'
 
 
 class InvPlaceholder(str):
@@ -234,6 +241,13 @@ def translate(patterns, flags):
                 default = os.fsencode(default)
             positive.append(WcParse(default, flags).parse())
 
+    if patterns and flags & NODIR:
+        unix = is_unix_style(flags)
+        exclude = _NO_NIX_DIR if unix else _NO_WIN_DIR
+        if isinstance(patterns[0], bytes):
+            exclude = os.fsencode(exclude)
+        negative.append(exclude)
+
     return positive, negative
 
 
@@ -268,6 +282,10 @@ def compile(patterns, flags):  # noqa A001
             if isinstance(patterns[0], bytes):
                 default = os.fsencode(default)
             positive.append(_compile(default, flags))
+
+    if flags & NODIR:
+        unix = is_unix_style(flags)
+        negative.append(RE_NO_DIR if unix else RE_WIN_NO_DIR)
 
     return WcRegexp(tuple(positive), tuple(negative), flags & REALPATH, flags & PATHNAME, flags & FOLLOW)
 

@@ -53,6 +53,7 @@ P = REALPATH = _wcparse.REALPATH
 L = FOLLOW = _wcparse.FOLLOW
 S = SPLIT = _wcparse.SPLIT
 X = MATCHBASE = _wcparse.MATCHBASE
+O = NODIR = _wcparse.NODIR
 K = MARK = 0x10000
 NEGDEFAULT = _wcparse.NEGDEFAULT
 
@@ -70,6 +71,7 @@ FLAG_MASK = (
     FOLLOW |
     SPLIT |
     MATCHBASE |
+    NODIR |
     NEGDEFAULT
 )
 
@@ -98,6 +100,9 @@ class Glob(object):
         self.neg_default = bool(flags & NEGDEFAULT)
         if self.neg_default:
             flags ^= NEGDEFAULT
+        self.nodir = bool(flags & _wcparse.NODIR)
+        if self.nodir:
+            flags ^= _wcparse.NODIR
         self.flags = _flag_transform(flags | _wcparse.REALPATH) ^ _wcparse.REALPATH
         self.follow_links = bool(flags & FOLLOW)
         self.dot = bool(flags & DOTMATCH)
@@ -139,6 +144,13 @@ class Glob(object):
                 if self.is_bytes:
                     default = os.fsencode(default)
                 self.pattern.append(_wcparse.WcPathSplit(default, self.flags).split())
+
+        if self.nodir:
+            if self.flags & _wcparse._FORCEWIN:
+                nodir = _wcparse.RE_BWIN_NO_DIR if self.is_bytes else _wcparse.RE_WIN_NO_DIR
+            else:
+                nodir = _wcparse.RE_BNO_DIR if self.is_bytes else _wcparse.RE_NO_DIR
+            self.npatterns.append(nodir)
 
     def _is_hidden(self, name):
         """Check if is file hidden."""

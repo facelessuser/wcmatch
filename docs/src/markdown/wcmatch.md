@@ -123,8 +123,8 @@ If searching with `imatch`, this provides a way to gracefully kill the internal 
 
 Once a "kill" has been issued, the class will remain in an aborted state. To clear the "kill" state, you must call [`reset`](#wcmatchreset). This allows a process to define a `Wcmatch` class and reuse it. If a process receives an early kill and sets it before the match is started, when the match is started, it will immediately abort. This helps with race conditions depending on how you are using `WcMatch`.
 
-!!! warning "Deprecated 3.1"
-    `kill` has been deprecated in 3.1. `kill` is viewed as unnecessary. Please use a simple `break` within your loop to terminate file search.
+!!! warning "Deprecated 4.0"
+    `kill` has been deprecated in 4.0. `kill` is viewed as unnecessary. Please use a simple `break` within your loop to terminate file search.
 
 #### `WcMatch.reset`
 
@@ -143,8 +143,8 @@ Resets the abort state after running `kill`.
 ['./LICENSE.md', './README.md']
 ```
 
-!!! warning "Deprecated 3.1"
-    `kill` has been deprecated in 3.1. `kill` is viewed as unnecessary. Please use a simple `break` within your loop to terminate file search.
+!!! warning "Deprecated 4.0"
+    `kill` has been deprecated in 4.0. `kill` is viewed as unnecessary. Please use a simple `break` within your loop to terminate file search.
 
 #### `WcMatch.get_skipped`
 
@@ -236,8 +236,8 @@ On match returns the path of the matched file.  You can override `on_match` and 
 `on_reset` is a hook to provide a way to reset any custom logic in classes that have derived from `WcMatch`. `on_reset`
 is called on every new `match` call.
 
-!!! new "New 3.1"
-    `on_reset` was added in 3.1.
+!!! new "New 4.0"
+    `on_reset` was added in 4.0.
 
 ## Flags
 
