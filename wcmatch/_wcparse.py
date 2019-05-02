@@ -43,7 +43,7 @@ RE_BMOUNT = re.compile(br'/')
 RE_ANCHOR = re.compile(r'^/+')
 RE_WIN_ANCHOR = re.compile(r'^(?:\\\\|/)+')
 RE_NO_DIR = re.compile(r'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$')
-RE_WIN_NO_DIR = re.compile(r'^(?:.*?(?:[\\/].{1,2}[\\/]*|[\\/])|.{1,2}[\\/]*)$')
+RE_WIN_NO_DIR = re.compile(r'^(?:.*?(?:[\\/]\.{1,2}[\\/]*|[\\/])|\.{1,2}[\\/]*)$')
 RE_BNO_DIR = re.compile(br'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$')
 RE_BWIN_NO_DIR = re.compile(br'^(?:.*?(?:[\\/]\.{1,2}[\\/]*|[\\/])|\.{1,2}[\\/]*)$')
 
@@ -157,8 +157,8 @@ _EXCLA_GROUP = r'(?:(?!(?:%s)'
 _EXCLA_GROUP_CLOSE = r')%s)'
 _NO_ROOT = r'(?!/)'
 _NO_WIN_ROOT = r'(?!(?:[\\/]|[a-zA-Z]:))'
-_NO_NIX_DIR = r'^(?!(?:.*?(?:/.{1,2}/*|/)|.{1,2}/*)$).*?$'
-_NO_WIN_DIR = r'^(?!(?:.*?(?:[\\/].{1,2}/*|[\\/])|.{1,2}[\\/]*)$).*?$'
+_NO_NIX_DIR = r'^(?!(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$).*?$'
+_NO_WIN_DIR = r'^(?!(?:.*?(?:[\\/]\.{1,2}/*|[\\/])|\.{1,2}[\\/]*)$).*?$'
 
 
 class InvPlaceholder(str):
@@ -285,7 +285,10 @@ def compile(patterns, flags):  # noqa A001
 
     if flags & NODIR:
         unix = is_unix_style(flags)
-        negative.append(RE_NO_DIR if unix else RE_WIN_NO_DIR)
+        if isinstance(patterns[0], bytes):
+            negative.append(RE_BNO_DIR if unix else RE_BWIN_NO_DIR)
+        else:
+            negative.append(RE_NO_DIR if unix else RE_WIN_NO_DIR)
 
     return WcRegexp(tuple(positive), tuple(negative), flags & REALPATH, flags & PATHNAME, flags & FOLLOW)
 
