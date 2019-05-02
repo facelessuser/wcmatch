@@ -140,7 +140,7 @@ False
 True
 ```
 
-When exclusion patterns are used in conjunction with other patterns, a path will be considered matched if one of the positive patterns match **and** none of the exclusion patterns match. If an exclusion pattern is given without any regular patterns, the pattern `*` will be used as the regular pattern. Exclusion patterns are used to filter the results of a normal patterns, so at least one must be provided or one will be assigned.
+When exclusion patterns are used in conjunction with other patterns, a path will be considered matched if one of the positive patterns match **and** none of the exclusion patterns match. If an exclusion pattern is given without any regular patterns, the pattern will match nothing. Exclusion patterns are meant to filter other patterns, not match anything by themselves.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -284,6 +284,10 @@ On Windows, `FORCECASE` will also force paths to be treated like Linux/Unix path
 #### `glob.NEGATE, glob.N` {: #globnegate}
 
 `NEGATE` causes patterns that start with `!` to be treated as exclusion patterns. A pattern of `!*.py` would match any file but Python files. If used with the extended glob feature, patterns like `!(inverse|pattern)` will be mistakenly parsed as an exclusion pattern instead of as an inverse extended glob group.  See [`MINUSNEGATE`](#globminusgate) for an alternative syntax that plays nice with extended glob.
+
+!!! warning "Change 4.0"
+    In 4.0, `NEGATE` requires a non-exclusion pattern to be paired with it. You can either use [`SPLIT`](#globSPLIT),
+    or feed in a list of multiple patterns instead of a single string.
 
 #### `glob.MINUSNEGATE, glob.M` {: #globminusnegate}
 

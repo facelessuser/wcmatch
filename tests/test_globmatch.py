@@ -394,7 +394,7 @@ class TestGlobFilter:
         GlobFiles(['d', 'e', '!ab', '!abc', 'a!b', '\\!a']),
 
         # anything that is NOT a* matches.
-        ['!a*', ['\\!a', 'd', 'e', '!ab', '!abc']],
+        ['**|!a*', ['\\!a', 'd', 'e', '!ab', '!abc'], glob.S],
 
         # anything that IS !a* matches.
         ['!a*', ['!ab', '!abc'], glob.N],
@@ -540,7 +540,7 @@ class TestGlobFilter:
             ["goo.cfg", "foo.bar", "foo.bar.cfg", "foo.cfg.bar"]
         ),
         ['*.bar', ["foo.bar", "foo.cfg.bar"]],
-        ['!*.bar', ["goo.cfg", "foo.bar.cfg"]]
+        ['*|!*.bar', ["goo.cfg", "foo.bar.cfg"], glob.S]
     ]
 
     @classmethod

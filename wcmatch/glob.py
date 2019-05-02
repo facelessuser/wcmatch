@@ -128,7 +128,7 @@ class Glob(object):
                     [_wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p, self.flags)]
                 )
         if not self.pattern and self.npatterns:
-            self.pattern.append(_wcparse.WcPathSplit((b'*' if self.is_bytes else '*'), self.flags).split())
+            self.pattern.append(_wcparse.WcPathSplit((b'' if self.is_bytes else ''), self.flags).split())
 
     def _is_hidden(self, name):
         """Check if is file hidden."""

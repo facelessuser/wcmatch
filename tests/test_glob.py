@@ -790,10 +790,7 @@ class Testglob(_TestGlob):
         [
             ('a*', '**'),
             [
-                ('EF',), ('ZZZ',)
             ] if not can_symlink() else [
-                ('EF',), ('ZZZ',),
-                ('sym1',), ('sym3',), ('sym2',)
             ],
             glob.N
         ],

@@ -6,7 +6,8 @@
 - **NEW**: Add a new flag `MARK` to force `glob` to return directories with a trailing slash.
 - **NEW**: Add `MATCHBASE` that causes `glob` and `WcMatch`, when the pattern has no slashes in it, to seek for any file anywhere in the tree with a matching basename.
 - **NEW**: Exclusion patterns (enabled with `NEGATE`) now always enable `DOTALL` in the exclusion patterns. They also will match symlinks in `**` patterns. Even when an exclusion pattern is specified by itself, a default regular pattern is always generated. Dot files and symlinks will always be handled properly in the regular portion, but the exclusion portion will allow dots and symlinks to make filtering easier.
-- **FIX**: Exclusion patterns should not use `**` as a default when no regular pattern is specified, they should use `*`.
+- **NEW**: Exclusion patterns should not match anything if no regular pattern is applied. They exclude other matches from other patterns, by themselves, they match nothing. This changes existing behavior which would default the regular pattern to `*` for non `GLOBSTAR` patterns and `**` for `GLOBSTAR` patterns. You can either use the `SPLIT` flag and provide a pattern with your default ('default_pattern|!exclusion'), or feed in a list of multiple patterns instead of a single string (`['default_pattern', '!exclusion']`). This may be an inconvenience for some, but it helps to provide a more consistent expectation from exclusion patterns.
+- **FIX**: An empty pattern in `glob` should match nothing.
 
 ## 3.0.2
 

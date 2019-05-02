@@ -61,13 +61,13 @@ Exclusion patterns are allowed as well.
 
 ```pycon3
 >>> from wcmatch import fnmatch
->>> fnmatch.fnmatch('test.py', r'!*.py', flags=fnmatch.NEGATE)
+>>> fnmatch.fnmatch('test.py', r'*|!*.py', flags=fnmatch.NEGATE | fnamtch.SPLIT)
 False
->>> fnmatch.fnmatch('test.txt', r'!*.py', flags=fnmatch.NEGATE)
+>>> fnmatch.fnmatch('test.txt', r'*|!*.py', flags=fnmatch.NEGATE | fnamtch.SPLIT)
 True
 ```
 
-When exclusion patterns are used in conjunction with other patterns, a file will be considered matched if one of the regular patterns match **and** none of the exclusion patterns match. If an exclusion pattern is given without any regular patterns, the pattern `*` will be used as the regular pattern. Exclusion patterns are used to filter the results of a regular pattern, so at least one must be provided or one will be assigned.
+When exclusion patterns are used in conjunction with other patterns, a file will be considered matched if one of the regular patterns match **and** none of the exclusion patterns match. If an exclusion pattern is given without any regular patterns, the pattern will match nothing. Exclusion patterns are meant to filter other patterns, not match anything by themselves.
 
 ```pycon3
 >>> from wcmatch import fnmatch
@@ -121,7 +121,7 @@ def translate(patterns, *, flags=0):
 >>> from wcmatch import translate
 >>> fnmatch.translate(r'*.{a,{b,c}}', flags=fnmatch.BRACE)
 (['^(?s:(?=.).*?\\.a)$', '^(?s:(?=.).*?\\.b)$', '^(?s:(?=.).*?\\.c)$'], [])
->>> fnmatch.translate(r'!*.{a,{b,c}}', flags=fnmatch.BRACE | fnmatch.NEGATE)
+>>> fnmatch.translate(r'**|!*.{a,{b,c}}', flags=fnmatch.BRACE | fnmatch.NEGATE | fnmatch.SPLIT)
 ([], ['^(?!(?s:(?=.).*?\\.a)).*?$', '^(?!(?s:(?=.).*?\\.b)).*?$', '^(?!(?s:(?=.).*?\\.c)).*?$'])
 ```
 
@@ -142,6 +142,10 @@ def translate(patterns, *, flags=0):
 #### `fnmatch.NEGATE, fnmatch.N` {: #fnmatchnegate}
 
 `NEGATE` causes patterns that start with `!` to be treated as exclusion matches. A pattern of `!*.py` would match any file but Python files. If used with [`EXTMATCH`](#fnmatchextmatch), patterns like `!(inverse|pattern)` will be mistakenly parsed as an exclusion pattern instead of an inverse `extmatch` group.  See [`MINUSNEGATE`](#fnmatchminusnegate) for an alternative syntax that plays nice with `EXTMATCH`.
+
+!!! warning "Change 4.0"
+    In 4.0, `NEGATE` requires a non-exclusion pattern to be paired with it. You can either use [`SPLIT`](#fnmatchSPLIT),
+    or feed in a list of multiple patterns instead of a single string.
 
 #### `fnmatch.MINUSNEGATE, fnmatch.M` {: #fnmatchminusnegate}
 

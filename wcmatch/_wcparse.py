@@ -225,10 +225,10 @@ def translate(patterns, flags):
             )
 
     if patterns and negative and not positive:
-        star = '*'
+        empty = ''
         if isinstance(patterns[0], bytes):
-            star = os.fsencode(star)
-        positive.append(WcParse(star, flags).parse())
+            empty = os.fsencode(empty)
+        positive.append(WcParse(empty, flags).parse())
 
     return positive, negative
 
@@ -258,10 +258,10 @@ def compile(patterns, flags):  # noqa A001
             (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
 
     if patterns and negative and not positive:
-        star = '*'
+        empty = ''
         if isinstance(patterns[0], bytes):
-            star = os.fsencode(star)
-        positive.append(_compile(star, flags))
+            empty = os.fsencode(empty)
+        positive.append(_compile(empty, flags))
 
     return WcRegexp(tuple(positive), tuple(negative), flags & REALPATH, flags & PATHNAME, flags & FOLLOW)
 
@@ -1283,9 +1283,10 @@ class WcParse(object):
             self.root('**', matchbase)
             self.globstar = globstar
 
-        self.root(p, result)
+        if p:
+            self.root(p, result)
 
-        if self.matchbase:
+        if p and self.matchbase:
             result = matchbase + result
 
         case_flag = 'i' if not self.case_sensitive else ''
