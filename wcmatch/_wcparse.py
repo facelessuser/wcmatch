@@ -227,13 +227,12 @@ def translate(patterns, flags):
             )
 
     if patterns and negative and not positive:
-        use_default = flags & NEGDEFAULT
-        if use_default:
+        if flags & NEGDEFAULT:
             util.warn_deprecated('Automatic defaults for exclusion patterns is deprecated')
-        default = '**' if use_default else ''
-        if isinstance(patterns[0], bytes):
-            default = os.fsencode(default)
-        positive.append(WcParse(default, flags).parse())
+            default = '**'
+            if isinstance(patterns[0], bytes):
+                default = os.fsencode(default)
+            positive.append(WcParse(default, flags).parse())
 
     return positive, negative
 
@@ -263,13 +262,12 @@ def compile(patterns, flags):  # noqa A001
             (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
 
     if patterns and negative and not positive:
-        use_default = flags & NEGDEFAULT
-        if use_default:
+        if flags & NEGDEFAULT:
             util.warn_deprecated('Automatic defaults for exclusion patterns is deprecated')
-        default = '**' if use_default else ''
-        if isinstance(patterns[0], bytes):
-            default = os.fsencode(default)
-        positive.append(_compile(default, flags))
+            default = '**'
+            if isinstance(patterns[0], bytes):
+                default = os.fsencode(default)
+            positive.append(_compile(default, flags))
 
     return WcRegexp(tuple(positive), tuple(negative), flags & REALPATH, flags & PATHNAME, flags & FOLLOW)
 

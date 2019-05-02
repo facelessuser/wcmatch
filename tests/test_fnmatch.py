@@ -341,10 +341,10 @@ class TestFnMatchTranslate(unittest.TestCase):
 
         p1, p2 = self.split_translate('-|-test|-', flags=flags | fnmatch.N | fnmatch.M)
         if util.PY36:
-            self.assertEqual(p1, [r'^(?s:)$'])
+            self.assertEqual(p1, [])
             self.assertEqual(p2, [r'^(?!(?s:)$).*?$', r'^(?!(?s:test)$).*?$', r'^(?!(?s:)$).*?$'])
         else:
-            self.assertEqual(p1, [r'(?s)^(?:)$'])
+            self.assertEqual(p1, [])
             self.assertEqual(p2, [r'(?s)^(?!(?:)$).*?$', r'(?s)^(?!(?:test)$).*?$', r'(?s)^(?!(?:)$).*?$'])
 
         p1, p2 = self.split_translate('test[^chars]', flags)
@@ -503,6 +503,17 @@ class TestDeprecated(unittest.TestCase):
             self.assertTrue(len(w) == 1)
             self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
 
+    def test_default_compile_bytes(self):
+        """Test deprecated default bytes."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            self.assertTrue(fnmatch.fnmatch(b'name', b'!test', flags=fnmatch.N | fnmatch.NEGDEFAULT))
+            self.assertTrue(len(w) == 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
+
     def test_default_translate(self):
         """Test deprecated default."""
 
@@ -511,5 +522,16 @@ class TestDeprecated(unittest.TestCase):
             warnings.simplefilter("always")
 
             fnmatch.translate('!test', flags=fnmatch.N | fnmatch.NEGDEFAULT)
+            self.assertTrue(len(w) == 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
+
+    def test_default_translate_bytes(self):
+        """Test deprecated default bytes."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            fnmatch.translate(b'!test', flags=fnmatch.N | fnmatch.NEGDEFAULT)
             self.assertTrue(len(w) == 1)
             self.assertTrue(issubclass(w[-1].category, DeprecationWarning))

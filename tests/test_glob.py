@@ -1059,3 +1059,14 @@ class TestDeprecated(unittest.TestCase):
             glob.glob('!name', flags=glob.N | glob.NEGDEFAULT)
             self.assertTrue(len(w) == 2)
             self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
+
+    def test_default_bytes(self):
+        """Test deprecated default bytes."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            glob.glob(b'!name', flags=glob.N | glob.NEGDEFAULT)
+            self.assertTrue(len(w) == 2)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))

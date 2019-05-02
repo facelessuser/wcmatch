@@ -130,13 +130,12 @@ class Glob(object):
                     [_wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p, self.flags)]
                 )
         if not self.pattern and self.npatterns:
-            use_default = self.flags & NEGDEFAULT
-            if use_default:
+            if self.flags & NEGDEFAULT:
                 util.warn_deprecated('Automatic defaults for exclusion patterns is deprecated')
-            default = '**' if use_default else ''
-            if self.is_bytes:
-                default = os.fsencode(default)
-            self.pattern.append(_wcparse.WcPathSplit(default, self.flags).split())
+                default = '**'
+                if self.is_bytes:
+                    default = os.fsencode(default)
+                self.pattern.append(_wcparse.WcPathSplit(default, self.flags).split())
 
     def _is_hidden(self, name):
         """Check if is file hidden."""

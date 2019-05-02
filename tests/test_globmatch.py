@@ -934,15 +934,15 @@ class TestGlobMatchSpecial(unittest.TestCase):
             )
         )
 
-    def test_glob_translate_real_has_positive_default(self):
+    def test_glob_translate_real_has_no_positive_default(self):
         """Test that `REALPATH` translations provide a default positive pattern."""
 
         pos, neg = glob.translate('!this', flags=self.flags)
-        self.assertTrue(len(pos) == 1)
+        self.assertTrue(len(pos) == 0)
         self.assertTrue(len(neg) == 1)
 
         pos, neg = glob.translate('!this', flags=self.flags | glob.REALPATH)
-        self.assertTrue(len(pos) == 1)
+        self.assertTrue(len(pos) == 0)
         self.assertTrue(len(neg) == 1)
 
     def test_glob_match_real(self):

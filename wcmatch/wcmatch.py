@@ -29,7 +29,7 @@ __all__ = (
     "FORCECASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME",
     "EXTMATCH", "GLOBSTAR", "BRACE", "MINUSNEGATE", "SYMLINKS", "HIDDEN", "RECURSIVE",
     "MATCHBASE", "NEGDEFAULT",
-    "F", "I", "R", "P", "E", "G", "M", "DP", "FP", "SL", "HD", "RV", "x",
+    "F", "I", "R", "P", "E", "G", "M", "DP", "FP", "SL", "HD", "RV", "X",
     "WcMatch"
 )
 
