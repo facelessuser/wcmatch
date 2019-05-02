@@ -20,7 +20,7 @@ Pattern           | Meaning
 `[!seq]`          | Matches any character not in seq.
 `[[:alnum:]]`     | POSIX style character classes inside sequences.  The `C` locale is used for byte strings and Unicode properties for Unicode strings. See [POSIX Character Classes](#posix-character-classes) for more info.
 `\`               | Escapes characters. If applied to a meta character, it will be treated as a normal character.
-`!`               | Inverse pattern (with configuration, can use `-` instead of `!`).
+`!`               | Exclusion pattern (with configuration, can use `-` instead of `!`).
 `?(pattern_list)` | The pattern matches if zero or one occurrences of any of the patterns in the `pattern_list` match the input string.
 `*(pattern_list)` | The pattern matches if zero or more occurrences of any of the patterns in the `pattern_list` match the input string.
 `+(pattern_list)` | The pattern matches if one or more occurrences of any of the patterns in the `pattern_list` match the input string.
@@ -70,7 +70,7 @@ Pattern           | Meaning
 def glob(patterns, *, flags=0):
 ```
 
-`glob` takes a pattern (or list of patterns) and will crawl the file system returning matching files. If a file/folder matches any positive patterns, it is considered a match.  If it matches *any* inverse pattern (when enabling the [`NEGATE`](#globnegate) flag), then it will be not be returned.
+`glob` takes a pattern (or list of patterns) and will crawl the file system returning matching files. If a file/folder matches any regular patterns, it is considered a match.  If it matches *any* exclusion pattern (when enabling the [`NEGATE`](#globnegate) flag), then it will be not be returned.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -130,7 +130,7 @@ When applying multiple patterns, a file path matches if it matches any of the pa
 True
 ```
 
-Inverse patterns are allowed as well.
+Exclusion patterns are allowed as well.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -140,7 +140,7 @@ False
 True
 ```
 
-When inverse patterns are used in conjunction with other patterns, a path will be considered matched if one of the positive patterns match **and** none of the inverse patterns match. If only inverse patterns are applied, the path must not match any of the patterns.
+When exclusion patterns are used in conjunction with other patterns, a path will be considered matched if one of the positive patterns match **and** none of the exclusion patterns match. If an exclusion pattern is given without any regular patterns, the pattern will match nothing. Exclusion patterns are meant to filter other patterns, not match anything by themselves.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -217,14 +217,14 @@ def globsplit(pattern, *, flags=0):
 def translate(patterns, *, flags=0):
 ```
 
-`translate` takes a glob pattern (or list of patterns) and returns two lists: one for positive patterns and one for inverse patterns. The lists contain the regular expressions used for matching the given patterns. Patterns should be used by matching a file against the patterns in the positive list and the negative list. A file is considered matching if it it matches at least one positive pattern and does not match any negative patterns.
+`translate` takes a file pattern (or list of patterns) and returns two lists: one for normal patterns and one for exclusion patterns. The lists contain the regular expressions used for matching the given patterns. All patterns are constructed in such a way that a matched pattern is what is desired, regardless of whether the pattern is an exclusion pattern or regular pattern. It should be noted that a file is considered matched if it matches at least one regular pattern and all of the exclusion patterns.
 
 ```pycon3
 >>> from wcmatch import glob
 >>> glob.translate(r'**/*.{py,txt}')
 (['^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?\\.py[\\/]*?)$', '^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?\\.txt[\\/]*?)$'], [])
->>> glob.translate(r'!**/*.{py,txt}', flags=glob.NEGATE)
-([], ['^(?!(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?\\.py[\\/]*?)).*?$', '^(?!(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?\\.txt[\\/]*?)).*?$'])
+>>> glob.translate(r'**|!**/*.{py,txt}', flags=glob.NEGATE | glob.SPLIT)
+(['^(?s:(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'], ['^(?!(?s:(?=.)(?!(?:\\.{1,2})(?:$|\\/))[^\\/]*?\\/+(?=.)(?!(?:\\.{1,2})(?:$|\\/))[^\\/]*?\\.\\{py\\,txt\\}[\\/]*?)$).*?$'])
 ```
 
 #### `glob.escape`
@@ -283,11 +283,17 @@ On Windows, `FORCECASE` will also force paths to be treated like Linux/Unix path
 
 #### `glob.NEGATE, glob.N` {: #globnegate}
 
-`NEGATE` causes patterns that start with `!` to be treated as inverse matches. A pattern of `!*.py` would match any file but Python files. If used with the extended glob feature, patterns like `!(inverse|pattern)` will be mistakenly parsed as an inverse pattern instead of as an inverse extended glob group.  See [`MINUSNEGATE`](#globminusgate) for an alternative syntax that plays nice with extended glob.
+`NEGATE` causes patterns that start with `!` to be treated as exclusion patterns. A pattern of `!*.py` would match any file but Python files. If used with the extended glob feature, patterns like `!(inverse|pattern)` will be mistakenly parsed as an exclusion pattern instead of as an inverse extended glob group.  See [`MINUSNEGATE`](#globminusgate) for an alternative syntax that plays nice with extended glob.
+
+!!! warning "Changes 4.0"
+    In 4.0, `NEGATE` now requires a non-exclusion pattern to be paired with it or it will match nothing. You can either
+    use [`SPLIT`](#fnmatchSPLIT), or feed in a list of multiple patterns instead of a single string. If you really
+    need the old behavior, you can use the `NEGDEFAULT` flag which will provide a default of `**` which is subject to
+    the `GLOBSTAR` flag. `NEGDEFAULT` will raise a deprecation warning and will be removed in the future.
 
 #### `glob.MINUSNEGATE, glob.M` {: #globminusnegate}
 
-When `MINUSNEGATE` is used with [`NEGATE`](#globnegate), negate patterns are recognized by a pattern starting with `-` instead of `!`. This plays nice with the extended glob feature which already uses `!` in patterns such as `!(...)`.
+When `MINUSNEGATE` is used with [`NEGATE`](#globnegate), exclusion patterns are recognized by a pattern starting with `-` instead of `!`. This plays nice with the extended glob feature which already uses `!` in patterns such as `!(...)`.
 
 #### `glob.GLOBSTAR, glob.G` {: #globglobstar}
 

@@ -383,6 +383,7 @@ class Testglob(_TestGlob):
         [('[.a]',), [('a',)]],
         [('*.',), []],
 
+        Options(default_negate='**'),
         # Glob inverse
         [
             ('a*', '**'),
@@ -400,7 +401,6 @@ class Testglob(_TestGlob):
             ('**', 'EF'),
             [
             ] if not can_symlink() else [
-                ('sym3', 'EF')
             ],
             glob.N | glob.L
         ],
@@ -786,15 +786,11 @@ class Testglob(_TestGlob):
             ('**', 'EF'),
             [('a', 'bcd', 'EF'), ('EF',)] if not can_symlink() else [('a', 'bcd', 'EF'), ('EF',), ('sym3', 'EF')]
         ],
-        Options(just_negative=True),
+        Options(just_negative=True, default_negate='**'),
         [
             ('a*', '**'),
             [
-                ('EF',), ('ZZZ',)
             ] if not can_symlink() else [
-                ('EF',), ('ZZZ',),
-                ('sym1',), ('sym3',), ('sym2',), ('sym3', 'efg'), ('sym3', 'efg', 'ha'),
-                ('sym3', 'EF')
             ],
             glob.N
         ],
@@ -1052,3 +1048,25 @@ class TestDeprecated(unittest.TestCase):
             self.assertTrue(len(w) == 1)
             self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
             self.assertTrue(patterns, ['test', 'test'])
+
+    def test_default(self):
+        """Test deprecated default."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            glob.glob('!name', flags=glob.N | glob.NEGDEFAULT)
+            self.assertTrue(len(w) != 0)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
+
+    def test_default_bytes(self):
+        """Test deprecated default bytes."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            glob.glob(b'!name', flags=glob.N | glob.NEGDEFAULT)
+            self.assertTrue(len(w) != 0)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))

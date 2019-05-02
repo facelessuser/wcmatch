@@ -19,7 +19,7 @@ Pattern           | Meaning
 `[!seq]`          | Matches any character not in seq.
 `[[:alnum:]]`     | POSIX style character classes inside sequences. The `C` locale is used for byte strings and Unicode properties for Unicode strings. See [POSIX Character Classes](#posix-character-classes) for more info.
 `\`               | Escapes characters. If applied to a meta character, it will be treated as a normal character.
-`!`               | Inverse pattern (with configuration, can use `-` instead of `!`).
+`!`               | Exclusion pattern (with configuration, can use `-` instead of `!`).
 `?(pattern_list)` | The pattern matches if zero or one occurrences of any of the patterns in the `pattern_list` match the input string.
 `*(pattern_list)` | The pattern matches if zero or more occurrences of any of the patterns in the `pattern_list` match the input string.
 `+(pattern_list)` | The pattern matches if one or more occurrences of any of the patterns in the `pattern_list` match the input string.
@@ -57,17 +57,17 @@ When applying multiple patterns, a file matches if it matches any of the pattern
 True
 ```
 
-Inverse patterns are allowed as well.
+Exclusion patterns are allowed as well.
 
 ```pycon3
 >>> from wcmatch import fnmatch
->>> fnmatch.fnmatch('test.py', r'!*.py', flags=fnmatch.NEGATE)
+>>> fnmatch.fnmatch('test.py', r'*|!*.py', flags=fnmatch.NEGATE | fnamtch.SPLIT)
 False
->>> fnmatch.fnmatch('test.txt', r'!*.py', flags=fnmatch.NEGATE)
+>>> fnmatch.fnmatch('test.txt', r'*|!*.py', flags=fnmatch.NEGATE | fnamtch.SPLIT)
 True
 ```
 
-When inverse patterns are used in conjunction with other patterns, a file will be considered matched if one of the positive patterns match **and** none of the inverse patterns match. If only inverse patterns are applied, the file must not match any of the patterns.
+When exclusion patterns are used in conjunction with other patterns, a file will be considered matched if one of the regular patterns match **and** none of the exclusion patterns match. If an exclusion pattern is given without any regular patterns, the pattern will match nothing. Exclusion patterns are meant to filter other patterns, not match anything by themselves.
 
 ```pycon3
 >>> from wcmatch import fnmatch
@@ -115,14 +115,14 @@ def fnsplit(pattern, *, flags=0):
 def translate(patterns, *, flags=0):
 ```
 
-`translate` takes a file pattern (or list of patterns) and returns two lists: one for positive patterns and one for inverse patterns. The lists contain the regular expressions used for matching the given patterns.
+`translate` takes a file pattern (or list of patterns) and returns two lists: one for normal patterns and one for exclusion patterns. The lists contain the regular expressions used for matching the given patterns. All patterns are constructed in such a way that a matched pattern is what is desired, regardless of whether the pattern is an exclusion pattern or regular pattern. It should be noted that a file is considered matched if it matches at least one regular pattern and all of the exclusion patterns.
 
 ```pycon3
 >>> from wcmatch import translate
 >>> fnmatch.translate(r'*.{a,{b,c}}', flags=fnmatch.BRACE)
 (['^(?s:(?=.).*?\\.a)$', '^(?s:(?=.).*?\\.b)$', '^(?s:(?=.).*?\\.c)$'], [])
->>> fnmatch.translate(r'!*.{a,{b,c}}', flags=fnmatch.BRACE | fnmatch.NEGATE)
-([], ['^(?!(?s:(?=.).*?\\.a)).*?$', '^(?!(?s:(?=.).*?\\.b)).*?$', '^(?!(?s:(?=.).*?\\.c)).*?$'])
+>>> fnmatch.translate(r'**|!*.{a,{b,c}}', flags=fnmatch.BRACE | fnmatch.NEGATE | fnmatch.SPLIT)
+(['^(?s:(?=.)(?![.]).*?)$'], ['^(?!(?s:(?=.).*?\\.a)$).*?$', '^(?!(?s:(?=.).*?\\.b)$).*?$', '^(?!(?s:(?=.).*?\\.c)$).*?$'])
 ```
 
 ## Flags
@@ -141,11 +141,17 @@ def translate(patterns, *, flags=0):
 
 #### `fnmatch.NEGATE, fnmatch.N` {: #fnmatchnegate}
 
-`NEGATE` causes patterns that start with `!` to be treated as inverse matches. A pattern of `!*.py` would match any file but Python files. If used with [`EXTMATCH`](#fnmatchextmatch), patterns like `!(inverse|pattern)` will be mistakenly parsed as an inverse pattern instead of an inverse `extmatch` group.  See [`MINUSNEGATE`](#fnmatchminusnegate) for an alternative syntax that plays nice with `EXTMATCH`.
+`NEGATE` causes patterns that start with `!` to be treated as exclusion matches. A pattern of `!*.py` would match any file but Python files. If used with [`EXTMATCH`](#fnmatchextmatch), patterns like `!(inverse|pattern)` will be mistakenly parsed as an exclusion pattern instead of an inverse `extmatch` group.  See [`MINUSNEGATE`](#fnmatchminusnegate) for an alternative syntax that plays nice with `EXTMATCH`.
+
+!!! warning "Change 4.0"
+    In 4.0, `NEGATE` now requires a non-exclusion pattern to be paired with it or it will match nothing. You can either
+    use [`SPLIT`](#fnmatchSPLIT), or feed in a list of multiple patterns instead of a single string. If you really
+    need the old behavior, you can use the `NEGDEFAULT` flag which will provide a default of `**` which is subject to
+    the `GLOBSTAR` flag. `NEGDEFAULT` will raise a deprecation warning and will be removed in the future.
 
 #### `fnmatch.MINUSNEGATE, fnmatch.M` {: #fnmatchminusnegate}
 
-When `MINUSNEGATE` is used with [`NEGATE`](#fnmatchnegate), negate patterns are recognized by a pattern starting with `-` instead of `!`. This plays nice with the [`EXTMATCH`](#fnmatchextmatch) option.
+When `MINUSNEGATE` is used with [`NEGATE`](#fnmatchnegate), exclusion patterns are recognized by a pattern starting with `-` instead of `!`. This plays nice with the [`EXTMATCH`](#fnmatchextmatch) option.
 
 #### `fnmatch.DOTMATCH, fnmatch.D` {: #fnmatchdotmatch}
 

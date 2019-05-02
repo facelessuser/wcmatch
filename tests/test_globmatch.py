@@ -7,6 +7,105 @@ import os
 import wcmatch.glob as glob
 import wcmatch._wcparse as _wcparse
 import wcmatch.util as util
+import shutil
+
+# Below is general helper stuff that Python uses in `unittests`.  As these
+# not meant for users, and could change without notice, include them
+# ourselves so we aren't surprised later.
+TESTFN = '@test'
+
+# Disambiguate `TESTFN` for parallel testing, while letting it remain a valid
+# module name.
+TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
+
+
+def create_empty_file(filename):
+    """Create an empty file. If the file already exists, truncate it."""
+
+    fd = os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
+    os.close(fd)
+
+
+_can_symlink = None
+
+
+def can_symlink():
+    """Check if we can symlink."""
+
+    global _can_symlink
+    if _can_symlink is not None:
+        return _can_symlink
+    symlink_path = TESTFN + "can_symlink"
+    try:
+        os.symlink(TESTFN, symlink_path)
+        can = True
+    except (OSError, NotImplementedError, AttributeError):
+        can = False
+    else:
+        os.remove(symlink_path)
+    _can_symlink = can
+    return can
+
+
+def skip_unless_symlink(test):
+    """Skip decorator for tests that require functional symlink."""
+
+    ok = can_symlink()
+    msg = "Requires functional symlink implementation"
+    return test if ok else unittest.skip(msg)(test)
+
+
+class _TestGlobmatch(unittest.TestCase):
+    """Test the `WcMatch` class."""
+
+    def mktemp(self, *parts):
+        """Make temp directory."""
+
+        filename = self.norm(*parts)
+        base, file = os.path.split(filename)
+        if not os.path.exists(base):
+            retry = 3
+            while retry:
+                try:
+                    os.makedirs(base)
+                    retry = 0
+                except Exception:
+                    retry -= 1
+        create_empty_file(filename)
+
+    def force_err(self):
+        """Force an error."""
+
+        raise TypeError
+
+    def norm(self, *parts):
+        """Normalizes file path (in relation to temp directory)."""
+        tempdir = os.fsencode(self.tempdir) if isinstance(parts[0], bytes) else self.tempdir
+        return os.path.join(tempdir, *parts)
+
+    def norm_list(self, files):
+        """Normalize file list."""
+
+        return sorted([self.norm(os.path.normpath(x)) for x in files])
+
+    def setUp(self):
+        """Setup."""
+
+        self.tempdir = TESTFN + "_dir"
+        self.default_flags = glob.G | glob.P
+
+    def tearDown(self):
+        """Cleanup."""
+
+        retry = 3
+        while retry:
+            try:
+                shutil.rmtree(self.tempdir)
+                while os.path.exists(self.tempdir):
+                    pass
+                retry = 0
+            except Exception:
+                retry -= 1
 
 
 class GlobFiles():
@@ -295,7 +394,7 @@ class TestGlobFilter:
         GlobFiles(['d', 'e', '!ab', '!abc', 'a!b', '\\!a']),
 
         # anything that is NOT a* matches.
-        ['!a*', ['\\!a', 'd', 'e', '!ab', '!abc']],
+        ['**|!a*', ['\\!a', 'd', 'e', '!ab', '!abc'], glob.S],
 
         # anything that IS !a* matches.
         ['!a*', ['!ab', '!abc'], glob.N],
@@ -305,7 +404,7 @@ class TestGlobFilter:
         # ['!!a*', ['a!b']],
 
         # anything that is NOT !a* matches
-        ['!\\!a*', ['a!b', 'd', 'e', '\\!a']],
+        ['**|!\\!a*', ['a!b', 'd', 'e', '\\!a'], glob.S],
 
         # negation nestled within a pattern
         GlobFiles(
@@ -441,7 +540,7 @@ class TestGlobFilter:
             ["goo.cfg", "foo.bar", "foo.bar.cfg", "foo.cfg.bar"]
         ),
         ['*.bar', ["foo.bar", "foo.cfg.bar"]],
-        ['!*.bar', ["goo.cfg", "foo.bar.cfg"]]
+        ['*|!*.bar', ["goo.cfg", "foo.bar.cfg"], glob.S]
     ]
 
     @classmethod
@@ -835,7 +934,7 @@ class TestGlobMatchSpecial(unittest.TestCase):
             )
         )
 
-    def test_glob_translate_real_has_positive_default(self):
+    def test_glob_translate_real_has_no_positive_default(self):
         """Test that `REALPATH` translations provide a default positive pattern."""
 
         pos, neg = glob.translate('!this', flags=self.flags)
@@ -843,7 +942,7 @@ class TestGlobMatchSpecial(unittest.TestCase):
         self.assertTrue(len(neg) == 1)
 
         pos, neg = glob.translate('!this', flags=self.flags | glob.REALPATH)
-        self.assertTrue(len(pos) == 1)
+        self.assertTrue(len(pos) == 0)
         self.assertTrue(len(neg) == 1)
 
     def test_glob_match_real(self):
@@ -879,9 +978,23 @@ class TestGlobMatchSpecial(unittest.TestCase):
 
         # Let's find something predictable for this cross platform test.
         user_dir = os.path.expanduser('~')
-        glob_user = glob.escape(user_dir)
-        self.assertFalse(glob.globmatch(user_dir, '**', flags=self.flags | glob.REALPATH))
-        self.assertTrue(glob.globmatch(user_dir, glob_user + '/**', flags=self.flags | glob.REALPATH))
+        if user_dir != '~':
+            glob_user = glob.escape(user_dir)
+            self.assertFalse(glob.globmatch(user_dir, '**', flags=self.flags | glob.REALPATH))
+            self.assertTrue(glob.globmatch(user_dir, glob_user + '/**', flags=self.flags | glob.REALPATH))
+
+    def test_glob_integrity_bytes(self):
+        """Test glob integrity to exercises the bytes portion of the code."""
+
+        self.assertTrue(
+            all(
+                [
+                    glob.globmatch(
+                        x, b'!**/*.md', flags=self.flags | glob.SPLIT
+                    ) for x in glob.glob(b'!**/*.md', flags=self.flags | glob.SPLIT)
+                ]
+            )
+        )
 
     def test_glob_integrity(self):
         """`globmatch` must match what glob globs."""
@@ -1116,3 +1229,48 @@ class TestGlobMatchSpecial(unittest.TestCase):
 
         if util.platform() == "windows":
             self.assertTrue(glob.globmatch('DOCS', '**/docs/**', flags=self.flags | glob.REALPATH | glob.FORCECASE))
+
+
+@skip_unless_symlink
+class TestGlobmatchSymlink(_TestGlobmatch):
+    """Test symlinks."""
+
+    def mksymlink(self, original, link):
+        """Make symlink."""
+
+        if not os.path.lexists(link):
+            os.symlink(original, link)
+
+    def setUp(self):
+        """Setup."""
+
+        self.tempdir = TESTFN + "_dir"
+        self.mktemp('.hidden', 'a.txt')
+        self.mktemp('.hidden', 'b.file')
+        self.mktemp('.hidden_file')
+        self.mktemp('a.txt')
+        self.mktemp('b.file')
+        self.mktemp('c.txt.bak')
+        self.can_symlink = can_symlink()
+        if self.can_symlink:
+            self.mksymlink('.hidden', self.norm('sym1'))
+            self.mksymlink(os.path.join('.hidden', 'a.txt'), self.norm('sym2'))
+
+        self.default_flags = glob.G | glob.P | glob.B
+
+    def test_globmatch_symlink(self):
+        """Test `globmatch` with symlinks."""
+
+        self.assertFalse(glob.globmatch(self.tempdir + '/sym1/a.txt', '**/*.txt}', flags=self.default_flags))
+        self.assertTrue(glob.globmatch(self.tempdir + '/a.txt', '**/*.txt', flags=self.default_flags))
+
+    def test_globmatch_follow_symlink(self):
+        """Test `globmatch` with symlinks that we follow."""
+
+        self.assertTrue(glob.globmatch(self.tempdir + '/sym1/a.txt', '**/*.txt', flags=self.default_flags | glob.L))
+        self.assertTrue(glob.globmatch(self.tempdir + '/a.txt', '**/*.txt', flags=self.default_flags | glob.L))
+
+    def test_globmatch_trigger_symlink_cache(self):
+        """Use a pattern that exercises the symlink cache."""
+
+        self.assertFalse(glob.globmatch(self.tempdir + '/sym1/a.txt', '**/{*.txt,*.t*}', flags=self.default_flags))

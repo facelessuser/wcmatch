@@ -90,13 +90,6 @@ class _TestWcmatch(unittest.TestCase):
         """Setup."""
 
         self.tempdir = TESTFN + "_dir"
-        self.mktemp('.hidden', 'a.txt')
-        self.mktemp('.hidden', 'b.file')
-        self.mktemp('.hidden_file')
-        self.mktemp('a.txt')
-        self.mktemp('b.file')
-        self.mktemp('c.txt.bak')
-
         self.default_flags = wcmatch.R | wcmatch.I | wcmatch.M | wcmatch.SL
         self.errors = []
         self.skipped = 0

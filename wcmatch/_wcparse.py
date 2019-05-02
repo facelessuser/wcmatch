@@ -70,6 +70,8 @@ MATCHBASE = 0x2000
 _FORCEWIN = 0x100000000  # Forces Windows behavior (used to not assume Unix/Linux because of `FORCECASE` on Windows).
 _TRANSLATE = 0x200000000  # Lets us know we are performing a translation, and we just want the regex.
 _ANCHOR = 0x400000000  # The pattern, if it starts with a slash, is anchored to the working directory; strip the slash.
+_NO_TRANSLATE = 0x800000000  # Don't return translation pattern in positive form, but in the faster negative form.
+NEGDEFAULT = 0x1000000000  # Provide a default for exclude patterns
 
 FLAG_MASK = (
     FORCECASE |
@@ -85,9 +87,11 @@ FLAG_MASK = (
     REALPATH |
     FOLLOW |
     MATCHBASE |
+    NEGDEFAULT |
     _FORCEWIN |
     _TRANSLATE |
-    _ANCHOR
+    _ANCHOR |
+    _NO_TRANSLATE
 )
 CASE_FLAGS = FORCECASE | IGNORECASE
 
@@ -214,16 +218,21 @@ def translate(patterns, flags):
     if isinstance(patterns, (str, bytes)):
         patterns = [patterns]
 
-    flags |= _TRANSLATE
+    flags = (flags | _TRANSLATE) & FLAG_MASK
 
     for pattern in patterns:
         for expanded in expand_braces(pattern, flags):
             (negative if is_negative(expanded, flags) else positive).append(
-                WcParse(expanded, flags & FLAG_MASK).parse()
+                WcParse(expanded, flags).parse()
             )
 
-    if patterns and flags & REALPATH and negative and not positive:
-        positive.append(_compile(b'**' if isinstance(patterns[0], bytes) else '**', flags))
+    if patterns and negative and not positive:
+        if flags & NEGDEFAULT:
+            util.warn_deprecated('Automatic defaults for exclusion patterns is deprecated')
+            default = '**'
+            if isinstance(patterns[0], bytes):
+                default = os.fsencode(default)
+            positive.append(WcParse(default, flags).parse())
 
     return positive, negative
 
@@ -252,8 +261,13 @@ def compile(patterns, flags):  # noqa A001
         for expanded in expand_braces(pattern, flags):
             (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
 
-    if patterns and flags & REALPATH and negative and not positive:
-        positive.append(_compile(b'**' if isinstance(patterns[0], bytes) else '**', flags))
+    if patterns and negative and not positive:
+        if flags & NEGDEFAULT:
+            util.warn_deprecated('Automatic defaults for exclusion patterns is deprecated')
+            default = '**'
+            if isinstance(patterns[0], bytes):
+                default = os.fsencode(default)
+            positive.append(_compile(default, flags))
 
     return WcRegexp(tuple(positive), tuple(negative), flags & REALPATH, flags & PATHNAME, flags & FOLLOW)
 
@@ -644,7 +658,10 @@ class WcParse(object):
         self.raw_chars = bool(flags & RAWCHARS)
         self.globstar = self.pathname and bool(flags & GLOBSTAR)
         self.realpath = bool(flags & REALPATH) and self.pathname
-        self.globstar_capture = self.realpath and not bool(flags & _TRANSLATE)
+        self.translate = bool(flags & _TRANSLATE)
+        self.globstar_capture = self.realpath and not self.translate
+        if flags & _NO_TRANSLATE:
+            self.translate = False
         self.dot = bool(flags & DOTMATCH)
         self.extend = bool(flags & EXTMATCH)
         self.matchbase = bool(flags & MATCHBASE)
@@ -1248,14 +1265,18 @@ class WcParse(object):
 
         result = ['']
         matchbase = ['']
-        negative = False
+        self.negative = False
 
         p = util.norm_pattern(self.pattern, not self.unix, self.raw_chars)
 
         p = p.decode('latin-1') if self.is_bytes else p
         if is_negative(p, self.flags):
-            negative = True
+            self.negative = True
             p = p[1:]
+
+        if self.negative:
+            self.globstar_capture = False
+            self.dot = True
 
         if self.anchor:
             p, number = (RE_ANCHOR if not self.win_drive_detect else RE_WIN_ANCHOR).subn('', p)
@@ -1268,19 +1289,20 @@ class WcParse(object):
             self.root('**', matchbase)
             self.globstar = globstar
 
-        self.root(p, result)
+        if p:
+            self.root(p, result)
 
-        if self.matchbase:
+        if p and self.matchbase:
             result = matchbase + result
 
         case_flag = 'i' if not self.case_sensitive else ''
         if util.PY36:
             pattern = (
-                r'^(?!(?s%s:%s)$).*?$' if negative and not self.globstar_capture else r'^(?s%s:%s)$'
+                r'^(?!(?s%s:%s)$).*?$' if self.negative and self.translate else r'^(?s%s:%s)$'
             ) % (case_flag, ''.join(result))
         else:
             pattern = (
-                r'(?s%s)^(?!(?:%s)$).*?$' if negative and not self.globstar_capture else r'(?s%s)^(?:%s)$'
+                r'(?s%s)^(?!(?:%s)$).*?$' if self.negative and self.translate else r'(?s%s)^(?:%s)$'
             ) % (case_flag, ''.join(result))
 
         if self.is_bytes:
@@ -1363,7 +1385,7 @@ def _match_real(filename, include, exclude, follow, symlinks):
         matched = True
         if exclude:
             for pattern in exclude:
-                if _fs_match(pattern, filename, is_dir, sep, follow, symlinks):
+                if _fs_match(pattern, filename, is_dir, sep, True, symlinks):
                     matched = False
                     break
     return matched
@@ -1397,14 +1419,11 @@ def _match_pattern(filename, include, exclude, real, path, follow):
             matched = True
             break
 
-    if not include and exclude:
-        matched = True
-
     if matched:
         matched = True
         if exclude:
             for pattern in exclude:
-                if not pattern.fullmatch(filename):
+                if pattern.fullmatch(filename):
                     matched = False
                     break
     return matched

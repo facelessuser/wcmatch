@@ -238,7 +238,12 @@ class TestFnMatchFilter:
 
         # Issue #24
         ['*.bar', ["goo.cfg", "foo.bar", "foo.bar.cfg", "foo.cfg.bar"], ["foo.bar", "foo.cfg.bar"], 0],
-        ['!*.bar', ["goo.cfg", "foo.bar", "foo.bar.cfg", "foo.cfg.bar"], ["goo.cfg", "foo.bar.cfg"], fnmatch.N]
+        [
+            '*|!*.bar',
+            ["goo.cfg", "foo.bar", "foo.bar.cfg", "foo.cfg.bar"],
+            ["goo.cfg", "foo.bar.cfg"],
+            fnmatch.N | fnmatch.S
+        ]
     ]
 
     @classmethod
@@ -486,3 +491,47 @@ class TestDeprecated(unittest.TestCase):
             self.assertTrue(len(w) == 1)
             self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
             self.assertTrue(patterns, ['test', 'test'])
+
+    def test_default_compile(self):
+        """Test deprecated default."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            self.assertTrue(fnmatch.fnmatch('name', '!test', flags=fnmatch.N | fnmatch.NEGDEFAULT))
+            self.assertTrue(len(w) == 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
+
+    def test_default_compile_bytes(self):
+        """Test deprecated default bytes."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            self.assertTrue(fnmatch.fnmatch(b'name', b'!test', flags=fnmatch.N | fnmatch.NEGDEFAULT))
+            self.assertTrue(len(w) == 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
+
+    def test_default_translate(self):
+        """Test deprecated default."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            fnmatch.translate('!test', flags=fnmatch.N | fnmatch.NEGDEFAULT)
+            self.assertTrue(len(w) == 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
+
+    def test_default_translate_bytes(self):
+        """Test deprecated default bytes."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            fnmatch.translate(b'!test', flags=fnmatch.N | fnmatch.NEGDEFAULT)
+            self.assertTrue(len(w) == 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))

@@ -28,7 +28,8 @@ from . import util
 __all__ = (
     "FORCECASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME",
     "EXTMATCH", "GLOBSTAR", "BRACE", "MINUSNEGATE", "SYMLINKS", "HIDDEN", "RECURSIVE",
-    "F", "I", "R", "P", "E", "G", "M", "DP", "FP", "SL", "HD", "RV",
+    "MATCHBASE", "NEGDEFAULT",
+    "F", "I", "R", "P", "E", "G", "M", "DP", "FP", "SL", "HD", "RV", "X",
     "WcMatch"
 )
 
@@ -40,6 +41,7 @@ G = GLOBSTAR = _wcparse.GLOBSTAR
 B = BRACE = _wcparse.BRACE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
 X = MATCHBASE = _wcparse.MATCHBASE
+NEGDEFAULT = _wcparse.NEGDEFAULT
 
 # Control `PATHNAME` individually for folder exclude and files
 DP = DIRPATHNAME = 0x10000
@@ -64,7 +66,8 @@ FLAG_MASK = (
     SYMLINKS |
     HIDDEN |
     RECURSIVE |
-    MATCHBASE
+    MATCHBASE |
+    NEGDEFAULT
 )
 
 
