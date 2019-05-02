@@ -261,3 +261,13 @@ def deprecated(message, stacklevel=2):  # pragma: no cover
             return func(*args, **kwargs)
         return _func
     return _decorator
+
+
+def warn_deprecated(message, stacklevel=2):  # pragma: no cover
+    """Warn deprecated."""
+
+    warnings.warn(
+        message,
+        category=DeprecationWarning,
+        stacklevel=stacklevel
+    )

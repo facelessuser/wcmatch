@@ -1,13 +1,14 @@
 # Changelog
 
-## 3.1.0
+## 4.0.0
 
 - **NEW**: Deprecated `WcMatch` class methods `kill` and `reset`. `WcMatch` should be broken with a simple `break` statement instead.
 - **NEW**: Add a new flag `MARK` to force `glob` to return directories with a trailing slash.
 - **NEW**: Add `MATCHBASE` that causes `glob` and `WcMatch`, when the pattern has no slashes in it, to seek for any file anywhere in the tree with a matching basename.
-- **NEW**: Exclusion patterns (enabled with `NEGATE`) now always enable `DOTALL` in the exclusion patterns. They also will match symlinks in `**` patterns. Even when an exclusion pattern is specified by itself, a default regular pattern is always generated. Dot files and symlinks will always be handled properly in the regular portion, but the exclusion portion will allow dots and symlinks to make filtering easier.
-- **NEW**: Exclusion patterns should not match anything if no regular pattern is applied. They exclude other matches from other patterns, by themselves, they match nothing. This changes existing behavior which would default the regular pattern to `*` for non `GLOBSTAR` patterns and `**` for `GLOBSTAR` patterns. You can either use the `SPLIT` flag and provide a pattern with your default ('default_pattern|!exclusion'), or feed in a list of multiple patterns instead of a single string (`['default_pattern', '!exclusion']`). This may be an inconvenience for some, but it helps to provide a more consistent expectation from exclusion patterns.
-- **FIX**: An empty pattern in `glob` should match nothing.
+- **NEW**: Exclusion patterns (enabled with `NEGATE`) now always enable `DOTALL` in the exclusion patterns. They also will match symlinks in `**` patterns. Only non `NEGATE` patterns that are paired with a `NEGATE` pattern are subject to symlinks and dot rules. Exclusion patterns themselves allow dots and symlinks to make filtering easier.
+- **NEW**: Exclusion patterns no longer provide a default regular pattern if one is not applied. Exclusion patterns are
+meant to filter the results of normal patterns. You can either use the `SPLIT` flag and provide a pattern with your default ('default_pattern|!exclusion'), or feed in a list of multiple patterns instead of a single string (`['default_pattern', '!exclusion']`). If you really need the old behavior, you can use the `NEGDEFAULT` flag which will provide a default of `**` which is subject to the `GLOBSTAR` flag. `NEGDEFAULT` will raise a deprecation warning and will be removed in the future.
+- **FIX**: An empty pattern in `glob` should not match slashes.
 
 ## 3.0.2
 

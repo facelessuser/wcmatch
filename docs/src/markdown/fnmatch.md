@@ -122,7 +122,7 @@ def translate(patterns, *, flags=0):
 >>> fnmatch.translate(r'*.{a,{b,c}}', flags=fnmatch.BRACE)
 (['^(?s:(?=.).*?\\.a)$', '^(?s:(?=.).*?\\.b)$', '^(?s:(?=.).*?\\.c)$'], [])
 >>> fnmatch.translate(r'**|!*.{a,{b,c}}', flags=fnmatch.BRACE | fnmatch.NEGATE | fnmatch.SPLIT)
-([], ['^(?!(?s:(?=.).*?\\.a)).*?$', '^(?!(?s:(?=.).*?\\.b)).*?$', '^(?!(?s:(?=.).*?\\.c)).*?$'])
+(['^(?s:(?=.)(?![.]).*?)$'], ['^(?!(?s:(?=.).*?\\.a)$).*?$', '^(?!(?s:(?=.).*?\\.b)$).*?$', '^(?!(?s:(?=.).*?\\.c)$).*?$'])
 ```
 
 ## Flags
@@ -144,8 +144,10 @@ def translate(patterns, *, flags=0):
 `NEGATE` causes patterns that start with `!` to be treated as exclusion matches. A pattern of `!*.py` would match any file but Python files. If used with [`EXTMATCH`](#fnmatchextmatch), patterns like `!(inverse|pattern)` will be mistakenly parsed as an exclusion pattern instead of an inverse `extmatch` group.  See [`MINUSNEGATE`](#fnmatchminusnegate) for an alternative syntax that plays nice with `EXTMATCH`.
 
 !!! warning "Change 4.0"
-    In 4.0, `NEGATE` requires a non-exclusion pattern to be paired with it. You can either use [`SPLIT`](#fnmatchSPLIT),
-    or feed in a list of multiple patterns instead of a single string.
+    In 4.0, `NEGATE` now requires a non-exclusion pattern to be paired with it or it will match nothing. You can either
+    use [`SPLIT`](#fnmatchSPLIT), or feed in a list of multiple patterns instead of a single string. If you really
+    need the old behavior, you can use the `NEGDEFAULT` flag which will provide a default of `**` which is subject to
+    the `GLOBSTAR` flag. `NEGDEFAULT` will raise a deprecation warning and will be removed in the future.
 
 #### `fnmatch.MINUSNEGATE, fnmatch.M` {: #fnmatchminusnegate}
 

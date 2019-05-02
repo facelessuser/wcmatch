@@ -242,7 +242,7 @@ class TestFnMatchFilter:
             '*|!*.bar',
             ["goo.cfg", "foo.bar", "foo.bar.cfg", "foo.cfg.bar"],
             ["goo.cfg", "foo.bar.cfg"],
-            fnmatch.N |fnmatch.S
+            fnmatch.N | fnmatch.S
         ]
     ]
 
@@ -491,3 +491,25 @@ class TestDeprecated(unittest.TestCase):
             self.assertTrue(len(w) == 1)
             self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
             self.assertTrue(patterns, ['test', 'test'])
+
+    def test_default_compile(self):
+        """Test deprecated default."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            self.assertTrue(fnmatch.fnmatch('name', '!test', flags=fnmatch.N | fnmatch.NEGDEFAULT))
+            self.assertTrue(len(w) == 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
+
+    def test_default_translate(self):
+        """Test deprecated default."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            fnmatch.translate('!test', flags=fnmatch.N | fnmatch.NEGDEFAULT)
+            self.assertTrue(len(w) == 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))

@@ -30,7 +30,7 @@ from . import util
 __all__ = (
     "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
-    "REALPATH", "FOLLOW", "MATCHBASE",
+    "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGDEFAULT",
     "F", "I", "R", "D", "E", "G", "N", "M", "P", "L", "X", 'K',
     "iglob", "glob", "globsplit", "globmatch", "globfilter", "escape"
 )
@@ -54,6 +54,7 @@ L = FOLLOW = _wcparse.FOLLOW
 S = SPLIT = _wcparse.SPLIT
 X = MATCHBASE = _wcparse.MATCHBASE
 K = MARK = 0x10000
+NEGDEFAULT = _wcparse.NEGDEFAULT
 
 FLAG_MASK = (
     FORCECASE |
@@ -68,7 +69,8 @@ FLAG_MASK = (
     REALPATH |
     FOLLOW |
     SPLIT |
-    MATCHBASE
+    MATCHBASE |
+    NEGDEFAULT
 )
 
 
@@ -128,7 +130,13 @@ class Glob(object):
                     [_wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p, self.flags)]
                 )
         if not self.pattern and self.npatterns:
-            self.pattern.append(_wcparse.WcPathSplit((b'' if self.is_bytes else ''), self.flags).split())
+            use_default = self.flags & NEGDEFAULT
+            if use_default:
+                util.warn_deprecated('Automatic defaults for exclusion patterns is deprecated')
+            default = '**' if use_default else ''
+            if self.is_bytes:
+                default = os.fsencode(default)
+            self.pattern.append(_wcparse.WcPathSplit(default, self.flags).split())
 
     def _is_hidden(self, name):
         """Check if is file hidden."""

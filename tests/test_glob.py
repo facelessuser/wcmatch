@@ -1048,3 +1048,14 @@ class TestDeprecated(unittest.TestCase):
             self.assertTrue(len(w) == 1)
             self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
             self.assertTrue(patterns, ['test', 'test'])
+
+    def test_default(self):
+        """Test deprecated default."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            glob.glob('!name', flags=glob.N | glob.NEGDEFAULT)
+            self.assertTrue(len(w) == 2)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))

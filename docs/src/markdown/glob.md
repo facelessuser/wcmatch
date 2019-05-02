@@ -223,8 +223,8 @@ def translate(patterns, *, flags=0):
 >>> from wcmatch import glob
 >>> glob.translate(r'**/*.{py,txt}')
 (['^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?\\.py[\\/]*?)$', '^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?\\.txt[\\/]*?)$'], [])
->>> glob.translate(r'!**/*.{py,txt}', flags=glob.NEGATE)
-([], ['^(?!(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?\\.py[\\/]*?)).*?$', '^(?!(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?\\.txt[\\/]*?)).*?$'])
+>>> glob.translate(r'**|!**/*.{py,txt}', flags=glob.NEGATE | glob.SPLIT)
+(['^(?s:(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'], ['^(?!(?s:(?=.)(?!(?:\\.{1,2})(?:$|\\/))[^\\/]*?\\/+(?=.)(?!(?:\\.{1,2})(?:$|\\/))[^\\/]*?\\.\\{py\\,txt\\}[\\/]*?)$).*?$'])
 ```
 
 #### `glob.escape`
@@ -285,9 +285,11 @@ On Windows, `FORCECASE` will also force paths to be treated like Linux/Unix path
 
 `NEGATE` causes patterns that start with `!` to be treated as exclusion patterns. A pattern of `!*.py` would match any file but Python files. If used with the extended glob feature, patterns like `!(inverse|pattern)` will be mistakenly parsed as an exclusion pattern instead of as an inverse extended glob group.  See [`MINUSNEGATE`](#globminusgate) for an alternative syntax that plays nice with extended glob.
 
-!!! warning "Change 4.0"
-    In 4.0, `NEGATE` requires a non-exclusion pattern to be paired with it. You can either use [`SPLIT`](#globSPLIT),
-    or feed in a list of multiple patterns instead of a single string.
+!!! warning "Changes 4.0"
+    In 4.0, `NEGATE` now requires a non-exclusion pattern to be paired with it or it will match nothing. You can either
+    use [`SPLIT`](#fnmatchSPLIT), or feed in a list of multiple patterns instead of a single string. If you really
+    need the old behavior, you can use the `NEGDEFAULT` flag which will provide a default of `**` which is subject to
+    the `GLOBSTAR` flag. `NEGDEFAULT` will raise a deprecation warning and will be removed in the future.
 
 #### `glob.MINUSNEGATE, glob.M` {: #globminusnegate}
 
