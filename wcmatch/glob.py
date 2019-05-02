@@ -95,6 +95,9 @@ class Glob(object):
         self.mark = bool(flags & MARK)
         if self.mark:
             flags ^= MARK
+        self.neg_default = bool(flags & NEGDEFAULT)
+        if self.neg_default:
+            flags ^= NEGDEFAULT
         self.flags = _flag_transform(flags | _wcparse.REALPATH) ^ _wcparse.REALPATH
         self.follow_links = bool(flags & FOLLOW)
         self.dot = bool(flags & DOTMATCH)
@@ -130,7 +133,7 @@ class Glob(object):
                     [_wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p, self.flags)]
                 )
         if not self.pattern and self.npatterns:
-            if self.flags & NEGDEFAULT:
+            if self.neg_default:
                 util.warn_deprecated('Automatic defaults for exclusion patterns is deprecated')
                 default = '**'
                 if self.is_bytes:

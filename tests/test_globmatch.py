@@ -978,9 +978,10 @@ class TestGlobMatchSpecial(unittest.TestCase):
 
         # Let's find something predictable for this cross platform test.
         user_dir = os.path.expanduser('~')
-        glob_user = glob.escape(user_dir)
-        self.assertFalse(glob.globmatch(user_dir, '**', flags=self.flags | glob.REALPATH))
-        self.assertTrue(glob.globmatch(user_dir, glob_user + '/**', flags=self.flags | glob.REALPATH))
+        if user_dir != '~':
+            glob_user = glob.escape(user_dir)
+            self.assertFalse(glob.globmatch(user_dir, '**', flags=self.flags | glob.REALPATH))
+            self.assertTrue(glob.globmatch(user_dir, glob_user + '/**', flags=self.flags | glob.REALPATH))
 
     def test_glob_integrity_bytes(self):
         """Test glob integrity to exercises the bytes portion of the code."""

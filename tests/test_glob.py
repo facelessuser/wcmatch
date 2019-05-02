@@ -1057,7 +1057,7 @@ class TestDeprecated(unittest.TestCase):
             warnings.simplefilter("always")
 
             glob.glob('!name', flags=glob.N | glob.NEGDEFAULT)
-            self.assertTrue(len(w) == 2)
+            self.assertTrue(len(w) != 0)
             self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
 
     def test_default_bytes(self):
@@ -1068,5 +1068,5 @@ class TestDeprecated(unittest.TestCase):
             warnings.simplefilter("always")
 
             glob.glob(b'!name', flags=glob.N | glob.NEGDEFAULT)
-            self.assertTrue(len(w) == 2)
+            self.assertTrue(len(w) != 0)
             self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
