@@ -434,7 +434,7 @@ class Testglob(_TestGlob):
                 ('EF',), ('ZZZ',), ('a',), ('a', 'D'), ('a', 'bcd'), ('a', 'bcd', 'EF'),
                 ('a', 'bcd', 'efg'), ('a', 'bcd', 'efg', 'ha'), ('aaa',), ('aaa', 'zzzF'), ('aab',),
                 ('aab', 'F')
-            ] if not can_symlink() else[
+            ] if not can_symlink() else [
                 ('EF',), ('ZZZ',), ('a',), ('a', 'D'), ('a', 'bcd'), ('a', 'bcd', 'EF'),
                 ('a', 'bcd', 'efg'), ('a', 'bcd', 'efg', 'ha'), ('aaa',), ('aaa', 'zzzF'), ('aab',),
                 ('aab', 'F'), ('sym1',), ('sym2',)
@@ -449,6 +449,18 @@ class Testglob(_TestGlob):
             glob.L | glob.X
         ],
         Options(cwd_temp=False, absolute=False),
+
+        [
+            ('**',),
+            [
+                ('a', 'bcd', 'EF',), ('a', 'bcd', 'efg', 'ha',), ('a', 'D',),
+                ('aaa', 'zzzF',), ('aab', 'F',), ('EF',), ('ZZZ',)
+            ] if not can_symlink() else [
+                ('a', 'bcd', 'EF',), ('a', 'bcd', 'efg', 'ha',), ('a', 'D',),
+                ('aaa', 'zzzF',), ('aab', 'F',), ('EF',), ('sym1',), ('sym2',), ('ZZZ',)
+            ],
+            glob.L | glob.O
+        ],
 
         # Test nested glob directory
         [

@@ -540,7 +540,26 @@ class TestGlobFilter:
             ["goo.cfg", "foo.bar", "foo.bar.cfg", "foo.cfg.bar"]
         ),
         ['*.bar', ["foo.bar", "foo.cfg.bar"]],
-        ['*|!*.bar', ["goo.cfg", "foo.bar.cfg"], glob.S]
+        ['*|!*.bar', ["goo.cfg", "foo.bar.cfg"], glob.S],
+
+        # Test `NODIR` option
+        GlobFiles(
+            [
+                "test/..", "test/.", "test/...", "test/.file", "test/.file/",
+                ".", "..", "...", '.../', "test/", "file", "/file"
+            ]
+        ),
+        ['**/*', ['...', '.../', '/file', 'file', 'test/', 'test/...', 'test/.file', 'test/.file/'], glob.D],
+        ['**/*', ['...', 'file', 'test/...', 'test/.file', "/file"], glob.O | glob.D],
+        ['**/..', [], glob.O | glob.D],
+        ['**/..', ['..', 'test/..'], glob.D],
+        GlobFiles(
+            [
+                b"test/..", b"test/.", b"test/...", b"test/.file", b"test/.file/",
+                b".", b"..", b"...", b'.../', b"test/", b"file", b"/file"
+            ]
+        ),
+        [b'**/*', [b'...', b'file', b'test/...', b'test/.file', b"/file"], glob.O | glob.D]
     ]
 
     @classmethod
@@ -850,6 +869,25 @@ class TestGlobMatchSpecial(unittest.TestCase):
                 flags=self.flags | glob.R
             )
         )
+
+    def test_glob_translate_no_dir(self):
+        """Test that an additional pattern is injected in translate."""
+
+        pos, neg = glob.translate('**', flags=glob.G)
+        self.assertEqual(1, len(pos))
+        self.assertEqual(0, len(neg))
+
+        pos, neg = glob.translate('**', flags=glob.G | glob.O)
+        self.assertEqual(1, len(pos))
+        self.assertEqual(1, len(neg))
+
+        pos, neg = glob.translate(b'**', flags=glob.G)
+        self.assertEqual(1, len(pos))
+        self.assertEqual(0, len(neg))
+
+        pos, neg = glob.translate(b'**', flags=glob.G | glob.O)
+        self.assertEqual(1, len(pos))
+        self.assertEqual(1, len(neg))
 
     @mock.patch('wcmatch.util.is_case_sensitive')
     def test_glob_translate(self, mock__iscase_sensitive):

@@ -39,6 +39,7 @@ lookaheads
 lookbehinds
 macOS
 matcher
+matchers
 paren
 posix
 pre

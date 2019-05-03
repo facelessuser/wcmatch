@@ -53,6 +53,7 @@ P = REALPATH = _wcparse.REALPATH
 L = FOLLOW = _wcparse.FOLLOW
 S = SPLIT = _wcparse.SPLIT
 X = MATCHBASE = _wcparse.MATCHBASE
+O = NODIR = _wcparse.NODIR
 K = MARK = 0x10000
 NEGDEFAULT = _wcparse.NEGDEFAULT
 
@@ -70,6 +71,7 @@ FLAG_MASK = (
     FOLLOW |
     SPLIT |
     MATCHBASE |
+    NODIR |
     NEGDEFAULT
 )
 
@@ -98,6 +100,9 @@ class Glob(object):
         self.neg_default = bool(flags & NEGDEFAULT)
         if self.neg_default:
             flags ^= NEGDEFAULT
+        self.nodir = bool(flags & _wcparse.NODIR)
+        if self.nodir:
+            flags ^= _wcparse.NODIR
         self.flags = _flag_transform(flags | _wcparse.REALPATH) ^ _wcparse.REALPATH
         self.follow_links = bool(flags & FOLLOW)
         self.dot = bool(flags & DOTMATCH)
@@ -139,6 +144,11 @@ class Glob(object):
                 if self.is_bytes:
                     default = os.fsencode(default)
                 self.pattern.append(_wcparse.WcPathSplit(default, self.flags).split())
+
+        if self.nodir:
+            ptype = _wcparse.BYTES if self.is_bytes else _wcparse.UNICODE
+            nodir = _wcparse.RE_WIN_NO_DIR[ptype] if self.flags & _wcparse._FORCEWIN else _wcparse.RE_NO_DIR[ptype]
+            self.npatterns.append(nodir)
 
     def _is_hidden(self, name):
         """Check if is file hidden."""
@@ -495,20 +505,18 @@ def escape(pattern, unix=False):
     """Escape."""
 
     is_bytes = isinstance(pattern, bytes)
+    ptype = _wcparse.BYTES if is_bytes else _wcparse.UNICODE
     replace = br'\\\1' if is_bytes else r'\\\1'
-    win = util.platform() == "windows"
-    if win and not unix:
-        magic = _wcparse.RE_BWIN_MAGIC if is_bytes else _wcparse.RE_WIN_MAGIC
-    else:
-        magic = _wcparse.RE_BMAGIC if is_bytes else _wcparse.RE_MAGIC
+    win = util.platform() == "windows" and not unix
+    magic = _wcparse.RE_WIN_MAGIC[ptype] if win else _wcparse.RE_MAGIC[ptype]
 
     # Handle windows drives special.
     # Windows drives are handled special internally.
     # So we shouldn't escape them as we'll just have to
     # detect and undo it later.
     drive = b'' if is_bytes else ''
-    if win and not unix:
-        m = (_wcparse.RE_BWIN_PATH if is_bytes else _wcparse.RE_WIN_PATH).match(pattern)
+    if win:
+        m = _wcparse.RE_WIN_PATH[ptype].match(pattern)
         if m:
             drive = m.group(0)
     pattern = pattern[len(drive):]

@@ -377,8 +377,8 @@ no trailing slash.
 ['appveyor.yml', 'base.patch', 'basematch.diff', 'docs', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'requirements', 'setup.cfg', 'setup.py', 'tests', 'tools', 'tox.ini', 'wcmatch']
 ```
 
-!!! new "New 3.1"
-    `MARK` added in 3.1.
+!!! new "New 4.0"
+    `MARK` added in 4.0.
 
 #### `glob.MATCHBASE, glob.X` {: #globmatchbase}
 
@@ -389,11 +389,23 @@ any file anywhere in the tree with a matching basename. When enabled for [`globf
 ```pycon3
 >>> from wcmatch import glob
 >>> glob.glob('*.txt', flags=glob.MATCHBASE)
-['docs/src/dictionary/en-custom.txt', 'docs/src/markdown/_snippets/abbr.txt', 'docs/src/markdown/_snippets/links.txt', 'docs/src/markdown/_snippets/posix.txt', 'docs/src/markdown/_snippets/refs.txt', 'requirements/docs.txt', 'requirements/lint.txt', 'requirements/setup.txt', 'requirements/test.txt', 'requirements/tools.txt'] 
+['docs/src/dictionary/en-custom.txt', 'docs/src/markdown/_snippets/abbr.txt', 'docs/src/markdown/_snippets/links.txt', 'docs/src/markdown/_snippets/posix.txt', 'docs/src/markdown/_snippets/refs.txt', 'requirements/docs.txt', 'requirements/lint.txt', 'requirements/setup.txt', 'requirements/test.txt', 'requirements/tools.txt']
 ```
 
-!!! new "New 3.1"
-    `MATCHBASE` added in 3.1.
+!!! new "New 4.0"
+    `MATCHBASE` added in 4.0.
+
+#### `glob.NODIR, glob.O` {: #globnodir}
+
+`NODIR` will cause [`glob`](#globglob), [`iglob`](#globiglob), [`globmatch`](#globglobmatch), and [`globfilter`](#globglobfilter) to return only matched files.
+
+```pycon3
+from wcmatch import glob
+>>> glob.glob('*', flags=glob.NODIR)
+['appveyor.yml', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'setup.cfg', 'setup.py', 'spell.log', 'tox.ini']
+>>> glob.glob('*')
+['appveyor.yml', 'docs', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'requirements', 'setup.cfg', 'setup.py', 'spell.log', 'tests', 'tools', 'tox.ini', 'wcmatch']
+```
 
 --8<--
 refs.txt
