@@ -134,19 +134,20 @@ Exclusion patterns are allowed as well.
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.globmatch('some/path/test.txt', r'!**/*/*.txt', flags=glob.NEGATE)
-False
->>> glob.globmatch('some/path/test.py', r'!**/*/*.txt', flags=glob.NEGATE)
+>>> glob.globmatch('some/path/test.py', r'**|!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.SPLIT)
 True
+>>> glob.globmatch('some/path/test.txt', r'**|!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.SPLIT)
+False
+>>>
 ```
 
 When exclusion patterns are used in conjunction with other patterns, a path will be considered matched if one of the positive patterns match **and** none of the exclusion patterns match. If an exclusion pattern is given without any regular patterns, the pattern will match nothing. Exclusion patterns are meant to filter other patterns, not match anything by themselves.
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.globmatch('some/path/test.txt', [r'**/*/*.txt', r'!**/*/avoid.txt'], flags=glob.NEGATE)
+>>> glob.globmatch('some/path/test.txt', [r'*/*/*.txt', r'!*/*/avoid.txt'], flags=glob.NEGATE)
 True
->>> glob.globmatch('some/path/avoid.txt', [r'**/*/*.txt', r'!**/*/avoid.txt'], flags=glob.NEGATE)
+>>> glob.globmatch('some/path/avoid.txt', [r'*/*/*.txt', r'!*/*/avoid.txt'], flags=glob.NEGATE)
 False
 ```
 
@@ -217,15 +218,18 @@ def globsplit(pattern, *, flags=0):
 def translate(patterns, *, flags=0):
 ```
 
-`translate` takes a file pattern (or list of patterns) and returns two lists: one for normal patterns and one for exclusion patterns. The lists contain the regular expressions used for matching the given patterns. All patterns are constructed in such a way that a matched pattern is what is desired, regardless of whether the pattern is an exclusion pattern or regular pattern. It should be noted that a file is considered matched if it matches at least one regular pattern and all of the exclusion patterns.
+`translate` takes a file pattern (or list of patterns) and returns two lists: one for normal patterns and one for exclusion patterns. The lists contain the regular expressions used for matching the given patterns. It should be noted that a file is considered matched if it matches at least one regular pattern and matches **none** of the exclusion patterns.
 
 ```pycon3
 >>> from wcmatch import glob
 >>> glob.translate(r'**/*.{py,txt}')
 (['^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?\\.py[\\/]*?)$', '^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?\\.txt[\\/]*?)$'], [])
 >>> glob.translate(r'**|!**/*.{py,txt}', flags=glob.NEGATE | glob.SPLIT)
-(['^(?s:(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'], ['^(?!(?s:(?=.)(?!(?:\\.{1,2})(?:$|\\/))[^\\/]*?\\/+(?=.)(?!(?:\\.{1,2})(?:$|\\/))[^\\/]*?\\.\\{py\\,txt\\}[\\/]*?)$).*?$'])
+(['^(?s:(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'], ['^(?s:(?=.)(?!(?:\\.{1,2})(?:$|\\/))[^\\/]*?\\/+(?=.)(?!(?:\\.{1,2})(?:$|\\/))[^\\/]*?\\.\\{py\\,txt\\}[\\/]*?)$'])
 ```
+
+!!! warning "Changed 4.0"
+    Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic to how it used to be, but is more efficient.
 
 #### `glob.escape`
 

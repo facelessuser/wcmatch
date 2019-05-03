@@ -115,15 +115,18 @@ def fnsplit(pattern, *, flags=0):
 def translate(patterns, *, flags=0):
 ```
 
-`translate` takes a file pattern (or list of patterns) and returns two lists: one for normal patterns and one for exclusion patterns. The lists contain the regular expressions used for matching the given patterns. All patterns are constructed in such a way that a matched pattern is what is desired, regardless of whether the pattern is an exclusion pattern or regular pattern. It should be noted that a file is considered matched if it matches at least one regular pattern and all of the exclusion patterns.
+`translate` takes a file pattern (or list of patterns) and returns two lists: one for normal patterns and one for exclusion patterns. The lists contain the regular expressions used for matching the given patterns. It should be noted that a file is considered matched if it matches at least one regular pattern and matches **none** of the exclusion patterns.
 
 ```pycon3
 >>> from wcmatch import translate
 >>> fnmatch.translate(r'*.{a,{b,c}}', flags=fnmatch.BRACE)
 (['^(?s:(?=.).*?\\.a)$', '^(?s:(?=.).*?\\.b)$', '^(?s:(?=.).*?\\.c)$'], [])
 >>> fnmatch.translate(r'**|!*.{a,{b,c}}', flags=fnmatch.BRACE | fnmatch.NEGATE | fnmatch.SPLIT)
-(['^(?s:(?=.)(?![.]).*?)$'], ['^(?!(?s:(?=.).*?\\.a)$).*?$', '^(?!(?s:(?=.).*?\\.b)$).*?$', '^(?!(?s:(?=.).*?\\.c)$).*?$'])
+(['^(?s:(?=.)(?![.]).*?)$'], ['^(?s:(?=.).*?\\.a)$', '^(?s:(?=.).*?\\.b)$', '^(?s:(?=.).*?\\.c)$'])
 ```
+
+!!! warning "Changed 4.0"
+    Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic to how it used to be, but is more efficient.
 
 ## Flags
 

@@ -27,7 +27,7 @@ __all__ = (
     "EXTMATCH", "FORCECASE", "IGNORECASE", "RAWCHARS",
     "NEGATE", "MINUSNEGATE", "DOTMATCH", "BRACE", "SPLIT",
     "NEGDEFAULT",
-    "F", "I", "R", "N", "M", "D", "E", "S",
+    "F", "I", "R", "N", "M", "D", "E", "S", "B",
     "translate", "fnmatch", "filter", "fnsplit"
 )
 

@@ -30,8 +30,8 @@ from . import util
 __all__ = (
     "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
-    "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGDEFAULT",
-    "F", "I", "R", "D", "E", "G", "N", "M", "P", "L", "X", 'K',
+    "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGDEFAULT", "NODIR",
+    "F", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O",
     "iglob", "glob", "globsplit", "globmatch", "globfilter", "escape"
 )
 
@@ -126,7 +126,7 @@ class Glob(object):
 
         self.pattern = []
         self.npatterns = []
-        nflags = self.flags | _wcparse.REALPATH | _wcparse._NO_TRANSLATE
+        nflags = self.flags | _wcparse.REALPATH
         for p in pattern:
             if _wcparse.is_negative(p, self.flags):
                 # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
@@ -232,7 +232,6 @@ class Glob(object):
                             is_dir = f.is_dir()
                             if is_dir:
                                 is_link = f.is_symlink()
-                                self.symlinks[path] = is_link
                             else:
                                 # We don't care if a file is a link
                                 is_link = False
@@ -253,7 +252,6 @@ class Glob(object):
                     is_dir = os.path.isdir(path)
                     if is_dir:
                         is_link = os.path.islink(path)
-                        self.symlinks[path] = is_link
                     else:
                         is_link = False
                     if deep and not self.follow_links and is_link:
@@ -376,9 +374,6 @@ class Glob(object):
 
     def glob(self):
         """Starts off the glob iterator."""
-
-        # Cached symlinks
-        self.symlinks = {}
 
         if self.is_bytes:
             curdir = os.fsencode(os.curdir)

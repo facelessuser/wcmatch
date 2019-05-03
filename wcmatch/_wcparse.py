@@ -93,8 +93,7 @@ NODIR = 0x4000
 _FORCEWIN = 0x100000000  # Forces Windows behavior (used to not assume Unix/Linux because of `FORCECASE` on Windows).
 _TRANSLATE = 0x200000000  # Lets us know we are performing a translation, and we just want the regex.
 _ANCHOR = 0x400000000  # The pattern, if it starts with a slash, is anchored to the working directory; strip the slash.
-_NO_TRANSLATE = 0x800000000  # Don't return translation pattern in positive form, but in the faster negative form.
-NEGDEFAULT = 0x1000000000  # Provide a default for exclude patterns
+NEGDEFAULT = 0x800000000  # Provide a default for exclude patterns
 
 FLAG_MASK = (
     FORCECASE |
@@ -114,8 +113,7 @@ FLAG_MASK = (
     NEGDEFAULT |
     _FORCEWIN |
     _TRANSLATE |
-    _ANCHOR |
-    _NO_TRANSLATE
+    _ANCHOR
 )
 CASE_FLAGS = FORCECASE | IGNORECASE
 
@@ -700,8 +698,6 @@ class WcParse(object):
         self.realpath = bool(flags & REALPATH) and self.pathname
         self.translate = bool(flags & _TRANSLATE)
         self.globstar_capture = self.realpath and not self.translate
-        if flags & _NO_TRANSLATE:
-            self.translate = False
         self.dot = bool(flags & DOTMATCH)
         self.extend = bool(flags & EXTMATCH)
         self.matchbase = bool(flags & MATCHBASE)
@@ -1337,13 +1333,9 @@ class WcParse(object):
 
         case_flag = 'i' if not self.case_sensitive else ''
         if util.PY36:
-            pattern = (
-                r'^(?!(?s%s:%s)$).*?$' if self.negative and self.translate else r'^(?s%s:%s)$'
-            ) % (case_flag, ''.join(result))
+            pattern = r'^(?s{}:{})$'.format(case_flag, ''.join(result))
         else:
-            pattern = (
-                r'(?s%s)^(?!(?:%s)$).*?$' if self.negative and self.translate else r'(?s%s)^(?:%s)$'
-            ) % (case_flag, ''.join(result))
+            pattern = r'(?s{})^(?:{})$'.format(case_flag, ''.join(result))
 
         if self.is_bytes:
             pattern = pattern.encode('latin-1')
