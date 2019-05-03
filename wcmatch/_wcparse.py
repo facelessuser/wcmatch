@@ -29,23 +29,41 @@ from collections import namedtuple
 from . import util
 from backrefs import uniprops
 
-RE_WIN_PATH = re.compile(r'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)', re.I)
-RE_BWIN_PATH = re.compile(br'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)', re.I)
-RE_WIN_MAGIC = re.compile(r'([-!*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
-RE_BWIN_MAGIC = re.compile(br'([-!*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
-RE_MAGIC = re.compile(r'([-!*?(\[|^{\\])')
-RE_BMAGIC = re.compile(br'([-!*?(\[|^{\\])')
-RE_POSIX = re.compile(r':(alnum|alpha|ascii|blank|cntrl|digit|graph|lower|print|punct|space|upper|xdigit):\]')
-RE_WIN_MOUNT = re.compile(r'\\|[a-z]:(?:\\|$)', re.I)
-RE_MOUNT = re.compile(r'/')
-RE_BWIN_MOUNT = re.compile(br'\\|[a-z]:(?:\\|$)', re.I)
-RE_BMOUNT = re.compile(br'/')
+UNICODE = 0
+BYTES = 1
+
+RE_WIN_PATH = (
+    re.compile(r'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)', re.I),
+    re.compile(br'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)', re.I)
+)
+RE_WIN_MAGIC = (
+    re.compile(r'([-!*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))'),
+    re.compile(br'([-!*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
+)
+RE_MAGIC = (
+    re.compile(r'([-!*?(\[|^{\\])'),
+    re.compile(br'([-!*?(\[|^{\\])')
+)
+RE_WIN_MOUNT = (
+    re.compile(r'\\|[a-z]:(?:\\|$)', re.I),
+    re.compile(br'\\|[a-z]:(?:\\|$)', re.I)
+)
+RE_MOUNT = (
+    re.compile(r'/'),
+    re.compile(br'/')
+)
+RE_NO_DIR = (
+    re.compile(r'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$'),
+    re.compile(br'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$')
+)
+RE_WIN_NO_DIR = (
+    re.compile(r'^(?:.*?(?:[\\/]\.{1,2}[\\/]*|[\\/])|\.{1,2}[\\/]*)$'),
+    re.compile(br'^(?:.*?(?:[\\/]\.{1,2}[\\/]*|[\\/])|\.{1,2}[\\/]*)$')
+)
+
 RE_ANCHOR = re.compile(r'^/+')
 RE_WIN_ANCHOR = re.compile(r'^(?:\\\\|/)+')
-RE_NO_DIR = re.compile(r'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$')
-RE_WIN_NO_DIR = re.compile(r'^(?:.*?(?:[\\/]\.{1,2}[\\/]*|[\\/])|\.{1,2}[\\/]*)$')
-RE_BNO_DIR = re.compile(br'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$')
-RE_BWIN_NO_DIR = re.compile(br'^(?:.*?(?:[\\/]\.{1,2}[\\/]*|[\\/])|\.{1,2}[\\/]*)$')
+RE_POSIX = re.compile(r':(alnum|alpha|ascii|blank|cntrl|digit|graph|lower|print|punct|space|upper|xdigit):\]')
 
 SET_OPERATORS = frozenset(('&', '~', '|'))
 NEGATIVE_SYM = frozenset((b'!', '!'))
@@ -155,8 +173,10 @@ _GROUP = r'(?:%s)'
 _EXCLA_GROUP = r'(?:(?!(?:%s)'
 # Closing for inverse group
 _EXCLA_GROUP_CLOSE = r')%s)'
+# Restrict root
 _NO_ROOT = r'(?!/)'
 _NO_WIN_ROOT = r'(?!(?:[\\/]|[a-zA-Z]:))'
+# Restrict directories
 _NO_NIX_DIR = r'^(?!(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$).*?$'
 _NO_WIN_DIR = r'^(?!(?:.*?(?:[\\/]\.{1,2}/*|[\\/])|\.{1,2}[\\/]*)$).*?$'
 
@@ -285,10 +305,8 @@ def compile(patterns, flags):  # noqa A001
 
     if flags & NODIR:
         unix = is_unix_style(flags)
-        if isinstance(patterns[0], bytes):
-            negative.append(RE_BNO_DIR if unix else RE_BWIN_NO_DIR)
-        else:
-            negative.append(RE_NO_DIR if unix else RE_WIN_NO_DIR)
+        ptype = BYTES if isinstance(patterns[0], bytes) else UNICODE
+        negative.append(RE_NO_DIR[ptype] if unix else RE_WIN_NO_DIR[ptype])
 
     return WcRegexp(tuple(positive), tuple(negative), flags & REALPATH, flags & PATHNAME, flags & FOLLOW)
 
@@ -353,7 +371,7 @@ class WcPathSplit(object):
             self.sep = '/'
         # Once split, Windows file names will never have `\\` in them,
         # so we can use the Unix magic detect
-        self.re_magic = RE_MAGIC if not self.is_bytes else RE_BMAGIC
+        self.re_magic = RE_MAGIC[BYTES if self.is_bytes else UNICODE]
         self.magic = False
 
     def is_magic(self, name):
@@ -467,7 +485,7 @@ class WcPathSplit(object):
 
         # Detect and store away windows drive as a literal
         if self.win_drive_detect:
-            m = RE_WIN_PATH.match(pattern)
+            m = RE_WIN_PATH[UNICODE].match(pattern)
             if m:
                 drive = m.group(0).replace('\\\\', '\\')
                 if self.is_bytes:
@@ -1209,7 +1227,7 @@ class WcParse(object):
         iter(i)
         root_specified = False
         if self.win_drive_detect:
-            m = RE_WIN_PATH.match(pattern)
+            m = RE_WIN_PATH[UNICODE].match(pattern)
             if m:
                 drive = m.group(0).replace('\\\\', '\\')
                 if drive.endswith('\\'):
@@ -1419,10 +1437,11 @@ def _match_pattern(filename, include, exclude, real, path, follow):
         symlinks = {}
         if isinstance(filename, bytes):
             curdir = os.fsencode(os.curdir)
-            mount = RE_BWIN_MOUNT if util.platform() == "windows" else RE_BMOUNT
+            ptype = BYTES
         else:
             curdir = os.curdir
-            mount = RE_WIN_MOUNT if util.platform() == "windows" else RE_MOUNT
+            ptype = UNICODE
+        mount = RE_WIN_MOUNT[ptype] if util.platform() == "windows" else RE_MOUNT[ptype]
 
         if not mount.match(filename):
             exists = os.path.lexists(os.path.join(curdir, filename))
