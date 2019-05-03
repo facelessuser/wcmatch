@@ -9,6 +9,7 @@
 - **NEW**: Exclusion patterns (enabled with `NEGATE`) now always enable `DOTALL` in the exclusion patterns. They also will match symlinks in `**` patterns. Only non `NEGATE` patterns that are paired with a `NEGATE` pattern are subject to symlinks and dot rules. Exclusion patterns themselves allow dots and symlinks to make filtering easier.
 - **NEW**: Exclusion patterns no longer provide a default regular pattern if one is not applied. Exclusion patterns are
 meant to filter the results of normal patterns. You can either use the `SPLIT` flag and provide a pattern with your default ('default_pattern|!exclusion'), or feed in a list of multiple patterns instead of a single string (`['default_pattern', '!exclusion']`). If you really need the old behavior, you can use the `NEGDEFAULT` flag which will provide a default of `**` which is subject to the `GLOBSTAR` flag. `NEGDEFAULT` will raise a deprecation warning and will be removed in the future.
+- **NEW**: Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic to how it used to be, but is more efficient.
 - **FIX**: An empty pattern in `glob` should not match slashes.
 
 ## 3.0.2
