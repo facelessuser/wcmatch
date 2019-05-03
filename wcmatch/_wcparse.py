@@ -110,6 +110,7 @@ FLAG_MASK = (
     REALPATH |
     FOLLOW |
     MATCHBASE |
+    NODIR |
     NEGDEFAULT |
     _FORCEWIN |
     _TRANSLATE |
@@ -303,7 +304,7 @@ def compile(patterns, flags):  # noqa A001
                 default = os.fsencode(default)
             positive.append(_compile(default, flags))
 
-    if flags & NODIR:
+    if patterns and flags & NODIR:
         unix = is_unix_style(flags)
         ptype = BYTES if isinstance(patterns[0], bytes) else UNICODE
         negative.append(RE_NO_DIR[ptype] if unix else RE_WIN_NO_DIR[ptype])

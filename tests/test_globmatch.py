@@ -870,6 +870,25 @@ class TestGlobMatchSpecial(unittest.TestCase):
             )
         )
 
+    def test_glob_translate_no_dir(self):
+        """Test that an additional pattern is injected in translate."""
+
+        pos, neg = glob.translate('**', flags=glob.G)
+        self.assertEqual(1, len(pos))
+        self.assertEqual(0, len(neg))
+
+        pos, neg = glob.translate('**', flags=glob.G | glob.O)
+        self.assertEqual(1, len(pos))
+        self.assertEqual(1, len(neg))
+
+        pos, neg = glob.translate(b'**', flags=glob.G)
+        self.assertEqual(1, len(pos))
+        self.assertEqual(0, len(neg))
+
+        pos, neg = glob.translate(b'**', flags=glob.G | glob.O)
+        self.assertEqual(1, len(pos))
+        self.assertEqual(1, len(neg))
+
     @mock.patch('wcmatch.util.is_case_sensitive')
     def test_glob_translate(self, mock__iscase_sensitive):
         """Test glob translation."""
