@@ -130,7 +130,7 @@ When applying multiple patterns, a file path matches if it matches any of the pa
 True
 ```
 
-Exclusion patterns are allowed as well.
+Exclusion patterns are allowed as well. When exclusion patterns are used in conjunction with other patterns, a path will be considered matched if one of the positive patterns match **and** none of the exclusion patterns match. If an exclusion pattern is given without any inclusion patterns, the pattern will match nothing. Exclusion patterns are meant to filter other patterns, not match anything by themselves.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -138,25 +138,19 @@ Exclusion patterns are allowed as well.
 True
 >>> glob.globmatch('some/path/test.txt', r'**|!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.SPLIT)
 False
-```
-
-When exclusion patterns are used in conjunction with other patterns, a path will be considered matched if one of the positive patterns match **and** none of the exclusion patterns match. If an exclusion pattern is given without any regular patterns, the pattern will match nothing. Exclusion patterns are meant to filter other patterns, not match anything by themselves.
-
-```pycon3
->>> from wcmatch import glob
 >>> glob.globmatch('some/path/test.txt', [r'*/*/*.txt', r'!*/*/avoid.txt'], flags=glob.NEGATE)
 True
 >>> glob.globmatch('some/path/avoid.txt', [r'*/*/*.txt', r'!*/*/avoid.txt'], flags=glob.NEGATE)
 False
 ```
 
-As mentioned, exclusion patterns need to be applied to a non-exclusion pattern to work, but if it is desired, you can force exclusion patterns to assume all files match unless excluded with the [`NEGATEALL`](#globnegateall) flag. Essentially, it means if you use a pattern such as `!*.md`, it means if you use a pattern such as `!*.md`, it will assume two pattern were given: `*` and `!*.md` (where `**` is specifically treated as if `GLOBSTAR` was enabled).
+As mentioned, exclusion patterns need to be applied to a inclusion pattern to work, but if it is desired, you can force exclusion patterns to assume all files should be filtered with the exclusion pattern(s) with the [`NEGATEALL`](#globnegateall) flag. Essentially, it means if you use a pattern such as `!*.md`, it means if you use a pattern such as `!*.md`, it will assume two pattern were given: `*` and `!*.md` (where `**` is specifically treated as if `GLOBSTAR` was enabled).
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.globmatch('some/path/test.py', r'!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.SPLIT)
+>>> glob.globmatch('some/path/test.py', r'!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.NEGATEALL)
 True
->>> glob.globmatch('some/path/test.txt', r'!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.SPLIT)
+>>> glob.globmatch('some/path/test.txt', r'!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.NEGATEALL)
 False
 ```
 
@@ -227,7 +221,7 @@ def globsplit(pattern, *, flags=0):
 def translate(patterns, *, flags=0):
 ```
 
-`translate` takes a file pattern (or list of patterns) and returns two lists: one for normal patterns and one for exclusion patterns. The lists contain the regular expressions used for matching the given patterns. It should be noted that a file is considered matched if it matches at least one regular pattern and matches **none** of the exclusion patterns.
+`translate` takes a file pattern (or list of patterns) and returns two lists: one for inclusion patterns and one for exclusion patterns. The lists contain the regular expressions used for matching the given patterns. It should be noted that a file is considered matched if it matches at least one inclusion pattern and matches **none** of the exclusion patterns.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -306,9 +300,11 @@ If used with the extended glob feature, patterns like `!(inverse|pattern)` will 
     In 4.0, `NEGATE` now requires a non-exclusion pattern to be paired with it or it will match nothing. If you really
     need something similar to the old behavior, that would assume a default inclusion pattern, you can use the [`NEGATEALL`](#globnegateall).
 
-#### `glob.NEGATEALL, glob.A`
+#### `glob.NEGATEALL, glob.A` {: #globnegateall}
 
-`NEGATEALL` can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the file matches the excluded pattern. Essentially, it means if you use a pattern such as `!*.md`, it will assume a pattern of `*|!*.md` (assuming the use of the [`SPLIT`](#globsplit) flag).
+`NEGATEALL` can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the file matches the excluded pattern. Essentially, it means if you use a pattern such as `!*.md`, it will assume two patterns were given: `**` and `!*.md`, where `!*.md` is applied to the results of `**`, and `**` is specifically treated as if [`GLOBSTAR`](#globglobstar) was enabled.
+
+Dot files will not be returned unless [`DOTGLOB`](#globdotglob) is enabled. Symlinks will also be ignored in the return unless [`FOLLOW`](#globfollow) is enabled.
 
 #### `glob.MINUSNEGATE, glob.M` {: #globminusnegate}
 
