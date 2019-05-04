@@ -4,11 +4,10 @@
 
 - **NEW**: Deprecated `WcMatch` class methods `kill` and `reset`. `WcMatch` should be broken with a simple `break` statement instead.
 - **NEW**: Add a new flag `MARK` to force `glob` to return directories with a trailing slash.
-- **NEW**: Add `MATCHBASE` that causes `glob` and `WcMatch`, when the pattern has no slashes in it, to seek for any file anywhere in the tree with a matching basename.
+- **NEW**: Add `MATCHBASE` that causes glob glob related functions and `WcMatch`, when the pattern has no slashes in it, to seek for any file anywhere in the tree with a matching basename.
 - **NEW**: Add `NODIR` that causes `glob` matchers and crawlers to only match and return files.
 - **NEW**: Exclusion patterns (enabled with `NEGATE`) now always enable `DOTALL` in the exclusion patterns. They also will match symlinks in `**` patterns. Only non `NEGATE` patterns that are paired with a `NEGATE` pattern are subject to symlinks and dot rules. Exclusion patterns themselves allow dots and symlinks to make filtering easier.
-- **NEW**: Exclusion patterns no longer provide a default regular pattern if one is not applied. Exclusion patterns are
-meant to filter the results of normal patterns. You can either use the `SPLIT` flag and provide a pattern with your default ('default_pattern|!exclusion'), or feed in a list of multiple patterns instead of a single string (`['default_pattern', '!exclusion']`). If you really need the old behavior, you can use the `NEGATEALL` flag which will provide a default inclusion pattern that matches all files.
+- **NEW**: Exclusion patterns no longer provide a default inclusion pattern if one is not specified. Exclusion patterns are meant to filter the results of inclusion patterns. You can either use the `SPLIT` flag and provide an inclusion pattern with your default ('default_pattern|!exclusion'), or feed in a list of multiple patterns instead of a single string (`['inclusion', '!exclusion']`). If you really need the old behavior, you can use the `NEGATEALL` flag which will provide a default inclusion pattern that matches all files.
 - **NEW**: Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic to how it used to be, but is more efficient.
 - **FIX**: An empty pattern in `glob` should not match slashes.
 
