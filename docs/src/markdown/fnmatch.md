@@ -77,6 +77,16 @@ True
 False
 ```
 
+As mentioned, exclusion patterns need to be applied to a non-exclusion pattern to work, but if it is desired, you can force exclusion patterns to assume all files match unless excluded with the [`NEGATEALL`](#fnmatchnegateall) flag. Essentially, it means if you use a pattern such as `!*.md`, it will assume two pattern were given: `*` and `!*.md`.
+
+```pycon3
+>>> from wcmatch import fnmatch
+>>> fnmatch.fnmatch('test.py', r'!*.py', flags=fnmatch.NEGATE | fnamtch.SPLIT)
+False
+>>> fnmatch.fnmatch('test.txt', r'!*.py', flags=fnmatch.NEGATE | fnamtch.SPLIT)
+True
+```
+
 #### `fnmatch.filter`
 
 ```py3
@@ -144,13 +154,19 @@ def translate(patterns, *, flags=0):
 
 #### `fnmatch.NEGATE, fnmatch.N` {: #fnmatchnegate}
 
-`NEGATE` causes patterns that start with `!` to be treated as exclusion matches. A pattern of `!*.py` would match any file but Python files. If used with [`EXTMATCH`](#fnmatchextmatch), patterns like `!(inverse|pattern)` will be mistakenly parsed as an exclusion pattern instead of an inverse `extmatch` group.  See [`MINUSNEGATE`](#fnmatchminusnegate) for an alternative syntax that plays nice with `EXTMATCH`.
+`NEGATE` causes patterns that start with `!` to be treated as exclusion patterns. A pattern of `!*.py` would match any file but Python files. Exclusion patterns cannot be used by themselves though, and must be paired with a normal, inclusion pattern, either by utilizing the [`SPLIT`](#fnmatchsplit) flag, or providing multiple patterns in a list. Assuming the `SPLIT` flag, this means using it in a pattern such as `inclusion|!exclusion`.
 
-!!! warning "Change 4.0"
-    In 4.0, `NEGATE` now requires a non-exclusion pattern to be paired with it or it will match nothing. You can either
-    use [`SPLIT`](#fnmatchSPLIT), or feed in a list of multiple patterns instead of a single string. If you really
-    need the old behavior, you can use the `NEGDEFAULT` flag which will provide a default of `**` which is subject to
-    the `GLOBSTAR` flag. `NEGDEFAULT` will raise a deprecation warning and will be removed in the future.
+If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the file matches the excluded pattern. This is done with the [`NEGATEALL`](#fnmatchnegateall) flag.
+
+If used with the extended glob feature, patterns like `!(inverse|pattern)` will be mistakenly parsed as an exclusion pattern instead of as an inverse extended glob group.  See [`MINUSNEGATE`](#fnmatchminusgate) for an alternative syntax that plays nice with extended glob.
+
+!!! warning "Changes 4.0"
+    In 4.0, `NEGATE` now requires a non-exclusion pattern to be paired with it or it will match nothing. If you really
+    need something similar to the old behavior, that would assume a default inclusion pattern, you can use the [`NEGATEALL`](#fnmatchnegateall).
+
+#### `glob.NEGATEALL, glob.A`
+
+`NEGATEALL` can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the file matches the excluded pattern. Essentially, it means if you use a pattern such as `!*.md`, it will assume a pattern of `*|!*.md` (assuming the use of the [`SPLIT`](#fnmatchsplit) flag).
 
 #### `fnmatch.MINUSNEGATE, fnmatch.M` {: #fnmatchminusnegate}
 

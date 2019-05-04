@@ -138,7 +138,6 @@ Exclusion patterns are allowed as well.
 True
 >>> glob.globmatch('some/path/test.txt', r'**|!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.SPLIT)
 False
->>>
 ```
 
 When exclusion patterns are used in conjunction with other patterns, a path will be considered matched if one of the positive patterns match **and** none of the exclusion patterns match. If an exclusion pattern is given without any regular patterns, the pattern will match nothing. Exclusion patterns are meant to filter other patterns, not match anything by themselves.
@@ -148,6 +147,16 @@ When exclusion patterns are used in conjunction with other patterns, a path will
 >>> glob.globmatch('some/path/test.txt', [r'*/*/*.txt', r'!*/*/avoid.txt'], flags=glob.NEGATE)
 True
 >>> glob.globmatch('some/path/avoid.txt', [r'*/*/*.txt', r'!*/*/avoid.txt'], flags=glob.NEGATE)
+False
+```
+
+As mentioned, exclusion patterns need to be applied to a non-exclusion pattern to work, but if it is desired, you can force exclusion patterns to assume all files match unless excluded with the [`NEGATEALL`](#globnegateall) flag. Essentially, it means if you use a pattern such as `!*.md`, it means if you use a pattern such as `!*.md`, it will assume two pattern were given: `*` and `!*.md` (where `**` is specifically treated as if `GLOBSTAR` was enabled).
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.globmatch('some/path/test.py', r'!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.SPLIT)
+True
+>>> glob.globmatch('some/path/test.txt', r'!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.SPLIT)
 False
 ```
 
@@ -287,13 +296,19 @@ On Windows, `FORCECASE` will also force paths to be treated like Linux/Unix path
 
 #### `glob.NEGATE, glob.N` {: #globnegate}
 
-`NEGATE` causes patterns that start with `!` to be treated as exclusion patterns. A pattern of `!*.py` would match any file but Python files. If used with the extended glob feature, patterns like `!(inverse|pattern)` will be mistakenly parsed as an exclusion pattern instead of as an inverse extended glob group.  See [`MINUSNEGATE`](#globminusgate) for an alternative syntax that plays nice with extended glob.
+`NEGATE` causes patterns that start with `!` to be treated as exclusion patterns. A pattern of `!*.py` would match any file but Python files. Exclusion patterns cannot be used by themselves though, and must be paired with a normal, inclusion pattern, either by utilizing the [`SPLIT`](#globSPLIT) flag, or providing multiple patterns in a list. Assuming the `SPLIT` flag, this means using it in a pattern such as `inclusion|!exclusion`.
+
+If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the file matches the excluded pattern. This is done with the [`NEGATEALL`](#globnegateall) flag.
+
+If used with the extended glob feature, patterns like `!(inverse|pattern)` will be mistakenly parsed as an exclusion pattern instead of as an inverse extended glob group.  See [`MINUSNEGATE`](#globminusgate) for an alternative syntax that plays nice with extended glob.
 
 !!! warning "Changes 4.0"
-    In 4.0, `NEGATE` now requires a non-exclusion pattern to be paired with it or it will match nothing. You can either
-    use [`SPLIT`](#fnmatchSPLIT), or feed in a list of multiple patterns instead of a single string. If you really
-    need the old behavior, you can use the `NEGDEFAULT` flag which will provide a default of `**` which is subject to
-    the `GLOBSTAR` flag. `NEGDEFAULT` will raise a deprecation warning and will be removed in the future.
+    In 4.0, `NEGATE` now requires a non-exclusion pattern to be paired with it or it will match nothing. If you really
+    need something similar to the old behavior, that would assume a default inclusion pattern, you can use the [`NEGATEALL`](#globnegateall).
+
+#### `glob.NEGATEALL, glob.A`
+
+`NEGATEALL` can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the file matches the excluded pattern. Essentially, it means if you use a pattern such as `!*.md`, it will assume a pattern of `*|!*.md` (assuming the use of the [`SPLIT`](#globsplit) flag).
 
 #### `glob.MINUSNEGATE, glob.M` {: #globminusnegate}
 
