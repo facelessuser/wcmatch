@@ -30,8 +30,8 @@ from . import util
 __all__ = (
     "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
-    "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGDEFAULT", "NODIR",
-    "F", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O",
+    "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR",
+    "F", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A",
     "iglob", "glob", "globsplit", "globmatch", "globfilter", "escape"
 )
 
@@ -54,8 +54,8 @@ L = FOLLOW = _wcparse.FOLLOW
 S = SPLIT = _wcparse.SPLIT
 X = MATCHBASE = _wcparse.MATCHBASE
 O = NODIR = _wcparse.NODIR
+A = NEGATEALL = _wcparse.NEGATEALL
 K = MARK = 0x10000
-NEGDEFAULT = _wcparse.NEGDEFAULT
 
 FLAG_MASK = (
     FORCECASE |
@@ -72,7 +72,7 @@ FLAG_MASK = (
     SPLIT |
     MATCHBASE |
     NODIR |
-    NEGDEFAULT
+    NEGATEALL
 )
 
 
@@ -97,9 +97,9 @@ class Glob(object):
         self.mark = bool(flags & MARK)
         if self.mark:
             flags ^= MARK
-        self.neg_default = bool(flags & NEGDEFAULT)
-        if self.neg_default:
-            flags ^= NEGDEFAULT
+        self.negateall = bool(flags & NEGATEALL)
+        if self.negateall:
+            flags ^= NEGATEALL
         self.nodir = bool(flags & _wcparse.NODIR)
         if self.nodir:
             flags ^= _wcparse.NODIR
@@ -138,12 +138,11 @@ class Glob(object):
                     [_wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p, self.flags)]
                 )
         if not self.pattern and self.npatterns:
-            if self.neg_default:
-                util.warn_deprecated('Automatic defaults for exclusion patterns is deprecated')
+            if self.negateall:
                 default = '**'
                 if self.is_bytes:
                     default = os.fsencode(default)
-                self.pattern.append(_wcparse.WcPathSplit(default, self.flags).split())
+                self.pattern.append(_wcparse.WcPathSplit(default, self.flags | GLOBSTAR).split())
 
         if self.nodir:
             ptype = _wcparse.BYTES if self.is_bytes else _wcparse.UNICODE

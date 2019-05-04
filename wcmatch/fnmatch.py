@@ -26,8 +26,8 @@ from . import _wcparse
 __all__ = (
     "EXTMATCH", "FORCECASE", "IGNORECASE", "RAWCHARS",
     "NEGATE", "MINUSNEGATE", "DOTMATCH", "BRACE", "SPLIT",
-    "NEGDEFAULT",
-    "F", "I", "R", "N", "M", "D", "E", "S", "B",
+    "NEGATEALL",
+    "F", "I", "R", "N", "M", "D", "E", "S", "B", "A",
     "translate", "fnmatch", "filter", "fnsplit"
 )
 
@@ -40,7 +40,7 @@ D = DOTMATCH = _wcparse.DOTMATCH
 E = EXTMATCH = _wcparse.EXTMATCH
 B = BRACE = _wcparse.BRACE
 S = SPLIT = _wcparse.SPLIT
-NEGDEFAULT = _wcparse.NEGDEFAULT
+A = NEGATEALL = _wcparse.NEGATEALL
 
 FLAG_MASK = (
     FORCECASE |
@@ -52,7 +52,7 @@ FLAG_MASK = (
     EXTMATCH |
     BRACE |
     SPLIT |
-    NEGDEFAULT
+    NEGATEALL
 )
 
 

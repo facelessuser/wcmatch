@@ -88,12 +88,12 @@ FOLLOW = 0x0800
 SPLIT = 0x1000
 MATCHBASE = 0x2000
 NODIR = 0x4000
+NEGATEALL = 0x8000
 
 # Internal flag
 _FORCEWIN = 0x100000000  # Forces Windows behavior (used to not assume Unix/Linux because of `FORCECASE` on Windows).
 _TRANSLATE = 0x200000000  # Lets us know we are performing a translation, and we just want the regex.
 _ANCHOR = 0x400000000  # The pattern, if it starts with a slash, is anchored to the working directory; strip the slash.
-NEGDEFAULT = 0x800000000  # Provide a default for exclude patterns
 
 FLAG_MASK = (
     FORCECASE |
@@ -110,7 +110,7 @@ FLAG_MASK = (
     FOLLOW |
     MATCHBASE |
     NODIR |
-    NEGDEFAULT |
+    NEGATEALL |
     _FORCEWIN |
     _TRANSLATE |
     _ANCHOR
@@ -253,12 +253,11 @@ def translate(patterns, flags):
             )
 
     if patterns and negative and not positive:
-        if flags & NEGDEFAULT:
-            util.warn_deprecated('Automatic defaults for exclusion patterns is deprecated')
+        if flags & NEGATEALL:
             default = '**'
             if isinstance(patterns[0], bytes):
                 default = os.fsencode(default)
-            positive.append(WcParse(default, flags).parse())
+            positive.append(WcParse(default, flags | (GLOBSTAR if flags & PATHNAME else 0)).parse())
 
     if patterns and flags & NODIR:
         unix = is_unix_style(flags)
@@ -295,12 +294,11 @@ def compile(patterns, flags):  # noqa A001
             (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
 
     if patterns and negative and not positive:
-        if flags & NEGDEFAULT:
-            util.warn_deprecated('Automatic defaults for exclusion patterns is deprecated')
+        if flags & NEGATEALL:
             default = '**'
             if isinstance(patterns[0], bytes):
                 default = os.fsencode(default)
-            positive.append(_compile(default, flags))
+            positive.append(_compile(default, flags | (GLOBSTAR if flags & PATHNAME else 0)))
 
     if patterns and flags & NODIR:
         unix = is_unix_style(flags)

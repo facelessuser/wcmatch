@@ -28,7 +28,7 @@ from . import util
 __all__ = (
     "FORCECASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME",
     "EXTMATCH", "GLOBSTAR", "BRACE", "MINUSNEGATE", "SYMLINKS", "HIDDEN", "RECURSIVE",
-    "MATCHBASE", "NEGDEFAULT",
+    "MATCHBASE",
     "F", "I", "R", "P", "E", "G", "M", "DP", "FP", "SL", "HD", "RV", "X", "B",
     "WcMatch"
 )
@@ -41,7 +41,6 @@ G = GLOBSTAR = _wcparse.GLOBSTAR
 B = BRACE = _wcparse.BRACE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
 X = MATCHBASE = _wcparse.MATCHBASE
-NEGDEFAULT = _wcparse.NEGDEFAULT
 
 # Control `PATHNAME` individually for folder exclude and files
 DP = DIRPATHNAME = 0x10000
@@ -66,8 +65,7 @@ FLAG_MASK = (
     SYMLINKS |
     HIDDEN |
     RECURSIVE |
-    MATCHBASE |
-    NEGDEFAULT
+    MATCHBASE
 )
 
 
@@ -105,7 +103,7 @@ class WcMatch(object):
         """Parse flags."""
 
         self.flags = flags & FLAG_MASK
-        self.flags |= _wcparse.NEGATE | _wcparse.DOTMATCH
+        self.flags |= _wcparse.NEGATE | _wcparse.DOTMATCH | _wcparse.NEGATEALL
         self.follow_links = bool(self.flags & SYMLINKS)
         self.show_hidden = bool(self.flags & HIDDEN)
         self.recursive = bool(self.flags & RECURSIVE)
@@ -137,7 +135,6 @@ class WcMatch(object):
             file_pattern = self._compile_wildcard(file_pattern, self.file_pathname)
 
         if not isinstance(folder_exclude_pattern, _wcparse.WcRegexp):
-
             folder_exclude_pattern = self._compile_wildcard(folder_exclude_pattern, self.dir_pathname)
 
         return file_pattern, folder_exclude_pattern

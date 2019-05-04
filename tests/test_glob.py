@@ -837,6 +837,20 @@ class Testglob(_TestGlob):
 
         self.eval_glob_cases(case)
 
+    def test_negateall(self):
+        """Negate applied to all files."""
+
+        with change_cwd(self.tempdir):
+            for file in glob.glob('!**/', flags=glob.N | glob.NEGATEALL | glob.G):
+                self.assertFalse(os.path.isdir(file))
+
+    def test_negateall_bytes(self):
+        """Negate applied to all files."""
+
+        with change_cwd(self.tempdir):
+            for file in glob.glob(b'!**/', flags=glob.N | glob.NEGATEALL | glob.G):
+                self.assertFalse(os.path.isdir(file))
+
 
 class TestGlobMarked(Testglob):
     """Test glob marked."""
@@ -1060,25 +1074,3 @@ class TestDeprecated(unittest.TestCase):
             self.assertTrue(len(w) == 1)
             self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
             self.assertTrue(patterns, ['test', 'test'])
-
-    def test_default(self):
-        """Test deprecated default."""
-
-        with warnings.catch_warnings(record=True) as w:
-            # Cause all warnings to always be triggered.
-            warnings.simplefilter("always")
-
-            glob.glob('!name', flags=glob.N | glob.NEGDEFAULT)
-            self.assertTrue(len(w) != 0)
-            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-
-    def test_default_bytes(self):
-        """Test deprecated default bytes."""
-
-        with warnings.catch_warnings(record=True) as w:
-            # Cause all warnings to always be triggered.
-            warnings.simplefilter("always")
-
-            glob.glob(b'!name', flags=glob.N | glob.NEGDEFAULT)
-            self.assertTrue(len(w) != 0)
-            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
