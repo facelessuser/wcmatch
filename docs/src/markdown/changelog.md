@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.0.1
+
+- **FIX**: Fix regression with exclusion patterns that use braces in `glob`.
+
 ## 4.0.0
 
 - **NEW**: Deprecated `WcMatch` class methods `kill` and `reset`. `WcMatch` should be broken with a simple `break` statement instead.
