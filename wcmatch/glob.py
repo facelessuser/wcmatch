@@ -115,7 +115,11 @@ class Glob(object):
         self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
         self.empty = b'' if self.is_bytes else ''
         self.current = b'.' if self.is_bytes else '.'
-        self._parse_patterns(_wcparse.split(pattern, flags))
+        split = _wcparse.split(pattern, flags)
+        patterns = []
+        for s in split:
+            patterns.extend(_wcparse.expand_braces(s, flags))
+        self._parse_patterns(patterns)
         if self.flags & _wcparse._FORCEWIN:
             self.sep = b'\\' if self.is_bytes else '\\'
         else:
@@ -134,9 +138,7 @@ class Glob(object):
                 # and then the exclude, but glob will already know it wants to include the file.
                 self.npatterns.append(re.compile(_wcparse.translate(p, flags=nflags)[1][0]))
             else:
-                self.pattern.extend(
-                    [_wcparse.WcPathSplit(x, self.flags).split() for x in _wcparse.expand_braces(p, self.flags)]
-                )
+                self.pattern.append(_wcparse.WcPathSplit(p, self.flags).split())
         if not self.pattern and self.npatterns:
             if self.negateall:
                 default = '**'
