@@ -3,6 +3,7 @@
 ## 4.0.1
 
 - **FIX**: Fix regression with exclusion patterns that use braces in `glob`.
+- **FIX**: Translate functions should have `NODIR` patterns exclude if matched not exclude if not matched.
 
 ## 4.0.0
 
