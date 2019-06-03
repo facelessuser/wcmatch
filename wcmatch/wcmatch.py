@@ -213,13 +213,11 @@ class WcMatch(object):
 
         return self._skipped
 
-    @util.deprecated("Please use builtin 'break' keyword to exit the loop instead.")
     def kill(self):
         """Abort process."""
 
         self._abort = True
 
-    @util.deprecated("Please use builtin 'break' keyword to exit the loop instead.")
     def reset(self):
         """Revive class from a killed state."""
 

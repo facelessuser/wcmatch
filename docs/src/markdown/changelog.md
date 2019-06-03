@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.0.2
+
+- **FIX**: Remove deprecation of `kill` and `reset` functions in `wcmatch`. There are legitimate reasons to not deprecate `kill` and `reset`.
+
 ## 4.0.1
 
 - **FIX**: Fix regression with exclusion patterns that use braces in `glob`.
