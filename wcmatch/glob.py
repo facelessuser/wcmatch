@@ -213,7 +213,7 @@ class Glob(object):
         scandir = self.current if not curdir else curdir
 
         # Python will never return . or .., so fake it.
-        if os.path.isdir(scandir) and matcher is not None:
+        if matcher is not None:
             for special in self.specials:
                 if matcher(special):
                     yield os.path.join(curdir, special), True
@@ -230,7 +230,10 @@ class Glob(object):
                             if deep and self._is_hidden(f.name):
                                 continue
                             path = os.path.join(curdir, f.name)
-                            is_dir = f.is_dir()
+                            try:
+                                is_dir = f.is_dir()
+                            except OSError:  # pragma: no cover
+                                is_dir = False
                             if is_dir:
                                 is_link = f.is_symlink()
                             else:
@@ -250,7 +253,10 @@ class Glob(object):
                     if deep and self._is_hidden(f):
                         continue
                     path = os.path.join(curdir, f)
-                    is_dir = os.path.isdir(path)
+                    try:
+                        is_dir = os.path.isdir(path)
+                    except OSError:  # pragma: no cover
+                        is_dir = False
                     if is_dir:
                         is_link = os.path.islink(path)
                     else:

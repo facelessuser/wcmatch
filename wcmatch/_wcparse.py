@@ -1400,8 +1400,14 @@ def _match_real(filename, include, exclude, follow, symlinks):
     sep = '\\' if util.platform() == "windows" else '/'
     if isinstance(filename, bytes):
         sep = os.fsencode(sep)
+
     is_dir = filename.endswith(sep)
-    if not is_dir and os.path.isdir(filename):
+    try:
+        is_file_dir = os.path.isdir(filename)
+    except OSError:  # pragma: no cover
+        is_file_dir = False
+
+    if not is_dir and is_file_dir:
         is_dir = True
         filename += sep
 
