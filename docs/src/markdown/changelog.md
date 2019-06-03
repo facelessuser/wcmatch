@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.1.0
+
+- **NEW**: Add `WcMatch.is_aborted`.
+- **FIX**: Remove deprecation of `kill` and `reset` in `WcMatch`. There are legitimate reasons to not deprecate killing via `kill` instead of simply breaking.
+
 ## 4.0.1
 
 - **FIX**: Fix regression with exclusion patterns that use braces in `glob`.
