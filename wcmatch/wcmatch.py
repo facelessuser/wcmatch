@@ -218,6 +218,11 @@ class WcMatch(object):
 
         self._abort = True
 
+    def is_aborted(self):
+        """Check if process has been aborted."""
+
+        return self._abort
+
     def reset(self):
         """Revive class from a killed state."""
 
@@ -229,7 +234,7 @@ class WcMatch(object):
         self._base_len = len(self.base)
 
         for base, dirs, files in os.walk(self.base, followlinks=self.follow_links):
-            if self._abort:
+            if self.is_aborted():
                 break
 
             # Remove child folders based on exclude rules
@@ -243,7 +248,7 @@ class WcMatch(object):
                     if value is not None:  # pragma: no cover
                         yield value
 
-                if self._abort:  # pragma: no cover
+                if self.is_aborted():  # pragma: no cover
                     break
 
             # Search files if they were found
@@ -266,7 +271,7 @@ class WcMatch(object):
                         if value is not None:
                             yield value
 
-                    if self._abort:
+                    if self.is_aborted():
                         break
 
     def match(self):

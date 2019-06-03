@@ -140,6 +140,23 @@ Resets the abort state after running `kill`.
 ['./LICENSE.md', './README.md']
 ```
 
+### `WcMatch.is_aborted`
+
+Checks if an abort has been issued.
+
+```
+>>> from wcmatch import wcmatch
+>>> wcm = wcmatch.WcMatch('.', '*.md|*.txt')
+>>> for f in wcm.imatch():
+...     wcm.kill()
+...
+>>> wcm.is_aborted()
+True
+```
+
+!!! new "New 4.1.0"
+    `is_aborted` was added in 4.1.0.
+
 #### `WcMatch.get_skipped`
 
 Returns the number of skipped files. Files in skipped folders are not included in the count.

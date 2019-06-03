@@ -1,8 +1,9 @@
 # Changelog
 
-## 4.0.2
+## 4.1.0
 
-- **FIX**: Remove deprecation of `kill` and `reset` functions in `wcmatch`. There are legitimate reasons to not deprecate `kill` and `reset`.
+- **NEW**: Add `WcMatch.is_aborted`.
+- **FIX**: Remove deprecation of `kill` and `reset` in `WcMatch`. There are legitimate reasons to not deprecate killing via `kill` instead of simply breaking.
 
 ## 4.0.1
 
