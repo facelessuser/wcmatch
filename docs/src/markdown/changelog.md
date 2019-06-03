@@ -4,6 +4,7 @@
 
 - **NEW**: Add `WcMatch.is_aborted`.
 - **FIX**: Remove deprecation of `kill` and `reset` in `WcMatch`. There are legitimate reasons to not deprecate killing via `kill` instead of simply breaking.
+- **FIX**: If for any reason, a file exists, but fails "is directory" check, consider it as a file.
 
 ## 4.0.1
 
