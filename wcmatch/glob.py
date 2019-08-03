@@ -98,7 +98,6 @@ def _flag_transform(flags):
         else:
             if flags & _wcparse.FORCEWIN:
                 flags ^= _wcparse.FORCEWIN
-            flags |= _wcparse.FORCEUNIX
 
     if flags & _wcparse.FORCEWIN and flags & _wcparse.FORCECASE:
         flags ^= _wcparse.FORCECASE
@@ -128,7 +127,7 @@ class Glob(object):
         self.globstar = bool(flags & _wcparse.GLOBSTAR)
         self.braces = bool(flags & _wcparse.BRACE)
         self.matchbase = bool(flags & _wcparse.MATCHBASE)
-        self.case_sensitive = _wcparse.get_case(flags)
+        self.case_sensitive = _wcparse.get_case(self.flags)
         self.is_bytes = isinstance(pattern[0], bytes)
         self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
         self.empty = b'' if self.is_bytes else ''
