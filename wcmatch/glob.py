@@ -491,6 +491,8 @@ def globmatch(filename, patterns, *, flags=0):
     """
 
     flags = _flag_transform(flags)
+    if flags & _wcparse.REALPATH and not _wcparse.get_case(flags):
+        flags |= _wcparse._REALPATH_CHECK
     if not _wcparse.is_unix_style(flags):
         filename = _wcparse.norm_slash(filename, flags)
     return _wcparse.compile(_wcparse.split(patterns, flags), flags).match(filename)
@@ -502,6 +504,8 @@ def globfilter(filenames, patterns, *, flags=0):
     matches = []
 
     flags = _flag_transform(flags)
+    if flags & _wcparse.REALPATH and not _wcparse.get_case(flags):
+        flags |= _wcparse._REALPATH_CHECK
     unix = _wcparse.is_unix_style(flags)
     obj = _wcparse.compile(_wcparse.split(patterns, flags), flags)
 

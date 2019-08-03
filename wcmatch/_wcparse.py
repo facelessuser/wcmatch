@@ -95,6 +95,7 @@ FORCEUNIX = 0x20000
 # Internal flag
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
 _ANCHOR = 0x200000000  # The pattern, if it starts with a slash, is anchored to the working directory; strip the slash.
+_REALPATH_CHECK = 0x400000000
 
 FLAG_MASK = (
     FORCECASE |
@@ -334,7 +335,9 @@ def compile(patterns, flags):  # noqa A001
         ptype = BYTES if isinstance(patterns[0], bytes) else UNICODE
         negative.append(RE_NO_DIR[ptype] if unix else RE_WIN_NO_DIR[ptype])
 
-    return WcRegexp(tuple(positive), tuple(negative), flags & REALPATH, flags & PATHNAME, flags & FOLLOW)
+    return WcRegexp(
+        tuple(positive), tuple(negative), flags & REALPATH, flags & PATHNAME, flags & FOLLOW, flags & _REALPATH_CHECK
+    )
 
 
 @functools.lru_cache(maxsize=256, typed=True)
@@ -1459,7 +1462,7 @@ def _match_real(filename, include, exclude, follow, symlinks):
     return matched
 
 
-def _match_pattern(filename, include, exclude, real, path, follow):
+def _match_pattern(filename, include, exclude, real, path, follow, check):
     """Match includes and excludes."""
 
     if real:
@@ -1476,6 +1479,13 @@ def _match_pattern(filename, include, exclude, real, path, follow):
             exists = os.path.lexists(os.path.join(curdir, filename))
         else:
             exists = os.path.lexists(filename)
+
+        if not exists and check:
+            from . import glob
+            flags = 0
+            temp = glob.escape(filename)
+            if glob.glob(temp, flags=glob.I):
+                exists = True
 
         if not exists:
             return False
@@ -1501,9 +1511,9 @@ def _match_pattern(filename, include, exclude, real, path, follow):
 class WcRegexp(util.Immutable):
     """File name match object."""
 
-    __slots__ = ("_include", "_exclude", "_real", "_path", "_follow", "_hash")
+    __slots__ = ("_include", "_exclude", "_real", "_path", "_follow", "_check", "_hash")
 
-    def __init__(self, include, exclude=None, real=False, path=False, follow=False):
+    def __init__(self, include, exclude=None, real=False, path=False, follow=False, check=False):
         """Initialization."""
 
         super(WcRegexp, self).__init__(
@@ -1512,6 +1522,7 @@ class WcRegexp(util.Immutable):
             _real=real,
             _path=path,
             _follow=follow,
+            _check=check,
             _hash=hash(
                 (
                     type(self),
@@ -1519,7 +1530,8 @@ class WcRegexp(util.Immutable):
                     type(exclude), exclude,
                     type(real), real,
                     type(path), path,
-                    type(follow), follow
+                    type(follow), follow,
+                    type(check), check
                 )
             )
         )
@@ -1538,7 +1550,8 @@ class WcRegexp(util.Immutable):
             self._exclude == other._exclude and
             self._real == other._real and
             self._path == other._path and
-            self._follow == other._follow
+            self._follow == other._follow and
+            self._check == other._check
         )
 
     def __ne__(self, other):
@@ -1550,17 +1563,18 @@ class WcRegexp(util.Immutable):
             self._exclude != other._exclude or
             self._real != other._real or
             self._path != other._path or
-            self._follow != other._follow
+            self._follow != other._follow or
+            self._check != other._check
         )
 
     def match(self, filename):
         """Match filename."""
 
-        return _match_pattern(filename, self._include, self._exclude, self._real, self._path, self._follow)
+        return _match_pattern(filename, self._include, self._exclude, self._real, self._path, self._follow, self._check)
 
 
 def _pickle(p):
-    return WcRegexp, (p._include, p._exclude, p._real, p._path, p._follow)
+    return WcRegexp, (p._include, p._exclude, p._real, p._path, p._follow, p._check)
 
 
 copyreg.pickle(WcRegexp, _pickle)
