@@ -136,11 +136,14 @@ def translate(patterns, *, flags=0):
 
 #### `fnmatch.FORCECASE, fnmatch.F` {: #fnmatchforcecase}
 
-`FORCECASE` forces case sensitivity. On Windows, this will force paths to be treated like Linux/Unix paths, and slashes will not be normalized. `FORCECASE` has higher priority than [`IGNORECASE`](#fnmatchignorecase).
+`FORCECASE` forces case sensitivity. `FORCECASE` has higher priority than [`IGNORECASE`](#fnmatchignorecase).
+
+On Windows, this will force paths to be treated like Linux/Unix paths, and slashes will not be normalized. In general,
+it is recommended to use [`FORCEUNIX`](#fnmatchforceunix) if the desire is to force Linux/Unix style logic. It is possible that in the future, Windows may simply ignore this flag.
 
 #### `fnmatch.IGNORECASE, fnmatch.I` {: #fnmatchignorecase}
 
-`IGNORECASE` forces case insensitivity. [`FORCECASE`](#fnmatchforecase) has higher priority than `IGNORECASE`.
+`IGNORECASE` forces case insensitivity. [`FORCECASE`](#fnmatchforcecase) has higher priority than `IGNORECASE`.
 
 #### `fnmatch.RAWCHARS, fnmatch.R` {: #fnmatchrawchars}
 
@@ -195,6 +198,28 @@ True
 >>> fnmatch.fnmatch('test.py', r'*.txt|*.py', flags=fnmatch.SPLIT)
 True
 ```
+
+#### `fnmatch.FORCEWIN, fnmatch.W` {: #fnmatchforcewin}
+
+`FORCEWIN` will force Windows name and case logic to be used on Linux/Unix systems. This is great if you need to match Windows specific names on a Linux/Unix system.
+
+When using `FORCEWIN`, [`FORCECASE`](#fnmatchforcecase) will be ignored as paths on Windows are not case sensitive.
+
+If `FORCEWIN` is used along side [`FORCEUNIX`](#fnmatchforceunix), both will be ignored.
+
+!!! new "New 4.2.0"
+    `FORCEWIN` is inew in 4.2.0.
+
+#### `fnmatch.FORCEUNIX, fnmatch.U` {: #fnmatchforceunix}
+
+`FORCEUNIX` will force Linux/Unix name and case logic to be used on Windows systems. This is great if you need to match Linux/Unix specific names on a Windows system.
+
+When using `FORCEUNIX`, the names are assumed to be case sensitive, but you can use [`IGNORECASE`](#fnmatchignorecase) to use case insensitivity.
+
+If `FORCEUNIX` is used along side [`FORCEWIN`](#fnmatchforcewin), both will be ignored.
+
+!!! new "New 4.2.0"
+    `FORCEUNIX` is inew in 4.2.0.
 
 --8<--
 refs.txt

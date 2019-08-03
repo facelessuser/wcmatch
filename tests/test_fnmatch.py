@@ -78,12 +78,21 @@ class TestFnMatch:
         ['abc', 'AbC', not util.is_case_sensitive(), 0],
         ['AbC', 'abc', not util.is_case_sensitive(), 0],
         ['AbC', 'AbC', True, 0],
+        ['abc', 'AbC', True, fnmatch.W],
+        ['abc', 'AbC', True, fnmatch.W | fnmatch.F],  # Can't force case if forcing Windows
+        ['abc', 'AbC', False, fnmatch.U],
+        ['abc', 'AbC', True, fnmatch.U | fnmatch.I],
+        ['AbC', 'abc', not util.is_case_sensitive(), fnmatch.W | fnmatch.U],  # Can't force both, just detect system
 
         # OS specific slash behavior
         ['usr/bin', 'usr/bin', True, 0],
         ['usr/bin', 'usr\\bin', not util.is_case_sensitive(), 0],
         [r'usr\\bin', 'usr/bin', not util.is_case_sensitive(), 0],
         [r'usr\\bin', 'usr\\bin', True, 0],
+        ['usr/bin', 'usr\\bin', True, fnmatch.W],
+        [r'usr\\bin', 'usr/bin', True, fnmatch.W],
+        ['usr/bin', 'usr\\bin', False, fnmatch.U],
+        [r'usr\\bin', 'usr/bin', False, fnmatch.U],
 
         # Ensure that we don't fail on regular expression related symbols
         # such as &&, ||, ~~, --, or [.  Currently re doesn't do anything with
@@ -153,7 +162,9 @@ class TestFnMatch:
         ['[9--]', '9', False, 0],
 
         # Escaped slashes are just slashes as they aren't treated special beyond normalization.
-        [r'a\/b', ('a/b' if util.is_case_sensitive() else 'a\\\\b'), True, 0]
+        [r'a\/b', ('a/b' if util.is_case_sensitive() else 'a\\\\b'), True, 0],
+        [r'a\/b', 'a/b', True, fnmatch.U],
+        [r'a\/b', 'a\\\\b', True, fnmatch.W]
     ]
 
     @classmethod

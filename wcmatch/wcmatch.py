@@ -43,11 +43,11 @@ M = MINUSNEGATE = _wcparse.MINUSNEGATE
 X = MATCHBASE = _wcparse.MATCHBASE
 
 # Control `PATHNAME` individually for folder exclude and files
-DP = DIRPATHNAME = 0x10000
-FP = FILEPATHNAME = 0x20000
-SL = SYMLINKS = 0x40000
-HD = HIDDEN = 0x80000
-RV = RECURSIVE = 0x100000
+DP = DIRPATHNAME = 0x100000
+FP = FILEPATHNAME = 0x200000
+SL = SYMLINKS = 0x400000
+HD = HIDDEN = 0x800000
+RV = RECURSIVE = 0x1000000
 
 # Control `PATHNAME` for file and folder
 P = PATHNAME = DIRPATHNAME | FILEPATHNAME
@@ -78,7 +78,7 @@ class WcMatch(object):
         self._abort = False
         args = list(args)
         self._skipped = 0
-        self._directory = util.norm_slash(args.pop(0))
+        self._directory = _wcparse.norm_slash(args.pop(0), 0)
         self.is_bytes = isinstance(self._directory, bytes)
         if not self._directory:
             if self.is_bytes:
@@ -111,7 +111,7 @@ class WcMatch(object):
         self.file_pathname = bool(self.flags & FILEPATHNAME)
         self.matchbase = bool(self.flags & MATCHBASE)
         if util.platform() == "windows":
-            self.flags |= _wcparse._FORCEWIN
+            self.flags |= _wcparse.FORCEWIN
         self.flags = self.flags & (_wcparse.FLAG_MASK ^ MATCHBASE)
 
     def _compile_wildcard(self, pattern, pathname=False):

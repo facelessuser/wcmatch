@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.2.0
+
+- **NEW**: Add flags `FORCEWIN` and `FORCEUNIX` to force Windows or Linux/Unix path logic on commands that do not access the file system: `translate`, `fnmatch`, `filter`, `globmatch`, `globfilter`, etc. These flags will not work with `glob`, `iglob` or with the `WcMatch` class. It also will not work when using the `REALPATH` flag with things like `fnmatch`, `filter`, `globmatch`, `globfilter`.
+
 ## 4.1.0
 
 - **NEW**: Add `WcMatch.is_aborted`.

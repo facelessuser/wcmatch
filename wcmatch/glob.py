@@ -55,7 +55,10 @@ S = SPLIT = _wcparse.SPLIT
 X = MATCHBASE = _wcparse.MATCHBASE
 O = NODIR = _wcparse.NODIR
 A = NEGATEALL = _wcparse.NEGATEALL
-K = MARK = 0x10000
+W = FORCEWIN = _wcparse.FORCEWIN
+U = FORCEUNIX = _wcparse.FORCEUNIX
+
+K = MARK = 0x100000
 
 FLAG_MASK = (
     FORCECASE |
@@ -72,19 +75,34 @@ FLAG_MASK = (
     SPLIT |
     MATCHBASE |
     NODIR |
-    NEGATEALL
+    NEGATEALL |
+    FORCEWIN |
+    FORCEUNIX
 )
 
 
 def _flag_transform(flags):
     """Transform flags to glob defaults."""
 
+    # Enabling both cancels out
+    if flags & _wcparse.FORCEUNIX and flags & _wcparse.FORCEWIN:
+        flags ^= _wcparse.FORCEWIN | _wcparse.FORCECASE
+
     # Here we force `PATHNAME`.
     flags = (flags & FLAG_MASK) | _wcparse.PATHNAME
-    if flags & _wcparse.REALPATH and util.platform() == "windows":
-        flags |= _wcparse._FORCEWIN
-        if flags & _wcparse.FORCECASE:
-            flags ^= _wcparse.FORCECASE
+    if flags & _wcparse.REALPATH:
+        if util.platform() == "windows":
+            if flags & _wcparse.FORCEUNIX:
+                flags ^= _wcparse.FORCEUNIX
+            flags |= _wcparse.FORCEWIN
+        else:
+            if flags & _wcparse.FORCEWIN:
+                flags ^= _wcparse.FORCEWIN
+            flags |= _wcparse.FORCEUNIX
+
+    if flags & _wcparse.FORCEWIN and flags & _wcparse.FORCECASE:
+        flags ^= _wcparse.FORCECASE
+
     return flags
 
 
@@ -120,7 +138,7 @@ class Glob(object):
         for s in split:
             patterns.extend(_wcparse.expand_braces(s, flags))
         self._parse_patterns(patterns)
-        if self.flags & _wcparse._FORCEWIN:
+        if self.flags & _wcparse.FORCEWIN:
             self.sep = b'\\' if self.is_bytes else '\\'
         else:
             self.sep = b'/' if self.is_bytes else '/'
@@ -148,7 +166,7 @@ class Glob(object):
 
         if self.nodir:
             ptype = _wcparse.BYTES if self.is_bytes else _wcparse.UNICODE
-            nodir = _wcparse.RE_WIN_NO_DIR[ptype] if self.flags & _wcparse._FORCEWIN else _wcparse.RE_NO_DIR[ptype]
+            nodir = _wcparse.RE_WIN_NO_DIR[ptype] if self.flags & _wcparse.FORCEWIN else _wcparse.RE_NO_DIR[ptype]
             self.npatterns.append(nodir)
 
     def _is_hidden(self, name):
@@ -475,7 +493,7 @@ def globmatch(filename, patterns, *, flags=0):
 
     flags = _flag_transform(flags)
     if not _wcparse.is_unix_style(flags):
-        filename = util.norm_slash(filename)
+        filename = _wcparse.norm_slash(filename, flags)
     return _wcparse.compile(_wcparse.split(patterns, flags), flags).match(filename)
 
 
@@ -490,7 +508,7 @@ def globfilter(filenames, patterns, *, flags=0):
 
     for filename in filenames:
         if not unix:
-            filename = util.norm_slash(filename)
+            filename = _wcparse.norm_slash(filename, flags)
         if obj.match(filename):
             matches.append(filename)
     return matches

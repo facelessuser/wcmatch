@@ -79,15 +79,6 @@ def to_tuple(values):
     return (values,) if isinstance(values, (str, bytes)) else tuple(values)
 
 
-def norm_slash(name):
-    """Normalize path slashes."""
-
-    if isinstance(name, str):
-        return name.replace('/', "\\") if not is_case_sensitive() else name
-    else:
-        return name.replace(b'/', b"\\") if not is_case_sensitive() else name
-
-
 def norm_pattern(pattern, normalize, is_raw_chars):
     r"""
     Normalize pattern.
