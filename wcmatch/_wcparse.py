@@ -356,7 +356,6 @@ class WcPathSplit(object):
     is determined by a trailing OS separator on the part.
 
     Example:
-
         "**/this/is_literal/*magic?/@(magic|part)"
 
         Would  become:
@@ -367,6 +366,7 @@ class WcPathSplit(object):
             ["*magic?", True, True],
             ["@(magic|part)", True, True]
         ]
+
     """
 
     def __init__(self, pattern, flags):

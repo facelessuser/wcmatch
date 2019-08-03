@@ -442,7 +442,7 @@ When using `FORCEWIN`, [`FORCECASE`](#globforcecase) will be ignored as paths on
 If `FORCEWIN` is used along side [`FORCEUNIX`](#globforceunix), both will be ignored.
 
 !!! new "New 4.2.0"
-    `FORCEWIN` is inew in 4.2.0.
+    `FORCEWIN` is new in 4.2.0.
 
 #### `glob.FORCEUNIX, glob.U` {: #globforceunix}
 
@@ -453,7 +453,7 @@ When using `FORCEUNIX`, the paths are assumed to be case sensitive, but you can 
 If `FORCEUNIX` is used along side [`FORCEWIN`](#globforcewin), both will be ignored.
 
 !!! new "New 4.2.0"
-    `FORCEUNIX` is inew in 4.2.0.
+    `FORCEUNIX` is new in 4.2.0.
 
 --8<--
 refs.txt

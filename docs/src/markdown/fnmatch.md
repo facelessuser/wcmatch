@@ -208,7 +208,7 @@ When using `FORCEWIN`, [`FORCECASE`](#fnmatchforcecase) will be ignored as paths
 If `FORCEWIN` is used along side [`FORCEUNIX`](#fnmatchforceunix), both will be ignored.
 
 !!! new "New 4.2.0"
-    `FORCEWIN` is inew in 4.2.0.
+    `FORCEWIN` is new in 4.2.0.
 
 #### `fnmatch.FORCEUNIX, fnmatch.U` {: #fnmatchforceunix}
 
@@ -219,7 +219,7 @@ When using `FORCEUNIX`, the names are assumed to be case sensitive, but you can 
 If `FORCEUNIX` is used along side [`FORCEWIN`](#fnmatchforcewin), both will be ignored.
 
 !!! new "New 4.2.0"
-    `FORCEUNIX` is inew in 4.2.0.
+    `FORCEUNIX` is new in 4.2.0.
 
 --8<--
 refs.txt

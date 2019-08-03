@@ -40,6 +40,7 @@ def change_cwd(path, quiet=False):
       quiet: if False (the default), the context manager raises an exception
         on error.  Otherwise, it issues only a warning and keeps the current
         working directory the same.
+
     """
 
     saved_dir = os.getcwd()
