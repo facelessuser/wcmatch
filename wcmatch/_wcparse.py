@@ -258,8 +258,8 @@ def is_unix_style(flags):
 
     return (
         (
-            (util.platform() != "windows" or flags & FORCEUNIX) or
-            (not bool(flags & REALPATH) and get_case(flags))
+            (util.platform() != "windows") or
+            (not bool(flags & REALPATH) and (bool(flags & FORCECASE) or bool(flags & FORCEUNIX)))
         ) and
         not flags & FORCEWIN
     )

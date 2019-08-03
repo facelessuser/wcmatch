@@ -907,12 +907,11 @@ class TestGlobMatchSpecial(unittest.TestCase):
         self.assertEqual(1, len(pos))
         self.assertEqual(1, len(neg))
 
-    @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_glob_translate(self, mock__iscase_sensitive):
+    def test_glob_translate(self):
         """Test glob translation."""
 
-        mock__iscase_sensitive.return_value = True
-        _wcparse._compile.cache_clear()
+        flags = self.flags
+        flags |= glob.FORCEUNIX
 
         if util.PY37:
             value = (
@@ -943,7 +942,7 @@ class TestGlobMatchSpecial(unittest.TestCase):
             )
 
         self.assertEqual(
-            glob.translate('**/[[:ascii:]]/stuff/*', flags=self.flags),
+            glob.translate('**/[[:ascii:]]/stuff/*', flags=flags),
             value
         )
 
