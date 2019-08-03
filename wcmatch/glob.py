@@ -86,7 +86,7 @@ def _flag_transform(flags):
 
     # Enabling both cancels out
     if flags & _wcparse.FORCEUNIX and flags & _wcparse.FORCEWIN:
-        flags ^= _wcparse.FORCEWIN | _wcparse.FORCECASE
+        flags ^= _wcparse.FORCEWIN | _wcparse.FORCEUNIX
 
     # Here we force `PATHNAME`.
     flags = (flags & FLAG_MASK) | _wcparse.PATHNAME
