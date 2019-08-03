@@ -734,6 +734,9 @@ class WcParse(object):
         self.flags = flags
         self.inv_ext = 0
         self.unix = is_unix_style(self.flags)
+        print("UNIX: ", self.unix)
+        print("CASE: ", self.case_sensitive)
+        print(hex(self.flags))
         if not self.unix:
             self.win_drive_detect = self.pathname
             self.char_avoid = (ord('\\'), ord('/'), ord('.'))
