@@ -1,6 +1,9 @@
 recursive-include wcmatch *.py
 recursive-include tests *.py
 recursive-include requirements *.txt
+recursive-include docs/src/markdown *.md *.png *.gif *.html
+recursive-include docs/src/dictionary *.txt
+recursive-include docs/theme *.js *.css *.html
 recursive-exclude site *
 include setup.py
 include setup.cfg
@@ -8,3 +11,4 @@ include tox.ini
 include LICENSE.md
 include README.md
 include MANIFEST.in
+include mkdocs.yml

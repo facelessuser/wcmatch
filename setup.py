@@ -44,7 +44,7 @@ VER, DEVSTATUS = get_version()
 
 setup(
     name='wcmatch',
-    python_requires=">=3.4",
+    python_requires=">=3.5",
     version=VER,
     keywords='glob fnmatch search wildcard',
     description='Wildcard/glob file name matcher.',
@@ -62,7 +62,6 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
