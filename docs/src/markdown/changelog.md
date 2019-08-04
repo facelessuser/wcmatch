@@ -2,6 +2,7 @@
 
 ## 4.2.0
 
+- **NEW**: Drop Python 3.4 support.
 - **NEW**: Add flags `FORCEWIN` and `FORCEUNIX` to force Windows or Linux/Unix path logic on commands that do not access the file system: `translate`, `fnmatch`, `filter`, `globmatch`, `globfilter`, etc. These flags will not work with `glob`, `iglob` or with the `WcMatch` class. It also will not work when using the `REALPATH` flag with things like `fnmatch`, `filter`, `globmatch`, `globfilter`.
 - **FIX**: `glob` corner case where the first folder, if defined as a literal name (not a magic pattern), would not be treated properly if `IGNORECASE` was enabled in Linux.
 
