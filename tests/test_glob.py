@@ -40,6 +40,7 @@ def change_cwd(path, quiet=False):
       quiet: if False (the default), the context manager raises an exception
         on error.  Otherwise, it issues only a warning and keeps the current
         working directory the same.
+
     """
 
     saved_dir = os.getcwd()
@@ -969,7 +970,7 @@ class TestGlobEscapes(unittest.TestCase):
         check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_]]/', raw=True)
         check(r'\x3f', r'\?', raw=True)
 
-    @unittest.skipUnless(sys.platform == "win32", "Win32 specific test")
+    @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
     def test_escape_windows(self):
         """Test windows escapes."""
         check = self.check_escape

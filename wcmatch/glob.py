@@ -55,7 +55,10 @@ S = SPLIT = _wcparse.SPLIT
 X = MATCHBASE = _wcparse.MATCHBASE
 O = NODIR = _wcparse.NODIR
 A = NEGATEALL = _wcparse.NEGATEALL
-K = MARK = 0x10000
+W = FORCEWIN = _wcparse.FORCEWIN
+U = FORCEUNIX = _wcparse.FORCEUNIX
+
+K = MARK = 0x100000
 
 FLAG_MASK = (
     FORCECASE |
@@ -72,19 +75,33 @@ FLAG_MASK = (
     SPLIT |
     MATCHBASE |
     NODIR |
-    NEGATEALL
+    NEGATEALL |
+    FORCEWIN |
+    FORCEUNIX
 )
 
 
 def _flag_transform(flags):
     """Transform flags to glob defaults."""
 
+    # Enabling both cancels out
+    if flags & _wcparse.FORCEUNIX and flags & _wcparse.FORCEWIN:
+        flags ^= _wcparse.FORCEWIN | _wcparse.FORCEUNIX
+
     # Here we force `PATHNAME`.
     flags = (flags & FLAG_MASK) | _wcparse.PATHNAME
-    if flags & _wcparse.REALPATH and util.platform() == "windows":
-        flags |= _wcparse._FORCEWIN
-        if flags & _wcparse.FORCECASE:
-            flags ^= _wcparse.FORCECASE
+    if flags & _wcparse.REALPATH:
+        if util.platform() == "windows":
+            if flags & _wcparse.FORCEUNIX:
+                flags ^= _wcparse.FORCEUNIX
+            flags |= _wcparse.FORCEWIN
+        else:
+            if flags & _wcparse.FORCEWIN:
+                flags ^= _wcparse.FORCEWIN
+
+    if flags & _wcparse.FORCEWIN and flags & _wcparse.FORCECASE:
+        flags ^= _wcparse.FORCECASE
+
     return flags
 
 
@@ -110,7 +127,7 @@ class Glob(object):
         self.globstar = bool(flags & _wcparse.GLOBSTAR)
         self.braces = bool(flags & _wcparse.BRACE)
         self.matchbase = bool(flags & _wcparse.MATCHBASE)
-        self.case_sensitive = _wcparse.get_case(flags)
+        self.case_sensitive = _wcparse.get_case(self.flags)
         self.is_bytes = isinstance(pattern[0], bytes)
         self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
         self.empty = b'' if self.is_bytes else ''
@@ -120,7 +137,7 @@ class Glob(object):
         for s in split:
             patterns.extend(_wcparse.expand_braces(s, flags))
         self._parse_patterns(patterns)
-        if self.flags & _wcparse._FORCEWIN:
+        if self.flags & _wcparse.FORCEWIN:
             self.sep = b'\\' if self.is_bytes else '\\'
         else:
             self.sep = b'/' if self.is_bytes else '/'
@@ -148,7 +165,7 @@ class Glob(object):
 
         if self.nodir:
             ptype = _wcparse.BYTES if self.is_bytes else _wcparse.UNICODE
-            nodir = _wcparse.RE_WIN_NO_DIR[ptype] if self.flags & _wcparse._FORCEWIN else _wcparse.RE_NO_DIR[ptype]
+            nodir = _wcparse.RE_WIN_NO_DIR[ptype] if self.flags & _wcparse.FORCEWIN else _wcparse.RE_NO_DIR[ptype]
             self.npatterns.append(nodir)
 
     def _is_hidden(self, name):
@@ -399,7 +416,8 @@ class Glob(object):
 
                     curdir = this[0]
 
-                    if not os.path.lexists(curdir):
+                    # Abort if we cannot find the drive, or if current directory is empty
+                    if not curdir or (this.is_drive and not os.path.lexists(curdir)):
                         return
 
                     # Make sure case matches, but running case insensitive
@@ -420,11 +438,11 @@ class Glob(object):
                                 rest = pattern[1:]
                                 if rest:
                                     this = rest.pop(0)
-                                    for match, is_dir in self._glob(curdir, this, rest):
+                                    for match, is_dir in self._glob(start, this, rest):
                                         if not self._is_excluded(match, is_dir):
                                             yield self.format_path(match, is_dir, dir_only)
-                                elif not self._is_excluded(curdir, is_dir):
-                                    yield self.format_path(curdir, is_dir, dir_only)
+                                elif not self._is_excluded(start, is_dir):
+                                    yield self.format_path(start, is_dir, dir_only)
                     else:
                         # Return the file(s) and finish.
                         for match, is_dir in results:
@@ -475,7 +493,7 @@ def globmatch(filename, patterns, *, flags=0):
 
     flags = _flag_transform(flags)
     if not _wcparse.is_unix_style(flags):
-        filename = util.norm_slash(filename)
+        filename = _wcparse.norm_slash(filename, flags)
     return _wcparse.compile(_wcparse.split(patterns, flags), flags).match(filename)
 
 
@@ -490,7 +508,7 @@ def globfilter(filenames, patterns, *, flags=0):
 
     for filename in filenames:
         if not unix:
-            filename = util.norm_slash(filename)
+            filename = _wcparse.norm_slash(filename, flags)
         if obj.match(filename):
             matches.append(filename)
     return matches

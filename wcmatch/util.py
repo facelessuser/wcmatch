@@ -4,14 +4,12 @@ import sys
 import os
 import stat
 import re
-import ctypes
 import unicodedata
 from functools import wraps
 import warnings
 
 PY37 = (3, 7) <= sys.version_info
 PY36 = (3, 6) <= sys.version_info
-PY35 = (3, 5) <= sys.version_info
 
 CASE_FS = os.path.normcase('A') != os.path.normcase('a')
 
@@ -77,15 +75,6 @@ def to_tuple(values):
     """Combine values."""
 
     return (values,) if isinstance(values, (str, bytes)) else tuple(values)
-
-
-def norm_slash(name):
-    """Normalize path slashes."""
-
-    if isinstance(name, str):
-        return name.replace('/', "\\") if not is_case_sensitive() else name
-    else:
-        return name.replace(b'/', b"\\") if not is_case_sensitive() else name
 
 
 def norm_pattern(pattern, normalize, is_raw_chars):
@@ -227,15 +216,8 @@ def is_hidden(path):
     elif _PLATFORM == 'windows':
         # On Windows, look for `FILE_ATTRIBUTE_HIDDEN`
         FILE_ATTRIBUTE_HIDDEN = 0x2
-        if PY35:
-            results = os.lstat(path)
-            hidden = bool(results.st_file_attributes & FILE_ATTRIBUTE_HIDDEN)
-        else:
-            if isinstance(path, bytes):
-                attrs = ctypes.windll.kernel32.GetFileAttributesA(path)
-            else:
-                attrs = ctypes.windll.kernel32.GetFileAttributesW(path)
-            hidden = attrs != -1 and attrs & FILE_ATTRIBUTE_HIDDEN
+        results = os.lstat(path)
+        hidden = bool(results.st_file_attributes & FILE_ATTRIBUTE_HIDDEN)
     elif _PLATFORM == "osx":  # pragma: no cover
         # On macOS, look for `UF_HIDDEN`
         results = os.lstat(path)

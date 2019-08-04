@@ -89,11 +89,12 @@ SPLIT = 0x1000
 MATCHBASE = 0x2000
 NODIR = 0x4000
 NEGATEALL = 0x8000
+FORCEWIN = 0x10000
+FORCEUNIX = 0x20000
 
 # Internal flag
-_FORCEWIN = 0x100000000  # Forces Windows behavior (used to not assume Unix/Linux because of `FORCECASE` on Windows).
-_TRANSLATE = 0x200000000  # Lets us know we are performing a translation, and we just want the regex.
-_ANCHOR = 0x400000000  # The pattern, if it starts with a slash, is anchored to the working directory; strip the slash.
+_TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
+_ANCHOR = 0x200000000  # The pattern, if it starts with a slash, is anchored to the working directory; strip the slash.
 
 FLAG_MASK = (
     FORCECASE |
@@ -111,7 +112,8 @@ FLAG_MASK = (
     MATCHBASE |
     NODIR |
     NEGATEALL |
-    _FORCEWIN |
+    FORCEWIN |
+    FORCEUNIX |
     _TRANSLATE |
     _ANCHOR
 )
@@ -218,11 +220,32 @@ def expand_braces(patterns, flags):
             yield p
 
 
+def norm_slash(name, flags):
+    """Normalize path slashes."""
+
+    if isinstance(name, str):
+        return name.replace('/', "\\") if not is_case_sensitive(flags) else name
+    else:
+        return name.replace(b'/', b"\\") if not is_case_sensitive(flags) else name
+
+
+def is_case_sensitive(flags):
+    """Is case sensitive."""
+
+    if bool(flags & FORCEWIN):
+        case_sensitive = False
+    elif bool(flags & FORCEUNIX):
+        case_sensitive = True
+    else:
+        case_sensitive = util.is_case_sensitive()
+    return case_sensitive
+
+
 def get_case(flags):
     """Parse flags for case sensitivity settings."""
 
     if not bool(flags & CASE_FLAGS):
-        case_sensitive = util.is_case_sensitive()
+        case_sensitive = is_case_sensitive(flags)
     elif flags & FORCECASE:
         case_sensitive = True
     else:
@@ -233,7 +256,13 @@ def get_case(flags):
 def is_unix_style(flags):
     """Check if we should use Unix style."""
 
-    return (util.platform() != "windows" or (not bool(flags & REALPATH) and get_case(flags))) and not flags & _FORCEWIN
+    return (
+        (
+            (util.platform() != "windows") or
+            (not bool(flags & REALPATH) and (bool(flags & FORCECASE) or bool(flags & FORCEUNIX)))
+        ) and
+        not flags & FORCEWIN
+    )
 
 
 def translate(patterns, flags):
@@ -327,7 +356,6 @@ class WcPathSplit(object):
     is determined by a trailing OS separator on the part.
 
     Example:
-
         "**/this/is_literal/*magic?/@(magic|part)"
 
         Would  become:
@@ -338,6 +366,7 @@ class WcPathSplit(object):
             ["*magic?", True, True],
             ["@(magic|part)", True, True]
         ]
+
     """
 
     def __init__(self, pattern, flags):

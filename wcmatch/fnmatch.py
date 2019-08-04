@@ -41,6 +41,8 @@ E = EXTMATCH = _wcparse.EXTMATCH
 B = BRACE = _wcparse.BRACE
 S = SPLIT = _wcparse.SPLIT
 A = NEGATEALL = _wcparse.NEGATEALL
+W = FORCEWIN = _wcparse.FORCEWIN
+U = FORCEUNIX = _wcparse.FORCEUNIX
 
 FLAG_MASK = (
     FORCECASE |
@@ -52,12 +54,23 @@ FLAG_MASK = (
     EXTMATCH |
     BRACE |
     SPLIT |
-    NEGATEALL
+    NEGATEALL |
+    FORCEWIN |
+    FORCEUNIX
 )
 
 
 def _flag_transform(flags):
     """Transform flags to glob defaults."""
+
+    # Enabling both cancels out
+    if flags & _wcparse.FORCEUNIX and flags & _wcparse.FORCEWIN:
+        flags ^= _wcparse.FORCEWIN | _wcparse.FORCEUNIX
+
+    # Force ignore case if Windows
+    if flags & _wcparse.FORCEWIN and flags & _wcparse.FORCECASE:
+        flags ^= _wcparse.FORCECASE
+        flags |= _wcparse.IGNORECASE
 
     return (flags & FLAG_MASK)
 
@@ -86,7 +99,7 @@ def fnmatch(filename, patterns, *, flags=0):
 
     flags = _flag_transform(flags)
     if not _wcparse.is_unix_style(flags):
-        filename = util.norm_slash(filename)
+        filename = _wcparse.norm_slash(filename, flags)
     return _wcparse.compile(_wcparse.split(patterns, flags), flags).match(filename)
 
 
@@ -101,7 +114,7 @@ def filter(filenames, patterns, *, flags=0):  # noqa A001
 
     for filename in filenames:
         if not unix:
-            filename = util.norm_slash(filename)
+            filename = _wcparse.norm_slash(filename, flags)
         if obj.match(filename):
             matches.append(filename)
     return matches

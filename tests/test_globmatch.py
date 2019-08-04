@@ -2,8 +2,8 @@
 """Tests for `globmatch`."""
 import unittest
 import pytest
-import mock
 import os
+import sys
 import wcmatch.glob as glob
 import wcmatch._wcparse as _wcparse
 import wcmatch.util as util
@@ -249,6 +249,8 @@ class TestGlobFilter:
         ['[abc-]', ['-'], 0, ['-']],
         ['\\', ['\\'], 0, ['\\']],
         ['[\\\\]', (['\\'] if util.is_case_sensitive() else []), 0, ['\\']],
+        ['[\\\\]', ['\\'], glob.U, ['\\']],
+        ['[\\\\]', [], glob.W, ['\\']],
         ['[[]', ['['], 0, ['[']],
         ['[', ['['], 0, ['[']],
         ['[*', ['[abc'], 0, ['[abc']],
@@ -345,6 +347,18 @@ class TestGlobFilter:
             '+(a|*\\|c\\\\|d\\\\\\|e\\\\\\\\|f\\\\\\\\\\|g',
             (['+(a|b\\|c\\|d\\|e\\\\|f\\\\|g'] if util.is_case_sensitive() else []),
             0,
+            ['+(a|b\\|c\\|d\\|e\\\\|f\\\\|g', 'a', 'b\\c']
+        ],
+        [
+            '+(a|*\\|c\\\\|d\\\\\\|e\\\\\\\\|f\\\\\\\\\\|g',
+            ['+(a|b\\|c\\|d\\|e\\\\|f\\\\|g'],
+            glob.U,
+            ['+(a|b\\|c\\|d\\|e\\\\|f\\\\|g', 'a', 'b\\c']
+        ],
+        [
+            '+(a|*\\|c\\\\|d\\\\\\|e\\\\\\\\|f\\\\\\\\\\|g',
+            [],
+            glob.W,
             ['+(a|b\\|c\\|d\\|e\\\\|f\\\\|g', 'a', 'b\\c']
         ],
 
@@ -457,6 +471,8 @@ class TestGlobFilter:
             ]
         ),
         ['**\\', [] if util.is_case_sensitive() else ['a/b/c/', 'd/e/f/', 'a/e/c/']],
+        ['**\\', [], glob.U],
+        ['**\\', ['a/b/c/', 'd/e/f/', 'a/e/c/'], glob.W],
 
         # Invalid `extglob` groups
         GlobFiles(
@@ -465,6 +481,8 @@ class TestGlobFilter:
             ]
         ),
         ['@([test', ['@([test'] if util.is_case_sensitive() else ['@([test', '@([test\\']],
+        ['@([test', ['@([test'], glob.U],
+        ['@([test', ['@([test', '@([test\\'], glob.W],
         ['@([test\\', ['@([test\\']],
         ['@(test\\', ['@(test\\']],
         ['@(test[)', ['test[']],
@@ -578,7 +596,7 @@ class TestGlobFilter:
         flags = glob._flag_transform(flags)
         unix = _wcparse.is_unix_style(flags)
 
-        return [(util.norm_slash(x) if not unix else x) for x in files]
+        return [(_wcparse.norm_slash(x, flags) if not unix else x) for x in files]
 
     @staticmethod
     def assert_equal(a, b):
@@ -778,14 +796,14 @@ class TestGlobMatchSpecial(unittest.TestCase):
     def test_windows_drives(self):
         """Test windows drives."""
 
-        if util.is_case_sensitive():
-            return
+        flags = self.flags
+        flags |= glob.FORCEWIN
 
         self.assertTrue(
             glob.globmatch(
                 '//?/c:/somepath/to/match/file.txt',
                 '//?/c:/**/*.txt',
-                flags=self.flags
+                flags=flags
             )
         )
 
@@ -793,80 +811,79 @@ class TestGlobMatchSpecial(unittest.TestCase):
             glob.globmatch(
                 'c:/somepath/to/match/file.txt',
                 'c:/**/*.txt',
-                flags=self.flags
+                flags=flags
             )
         )
 
-    @mock.patch('wcmatch.util.platform')
-    @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_glob_parsing_win(self, mock__iscase_sensitive, mock_platform):
+    def test_glob_parsing_win(self):
         """Test windows style glob parsing."""
 
-        mock_platform.return_value = "windows"
-        mock__iscase_sensitive.return_value = False
+        flags = self.flags
+        flags |= glob.FORCEWIN
+
         _wcparse._compile.cache_clear()
 
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/named/file/test.py',
                 '**/named/file/*.py',
-                flags=self.flags
+                flags=flags
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na[/]med/file/test.py',
                 '**/na[/]med/file/*.py',
-                flags=self.flags
+                flags=flags
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na[/]med\\/file/test.py',
                 '**/na[/]med\\/file/*.py',
-                flags=self.flags
+                flags=flags
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na[\\]med/file/test.py',
                 r'**/na[\\]med/file/*.py',
-                flags=self.flags | glob.R
+                flags=flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some\\name\\with\\na[\\]med\\file\\test.py',
                 r'**/na[\\]med/file/*.py',
-                flags=self.flags | glob.R
+                flags=flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some\\name\\with\\na[\\]med\\file*.py',
                 r'**\\na[\\]med\\file\*.py',
-                flags=self.flags | glob.R
+                flags=flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some\\name\\with\\na[\\]med\\file\\test.py',
                 r'**\\na[\\]m\ed\\file\\*.py',
-                flags=self.flags | glob.R
+                flags=flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some\\name\\with\\na[\\]med\\\\file\\test.py',
                 r'**\\na[\\]m\ed\\/file\\*.py',
-                flags=self.flags | glob.R
+                flags=flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some\\name\\with\\na[\\\\]med\\\\file\\test.py',
                 r'**\\na[\/]m\ed\/file\\*.py',
-                flags=self.flags | glob.R
+                flags=flags | glob.R
             )
         )
 
@@ -889,12 +906,11 @@ class TestGlobMatchSpecial(unittest.TestCase):
         self.assertEqual(1, len(pos))
         self.assertEqual(1, len(neg))
 
-    @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_glob_translate(self, mock__iscase_sensitive):
+    def test_glob_translate(self):
         """Test glob translation."""
 
-        mock__iscase_sensitive.return_value = True
-        _wcparse._compile.cache_clear()
+        flags = self.flags
+        flags |= glob.FORCEUNIX
 
         if util.PY37:
             value = (
@@ -925,50 +941,49 @@ class TestGlobMatchSpecial(unittest.TestCase):
             )
 
         self.assertEqual(
-            glob.translate('**/[[:ascii:]]/stuff/*', flags=self.flags),
+            glob.translate('**/[[:ascii:]]/stuff/*', flags=flags),
             value
         )
 
-    @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_glob_parsing_nix(self, mock__iscase_sensitive):
+    def test_glob_parsing_nix(self):
         """Test wildcard parsing."""
 
-        mock__iscase_sensitive.return_value = True
-        _wcparse._compile.cache_clear()
+        flags = self.flags
+        flags |= glob.FORCEUNIX
 
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/named/file/test.py',
                 '**/named/file/*.py',
-                flags=self.flags
+                flags=flags
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na[/]med/file/test.py',
                 '**/na[/]med/file/*.py',
-                flags=self.flags
+                flags=flags
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na[/]med\\/file/test.py',
                 '**/na[/]med\\/file/*.py',
-                flags=self.flags
+                flags=flags
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na\\med/file/test.py',
                 r'**/na[\\]med/file/*.py',
-                flags=self.flags | glob.R
+                flags=flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na[\\/]med\\/file/test.py',
                 r'**/na[\/]med\/file/*.py',
-                flags=self.flags | glob.R
+                flags=flags | glob.R
             )
         )
 
@@ -1262,11 +1277,35 @@ class TestGlobMatchSpecial(unittest.TestCase):
             )
         )
 
+    @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
     def test_glob_match_real_ignore_forcecase(self):
         """Ignore `FORCECASE` when using `globmatch` real."""
 
-        if util.platform() == "windows":
-            self.assertTrue(glob.globmatch('DOCS', '**/docs/**', flags=self.flags | glob.REALPATH | glob.FORCECASE))
+        self.assertTrue(glob.globmatch('docs/', '**/DOCS/**', flags=self.flags | glob.REALPATH | glob.FORCECASE))
+
+    @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
+    def test_glob_match_real_ignore_forceunix(self):
+        """Ignore `FORCEUNIX` when using `globmatch` real."""
+
+        self.assertTrue(glob.globmatch('docs/', '**/DOCS/**', flags=self.flags | glob.REALPATH | glob.FORCEUNIX))
+
+    @unittest.skipUnless(not sys.platform.startswith('win'), "Non Windows test")
+    def test_glob_match_real_ignore_forcewin(self):
+        """Ignore `FORCEWIN` when using `globmatch` real."""
+
+        self.assertFalse(glob.globmatch('docs/', '**/DOCS/**', flags=self.flags | glob.REALPATH | glob.FORCEWIN))
+        self.assertTrue(
+            glob.globmatch('docs/', '**/DOCS/**', flags=self.flags | glob.REALPATH | glob.FORCEWIN | glob.I)
+        )
+
+    def test_glob_match_ignore_forcewin_forceunix(self):
+        """Ignore `FORCEUNIX` and `FORCEWIN` when both are used."""
+
+        if sys.platform.startswith('win'):
+            self.assertTrue(glob.globmatch('docs/', '**/DOCS/**', flags=self.flags | glob.FORCEWIN | glob.FORCEUNIX))
+        else:
+            self.assertFalse(glob.globmatch('docs/', '**/DOCS/**', flags=self.flags | glob.FORCEWIN | glob.FORCEUNIX))
+            self.assertTrue(glob.globmatch('docs/', '**/docs/**', flags=self.flags | glob.FORCEWIN | glob.FORCEUNIX))
 
 
 @skip_unless_symlink
