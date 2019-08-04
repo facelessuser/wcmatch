@@ -1281,22 +1281,31 @@ class TestGlobMatchSpecial(unittest.TestCase):
     def test_glob_match_real_ignore_forcecase(self):
         """Ignore `FORCECASE` when using `globmatch` real."""
 
-        self.assertTrue(glob.globmatch('DOCS', '**/docs/**', flags=self.flags | glob.REALPATH | glob.FORCECASE))
+        self.assertTrue(glob.globmatch('docs/', '**/DOCS/**', flags=self.flags | glob.REALPATH | glob.FORCECASE))
 
     @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
     def test_glob_match_real_ignore_forceunix(self):
         """Ignore `FORCEUNIX` when using `globmatch` real."""
 
-        self.assertTrue(glob.globmatch('DOCS', '**/docs/**', flags=self.flags | glob.REALPATH | glob.FORCEUNIX))
+        self.assertTrue(glob.globmatch('docs/', '**/DOCS/**', flags=self.flags | glob.REALPATH | glob.FORCEUNIX))
 
     @unittest.skipUnless(not sys.platform.startswith('win'), "Non Windows test")
     def test_glob_match_real_ignore_forcewin(self):
-        """Ignore `FORCEUNIX` when using `globmatch` real."""
+        """Ignore `FORCEWIN` when using `globmatch` real."""
 
-        self.assertFalse(glob.globmatch('DOCS', '**/docs/**', flags=self.flags | glob.REALPATH | glob.FORCEWIN))
+        self.assertFalse(glob.globmatch('docs/', '**/DOCS/**', flags=self.flags | glob.REALPATH | glob.FORCEWIN))
         self.assertTrue(
-            glob.globmatch('docs', '**/DOCS/**', flags=self.flags | glob.REALPATH | glob.FORCEWIN | glob.I)
+            glob.globmatch('docs/', '**/DOCS/**', flags=self.flags | glob.REALPATH | glob.FORCEWIN | glob.I)
         )
+
+    def test_glob_match_ignore_forcewin_forceunix(self):
+        """Ignore `FORCEUNIX` and `FORCEWIN` when both are used."""
+
+        if sys.platform.startswith('win'):
+            self.assertTrue(glob.globmatch('docs/', '**/DOCS/**', flags=self.flags | glob.FORCEWIN | glob.FORCEUNIX))
+        else:
+            self.assertFalse(glob.globmatch('docs/', '**/DOCS/**', flags=self.flags | glob.FORCEWIN | glob.FORCEUNIX))
+            self.assertTrue(glob.globmatch('docs/', '**/docs/**', flags=self.flags | glob.FORCEWIN | glob.FORCEUNIX))
 
 
 @skip_unless_symlink
