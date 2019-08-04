@@ -2,7 +2,6 @@
 """Tests for `globmatch`."""
 import unittest
 import pytest
-import mock
 import os
 import sys
 import wcmatch.glob as glob
