@@ -289,7 +289,7 @@ True
 
 On Windows, `FORCECASE` will also force paths to be treated like Linux/Unix paths in [`globmatch`](#globglobmatch) and [`globfilter`](#globfilter), but only when [`REALPATH`](#globrealpath) is not enabled. `iglob`, `glob`, and cases when `REALPATH` is enabled must normalize paths and use Windows logic as these operations are performed on the current file system of the host machine. File system operations should not enable `FORCECASE` on Windows as it provides no meaningful results. But, if you wish to evaluate Linux/Unix paths on a Windows machine, without touching the file system, then `FORCECASE` might be useful.
 
-Moving forward, it is recommended to use [`FORCEUNIX`](#globforceunix) if the desire is to force Linux/Unix style logic. It is possible that in the future, Windows may simply ignore this flag.
+It is recommended to use [`FORCEUNIX`](#globforceunix) if the desire is to force Linux/Unix style logic. It is more intuitive when reading the code. Currently, Windows is the only system that is treated case insensitively by default.
 
 #### `glob.IGNORECASE, glob.I` {: #globignorecase}
 

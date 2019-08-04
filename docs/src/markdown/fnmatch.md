@@ -138,8 +138,8 @@ def translate(patterns, *, flags=0):
 
 `FORCECASE` forces case sensitivity. `FORCECASE` has higher priority than [`IGNORECASE`](#fnmatchignorecase).
 
-On Windows, this will force paths to be treated like Linux/Unix paths, and slashes will not be normalized. In general,
-it is recommended to use [`FORCEUNIX`](#fnmatchforceunix) if the desire is to force Linux/Unix style logic. It is possible that in the future, Windows may simply ignore this flag.
+On Windows, this will force paths to be treated like Linux/Unix paths, and slashes will not be normalized. It is recommended to use [`FORCEUNIX`](#fnmatchforceunix) if the desire is to force Linux/Unix style logic. It is more intuitive when reading the code. Currently, Windows is the only system that is treated case insensitively by default.
+
 
 #### `fnmatch.IGNORECASE, fnmatch.I` {: #fnmatchignorecase}
 
