@@ -30,8 +30,8 @@ from . import util
 __all__ = (
     "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
-    "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR",
-    "F", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A",
+    "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX",
+    "F", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U",
     "iglob", "glob", "globsplit", "globmatch", "globfilter", "escape"
 )
 
