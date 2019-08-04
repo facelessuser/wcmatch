@@ -1296,7 +1296,7 @@ class TestGlobMatchSpecial(unittest.TestCase):
 
         self.assertFalse(glob.globmatch('DOCS', '**/docs/**', flags=self.flags | glob.REALPATH | glob.FORCEWIN))
         self.assertTrue(
-            glob.globmatch('DOCS', '**/docs/**', flags=self.flags | glob.REALPATH | glob.FORCEWIN | glob.I)
+            glob.globmatch('docs', '**/DOCS/**', flags=self.flags | glob.REALPATH | glob.FORCEWIN | glob.I)
         )
 
 
