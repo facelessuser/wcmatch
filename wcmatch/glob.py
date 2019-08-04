@@ -438,11 +438,11 @@ class Glob(object):
                                 rest = pattern[1:]
                                 if rest:
                                     this = rest.pop(0)
-                                    for match, is_dir in self._glob(curdir, this, rest):
+                                    for match, is_dir in self._glob(start, this, rest):
                                         if not self._is_excluded(match, is_dir):
                                             yield self.format_path(match, is_dir, dir_only)
-                                elif not self._is_excluded(curdir, is_dir):
-                                    yield self.format_path(curdir, is_dir, dir_only)
+                                elif not self._is_excluded(start, is_dir):
+                                    yield self.format_path(start, is_dir, dir_only)
                     else:
                         # Return the file(s) and finish.
                         for match, is_dir in results:
