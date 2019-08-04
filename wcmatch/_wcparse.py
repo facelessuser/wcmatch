@@ -180,6 +180,8 @@ _NO_WIN_ROOT = r'(?!(?:[\\/]|[a-zA-Z]:))'
 # Restrict directories
 _NO_NIX_DIR = r'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$'
 _NO_WIN_DIR = r'^(?:.*?(?:[\\/]\.{1,2}/*|[\\/])|\.{1,2}[\\/]*)$'
+_NO_NIX_DIR_BYTES = rb'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$'
+_NO_WIN_DIR_BYTES = rb'^(?:.*?(?:[\\/]\.{1,2}/*|[\\/])|\.{1,2}[\\/]*)$'
 
 
 class InvPlaceholder(str):
@@ -283,16 +285,15 @@ def translate(patterns, flags):
 
     if patterns and negative and not positive:
         if flags & NEGATEALL:
-            default = '**'
-            if isinstance(patterns[0], bytes):
-                default = os.fsencode(default)
+            default = b'**' if isinstance(patterns[0], bytes) else '**'
             positive.append(WcParse(default, flags | (GLOBSTAR if flags & PATHNAME else 0)).parse())
 
     if patterns and flags & NODIR:
         unix = is_unix_style(flags)
-        exclude = _NO_NIX_DIR if unix else _NO_WIN_DIR
         if isinstance(patterns[0], bytes):
-            exclude = os.fsencode(exclude)
+            exclude = _NO_NIX_DIR_BYTES if unix else _NO_WIN_DIR_BYTES
+        else:
+            exclude = _NO_NIX_DIR if unix else _NO_WIN_DIR
         negative.append(exclude)
 
     return positive, negative
