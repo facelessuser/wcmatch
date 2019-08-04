@@ -416,7 +416,8 @@ class Glob(object):
 
                     curdir = this[0]
 
-                    if not os.path.lexists(curdir):
+                    # Abort if we cannot find the drive, or if curdir is empty
+                    if not curdir or (this.is_drive and not os.path.lexists(curdir)):
                         return
 
                     # Make sure case matches, but running case insensitive
