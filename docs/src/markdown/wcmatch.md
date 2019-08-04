@@ -277,6 +277,8 @@ is called on every new `match` call.
 
 `FORCECASE` forces cased searches. `FORCECASE` has higher priority than [`IGNORECASE`](#wcmatchignorecase). This does **not** affect path normalization. All paths are normalized for the host as it is required to properly access the file system.
 
+`FORCECASE` does not apply to Windows systems.
+
 #### `wcmatch.IGNORECASE, wcmatch.I` {: #wcmatchignorecase}
 
 `IGNORECASE` forces case insensitive searches. `FORCECASE` has higher priority than [`IGNORECASE`](#wcmatchignorecase).

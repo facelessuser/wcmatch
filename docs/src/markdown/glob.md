@@ -289,7 +289,7 @@ True
 
 On Windows, `FORCECASE` will also force paths to be treated like Linux/Unix paths in [`globmatch`](#globglobmatch) and [`globfilter`](#globfilter), but only when [`REALPATH`](#globrealpath) is not enabled. `iglob`, `glob`, and cases when `REALPATH` is enabled must normalize paths and use Windows logic as these operations are performed on the current file system of the host machine. File system operations should not enable `FORCECASE` on Windows as it provides no meaningful results. But, if you wish to evaluate Linux/Unix paths on a Windows machine, without touching the file system, then `FORCECASE` might be useful.
 
-It is recommended to use [`FORCEUNIX`](#globforceunix) if the desire is to force Linux/Unix style logic. It is more intuitive when reading the code. Currently, Windows is the only system that is treated case insensitively by default.
+It is recommended to use [`FORCEUNIX`](#globforceunix) if the desire is to force Linux/Unix style logic. It is more intuitive when reading the code and can allow combinations with `IGNORECASE` if a case insensitive Linux/Unix style is preferred. Currently, Windows is the only system that is treated case insensitively by default.
 
 #### `glob.IGNORECASE, glob.I` {: #globignorecase}
 
@@ -435,7 +435,7 @@ from wcmatch import glob
 
 #### `glob.FORCEWIN, glob.W` {: #globforcewin}
 
-`FORCEWIN` will force Windows path and case logic to be used on Linux/Unix systems. This is great if you need to match Windows specific paths on a Linux/Unix system. This will only work on commands that do not access the file system: `translate`, `globmatch`, `globfilter`, etc. These flags will not work with `glob` or `iglob`. It also will not work when using the [`REALPATH`](#globrealpath) flag with things like `globmatch` and `globfilter`.
+`FORCEWIN` will force Windows path and case logic to be used on Linux/Unix systems. It will also cause slashes to be normalized and Windows drive syntax to be handled special. This is great if you need to match Windows specific paths on a Linux/Unix system. This will only work on commands that do not access the file system: `translate`, `globmatch`, `globfilter`, etc. These flags will not work with `glob` or `iglob`. It also will not work when using the [`REALPATH`](#globrealpath) flag with things like `globmatch` and `globfilter`.
 
 When using `FORCEWIN`, [`FORCECASE`](#globforcecase) will be ignored as paths on Windows are not case sensitive.
 

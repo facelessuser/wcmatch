@@ -138,8 +138,7 @@ def translate(patterns, *, flags=0):
 
 `FORCECASE` forces case sensitivity. `FORCECASE` has higher priority than [`IGNORECASE`](#fnmatchignorecase).
 
-On Windows, this will force paths to be treated like Linux/Unix paths, and slashes will not be normalized. It is recommended to use [`FORCEUNIX`](#fnmatchforceunix) if the desire is to force Linux/Unix style logic. It is more intuitive when reading the code. Currently, Windows is the only system that is treated case insensitively by default.
-
+On Windows, this will force names to be treated like Linux/Unix names, and slashes will not be normalized. It is recommended to use [`FORCEUNIX`](#fnmatchforceunix) if the desire is to force Linux/Unix style logic. It is more intuitive when reading the code and can allow combinations with `IGNORECASE` if a case insensitive Linux/Unix style is preferred. Currently, Windows is the only system that is treated case insensitively by default.
 
 #### `fnmatch.IGNORECASE, fnmatch.I` {: #fnmatchignorecase}
 
@@ -201,7 +200,7 @@ True
 
 #### `fnmatch.FORCEWIN, fnmatch.W` {: #fnmatchforcewin}
 
-`FORCEWIN` will force Windows name and case logic to be used on Linux/Unix systems. This is great if you need to match Windows specific names on a Linux/Unix system.
+`FORCEWIN` will force Windows name and case logic to be used on Linux/Unix systems. It will also cause slashes to be normalized. This is great if you need to match Windows specific names on a Linux/Unix system.
 
 When using `FORCEWIN`, [`FORCECASE`](#fnmatchforcecase) will be ignored as paths on Windows are not case sensitive.
 
