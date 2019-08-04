@@ -4,7 +4,6 @@ import sys
 import os
 import stat
 import re
-import ctypes
 import unicodedata
 from functools import wraps
 import warnings
