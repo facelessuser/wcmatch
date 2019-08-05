@@ -26,13 +26,14 @@ from . import _wcparse
 from . import util
 
 __all__ = (
-    "FORCECASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME",
+    "CASE", "FORCECASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME",
     "EXTMATCH", "GLOBSTAR", "BRACE", "MINUSNEGATE", "SYMLINKS", "HIDDEN", "RECURSIVE",
     "MATCHBASE",
-    "F", "I", "R", "P", "E", "G", "M", "DP", "FP", "SL", "HD", "RV", "X", "B",
+    "C", "F", "I", "R", "P", "E", "G", "M", "DP", "FP", "SL", "HD", "RV", "X", "B",
     "WcMatch"
 )
 
+C = CASE = _wcparse.CASE
 F = FORCECASE = _wcparse.FORCECASE
 I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
@@ -53,6 +54,7 @@ RV = RECURSIVE = 0x1000000
 P = PATHNAME = DIRPATHNAME | FILEPATHNAME
 
 FLAG_MASK = (
+    CASE |
     FORCECASE |
     IGNORECASE |
     RAWCHARS |

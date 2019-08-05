@@ -24,13 +24,14 @@ from . import util
 from . import _wcparse
 
 __all__ = (
-    "EXTMATCH", "FORCECASE", "IGNORECASE", "RAWCHARS",
+    "CASE", "EXTMATCH", "FORCECASE", "IGNORECASE", "RAWCHARS",
     "NEGATE", "MINUSNEGATE", "DOTMATCH", "BRACE", "SPLIT",
     "NEGATEALL", "FORCEWIN", "FORCEUNIX",
-    "F", "I", "R", "N", "M", "D", "E", "S", "B", "A", "W", "U",
+    "C", "F", "I", "R", "N", "M", "D", "E", "S", "B", "A", "W", "U",
     "translate", "fnmatch", "filter", "fnsplit"
 )
 
+C = CASE = _wcparse.CASE
 F = FORCECASE = _wcparse.FORCECASE
 I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
@@ -45,6 +46,7 @@ W = FORCEWIN = _wcparse.FORCEWIN
 U = FORCEUNIX = _wcparse.FORCEUNIX
 
 FLAG_MASK = (
+    CASE |
     FORCECASE |
     IGNORECASE |
     RAWCHARS |
@@ -70,7 +72,6 @@ def _flag_transform(flags):
     # Force ignore case if Windows
     if flags & _wcparse.FORCEWIN and flags & _wcparse.FORCECASE:
         flags ^= _wcparse.FORCECASE
-        flags |= _wcparse.IGNORECASE
 
     return (flags & FLAG_MASK)
 

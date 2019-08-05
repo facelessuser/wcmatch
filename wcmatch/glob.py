@@ -28,10 +28,10 @@ from . import _wcparse
 from . import util
 
 __all__ = (
-    "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
+    "CASE", "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
     "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX",
-    "F", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U",
+    "C", "F", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U",
     "iglob", "glob", "globsplit", "globmatch", "globfilter", "escape"
 )
 
@@ -40,6 +40,7 @@ __all__ = (
 WIN = sys.platform.startswith('win')
 NO_SCANDIR_WORKAROUND = util.PY36
 
+C = CASE = _wcparse.CASE
 F = FORCECASE = _wcparse.FORCECASE
 I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
@@ -61,6 +62,7 @@ U = FORCEUNIX = _wcparse.FORCEUNIX
 K = MARK = 0x100000
 
 FLAG_MASK = (
+    CASE |
     FORCECASE |
     IGNORECASE |
     RAWCHARS |
