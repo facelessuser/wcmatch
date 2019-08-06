@@ -180,10 +180,14 @@ _EXCLA_GROUP_CLOSE = r')%s)'
 _NO_ROOT = r'(?!/)'
 _NO_WIN_ROOT = r'(?!(?:[\\/]|[a-zA-Z]:))'
 # Restrict directories
-_NO_NIX_DIR = r'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$'
-_NO_WIN_DIR = r'^(?:.*?(?:[\\/]\.{1,2}/*|[\\/])|\.{1,2}[\\/]*)$'
-_NO_NIX_DIR_BYTES = rb'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$'
-_NO_WIN_DIR_BYTES = rb'^(?:.*?(?:[\\/]\.{1,2}/*|[\\/])|\.{1,2}[\\/]*)$'
+_NO_NIX_DIR = (
+    r'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$',
+    rb'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$'
+)
+_NO_WIN_DIR = (
+    r'^(?:.*?(?:[\\/]\.{1,2}/*|[\\/])|\.{1,2}[\\/]*)$',
+    rb'^(?:.*?(?:[\\/]\.{1,2}/*|[\\/])|\.{1,2}[\\/]*)$'
+)
 
 
 class InvPlaceholder(str):
@@ -311,10 +315,8 @@ def translate(patterns, flags):
 
     if patterns and flags & NODIR:
         unix = is_unix_style(flags)
-        if isinstance(patterns[0], bytes):
-            exclude = _NO_NIX_DIR_BYTES if unix else _NO_WIN_DIR_BYTES
-        else:
-            exclude = _NO_NIX_DIR if unix else _NO_WIN_DIR
+        index = BYTES if isinstance(patterns[0], bytes) else UNICODE
+        exclude = _NO_NIX_DIR[index] if unix else _NO_WIN_DIR[index]
         negative.append(exclude)
 
     return positive, negative
