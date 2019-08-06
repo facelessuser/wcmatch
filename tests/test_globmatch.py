@@ -541,11 +541,7 @@ class TestGlobFilter:
         ['!(dir)/abc', ['directory/abc', 'folder/abc'], glob.M],
 
         # Slash exclusion
-        GlobFiles(
-            [
-                'test/test', 'test\\/test'
-            ]
-        ),
+        GlobFiles(['test/test', 'test\\/test']),
 
         # Deprecated: Force case
         ['test/test', ['test/test'], glob.F],
@@ -582,6 +578,18 @@ class TestGlobFilter:
         ['test\\/TEST', ['test\\/test'], glob.U | glob.I],
         ['TEST/test', [], glob.U],
         ['test\\/TEST', [], glob.U],
+
+        GlobFiles(['c:/some/path', '//host/share/some/path']),
+
+        # Test Windows drive and UNC host/share case sensitivity
+        ['C:/**', ['c:/some/path'], glob.W],
+        ['//HoSt/ShArE/**', ['//host/share/some/path'], glob.W],
+        ['C:/SoMe/PaTh', ['c:/some/path'], glob.W],
+        ['//HoSt/ShArE/SoMe/PaTh', ['//host/share/some/path'], glob.W],
+        ['C:/**', ['c:/some/path'], glob.W | glob.C],
+        ['//HoSt/ShArE/**', ['//host/share/some/path'], glob.W | glob.C],
+        ['C:/SoMe/PaTh', [], glob.W | glob.C],
+        ['//HoSt/ShArE/SoMe/PaTh', [], glob.W | glob.C],
 
         # Issue #24
         GlobFiles(
