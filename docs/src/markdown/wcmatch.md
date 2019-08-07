@@ -279,9 +279,22 @@ is called on every new `match` call.
 
 `FORCECASE` does not apply to Windows systems.
 
+!!! warning "Deprecated 4.3.0"
+
+    `FORCECASE` is deprecated in 4.3.0.
+
+    If you'd like to force case sensitivity, even on Windows, it is recommended to use [`CASE`](#wcmatchcase).
+
+#### `wcmatch.CASE, wcmatch.C` {: #wcmatchcase}
+
+`CASE` forces case sensitivity. `CASE` has higher priority than [`IGNORECASE`](#wcmatchignorecase).
+
+!!! new "New 4.3.0"
+    `CASE` is new in 4.3.0.
+
 #### `wcmatch.IGNORECASE, wcmatch.I` {: #wcmatchignorecase}
 
-`IGNORECASE` forces case insensitive searches. `FORCECASE` has higher priority than [`IGNORECASE`](#wcmatchignorecase).
+`IGNORECASE` forces case insensitive searches. [`CASE`](#wcmatchcase) has higher priority than `IGNORECASE`.
 
 #### `wcmatch.RAWCHARS, wcmatch.R` {: #wcmatchrawchars}
 

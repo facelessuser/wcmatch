@@ -138,11 +138,25 @@ def translate(patterns, *, flags=0):
 
 `FORCECASE` forces case sensitivity. `FORCECASE` has higher priority than [`IGNORECASE`](#fnmatchignorecase).
 
-On Windows, this will force names to be treated like Linux/Unix names, and slashes will not be normalized. It is recommended to use [`FORCEUNIX`](#fnmatchforceunix) if the desire is to force Linux/Unix style logic. It is more intuitive when reading the code and can allow combinations with `IGNORECASE` if a case insensitive Linux/Unix style is preferred. Currently, Windows is the only system that is treated case insensitively by default.
+On Windows, this will force names to be treated like Linux/Unix names, and slashes will not be normalized.
+
+!!! warning "Deprecated 4.3.0"
+    `FORCECASE` has been deprecated as of 4.3.0.
+
+    It is recommended to use [`FORCEUNIX`](#fnmatchforceunix) if the desire is to force Linux/Unix style logic. It is more intuitive when reading the code and can allow combinations with `IGNORECASE` if a case insensitive Linux/Unix style is preferred. Currently, Windows is the only system that is treated case insensitively by default.
+
+    If you'd like to force case sensitivity, even on Windows, it is recommended to use [`CASE`](#fnmatchcase). `CASE` can also be paired with the [`FORCEWIN`](#fnmatchforceunix) flag if desired.
+
+#### `fnmatch.CASE, fnmatch.C` {: #fnmatchcase}
+
+`CASE` forces case sensitivity. `CASE` has higher priority than [`IGNORECASE`](#fnmatchignorecase).
+
+!!! new "New 4.3.0"
+    `CASE` is new in 4.3.0.
 
 #### `fnmatch.IGNORECASE, fnmatch.I` {: #fnmatchignorecase}
 
-`IGNORECASE` forces case insensitivity. [`FORCECASE`](#fnmatchforcecase) has higher priority than `IGNORECASE`.
+`IGNORECASE` forces case insensitivity. [`CASE`](#fnmatchcase) has higher priority than `IGNORECASE`.
 
 #### `fnmatch.RAWCHARS, fnmatch.R` {: #fnmatchrawchars}
 
@@ -154,13 +168,13 @@ On Windows, this will force names to be treated like Linux/Unix names, and slash
 
 If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the file matches the excluded pattern. This is done with the [`NEGATEALL`](#fnmatchnegateall) flag.
 
-If used with the extended glob feature, patterns like `!(inverse|pattern)` will be mistakenly parsed as an exclusion pattern instead of as an inverse extended glob group.  See [`MINUSNEGATE`](#fnmatchminusgate) for an alternative syntax that plays nice with extended glob.
+If used with the extended match feature, patterns like `!(inverse|pattern)` will be mistakenly parsed as an exclusion pattern instead of as an inverse extended glob group.  See [`MINUSNEGATE`](#fnmatchminusgate) for an alternative syntax that plays nice with extended glob.
 
 !!! warning "Changes 4.0"
     In 4.0, `NEGATE` now requires a non-exclusion pattern to be paired with it or it will match nothing. If you really
     need something similar to the old behavior, that would assume a default inclusion pattern, you can use the [`NEGATEALL`](#fnmatchnegateall).
 
-#### `fnmatch.NEGATEALL, glob.A` {: #fnmatchnegateall}
+#### `fnmatch.NEGATEALL, fnmatch.A` {: #fnmatchnegateall}
 
 `NEGATEALL` can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the file matches the excluded pattern. Essentially, it means if you use a pattern such as `!*.md`, it will assume two patterns were given: `*` and `!*.md`, where `!*.md` is applied to the results of `*`.
 
@@ -172,7 +186,7 @@ When `MINUSNEGATE` is used with [`NEGATE`](#fnmatchnegate), exclusion patterns a
 
 #### `fnmatch.DOTMATCH, fnmatch.D` {: #fnmatchdotmatch}
 
-By default, [`glob`](#fnmatchfnmatch) and related functions will not match file or directory names that start with dot `.` unless matched with a literal dot. `DOTMATCH` allows the meta characters (such as `*`) to match dots like any other character. Dots will not be matched in `[]`, `*`, or `?`.
+By default, [`fnmatch`](#fnmatchfnmatch) and related functions will not match file or directory names that start with dot `.` unless matched with a literal dot. `DOTMATCH` allows the meta characters (such as `*`) to match dots like any other character. Dots will not be matched in `[]`, `*`, or `?`.
 
 #### `fnmatch.EXTMATCH, fnmatch.E` {: #fnmatchextmatch}
 
@@ -201,8 +215,6 @@ True
 #### `fnmatch.FORCEWIN, fnmatch.W` {: #fnmatchforcewin}
 
 `FORCEWIN` will force Windows name and case logic to be used on Linux/Unix systems. It will also cause slashes to be normalized. This is great if you need to match Windows specific names on a Linux/Unix system.
-
-When using `FORCEWIN`, [`FORCECASE`](#fnmatchforcecase) will be ignored as paths on Windows are not case sensitive.
 
 If `FORCEWIN` is used along side [`FORCEUNIX`](#fnmatchforceunix), both will be ignored.
 
