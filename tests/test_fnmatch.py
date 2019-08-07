@@ -529,3 +529,16 @@ class TestDeprecated(unittest.TestCase):
             self.assertTrue(len(w) == 1)
             self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
             self.assertTrue(patterns, ['test', 'test'])
+
+    def test_forcecase(self):
+        """Test deprecation of force case flag."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            fnmatch.translate('*', flags=fnmatch.F),
+            fnmatch.fnmatch('path', "*", flags=fnmatch.F)
+            fnmatch.filter(['path'], "*", flags=fnmatch.F)
+            self.assertEqual(len(w), 3)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))

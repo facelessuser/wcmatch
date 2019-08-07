@@ -2,6 +2,7 @@
 """Tests for `wcmatch`."""
 import unittest
 import os
+import warnings
 import wcmatch.wcmatch as wcmatch
 import shutil
 
@@ -566,3 +567,18 @@ class TestWcmatchSymlink(_TestWcmatch):
                 ['a.txt', '.hidden/a.txt']
             )
         )
+
+
+class TestDeprecated(unittest.TestCase):
+    """Test deprecated."""
+
+    def test_forcecase(self):
+        """Test deprecation of force case flag."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            wcmatch.WcMatch('', '*', None, wcmatch.FORCECASE)
+            self.assertEqual(len(w), 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))

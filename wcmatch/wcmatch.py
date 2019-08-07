@@ -104,6 +104,8 @@ class WcMatch(object):
     def _parse_flags(self, flags):
         """Parse flags."""
 
+        _wcparse.deprecate_flags(flags)
+
         self.flags = flags & FLAG_MASK
         self.flags |= _wcparse.NEGATE | _wcparse.DOTMATCH | _wcparse.NEGATEALL
         self.follow_links = bool(self.flags & SYMLINKS)

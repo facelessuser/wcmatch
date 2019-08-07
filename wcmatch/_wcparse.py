@@ -292,6 +292,17 @@ def is_unix_style(flags):
     )
 
 
+def deprecate_flags(flags):
+    """Deprecate flags."""
+
+    if flags & FORCECASE:
+        util.warn_deprecated(
+            'FORCECASE flag has been deprecated.'
+            'It is recommended to use FORCEUNIX to force Linux/Unix behavior on Windows '
+            ' and/or use CASE to force case sensitive to force case sensitivity on Windows file paths.'
+        )
+
+
 def translate(patterns, flags):
     """Translate patterns."""
 
