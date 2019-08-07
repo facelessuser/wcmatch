@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.3.0
+
+- **NEW**: Add `CASE` flag which allows for case sensitive paths on Linux, macOS, and Windows. Windows drive letters and UNC `//host-name/share-name/` portion are still treated insensitively, but all directories will be treated with case sensitivity.
+- **NEW**: With the recent addition of `CASE` and `FORCEUNIX`, `FORCECASE` is no longer needed. Deprecate `FORCECASE` which will be removed at some future point.
+
 ## 4.2.0
 
 - **NEW**: Drop Python 3.4 support.

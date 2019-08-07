@@ -541,17 +541,55 @@ class TestGlobFilter:
         ['!(dir)/abc', ['directory/abc', 'folder/abc'], glob.M],
 
         # Slash exclusion
-        GlobFiles(
-            [
-                'test/test', 'test\\/test'
-            ]
-        ),
+        GlobFiles(['test/test', 'test\\/test']),
+
+        # Deprecated: Force case
         ['test/test', ['test/test'], glob.F],
         ['test\\/test', ['test\\/test'], glob.F],
         ['@(test/test)', [], glob.F],
         [r'@(test\/test)', [], glob.F],
         ['test[/]test', [], glob.F],
         [r'test[\/]test', [], glob.F],
+
+        # Force Unix/Linux
+        ['test/test', ['test/test'], glob.U],
+        ['test\\/test', ['test\\/test'], glob.U],
+        ['@(test/test)', [], glob.U],
+        [r'@(test\/test)', [], glob.U],
+        ['test[/]test', [], glob.U],
+        [r'test[\/]test', [], glob.U],
+
+        # Force Windows
+        ['test/test', ['test/test', 'test\\/test'], glob.W],
+        ['test\\/test', ['test/test', 'test\\/test'], glob.W],
+        ['@(test/test)', [], glob.W],
+        [r'@(test\/test)', [], glob.W],
+        ['test[/]test', [], glob.W],
+        [r'test[\/]test', [], glob.W],
+
+        # Case
+        ['TEST/test', ['test/test', 'test\\/test'], glob.W],
+        ['test\\/TEST', ['test/test', 'test\\/test'], glob.W],
+        ['TEST/test', [], glob.W | glob.C],
+        ['test\\/TEST', [], glob.W | glob.C],
+        ['test/test', ['test/test', 'test\\/test'], glob.W | glob.C],
+        ['test\\/test', ['test/test', 'test\\/test'], glob.W | glob.C],
+        ['TEST/test', ['test/test'], glob.U | glob.I],
+        ['test\\/TEST', ['test\\/test'], glob.U | glob.I],
+        ['TEST/test', [], glob.U],
+        ['test\\/TEST', [], glob.U],
+
+        GlobFiles(['c:/some/path', '//host/share/some/path']),
+
+        # Test Windows drive and UNC host/share case sensitivity
+        ['C:/**', ['c:/some/path'], glob.W],
+        ['//HoSt/ShArE/**', ['//host/share/some/path'], glob.W],
+        ['C:/SoMe/PaTh', ['c:/some/path'], glob.W],
+        ['//HoSt/ShArE/SoMe/PaTh', ['//host/share/some/path'], glob.W],
+        ['C:/**', ['c:/some/path'], glob.W | glob.C],
+        ['//HoSt/ShArE/**', ['//host/share/some/path'], glob.W | glob.C],
+        ['C:/SoMe/PaTh', [], glob.W | glob.C],
+        ['//HoSt/ShArE/SoMe/PaTh', [], glob.W | glob.C],
 
         # Issue #24
         GlobFiles(

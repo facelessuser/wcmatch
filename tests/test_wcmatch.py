@@ -2,6 +2,7 @@
 """Tests for `wcmatch`."""
 import unittest
 import os
+import warnings
 import wcmatch.wcmatch as wcmatch
 import shutil
 
@@ -452,6 +453,54 @@ class TestWcmatch(_TestWcmatch):
             )
         )
 
+    def test_match_insensitive(self):
+        """Test case insensitive."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            'A.TXT', None,
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.FILEPATHNAME | wcmatch.IGNORECASE
+        )
+        self.crawl_files(walker)
+        self.assertEqual(
+            sorted(self.files),
+            self.norm_list(
+                ['a.txt']
+            )
+        )
+
+    def test_nomatch_sensitive(self):
+        """Test case sensitive does not match."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            'A.TXT', None,
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.FILEPATHNAME | wcmatch.CASE
+        )
+        self.crawl_files(walker)
+        self.assertEqual(
+            sorted(self.files),
+            self.norm_list(
+                []
+            )
+        )
+
+    def test_match_sensitive(self):
+        """Test case sensitive."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            'a.txt', None,
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.FILEPATHNAME | wcmatch.CASE
+        )
+        self.crawl_files(walker)
+        self.assertEqual(
+            sorted(self.files),
+            self.norm_list(
+                ['a.txt']
+            )
+        )
+
 
 @skip_unless_symlink
 class TestWcmatchSymlink(_TestWcmatch):
@@ -518,3 +567,18 @@ class TestWcmatchSymlink(_TestWcmatch):
                 ['a.txt', '.hidden/a.txt']
             )
         )
+
+
+class TestDeprecated(unittest.TestCase):
+    """Test deprecated."""
+
+    def test_forcecase(self):
+        """Test deprecation of force case flag."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            wcmatch.WcMatch('', '*', None, wcmatch.FORCECASE)
+            self.assertEqual(len(w), 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))

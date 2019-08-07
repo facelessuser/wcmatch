@@ -91,12 +91,14 @@ NODIR = 0x4000
 NEGATEALL = 0x8000
 FORCEWIN = 0x10000
 FORCEUNIX = 0x20000
+CASE = 0x40000
 
 # Internal flag
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
 _ANCHOR = 0x200000000  # The pattern, if it starts with a slash, is anchored to the working directory; strip the slash.
 
 FLAG_MASK = (
+    CASE |
     FORCECASE |
     IGNORECASE |
     RAWCHARS |
@@ -117,7 +119,7 @@ FLAG_MASK = (
     _TRANSLATE |
     _ANCHOR
 )
-CASE_FLAGS = FORCECASE | IGNORECASE
+CASE_FLAGS = FORCECASE | IGNORECASE | CASE
 
 # Pieces to construct search path
 
@@ -178,10 +180,14 @@ _EXCLA_GROUP_CLOSE = r')%s)'
 _NO_ROOT = r'(?!/)'
 _NO_WIN_ROOT = r'(?!(?:[\\/]|[a-zA-Z]:))'
 # Restrict directories
-_NO_NIX_DIR = r'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$'
-_NO_WIN_DIR = r'^(?:.*?(?:[\\/]\.{1,2}/*|[\\/])|\.{1,2}[\\/]*)$'
-_NO_NIX_DIR_BYTES = rb'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$'
-_NO_WIN_DIR_BYTES = rb'^(?:.*?(?:[\\/]\.{1,2}/*|[\\/])|\.{1,2}[\\/]*)$'
+_NO_NIX_DIR = (
+    r'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$',
+    rb'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$'
+)
+_NO_WIN_DIR = (
+    r'^(?:.*?(?:[\\/]\.{1,2}/*|[\\/])|\.{1,2}[\\/]*)$',
+    rb'^(?:.*?(?:[\\/]\.{1,2}/*|[\\/])|\.{1,2}[\\/]*)$'
+)
 
 
 class InvPlaceholder(str):
@@ -248,11 +254,30 @@ def get_case(flags):
 
     if not bool(flags & CASE_FLAGS):
         case_sensitive = is_case_sensitive(flags)
-    elif flags & FORCECASE:
+    elif flags & FORCECASE or flags & CASE:
         case_sensitive = True
     else:
         case_sensitive = False
     return case_sensitive
+
+
+def escape_drive(drive, case):
+    """Escape drive."""
+
+    if case and not util.PY36:
+        escaped = []
+        upper = drive.upper()
+        lower = drive.lower()
+
+        for index, u in enumerate(upper):
+            l = lower[index]
+            if u != l:
+                escaped.append('[{}{}]'.format(re.escape(l), re.escape(u)))
+            else:
+                escaped.append(re.escape(l))
+        return ''.join(escaped)
+    else:
+        return '(?i:{})'.format(re.escape(drive)) if case else re.escape(drive)
 
 
 def is_unix_style(flags):
@@ -265,6 +290,17 @@ def is_unix_style(flags):
         ) and
         not flags & FORCEWIN
     )
+
+
+def deprecate_flags(flags):
+    """Deprecate flags."""
+
+    if flags & FORCECASE:
+        util.warn_deprecated(
+            'FORCECASE flag has been deprecated.'
+            'It is recommended to use FORCEUNIX to force Linux/Unix behavior on Windows '
+            ' and/or use CASE to force case sensitive to force case sensitivity on Windows file paths.'
+        )
 
 
 def translate(patterns, flags):
@@ -290,10 +326,8 @@ def translate(patterns, flags):
 
     if patterns and flags & NODIR:
         unix = is_unix_style(flags)
-        if isinstance(patterns[0], bytes):
-            exclude = _NO_NIX_DIR_BYTES if unix else _NO_WIN_DIR_BYTES
-        else:
-            exclude = _NO_NIX_DIR if unix else _NO_WIN_DIR
+        index = BYTES if isinstance(patterns[0], bytes) else UNICODE
+        exclude = _NO_NIX_DIR[index] if unix else _NO_WIN_DIR[index]
         negative.append(exclude)
 
     return positive, negative
@@ -1258,7 +1292,7 @@ class WcParse(object):
                 if drive.endswith('\\'):
                     slash = True
                 drive = drive[:-1]
-                current.append(re.escape(drive))
+                current.append(escape_drive(drive, self.case_sensitive))
                 if slash:
                     current.append(self.get_path_sep() + _ONE_OR_MORE)
                 i.advance(m.end(0))

@@ -38,9 +38,9 @@ Pattern           | Meaning
 
 - Meta characters have no effect when inside a UNC path: `\\\\Server?\\mount*\\`.
 
-- If [`FORCECASE`](#globforcecase) or [`FORCEUNIX`](#globforceunix) are applied on a Windows system, match and filter commands that do not touch the file system will not have slashes normalized. In addition, drive letters will also not be handled. Essentially, paths will be treated as if on Linux/Unix. Commands on Windows that do touch the file system will ignore `FORCECASE` and `FORCEUNIX`. [`glob`](#globglob) and [`iglob`](#globiglob) will ignore `FORCECASE` on Windows. [`globmatch`](#globglobmatch) and [`globfilter`](#globglobfilter), will also ignore `FORCECASE` if the [`REALPATH`](#globrealpath) flag is enabled.
+- If [`FORCEUNIX`](#globforceunix) is applied on a Windows system, match and filter commands that do not touch the file system will not have slashes normalized. In addition, drive letters will also not be handled. Essentially, paths will be treated as if on Linux/Unix. Commands that do touch the file system ([`glob`](#globglob) and [`iglob`](#globiglob)) will ignore `FORCEUNIX` and [`FORCEWIN`](#globforcewin). [`globmatch`](#globglobmatch) and [`globfilter`](#globglobfilter), will also ignore `FORCEUNIX` and `FORCEWIN` if the [`REALPATH`](#globrealpath) flag is enabled.
 
-    The reverse applies when [`FORCEWIN`](#globforcewin) is used on a Linux/Unix system.
+    [`FORCEWIN`](#globforcewin) will do the opposite on a Linux/Unix system, and will force non-Windows logic on a Windows system. Like with `FORCEUNIX`, it only applies to commands that don't touch the file system.
 
 - By default, file and directory names starting with `.` are only matched with literal `.`.  The patterns `*`, `**`, `?`, and `[]` will not match a leading `.`.  To alter this behavior, you can use the [`DOTGLOB`](#globdotglob) flag, but even with `DOTGLOB` these special tokens will not match a special directory (`.` or `..`).  But when a literal `.` is used at the start of the filename, for instance in the pattern `.*`, `.` and `..` can potentially be matched.
 
@@ -289,11 +289,26 @@ True
 
 On Windows, `FORCECASE` will also force paths to be treated like Linux/Unix paths in [`globmatch`](#globglobmatch) and [`globfilter`](#globfilter), but only when [`REALPATH`](#globrealpath) is not enabled. `iglob`, `glob`, and cases when `REALPATH` is enabled must normalize paths and use Windows logic as these operations are performed on the current file system of the host machine. File system operations should not enable `FORCECASE` on Windows as it provides no meaningful results. But, if you wish to evaluate Linux/Unix paths on a Windows machine, without touching the file system, then `FORCECASE` might be useful.
 
-It is recommended to use [`FORCEUNIX`](#globforceunix) if the desire is to force Linux/Unix style logic. It is more intuitive when reading the code and can allow combinations with `IGNORECASE` if a case insensitive Linux/Unix style is preferred. Currently, Windows is the only system that is treated case insensitively by default.
+!!! warning "Deprecated 4.3.0"
+
+    `FORCECASE` is deprecated in 4.3.0.
+
+    It is recommended to use [`FORCEUNIX`](#globforceunix) if the desire is to force Linux/Unix style logic. It is more intuitive when reading the code and can allow combinations with `IGNORECASE` if a case insensitive Linux/Unix style is preferred.
+
+    If you'd like to force case sensitivity, even on Windows, it is recommended to use [`CASE`](#globcase). `CASE` can also be paired with the [`FORCEWIN`](#globforceunix) flag if desired.
+
+#### `glob.CASE, glob.C` {: #globcase}
+
+`CASE` forces case sensitivity. `CASE` has higher priority than [`IGNORECASE`](#globignorecase).
+
+On Windows, drive letters (`C:`) and UNC host/share (`//host/share`) portions of a path will still be treated case insensitively, but the rest of the path will have case sensitive logic applied.
+
+!!! new "New 4.3.0"
+    `CASE` is new in 4.3.0.
 
 #### `glob.IGNORECASE, glob.I` {: #globignorecase}
 
-`IGNORECASE` forces case insensitivity. [`FORCECASE`](#globforcecase) has higher priority than `IGNORECASE`.
+`IGNORECASE` forces case insensitivity. [`CASE`](#globcase) has higher priority than `IGNORECASE`.
 
 #### `glob.RAWCHARS, glob.R` {: #globrawchars}
 
@@ -339,7 +354,7 @@ When `MINUSNEGATE` is used with [`NEGATE`](#globnegate), exclusion patterns are 
 
 In the past, only `glob` and `iglob` operated on the filesystem, but with `REALPATH`, other functions will now operate on the filesystem as well: `globmatch` and `globfilter`.
 
-Traditionally, functions such as `globmatch` would simply match a path with regular expression and return the result. It was not concerned with whether the path existed or not. It didn't care if it was even valid for the operating system as `FORCECASE` would force Linux/Unix path logic on Windows.
+Normally, functions such as `globmatch` would simply match a path with regular expression and return the result. The functions were not concerned with whether the path existed or not. It didn't care if it was even valid for the operating system.
 
 `REALPATH` forces `globmatch` and `globfilter` to treat the string path as a real file path for the given system it is running on. It will augment the patterns used to match files and enable additional logic that the path must meet in order to match:
 
@@ -347,6 +362,8 @@ Traditionally, functions such as `globmatch` would simply match a path with regu
 - Directories that are symlinks will not be matched by `GLOBSTAR` patterns (`**`) unless the `FOLLOW` flag is enabled.
 - When presented with a pattern where the match must be a directory, but the file path being compared doesn't indicate the file is a directory with a trailing slash, the command will look at the filesystem to determine if it is a directory.
 - Paths must match in relation to the current working directory unless the pattern is constructed in a way to indicates an absolute path.
+
+Since `REALPATH` causes the file system to be referenced when matching a path, flags such as [`FORCEUNIX`](#globforceunix) and [`FORCEWIN`](#globforcewin) are not allowed with this flag and will be ignored.
 
 !!! new "NEW 3.0"
     `REALPATH` was added in 3.0.
@@ -436,8 +453,6 @@ from wcmatch import glob
 #### `glob.FORCEWIN, glob.W` {: #globforcewin}
 
 `FORCEWIN` will force Windows path and case logic to be used on Linux/Unix systems. It will also cause slashes to be normalized and Windows drive syntax to be handled special. This is great if you need to match Windows specific paths on a Linux/Unix system. This will only work on commands that do not access the file system: `translate`, `globmatch`, `globfilter`, etc. These flags will not work with `glob` or `iglob`. It also will not work when using the [`REALPATH`](#globrealpath) flag with things like `globmatch` and `globfilter`.
-
-When using `FORCEWIN`, [`FORCECASE`](#globforcecase) will be ignored as paths on Windows are not case sensitive.
 
 If `FORCEWIN` is used along side [`FORCEUNIX`](#globforceunix), both will be ignored.
 

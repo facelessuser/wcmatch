@@ -56,13 +56,30 @@ class TestFnMatch:
         ['foo*', '\nfoo', False, 0],
         ['*', '\n', True, 0],
 
-        # Force case: General
+        # Case: General
+        ['abc', 'abc', True, fnmatch.C],
+        ['abc', 'AbC', False, fnmatch.C],
+        ['AbC', 'abc', False, fnmatch.C],
+        ['AbC', 'AbC', True, fnmatch.C],
+
+        # Case and Force Unix: slash conventions
+        ['usr/bin', 'usr/bin', True, fnmatch.C | fnmatch.U],
+        ['usr/bin', 'usr\\bin', False, fnmatch.C | fnmatch.U],
+        [r'usr\\bin', 'usr/bin', False, fnmatch.C | fnmatch.U],
+        [r'usr\\bin', 'usr\\bin', True, fnmatch.C | fnmatch.U],
+
+        # Case and Force Windows: slash conventions
+        ['usr/bin', 'usr/bin', True, fnmatch.C | fnmatch.W],
+        ['usr/bin', 'usr\\bin', True, fnmatch.C | fnmatch.W],
+        [r'usr\\bin', 'usr/bin', True, fnmatch.C | fnmatch.W],
+        [r'usr\\bin', 'usr\\bin', True, fnmatch.C | fnmatch.W],
+
+        # Deprecated: Force Case
         ['abc', 'abc', True, fnmatch.F],
         ['abc', 'AbC', False, fnmatch.F],
         ['AbC', 'abc', False, fnmatch.F],
         ['AbC', 'AbC', True, fnmatch.F],
 
-        # Force case: slash conventions
         ['usr/bin', 'usr/bin', True, fnmatch.F],
         ['usr/bin', 'usr\\bin', False, fnmatch.F],
         [r'usr\\bin', 'usr/bin', False, fnmatch.F],
@@ -79,7 +96,7 @@ class TestFnMatch:
         ['AbC', 'abc', not util.is_case_sensitive(), 0],
         ['AbC', 'AbC', True, 0],
         ['abc', 'AbC', True, fnmatch.W],
-        ['abc', 'AbC', True, fnmatch.W | fnmatch.F],  # Can't force case if forcing Windows
+        ['abc', 'AbC', True, fnmatch.W | fnmatch.F],  # Deprecated: Can't force case if forcing Windows
         ['abc', 'AbC', False, fnmatch.U],
         ['abc', 'AbC', True, fnmatch.U | fnmatch.I],
         ['AbC', 'abc', not util.is_case_sensitive(), fnmatch.W | fnmatch.U],  # Can't force both, just detect system
@@ -245,7 +262,7 @@ class TestFnMatchFilter:
             0
         ],
         [r'te\st[ma]', ['testm', 'test\\3', 'testa'], ['testm', 'testa'], fnmatch.I],
-        [r'te\st[ma]', ['testm', 'test\\3', 'testa'], ['testm', 'testa'], fnmatch.F],
+        [r'te\st[ma]', ['testm', 'test\\3', 'testa'], ['testm', 'testa'], fnmatch.C],
 
         # Issue #24
         ['*.bar', ["goo.cfg", "foo.bar", "foo.bar.cfg", "foo.cfg.bar"], ["foo.bar", "foo.cfg.bar"], 0],
@@ -306,15 +323,13 @@ class TestFnMatchTranslate(unittest.TestCase):
 
         return fnmatch.translate(pattern, flags=flags | fnmatch.SPLIT)
 
-    @mock.patch('wcmatch.util.is_case_sensitive')
-    def test_split_parsing(self, mock__iscase_sensitive):
+    def test_split_parsing(self):
         """Test wildcard parsing."""
-
-        mock__iscase_sensitive.return_value = True
 
         _wcparse._compile.cache_clear()
 
-        flags = self.flags
+        flags = self.flags | fnmatch.FORCEUNIX
+
         p1, p2 = self.split_translate('*test[a-z]?|*test2[a-z]?|!test[!a-z]|!test[!-|a-z]', flags | fnmatch.N)
         if util.PY36:
             self.assertEqual(p1, [r'^(?s:(?=.).*?test[a-z].)$', r'^(?s:(?=.).*?test2[a-z].)$'])
@@ -323,7 +338,7 @@ class TestFnMatchTranslate(unittest.TestCase):
             self.assertEqual(p1, [r'(?s)^(?:(?=.).*?test[a-z].)$', r'(?s)^(?:(?=.).*?test2[a-z].)$'])
             self.assertEqual(p2, [r'(?s)^(?:test[^a-z])$', r'(?s)^(?:test[^\-\|a-z])$'])
 
-        p1, p2 = self.split_translate('test[]][!][][]', flags | fnmatch.F)
+        p1, p2 = self.split_translate('test[]][!][][]', flags | fnmatch.U | fnmatch.C)
         if util.PY36:
             self.assertEqual(p1, [r'^(?s:test[\]][^\][]\[\])$'])
             self.assertEqual(p2, [])
@@ -387,13 +402,13 @@ class TestFnMatchTranslate(unittest.TestCase):
     def test_posix_range(self):
         """Test posix range."""
 
-        p = fnmatch.translate(r'[[:ascii:]-z]', flags=self.flags | fnmatch.F)
+        p = fnmatch.translate(r'[[:ascii:]-z]', flags=self.flags | fnmatch.U | fnmatch.C)
         if util.PY36:
             self.assertEqual(p, (['^(?s:[\x00-\x7f\\-z])$'], []))
         else:
             self.assertEqual(p, (['(?s)^(?:[\x00-\x7f\\-z])$'], []))
 
-        p = fnmatch.translate(r'[a-[:ascii:]-z]', flags=self.flags | fnmatch.F)
+        p = fnmatch.translate(r'[a-[:ascii:]-z]', flags=self.flags | fnmatch.U | fnmatch.C)
         if util.PY36:
             self.assertEqual(p, (['^(?s:[a\\-\x00-\x7f\\-z])$'], []))
         else:
@@ -403,12 +418,12 @@ class TestFnMatchTranslate(unittest.TestCase):
     def test_special_escapes(self, mock__iscase_sensitive):
         """Test wildcard character notations."""
 
-        mock__iscase_sensitive.return_value = True
+        flags = self.flags | fnmatch.U
 
         _wcparse._compile.cache_clear()
 
         p1, p2 = fnmatch.translate(
-            r'test\x70\u0070\U00000070\160\N{LATIN SMALL LETTER P}', flags=self.flags | fnmatch.R
+            r'test\x70\u0070\U00000070\160\N{LATIN SMALL LETTER P}', flags=flags | fnmatch.R
         )
         if util.PY36:
             self.assertEqual(p1, [r'^(?s:testppppp)$'])
@@ -418,7 +433,7 @@ class TestFnMatchTranslate(unittest.TestCase):
             self.assertEqual(p2, [])
 
         p1, p2 = fnmatch.translate(
-            r'test[\x70][\u0070][\U00000070][\160][\N{LATIN SMALL LETTER P}]', flags=self.flags | fnmatch.R
+            r'test[\x70][\u0070][\U00000070][\160][\N{LATIN SMALL LETTER P}]', flags=flags | fnmatch.R
         )
         if util.PY36:
             self.assertEqual(p1, [r'^(?s:test[p][p][p][p][p])$'])
@@ -427,7 +442,7 @@ class TestFnMatchTranslate(unittest.TestCase):
             self.assertEqual(p1, [r'(?s)^(?:test[p][p][p][p][p])$'])
             self.assertEqual(p2, [])
 
-        p1, p2 = fnmatch.translate(r'test\t\m', flags=self.flags | fnmatch.R)
+        p1, p2 = fnmatch.translate(r'test\t\m', flags=flags | fnmatch.R)
         if util.PY36:
             self.assertEqual(p1, [r'^(?s:test\	m)$'])
             self.assertEqual(p2, [])
@@ -435,7 +450,7 @@ class TestFnMatchTranslate(unittest.TestCase):
             self.assertEqual(p1, [r'(?s)^(?:test\	m)$'])
             self.assertEqual(p2, [])
 
-        p1, p2 = fnmatch.translate(r'test[\\]test', flags=self.flags | fnmatch.R)
+        p1, p2 = fnmatch.translate(r'test[\\]test', flags=flags | fnmatch.R)
         if util.PY36:
             self.assertEqual(p1, [r'^(?s:test[\\]test)$'])
             self.assertEqual(p2, [])
@@ -443,7 +458,7 @@ class TestFnMatchTranslate(unittest.TestCase):
             self.assertEqual(p1, [r'(?s)^(?:test[\\]test)$'])
             self.assertEqual(p2, [])
 
-        p1, p2 = fnmatch.translate('test[\\', flags=self.flags)
+        p1, p2 = fnmatch.translate('test[\\', flags=flags)
         if util.PY36:
             self.assertEqual(p1, [r'^(?s:test\[\\)$'])
             self.assertEqual(p2, [])
@@ -451,7 +466,7 @@ class TestFnMatchTranslate(unittest.TestCase):
             self.assertEqual(p1, [r'(?s)^(?:test\[\\)$'])
             self.assertEqual(p2, [])
 
-        p1, p2 = fnmatch.translate(r'test\44test', flags=self.flags | fnmatch.R)
+        p1, p2 = fnmatch.translate(r'test\44test', flags=flags | fnmatch.R)
         if util.PY36:
             self.assertEqual(p1, [r'^(?s:test\$test)$'])
             self.assertEqual(p2, [])
@@ -459,7 +474,7 @@ class TestFnMatchTranslate(unittest.TestCase):
             self.assertEqual(p1, [r'(?s)^(?:test\$test)$'])
             self.assertEqual(p2, [])
 
-        p1, p2 = fnmatch.translate(r'test\44', flags=self.flags | fnmatch.R)
+        p1, p2 = fnmatch.translate(r'test\44', flags=flags | fnmatch.R)
         if util.PY36:
             self.assertEqual(p1, [r'^(?s:test\$)$'])
             self.assertEqual(p2, [])
@@ -467,7 +482,7 @@ class TestFnMatchTranslate(unittest.TestCase):
             self.assertEqual(p1, [r'(?s)^(?:test\$)$'])
             self.assertEqual(p2, [])
 
-        p1, p2 = fnmatch.translate(r'test\400', flags=self.flags | fnmatch.R)
+        p1, p2 = fnmatch.translate(r'test\400', flags=flags | fnmatch.R)
         if util.PY37:
             self.assertEqual(p1, [r'^(?s:testĀ)$'])
             self.assertEqual(p2, [])
@@ -479,13 +494,13 @@ class TestFnMatchTranslate(unittest.TestCase):
             self.assertEqual(p2, [])
 
         with pytest.raises(SyntaxError):
-            fnmatch.translate(r'test\N', flags=self.flags | fnmatch.R)
+            fnmatch.translate(r'test\N', flags=flags | fnmatch.R)
 
         with pytest.raises(SyntaxError):
-            fnmatch.translate(r'test\Nx', flags=self.flags | fnmatch.R)
+            fnmatch.translate(r'test\Nx', flags=flags | fnmatch.R)
 
         with pytest.raises(SyntaxError):
-            fnmatch.translate(r'test\N{', flags=self.flags | fnmatch.R)
+            fnmatch.translate(r'test\N{', flags=flags | fnmatch.R)
 
     def test_default_compile(self):
         """Test default with exclusion."""
@@ -514,3 +529,16 @@ class TestDeprecated(unittest.TestCase):
             self.assertTrue(len(w) == 1)
             self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
             self.assertTrue(patterns, ['test', 'test'])
+
+    def test_forcecase(self):
+        """Test deprecation of force case flag."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            fnmatch.translate('*', flags=fnmatch.F),
+            fnmatch.fnmatch('path', "*", flags=fnmatch.F)
+            fnmatch.filter(['path'], "*", flags=fnmatch.F)
+            self.assertEqual(len(w), 3)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))

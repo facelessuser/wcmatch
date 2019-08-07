@@ -12,6 +12,7 @@ made difference in implementation.
 import contextlib
 from wcmatch import glob
 from wcmatch import util
+import re
 import types
 import pytest
 import os
@@ -469,6 +470,18 @@ class Testglob(_TestGlob):
             [('a', 'bcd', 'EF')] if util.is_case_sensitive() else [('a', 'bcd', 'EF'), ('a', 'bcd', 'efg')]
         ],
         [('a', 'bcd', '*g'), [('a', 'bcd', 'efg')]],
+
+        # Test case sensitive and insensitive
+        [
+            ('a', 'bcd', 'E*'),
+            [('a', 'bcd', 'EF')],
+            glob.C
+        ],
+        [
+            ('a', 'bcd', 'E*'),
+            [('a', 'bcd', 'EF'), ('a', 'bcd', 'efg')],
+            glob.I
+        ],
 
         # Test glob directory names.
         [('*', 'D'), [('a', 'D')]],
@@ -982,8 +995,45 @@ class TestGlobEscapes(unittest.TestCase):
         check('//*/*/*', r'//*/*/\*')
 
 
+@unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
+class TestWindowsDriveCase(unittest.TestCase):
+    """Test Windows drive case."""
+
+    RE_DRIVE = re.compile(r'((?:\\|/){2}[^\\/]+(?:\\|/){1}[^\\/]+|[a-z]:)((?:\\|/){1}|$)', re.I)
+
+    def test_drive_insensitive(self):
+        """Test drive case insensitivity."""
+
+        cwd = os.getcwd()
+        filepath = os.path.join(cwd, 'README.md')
+        self.assertEqual([filepath], glob.glob(filepath.replace('\\', '\\\\')))
+        self.assertEqual(
+            [self.RE_DRIVE.sub(lambda m: m.group(0).upper(), filepath)],
+            glob.glob(filepath.replace('\\', '\\\\').upper())
+        )
+        self.assertEqual(
+            [self.RE_DRIVE.sub(lambda m: m.group(0).lower(), filepath)],
+            glob.glob(filepath.replace('\\', '\\\\').lower())
+        )
+
+    def test_drive_sensitive(self):
+        """Test drive case sensitivity (they'll be insensitive regardless of case flag)."""
+
+        cwd = os.getcwd()
+        filepath = os.path.join(cwd, 'README.md')
+        self.assertEqual([filepath], glob.glob(filepath.replace('\\', '\\\\'), flags=glob.C))
+        self.assertEqual(
+            [self.RE_DRIVE.sub(lambda m: m.group(0).upper(), filepath)],
+            glob.glob(self.RE_DRIVE.sub(lambda m: m.group(0).upper(), filepath).replace('\\', '\\\\'), flags=glob.C)
+        )
+        self.assertEqual(
+            [self.RE_DRIVE.sub(lambda m: m.group(0).lower(), filepath)],
+            glob.glob(self.RE_DRIVE.sub(lambda m: m.group(0).lower(), filepath).replace('\\', '\\\\'), flags=glob.C)
+        )
+
+
 @skip_unless_symlink
-class SymlinkLoopGlobTests(unittest.TestCase):
+class TestSymlinkLoopGlob(unittest.TestCase):
     """Symlink loop test case."""
 
     DEFAULT_FLAGS = glob.BRACE | glob.EXTGLOB | glob.GLOBSTAR | glob.FOLLOW
@@ -1075,3 +1125,18 @@ class TestDeprecated(unittest.TestCase):
             self.assertTrue(len(w) == 1)
             self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
             self.assertTrue(patterns, ['test', 'test'])
+
+    def test_forcecase(self):
+        """Test deprecation of force case flag."""
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            glob.glob('*', flags=glob.F)
+            list(glob.iglob('*', flags=glob.F))
+            glob.translate('*', flags=glob.F),
+            glob.globmatch('path', "*", flags=glob.F)
+            glob.globfilter(['path'], "*", flags=glob.F)
+            self.assertEqual(len(w), 5)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
