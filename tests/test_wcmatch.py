@@ -452,6 +452,54 @@ class TestWcmatch(_TestWcmatch):
             )
         )
 
+    def test_match_insensitive(self):
+        """Test case insensitive."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            'A.TXT', None,
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.FILEPATHNAME | wcmatch.IGNORECASE
+        )
+        self.crawl_files(walker)
+        self.assertEqual(
+            sorted(self.files),
+            self.norm_list(
+                ['a.txt']
+            )
+        )
+
+    def test_nomatch_sensitive(self):
+        """Test case sensitive does not match."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            'A.TXT', None,
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.FILEPATHNAME | wcmatch.CASE
+        )
+        self.crawl_files(walker)
+        self.assertEqual(
+            sorted(self.files),
+            self.norm_list(
+                []
+            )
+        )
+
+    def test_match_sensitive(self):
+        """Test case sensitive."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir,
+            'a.txt', None,
+            self.default_flags | wcmatch.RECURSIVE | wcmatch.FILEPATHNAME | wcmatch.CASE
+        )
+        self.crawl_files(walker)
+        self.assertEqual(
+            sorted(self.files),
+            self.norm_list(
+                ['a.txt']
+            )
+        )
+
 
 @skip_unless_symlink
 class TestWcmatchSymlink(_TestWcmatch):
