@@ -6,8 +6,8 @@ jobs:
   test-linux:
     strategy:
       max-parallel: 4
-      platform: [ubuntu-latest, macos-latest, windows-latest]
       matrix:
+        platform: [ubuntu-latest, macos-latest, windows-latest]
         python-version: [3.5, 3.6, 3.7]
 
     runs-on: ${{ matrix.platform }}
