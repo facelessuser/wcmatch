@@ -21,6 +21,6 @@ jobs:
         python -m pip install --upgrade pip setuptools tox coverage
     - name: Test with pytest
       run: |
-        py.test --cov wcmatch --cov-append tests
+        pytest --cov wcmatch --cov-append tests
         coverage html -d coverage
         coverage report --show-missing
