@@ -97,18 +97,18 @@ jobs:
         python -m pip install -r requirements/docs.txt
     - name: Deploy documents
       env:
-        gh_token: ${{ secrets.GH_DEPLOY_KEY }}
-        gh_user: ${{ secrets.GH_USER }}
-        gh_email: ${{ secrets.GH_EMAIL }}
+        GH_TOKEN: ${{ secrets.GH_DEPLOY_KEY }}
+        GH_USER: ${{ secrets.GH_USER }}
+        GH_EMAIL: ${{ secrets.GH_EMAIL }}
       run: |
-        echo "set user"
+        echo "${GH_USER}";
         git config user.name ${GH_USER};
-        echo "set email"
+        echo "set email";
         git config user.email "${GH_EMAIL}";
-        echo "set remote"
+        echo "set remote";
         git remote add gh-token "https://${GH_TOKEN}@github.com/facelessuser/wcmatch.git";
-        echo "fetch"
+        echo "fetch";
         git fetch gh-token && git fetch gh-token gh-pages:gh-pages;
-        echo "deploy"
+        echo "deploy";
         python -m mkdocs gh-deploy -v --clean --remote-name gh-token;
         git push gh-token gh-pages;
