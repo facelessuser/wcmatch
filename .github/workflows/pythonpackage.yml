@@ -76,17 +76,3 @@ jobs:
       run: |
         python -m mkdocs build --clean --verbose --strict
         python -m pyspelling
-    - name: Deploy documents
-      env:
-        GH_TOKEN: ${{ secrets.GH_DEPLOY_KEY }}
-        GH_USER: ${{ secrets.GH_USER }}
-        GH_EMAIL: ${{ secrets.GH_EMAIL }}
-        CONTEXT: ${{ toJson(strategy) }}
-      run: |
-        echo "${CONTEXT}"
-        git config user.name ${GH_USER}
-        git config user.email "${GH_EMAIL}"
-        git remote add gh-token "https://${GH_TOKEN}@github.com/facelessuser/wcmatch.git"
-        git fetch gh-token && git fetch gh-token gh-pages:gh-pages
-        python -m mkdocs gh-deploy -v --clean --remote-name gh-token
-        git push gh-token gh-pages
