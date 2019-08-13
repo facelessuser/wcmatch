@@ -81,7 +81,9 @@ jobs:
         GH_TOKEN: ${{ secrets.GH_DEPLOY_KEY }}
         GH_USER: ${{ secrets.GH_USER }}
         GH_EMAIL: ${{ secrets.GH_EMAIL }}
+        CONTEXT: ${{ toJson(strategy) }}
       run: |
+        echo "${CONTEXT}"
         git config user.name ${GH_USER}
         git config user.email "${GH_EMAIL}"
         git remote add gh-token "https://${GH_TOKEN}@github.com/facelessuser/wcmatch.git"
