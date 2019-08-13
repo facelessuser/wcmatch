@@ -3,11 +3,11 @@ name: Python package
 on: [push]
 
 jobs:
-  test-linux:
+  tests:
     strategy:
       max-parallel: 4
       matrix:
-        platform: [ubuntu-latest, macos-latest, windows-latest]
+        platform: [ubuntu-latest, windows-latest]
         python-version: [3.5, 3.6, 3.7]
 
     runs-on: ${{ matrix.platform }}
