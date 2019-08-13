@@ -3,81 +3,33 @@ name: Python package
 on: [push]
 
 jobs:
-  # tests:
-  #   strategy:
-  #     max-parallel: 4
-  #     matrix:
-  #       platform: [ubuntu-latest, windows-latest]
-  #       python-version: [3.5, 3.6, 3.7]
+  tests:
+    strategy:
+      max-parallel: 4
+      matrix:
+        platform: [ubuntu-latest, windows-latest]
+        python-version: [3.5, 3.6, 3.7]
 
-  #   runs-on: ${{ matrix.platform }}
+    runs-on: ${{ matrix.platform }}
 
-  #   steps:
-  #   - uses: actions/checkout@master
-  #   - name: Set up Python ${{ matrix.python-version }}
-  #     uses: actions/setup-python@v1
-  #     with:
-  #       version: ${{ matrix.python-version }}
-  #   - name: Install dependencies
-  #     run: |
-  #       python -m pip install --upgrade pip setuptools tox coverage
-  #       python -m pip install -r requirements/test.txt
-  #       python -m pip install -r requirements/setup.txt
-  #   - name: Test with pytest
-  #     run: |
-  #       python -m pytest --cov wcmatch --cov-append tests
-  #       python -m coverage html -d coverage
-  #       python -m coverage report --show-missing
+    steps:
+    - uses: actions/checkout@master
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools tox coverage;
+        python -m pip install -r requirements/test.txt;
+        python -m pip install -r requirements/setup.txt;
+    - name: Test with pytest
+      run: |
+        python -m pytest --cov wcmatch --cov-append tests;
+        python -m coverage html -d coverage;
+        python -m coverage report --show-missing;
 
-  # lint:
-  #   strategy:
-  #     max-parallel: 4
-  #     matrix:
-  #       python-version: [3.7]
-
-  #   runs-on: ubuntu-latest
-
-  #   steps:
-  #   - uses: actions/checkout@master
-  #   - name: Set up Python ${{ matrix.python-version }}
-  #     uses: actions/setup-python@v1
-  #     with:
-  #       version: ${{ matrix.python-version }}
-  #   - name: Install dependencies
-  #     run: |
-  #       python -m pip install --upgrade pip setuptools
-  #       python -m pip install -r requirements/lint.txt
-  #   - name: Lint
-  #     run: |
-  #       python -m flake8 .
-
-  # documents:
-  #   strategy:
-  #     max-parallel: 4
-  #     matrix:
-  #       python-version: [3.7]
-
-  #   runs-on: ubuntu-latest
-
-  #   steps:
-  #   - uses: actions/checkout@master
-  #   - name: Set up Python ${{ matrix.python-version }}
-  #     uses: actions/setup-python@v1
-  #     with:
-  #       version: ${{ matrix.python-version }}
-  #   - name: Install dependencies
-  #     run: |
-  #       python -m pip install --upgrade pip setuptools
-  #       python -m pip install -r requirements/docs.txt
-  #   - name: Install Aspell
-  #     run: |
-  #       sudo apt-get install aspell aspell-en
-  #   - name: Build documents
-  #     run: |
-  #       python -m mkdocs build --clean --verbose --strict
-  #       python -m pyspelling
-
-  mkdocs:
+  lint:
     strategy:
       max-parallel: 4
       matrix:
@@ -93,22 +45,46 @@ jobs:
         version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip setuptools
-        python -m pip install -r requirements/docs.txt
+        python -m pip install --upgrade pip setuptools;
+        python -m pip install -r requirements/lint.txt;
+    - name: Lint
+      run: |
+        python -m flake8 .
+
+  documents:
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.7]
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@master
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools;
+        python -m pip install -r requirements/docs.txt;
+    - name: Install Aspell
+      run: |
+        sudo apt-get install aspell aspell-en;
+    - name: Build documents
+      run: |
+        python -m mkdocs build --clean --verbose --strict;
+        python -m pyspelling;
     - name: Deploy documents
       env:
         GH_TOKEN: ${{ secrets.GH_DEPLOY_KEY }}
         GH_USER: ${{ secrets.GH_USER }}
         GH_EMAIL: ${{ secrets.GH_EMAIL }}
       run: |
-        echo "${GH_USER}";
         git config user.name ${GH_USER};
-        echo "set email";
         git config user.email "${GH_EMAIL}";
-        echo "set remote";
         git remote add gh-token "https://${GH_TOKEN}@github.com/facelessuser/wcmatch.git";
-        echo "fetch";
         git fetch gh-token && git fetch gh-token gh-pages:gh-pages;
-        echo "deploy";
         python -m mkdocs gh-deploy -v --clean --remote-name gh-token;
         git push gh-token gh-pages;
