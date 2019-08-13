@@ -71,7 +71,7 @@ jobs:
         python -m pip install -r requirements/docs.txt
     - name: Install Aspell
       run: |
-        apt-get install aspell aspell-en
+        sudo apt-get install aspell aspell-en
     - name: Build documents
       run: |
         python -m mkdocs build --clean --verbose --strict
