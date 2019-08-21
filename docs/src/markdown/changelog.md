@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.3.1
+
+- **FIX**: Regression for root level literal matches in `glob`.
+- **FIX**: Bug where `glob` would mistakenly abort if a pattern started with a literal file or directory and could not match a file or directory. This caused subsequent patterns in the chain to not get evaluated.
+
 ## 4.3.0
 
 - **NEW**: Add `CASE` flag which allows for case sensitive paths on Linux, macOS, and Windows. Windows drive letters and UNC `//host-name/share-name/` portion are still treated insensitively, but all directories will be treated with case sensitivity.

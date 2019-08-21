@@ -1099,8 +1099,8 @@ class TestSymlinkLoopGlob(unittest.TestCase):
                 depth += 1
 
 
-class TestGlobRoot(unittest.TestCase):
-    """Test `glob` at root of mount."""
+class TestGlobPaths(unittest.TestCase):
+    """Test `glob` paths."""
 
     def test_root(self):
         """Test that `glob` translates the root properly."""
@@ -1109,6 +1109,14 @@ class TestGlobRoot(unittest.TestCase):
         # On Linux/Unix, this should translate to the root.
         # Basically, we should not return an empty set.
         self.assertTrue(len(glob.glob('/*')) > 0)
+
+    def test_start(self):
+        """Test that starting directory/files are handled properly."""
+
+        self.assertEqual(
+            sorted(['docs', 'wcmatch', 'readme.md']),
+            sorted([each.lower() for each in glob.glob(['BAD', 'docs', 'WCMATCH', 'readme.MD'], flags=glob.I)])
+        )
 
 
 class TestDeprecated(unittest.TestCase):

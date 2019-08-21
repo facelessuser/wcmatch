@@ -373,7 +373,7 @@ class Glob(object):
                 else:
                     yield path, is_dir
 
-    def _get_starting_paths(self, curdir):
+    def _get_starting_paths(self, curdir, dir_only):
         """
         Get the starting location.
 
@@ -391,7 +391,9 @@ class Glob(object):
             dirname = os.path.dirname(fullpath)
             if basename:
                 matcher = self._get_matcher(basename)
-                results = [(os.path.basename(name), is_dir) for name, is_dir in self._glob_dir(dirname, matcher, self)]
+                results = [
+                    (os.path.basename(name), is_dir) for name, is_dir in self._glob_dir(dirname, matcher, dir_only)
+                ]
 
         return results
 
@@ -422,18 +424,14 @@ class Glob(object):
 
                     # Abort if we cannot find the drive, or if current directory is empty
                     if not curdir or (this.is_drive and not os.path.lexists(curdir)):
-                        return
+                        continue
 
                     # Make sure case matches, but running case insensitive
                     # on a case sensitive file system may return more than
                     # one starting location.
-                    results = [(curdir, True)] if this.is_drive else self._get_starting_paths(curdir)
+                    results = [(curdir, True)] if this.is_drive else self._get_starting_paths(curdir, dir_only)
                     if not results:
-                        if not dir_only:
-                            # There is no directory with this name,
-                            # but we have a file and no directory restriction
-                            yield self.format_path(curdir, False, dir_only)
-                        return
+                        continue
 
                     if this.dir_only:
                         # Glob these directories if they exists
