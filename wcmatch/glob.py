@@ -509,12 +509,16 @@ class PurePath(pathlib.PurePath):
         is_bytes = isinstance(([patterns] if isinstance(patterns, (str, bytes)) else patterns)[0], bytes)
         if isinstance(self, Path) and real:
             flags |= _wcparse.REALPATH
-        if flags & _wcparse.FORCEUNIX:
-            flags ^= _wcparse.FORCEUNIX
-        if flags & _wcparse.FORCEWIN:
-            flags ^= _wcparse.FORCEWIN
+        if isinstance(self, PureWindowsPath):
+            if flags & _wcparse.FORCEUNIX:
+                raise ValueError("Windows pathlike objects cannot be forced to behave like a Posix path")
+            flags |= _wcparse.FORCEWIN
+        elif isinstance(self, PurePosixPath):
+            if flags & _wcparse.FORCEWIN:
+                raise ValueError("Posix pathlike objects cannot be forced to behave like a Windows path")
+            flags |= _wcparse.FORCEUNIX
         if isinstance(self, Path) and self.is_dir():
-            sep = '\\' if isinstance(self, WindowsPath) else '/'
+            sep = self._flavour.sep
         if is_bytes:
             sep = os.fsencode(sep)
 

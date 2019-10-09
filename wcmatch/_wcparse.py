@@ -95,7 +95,7 @@ CASE = 0x40000
 # Internal flag
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
 _ANCHOR = 0x200000000  # The pattern, if it starts with a slash, is anchored to the working directory; strip the slash.
-_RECURSIVEMATCH = 0x400000000  # Internal flag that allows for something similar to MATCHBASE, but for relative paths.
+_RECURSIVEMATCH = 0x400000000  # Internal flag that allows for something similar to `MATCHBASE`, but for relative paths.
 
 FLAG_MASK = (
     CASE |
