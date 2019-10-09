@@ -478,7 +478,7 @@ class Path(pathlib.Path):
     def glob(self, patterns, *, flags=0):
         """Search the file system."""
 
-        name, flags = self._translate_for_glob(patterns, flags, real=True)
+        name, flags = self._translate_for_glob(patterns, flags)
         for filename in Glob(util.to_tuple(patterns), flags, plib=name).glob():
             yield self / filename
 
@@ -500,14 +500,12 @@ class PurePath(pathlib.PurePath):
             cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
         return cls._from_parts(args)
 
-    def _translate_for_glob(self, patterns, flags, real=False):
+    def _translate_for_glob(self, patterns, flags):
         """Translate for glob."""
 
         sep = ''
         flags |= _wcparse.GLOBSTAR
         is_bytes = isinstance(([patterns] if isinstance(patterns, (str, bytes)) else patterns)[0], bytes)
-        if isinstance(self, Path) and real:
-            flags |= _wcparse.REALPATH
         if isinstance(self, PureWindowsPath):
             if flags & _wcparse.FORCEUNIX:
                 raise ValueError("Windows pathlike objects cannot be forced to behave like a Posix path")
