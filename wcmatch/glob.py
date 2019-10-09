@@ -503,9 +503,11 @@ class PurePath(pathlib.PurePath):
     def _translate_for_glob(self, patterns, flags):
         """Translate for glob."""
 
+        if not all([isinstance(p, str) for p in ([patterns] if isinstance(patterns, (str, bytes)) else patterns)]):
+            raise ValueError("Expected a pattern of type 'str', but received 'bytes' instead")
+
         sep = ''
         flags |= _wcparse.GLOBSTAR
-        is_bytes = isinstance(([patterns] if isinstance(patterns, (str, bytes)) else patterns)[0], bytes)
         if isinstance(self, PureWindowsPath):
             if flags & _wcparse.FORCEUNIX:
                 raise ValueError("Windows pathlike objects cannot be forced to behave like a Posix path")
@@ -516,10 +518,8 @@ class PurePath(pathlib.PurePath):
             flags |= _wcparse.FORCEUNIX
         if isinstance(self, Path) and self.is_dir():
             sep = self._flavour.sep
-        if is_bytes:
-            sep = os.fsencode(sep)
 
-        return bytes(self) + sep if is_bytes else str(self) + sep, flags
+        return str(self) + sep, flags
 
     def match(self, patterns, *, flags=0):
         """Match the pattern."""
