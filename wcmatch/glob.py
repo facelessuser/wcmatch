@@ -79,7 +79,8 @@ FLAG_MASK = (
     NODIR |
     NEGATEALL |
     FORCEWIN |
-    FORCEUNIX
+    FORCEUNIX |
+    _wcparse._RECURSIVEMATCH
 )
 
 
@@ -474,28 +475,18 @@ class Path(pathlib.Path):
         self._init()
         return self
 
-    def iglob(self, patterns, *, flags=0):
+    def glob(self, patterns, *, flags=0):
         """Search the file system."""
 
-        name, flags = self._translate_for_glob(patterns, flags)
+        name, flags = self._translate_for_glob(patterns, flags, real=True)
         length = len(name)
         for filename in Glob(util.to_tuple(patterns), flags, plib=name).glob():
             yield self._make_child_relpath(filename[length:])
 
-    def glob(self, patterns, *, flags=0):
-        """Search the file system."""
-
-        return list(self.iglob(patterns, flags=flags))
-
     def rglob(self, patterns, *, flags=0):
         """Recursive glob."""
 
-        return self.glob(patterns, flags=flags | _wcparse.GLOBSTAR)
-
-    def irglob(self, patterns, *, flags=0):
-        """Recursive glob iterator."""
-
-        yield from self.iglob(patterns, flags=flags | _wcparse.GLOBSTAR)
+        return self.glob(patterns, flags=flags | _wcparse._RECURSIVEMATCH)
 
 
 class PurePath(pathlib.PurePath):
@@ -510,12 +501,13 @@ class PurePath(pathlib.PurePath):
             cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
         return cls._from_parts(args)
 
-    def _translate_for_glob(self, patterns, flags):
+    def _translate_for_glob(self, patterns, flags, real=False):
         """Translate for glob."""
 
         sep = ''
+        flags |= _wcparse.GLOBSTAR
         is_bytes = isinstance(([patterns] if isinstance(patterns, (str, bytes)) else patterns)[0], bytes)
-        if isinstance(self, Path):
+        if isinstance(self, Path) and real:
             flags |= _wcparse.REALPATH
         if flags & _wcparse.FORCEUNIX:
             flags ^= _wcparse.FORCEUNIX
@@ -531,7 +523,7 @@ class PurePath(pathlib.PurePath):
     def match(self, patterns, *, flags=0):
         """Match the pattern."""
 
-        filename, flags = self._translate_for_glob(patterns, flags)
+        filename, flags = self._translate_for_glob(patterns, flags | _wcparse.GLOBSTAR | _wcparse._RECURSIVEMATCH)
         return globmatch(filename, patterns, flags=flags)
 
 

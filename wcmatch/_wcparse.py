@@ -95,6 +95,7 @@ CASE = 0x40000
 # Internal flag
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
 _ANCHOR = 0x200000000  # The pattern, if it starts with a slash, is anchored to the working directory; strip the slash.
+_RECURSIVEMATCH = 0x400000000  # Internal flag that allows for something similar to MATCHBASE, but for relative paths.
 
 FLAG_MASK = (
     CASE |
@@ -115,7 +116,8 @@ FLAG_MASK = (
     FORCEWIN |
     FORCEUNIX |
     _TRANSLATE |
-    _ANCHOR
+    _ANCHOR |
+    _RECURSIVEMATCH
 )
 CASE_FLAGS = IGNORECASE | CASE
 
@@ -399,6 +401,7 @@ class WcPathSplit(object):
         self.pattern = util.norm_pattern(pattern, not self.unix, flags & RAWCHARS)
         self.globstar = bool(flags & GLOBSTAR)
         self.matchbase = bool(flags & MATCHBASE)
+        self.recursivematch = bool(flags & _RECURSIVEMATCH) and not self.matchbase
         if is_negative(self.pattern, flags):  # pragma: no cover
             # This isn't really used, but we'll keep it around
             # in case we find a reason to directly send inverse patterns
@@ -596,6 +599,10 @@ class WcPathSplit(object):
             self.globstar = True
             parts.insert(0, WcGlob(b'**' if self.is_bytes else '**', True, True, True, False))
 
+        if self.recursivematch and not parts[0].is_drive:
+            self.globstar = True
+            parts.insert(0, WcGlob(b'**' if self.is_bytes else '**', True, True, True, False))
+
         return parts
 
 
@@ -750,6 +757,7 @@ class WcParse(object):
         self.dot = bool(flags & DOTMATCH)
         self.extend = bool(flags & EXTMATCH)
         self.matchbase = bool(flags & MATCHBASE)
+        self.recursivematch = bool(flags & _RECURSIVEMATCH) and not self.matchbase
         self.anchor = bool(flags & _ANCHOR)
         self.case_sensitive = get_case(flags)
         self.in_list = False
@@ -1292,6 +1300,7 @@ class WcParse(object):
 
         if root_specified:
             self.matchbase = False
+            self.recursivematch = False
 
         if not root_specified and self.realpath:
             current.append(_NO_WIN_ROOT if self.win_drive_detect else _NO_ROOT)
@@ -1368,7 +1377,7 @@ class WcParse(object):
             if number:
                 self.matchbase = False
 
-        if self.matchbase:
+        if self.matchbase or self.recursivematch:
             globstar = self.globstar
             self.globstar = True
             self.root('**', matchbase)
@@ -1377,7 +1386,7 @@ class WcParse(object):
         if p:
             self.root(p, result)
 
-        if p and self.matchbase:
+        if p and (self.matchbase or self.recursivematch):
             result = matchbase + result
 
         case_flag = 'i' if not self.case_sensitive else ''
