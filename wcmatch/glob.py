@@ -460,7 +460,7 @@ class Glob(object):
 
 
 class Path(pathlib.Path):
-    """Special pathlike object that uses our own glob methods."""
+    """Special pathlike object (which accesses the filesystem) that uses our own glob methods."""
 
     __slots__ = ()
 
@@ -476,20 +476,33 @@ class Path(pathlib.Path):
         return self
 
     def glob(self, patterns, *, flags=0):
-        """Search the file system."""
+        """
+        Search the file system.
+
+        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
+
+        """
 
         name, flags = self._translate_for_glob(patterns, flags)
         for filename in Glob(util.to_tuple(patterns), flags, plib=name).glob():
             yield self / filename
 
     def rglob(self, patterns, *, flags=0):
-        """Recursive glob."""
+        """
+        Recursive glob.
+
+        This uses the same recursive logic that the default `pathlib` object uses.
+        Folders and files are essentially matched from right to left.
+
+        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
+
+        """
 
         return self.glob(patterns, flags=flags | _wcparse._RECURSIVEMATCH)
 
 
 class PurePath(pathlib.PurePath):
-    """Special pathlike object that uses our own glob methods."""
+    """Special pure pathlike object that uses our own glob methods."""
 
     __slots__ = ()
 
@@ -501,7 +514,7 @@ class PurePath(pathlib.PurePath):
         return cls._from_parts(args)
 
     def _translate_for_glob(self, patterns, flags):
-        """Translate for glob."""
+        """Translate the object to a path string and adjust the flags for the current `pathlib` object."""
 
         if not all([isinstance(p, str) for p in ([patterns] if isinstance(patterns, (str, bytes)) else patterns)]):
             raise ValueError("Expected a pattern of type 'str', but received 'bytes' instead")
@@ -522,21 +535,40 @@ class PurePath(pathlib.PurePath):
         return str(self) + sep, flags
 
     def match(self, patterns, *, flags=0):
-        """Match the pattern."""
+        """
+        Match patterns using `globmatch`, but also using the same recursive logic that the default `pathlib` uses.
+
+        This uses the same recursive logic that the default `pathlib` object uses.
+        Folders and files are essentially matched from right to left.
+
+        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
+
+        """
 
         filename, flags = self._translate_for_glob(patterns, flags | _wcparse.GLOBSTAR | _wcparse._RECURSIVEMATCH)
         return globmatch(filename, patterns, flags=flags)
 
+    def globmatch(self, patterns, *, flags=0):
+        """
+        Match patterns using `globmatch`, but without the recursive logic that the default `pathlib` uses.
+
+        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
+
+        """
+
+        filename, flags = self._translate_for_glob(patterns, flags | _wcparse.GLOBSTAR)
+        return globmatch(filename, patterns, flags=flags)
+
 
 class PurePosixPath(PurePath):
-    """Posix path."""
+    """Pure Posix path."""
 
     _flavour = pathlib._posix_flavour
     __slots__ = ()
 
 
 class PureWindowsPath(PurePath):
-    """Windows path."""
+    """Pure Windows path."""
 
     _flavour = pathlib._windows_flavour
     __slots__ = ()
