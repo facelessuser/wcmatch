@@ -24,7 +24,6 @@ import os
 import sys
 import functools
 import re
-import pathlib
 from . import _wcparse
 from . import util
 
@@ -33,7 +32,7 @@ __all__ = (
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
     "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX",
     "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U",
-    "iglob", "glob", "globmatch", "globfilter", "escape",
+    "iglob", "glob", "globmatch", "globfilter", "escape", "raw_escape",
     "Path", "PurePath", "WindowsPath", "PosixPath", "PurePosixPath", "PureWindowsPath"
 )
 
@@ -108,11 +107,12 @@ def _flag_transform(flags):
 class Glob(object):
     """Glob patterns."""
 
-    def __init__(self, pattern, flags=0, plib=None):
+    def __init__(self, pattern, flags=0, curdir=None, pathlib=False):
         """Initialize the directory walker object."""
 
         self.is_bytes = isinstance(pattern[0], bytes)
-        self.curdir = plib
+        self.curdir = curdir
+        self.pathlib = pathlib
         self.mark = bool(flags & MARK)
         if self.mark:
             flags ^= MARK
@@ -157,7 +157,7 @@ class Glob(object):
                 self.npatterns.append(re.compile(_wcparse.translate(p, flags=nflags)[1][0]))
             else:
                 self.pattern.append(_wcparse.WcPathSplit(p, self.flags).split())
-                if self.curdir is not None:
+                if self.pathlib:
                     if self.pattern[-1][0].is_drive:
                         raise ValueError('PathLike objects do not support absolute paths')
         if not self.pattern and self.npatterns:
@@ -457,133 +457,6 @@ class Glob(object):
                     for match, is_dir in self._glob(curdir if not curdir == self.current else self.empty, this, rest):
                         if not self._is_excluded(match, is_dir):
                             yield self.format_path(match, is_dir, dir_only)
-
-
-class Path(pathlib.Path):
-    """Special pathlike object (which accesses the filesystem) that uses our own glob methods."""
-
-    __slots__ = ()
-
-    def __new__(cls, *args, **kwargs):
-        """New."""
-
-        if cls is Path:
-            cls = WindowsPath if os.name == 'nt' else PosixPath
-        self = cls._from_parts(args, init=False)
-        if not self._flavour.is_supported:
-            raise NotImplementedError("Cannot instantiate %r on your system" % (cls.__name__,))
-        self._init()
-        return self
-
-    def glob(self, patterns, *, flags=0):
-        """
-        Search the file system.
-
-        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
-
-        """
-
-        name, flags = self._translate_for_glob(patterns, flags)
-        for filename in Glob(util.to_tuple(patterns), flags, plib=name).glob():
-            yield self / filename
-
-    def rglob(self, patterns, *, flags=0):
-        """
-        Recursive glob.
-
-        This uses the same recursive logic that the default `pathlib` object uses.
-        Folders and files are essentially matched from right to left.
-
-        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
-
-        """
-
-        return self.glob(patterns, flags=flags | _wcparse._RECURSIVEMATCH)
-
-
-class PurePath(pathlib.PurePath):
-    """Special pure pathlike object that uses our own glob methods."""
-
-    __slots__ = ()
-
-    def __new__(cls, *args):
-        """New."""
-
-        if cls is PurePath:
-            cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
-        return cls._from_parts(args)
-
-    def _translate_for_glob(self, patterns, flags):
-        """Translate the object to a path string and adjust the flags for the current `pathlib` object."""
-
-        if not all([isinstance(p, str) for p in ([patterns] if isinstance(patterns, (str, bytes)) else patterns)]):
-            raise ValueError("Expected a pattern of type 'str', but received 'bytes' instead")
-
-        sep = ''
-        flags |= _wcparse.GLOBSTAR
-        if isinstance(self, PureWindowsPath):
-            if flags & _wcparse.FORCEUNIX:
-                raise ValueError("Windows pathlike objects cannot be forced to behave like a Posix path")
-            flags |= _wcparse.FORCEWIN
-        elif isinstance(self, PurePosixPath):
-            if flags & _wcparse.FORCEWIN:
-                raise ValueError("Posix pathlike objects cannot be forced to behave like a Windows path")
-            flags |= _wcparse.FORCEUNIX
-        if isinstance(self, Path) and self.is_dir():
-            sep = self._flavour.sep
-
-        return str(self) + sep, flags
-
-    def match(self, patterns, *, flags=0):
-        """
-        Match patterns using `globmatch`, but also using the same recursive logic that the default `pathlib` uses.
-
-        This uses the same recursive logic that the default `pathlib` object uses.
-        Folders and files are essentially matched from right to left.
-
-        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
-
-        """
-
-        filename, flags = self._translate_for_glob(patterns, flags | _wcparse.GLOBSTAR | _wcparse._RECURSIVEMATCH)
-        return globmatch(filename, patterns, flags=flags)
-
-    def globmatch(self, patterns, *, flags=0):
-        """
-        Match patterns using `globmatch`, but without the recursive logic that the default `pathlib` uses.
-
-        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
-
-        """
-
-        filename, flags = self._translate_for_glob(patterns, flags | _wcparse.GLOBSTAR)
-        return globmatch(filename, patterns, flags=flags)
-
-
-class PurePosixPath(PurePath):
-    """Pure Posix path."""
-
-    _flavour = pathlib._posix_flavour
-    __slots__ = ()
-
-
-class PureWindowsPath(PurePath):
-    """Pure Windows path."""
-
-    _flavour = pathlib._windows_flavour
-    __slots__ = ()
-
-
-class PosixPath(Path, PurePosixPath):
-    """Posix path."""
-
-    __slots__ = ()
-
-
-class WindowsPath(Path, PureWindowsPath):
-    """Windows path."""
-
-    __slots__ = ()
 
 
 def iglob(patterns, *, flags=0):
