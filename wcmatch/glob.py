@@ -479,9 +479,8 @@ class Path(pathlib.Path):
         """Search the file system."""
 
         name, flags = self._translate_for_glob(patterns, flags, real=True)
-        length = len(name)
         for filename in Glob(util.to_tuple(patterns), flags, plib=name).glob():
-            yield self._make_child_relpath(filename[length:])
+            yield self / filename
 
     def rglob(self, patterns, *, flags=0):
         """Recursive glob."""
