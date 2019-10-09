@@ -41,6 +41,7 @@ macOS
 matcher
 matchers
 paren
+pathlike
 posix
 pre
 prepend

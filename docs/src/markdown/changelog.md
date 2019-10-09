@@ -2,6 +2,7 @@
 
 ## 5.0.0
 
+- **NEW**: Add `pathlib` variant that uses `wcmatch.glob` instead of the default Python glob.
 - **NEW**: The deprecated flag `FORCECASE` has now been removed.
 - **NEW**: The deprecated functions `globsplit` and `fnsplit` have been removed.
 - **NEW**: The deprecated variables `version` and `version_info` have been removed.
