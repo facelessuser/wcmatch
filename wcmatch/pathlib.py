@@ -9,7 +9,7 @@ __all__ = (
     "CASE", "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "NEGATE", "MINUSNEGATE", "BRACE",
     "REALPATH", "FOLLOW", "MATCHBASE", "NEGATEALL", "NODIR",
-    "C", "F", "I", "R", "D", "E", "N", "B", "M", "P", "L", "S", "X", "O", "A",
+    "C", "F", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A",
     "Path", "PurePath", "WindowsPath", "PosixPath", "PurePosixPath", "PureWindowsPath"
 )
 
@@ -19,9 +19,10 @@ I = IGNORECASE = glob.IGNORECASE
 R = RAWCHARS = glob.RAWCHARS
 D = DOTGLOB = DOTMATCH = glob.DOTMATCH
 E = EXTGLOB = EXTMATCH = glob.EXTMATCH
+G = GLOBSTAR = _wcparse.GLOBSTAR
 N = NEGATE = glob.NEGATE
-M = MINUSNEGATE = glob.MINUSNEGATE
 B = BRACE = glob.BRACE
+M = MINUSNEGATE = glob.MINUSNEGATE
 P = REALPATH = glob.REALPATH
 L = FOLLOW = glob.FOLLOW
 S = SPLIT = glob.SPLIT
@@ -36,6 +37,7 @@ FLAG_MASK = (
     RAWCHARS |
     DOTMATCH |
     EXTMATCH |
+    GLOBSTAR |
     NEGATE |
     MINUSNEGATE |
     BRACE |
@@ -45,9 +47,7 @@ FLAG_MASK = (
     MATCHBASE |
     NODIR |
     NEGATEALL |
-    _wcparse._RECURSIVEMATCH |
-    _wcparse.GLOBSTAR |
-    _wcparse.PATHNAME
+    _wcparse._RECURSIVEMATCH
 )
 
 
@@ -109,7 +109,7 @@ class PurePath(pathlib.PurePath):
     def _translate_flags(self, flags):
         """Translate flags for the current `pathlib` object."""
 
-        flags = (flags & FLAG_MASK) | _wcparse.GLOBSTAR
+        flags = (flags & FLAG_MASK) | _wcparse.PATHNAME
         if flags & REALPATH:
             flags = _wcparse.FORCEWIN if os.name == 'nt' else _wcparse.FORCEUNIX
         if isinstance(self, PureWindowsPath):
@@ -126,10 +126,11 @@ class PurePath(pathlib.PurePath):
         """Translate the object to a path string and ensure trailing slash for non-pure paths that are directories."""
 
         sep = ''
-        if isinstance(self, Path) and self.is_dir():
+        name = str(self)
+        if isinstance(self, Path) and name and self.is_dir():
             sep = self._flavour.sep
 
-        return str(self) + sep
+        return name + sep
 
     def match(self, patterns, *, flags=0):
         """

@@ -111,7 +111,9 @@ class Glob(object):
         """Initialize the directory walker object."""
 
         self.is_bytes = isinstance(pattern[0], bytes)
+        self.current = b'.' if self.is_bytes else '.'
         self.curdir = curdir
+        self.lead_strip = len(curdir) + 1 if curdir and curdir != self.current else 0
         self.pathlib = pathlib
         self.mark = bool(flags & MARK)
         if self.mark:
@@ -132,7 +134,6 @@ class Glob(object):
         self.case_sensitive = _wcparse.get_case(self.flags)
         self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
         self.empty = b'' if self.is_bytes else ''
-        self.current = b'.' if self.is_bytes else '.'
         split = _wcparse.split(pattern, flags)
         patterns = []
         for s in split:
@@ -400,7 +401,10 @@ class Glob(object):
     def format_path(self, path, is_dir, dir_only):
         """Format path."""
 
-        return os.path.join(path, self.empty) if dir_only or (self.mark and is_dir) else path
+        if self.curdir is not None and self.lead_strip:
+            return (os.path.join(path, self.empty) if dir_only or (self.mark and is_dir) else path)[self.lead_strip:]
+        else:
+            return os.path.join(path, self.empty) if dir_only or (self.mark and is_dir) else path
 
     def glob(self):
         """Starts off the glob iterator."""
