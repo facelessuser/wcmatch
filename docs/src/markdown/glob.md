@@ -120,7 +120,7 @@ def iglob(patterns, *, flags=0):
 #### `glob.globmatch`
 
 ```py3
-def globmatch(filename, patterns, \*, flags=0):
+def globmatch(filename, patterns, *, flags=0):
 ```
 
 `globmatch` takes a file name, a pattern (or list of patterns), and flags.  It will return a boolean indicating whether the file path was matched by the pattern(s).
@@ -339,7 +339,7 @@ In the past, only `glob` and `iglob` operated on the filesystem, but with `REALP
 
 Normally, functions such as `globmatch` would simply match a path with regular expression and return the result. The functions were not concerned with whether the path existed or not. It didn't care if it was even valid for the operating system.
 
-`REALPATH` forces `globmatch` and `globfilter` to treat the string path as a real file path for the given system it is running on. It will augment the patterns used to match files and enable additional logic that the path must meet in order to match:
+`REALPATH` forces `globmatch` and `globfilter` to treat the string path as a real file path for the given system it is running on. It will augment the patterns used to match files and enable additional logic so that the path must meet the following in order to match:
 
 - Path must exist.
 - Directories that are symlinks will not be matched by `GLOBSTAR` patterns (`**`) unless the `FOLLOW` flag is enabled.
@@ -410,7 +410,7 @@ no trailing slash.
 
 `MATCHBASE`, when a pattern has no slashes in it, will cause [`glob`](#globglob) and [`iglob`](#globiglob) to seek for
 any file anywhere in the tree with a matching basename. When enabled for [`globfilter`](#globglobfilter) and
-[`globmatch`](#globglobmatch), they will match any basename in the tree.
+[`globmatch`](#globglobmatch), any path whose basename matches.
 
 ```pycon3
 >>> from wcmatch import glob
