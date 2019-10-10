@@ -50,6 +50,9 @@ prerelease
 prereleases
 regex
 sortable
+subclass
+subclassed
+subclasses
 subdirectories
 sublicense
 symlink

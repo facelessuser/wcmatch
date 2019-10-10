@@ -10,9 +10,7 @@ __all__ = (
     "EXTGLOB", "EXTMATCH", "NEGATE", "MINUSNEGATE", "BRACE",
     "REALPATH", "FOLLOW", "MATCHBASE", "NEGATEALL", "NODIR",
     "C", "F", "I", "R", "D", "E", "N", "B", "M", "P", "L", "S", "X", "O", "A",
-    "escape", "raw_escape",
-    "Path", "PurePath", "WindowsPath", "PosixPath", "PurePosixPath", "PureWindowsPath",
-    "AUTO", "WINDOWS", "UNIX"
+    "Path", "PurePath", "WindowsPath", "PosixPath", "PurePosixPath", "PureWindowsPath"
 )
 
 C = CASE = glob.CASE
@@ -30,10 +28,6 @@ S = SPLIT = glob.SPLIT
 X = MATCHBASE = glob.MATCHBASE
 O = NODIR = glob.NODIR
 A = NEGATEALL = glob.NEGATEALL
-
-AUTO = glob.AUTO
-WINDOWS = glob.WINDOWS
-UNIX = glob.UNIX
 
 FLAG_MASK = (
     CASE |
@@ -191,15 +185,3 @@ class WindowsPath(Path, PureWindowsPath):
     """Windows path."""
 
     __slots__ = ()
-
-
-def raw_escape(pattern, *, platform=AUTO):
-    """Apply raw character transform before applying escape."""
-
-    return glob.raw_escape(pattern, platform=platform)
-
-
-def escape(pattern, *, platform=AUTO):
-    """Escape."""
-
-    return glob.escape(pattern, platform=platform)
