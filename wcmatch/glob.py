@@ -33,7 +33,8 @@ __all__ = (
     "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX",
     "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U",
     "iglob", "glob", "globmatch", "globfilter", "escape", "raw_escape",
-    "Path", "PurePath", "WindowsPath", "PosixPath", "PurePosixPath", "PureWindowsPath"
+    "Path", "PurePath", "WindowsPath", "PosixPath", "PurePosixPath", "PureWindowsPath",
+    "AUTO", "WINDOWS", "UNIX"
 )
 
 # We don't use `util.platform` only because we mock it in tests,
@@ -60,6 +61,10 @@ W = FORCEWIN = _wcparse.FORCEWIN
 U = FORCEUNIX = _wcparse.FORCEUNIX
 
 K = MARK = 0x100000
+
+AUTO = 0
+WINDOWS = 1
+UNIX = 2
 
 FLAG_MASK = (
     CASE |
@@ -509,20 +514,42 @@ def globfilter(filenames, patterns, *, flags=0):
     return matches
 
 
-def raw_escape(pattern, unix=False):
+def raw_escape(pattern, *args, platform=AUTO, **kwargs):
     """Apply raw character transform before applying escape."""
 
     pattern = util.norm_pattern(pattern, False, True)
-    return escape(pattern, unix)
+    return escape(pattern, *args, platform=platform, **kwargs)
 
 
-def escape(pattern, unix=False):
+def escape(pattern, *args, platform=AUTO, **kwargs):
     """Escape."""
+
+    # Deprecate the use of `unix` parameter
+    if args or 'unix' in kwargs:
+        util.warn_deprecated(
+            "The 'unix' parameter has been deprecated for 'raw_escape' and 'escape'.\n"
+            "Please use 'platform=UNIX' to force Unix style escapes, "
+            "and 'platform=WINDOWS' to force Windows style escapes.",
+            stacklevel=3
+        )
+        count = (len(args) + len(kwargs) + 1) > 1
+        if count > 2:
+            raise TypeError("'escape' and 'raw_escape' take 2 arguments but {:d} were given".format())
+        unix = args[0] if args else kwargs['unix']
+    else:
+        if kwargs:
+            raise TypeError(
+                "Unexpected keyword argument {}".format(list(kwargs.keys())[0])
+            )
+        unix = False
+
+    if platform > UNIX:
+        raise ValueError("Unrecognized value for 'platform': {}".format(platform))
 
     is_bytes = isinstance(pattern, bytes)
     ptype = _wcparse.BYTES if is_bytes else _wcparse.UNICODE
     replace = br'\\\1' if is_bytes else r'\\\1'
-    win = util.platform() == "windows" and not unix
+    win = ((platform == AUTO and util.platform() == "windows") or platform == WINDOWS) and not unix
     magic = _wcparse.RE_WIN_MAGIC[ptype] if win else _wcparse.RE_MAGIC[ptype]
 
     # Handle windows drives special.

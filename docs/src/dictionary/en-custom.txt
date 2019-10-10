@@ -12,6 +12,7 @@ MacOS
 MkDocs
 NONINFRINGEMENT
 POSIX
+Pathlib
 Preprocess
 PyPI
 Symlink
@@ -57,4 +58,5 @@ tuple
 un
 unclosed
 unordered
+versa
 wildcard

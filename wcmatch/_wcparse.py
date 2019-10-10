@@ -1376,6 +1376,7 @@ class WcParse(object):
             p, number = (RE_ANCHOR if not self.win_drive_detect else RE_WIN_ANCHOR).subn('', p)
             if number:
                 self.matchbase = False
+                self.recursivematch = False
 
         if self.matchbase or self.recursivematch:
             globstar = self.globstar

@@ -229,7 +229,7 @@ def translate(patterns, *, flags=0):
 #### `glob.escape`
 
 ```py3
-def escape(pattern, unix=False):
+def escape(pattern, *, platform=AUTO):
 ```
 
 This escapes special glob meta characters so they will be treated as literal characters.  It escapes using backslashes. It will escape `-`, `!`, `*`, `?`, `(`, `[`, `|`, `^`, `{`, and `\`. On Windows, it will specifically only escape `\` when not already escaped (`\\`). `/` and `\\` (on Windows) are not escaped as they are path separators.
@@ -244,12 +244,19 @@ True
 
 On a Windows system, drives are not escaped since meta characters are not parsed in drives. Drives on Windows are generally treated special. This is because a drive could contain special characters like in `\\?\c:\`.
 
-`escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since [`globmatch`](#globglobmatch) allows you to match Unix style paths on a Windows system, you can force Unix style escaping via the `unix` parameter.
+`escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since [`globmatch`](#globglobmatch) allows you to match Unix style paths on a Windows system, and vice versa, you can force Unix style escaping or Windows style escaping via the `platform` parameter. Simply use the constants `AUTO`, `WINDOWS`, or `UNIX`.
+
+```pycon3
+>>> glob.escape('some/path?/**file**{}.txt', platform=glob.UNIX)
+```
+
+!!! warning "Deprecated 5.0"
+    The `unix` parameter was deprecated in 5.0 and will be removed at some future time. `platform` should be used going forward.
 
 #### `glob.raw_escape`
 
 ```py3
-def raw_escape(pattern, unix=False):
+def raw_escape(pattern, *, platform=AUTO):
 ```
 
 This is like [`escape`](#globescape) except it will apply raw character string escapes before doing meta character escapes.  This is meant for use with the [`RAWCHARS`](#globrawchars) flag.
@@ -262,7 +269,14 @@ This is like [`escape`](#globescape) except it will apply raw character string e
 True
 ```
 
-`raw_escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since [`globmatch`](#globglobmatch) allows you to match Unix style paths on a Windows system, you can force Unix style escaping via the `unix` parameter.
+`raw_escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since [`globmatch`](#globglobmatch) allows you to match Unix style paths on a Windows system, and vice versa, you can force Unix style escaping or Windows style escaping via the `platform` parameter. Simply use the constants `AUTO`, `WINDOWS`, or `UNIX`.
+
+```pycon3
+>>> glob.raw_escape('some/path?/\x2a\x2afile\x2a\x2a{}.txt', platform=glob.UNIX)
+```
+
+!!! warning "Deprecated 5.0"
+    The `unix` parameter was deprecated in 5.0 and will be removed at some future time. `platform` should be used going forward.
 
 ## Flags
 
