@@ -110,6 +110,8 @@ class PurePath(pathlib.PurePath):
         """Translate flags for the current `pathlib` object."""
 
         flags = (flags & FLAG_MASK) | _wcparse.GLOBSTAR
+        if flags & REALPATH:
+            flags = _wcparse.FORCEWIN if os.name == 'nt' else _wcparse.FORCEUNIX
         if isinstance(self, PureWindowsPath):
             if flags & _wcparse.FORCEUNIX:
                 raise ValueError("Windows pathlike objects cannot be forced to behave like a Posix path")
