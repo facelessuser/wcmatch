@@ -263,16 +263,16 @@ This is like [`escape`](#globescape) except it will apply raw character string e
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.raw_escape('some/path?/\x2a\x2afile\x2a\x2a{}.txt')
+>>> glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt')
 'some/path\\?/\\*\\*file\\*\\*\\{}.txt'
->>> glob.globmatch('some/path?/**file**{}.txt', glob.escape('some/path?/\x2a\x2afile\x2a\x2a{}.txt'), flags=glob.RAWCHARS)
+>>> glob.globmatch('some/path?/**file**{}.txt', glob.escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt'), flags=glob.RAWCHARS)
 True
 ```
 
 `raw_escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since [`globmatch`](#globglobmatch) allows you to match Unix style paths on a Windows system, and vice versa, you can force Unix style escaping or Windows style escaping via the `platform` parameter. Simply use the constants `AUTO`, `WINDOWS`, or `UNIX`.
 
 ```pycon3
->>> glob.raw_escape('some/path?/\x2a\x2afile\x2a\x2a{}.txt', platform=glob.UNIX)
+>>> glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt', platform=glob.UNIX)
 ```
 
 !!! warning "Deprecated 5.0"
