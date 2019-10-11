@@ -2,7 +2,57 @@
 import pytest
 import unittest
 import os
-from wcmatch import pathlib
+from wcmatch import pathlib, glob
+import pathlib as pypathlib
+import pickle
+
+
+class TestGlob(unittest.TestCase):
+    """
+    Test file globbing.
+
+    NOTE: We are not testing the actual `glob` library, just the interface on the `pathlib` object and specifics
+    introduced by the particular function.
+
+    """
+
+    def test_glob(self):
+        """Test globbing function."""
+
+        p = pathlib.Path('docs')
+        results = list(p.glob('*.md'))
+        self.assertTrue(not results)
+
+        results = list(p.glob('**/*.md', flags=pathlib.GLOBSTAR))
+        self.assertTrue(len(results))
+        self.assertTrue(all([file.suffix == '.md' for file in results]))
+
+    def test_rglob(self):
+        """Test globbing function."""
+
+        p = pathlib.Path('docs')
+        results = list(p.rglob('*.md'))
+        self.assertTrue(len(results))
+        self.assertTrue(all([file.suffix == '.md' for file in results]))
+
+        results = list(p.rglob('*.md'))
+        self.assertTrue(len(results))
+        self.assertTrue(all([file.suffix == '.md' for file in results]))
+
+        results = list(p.rglob('markdown/*.md'))
+        self.assertTrue(len(results))
+        self.assertTrue(all([file.suffix == '.md' for file in results]))
+
+    def test_integrity(self):
+        """Test glob integrity, or better put, test the path structure comes out sane."""
+
+        orig = [pathlib.Path(x) for x in glob.iglob('docs/**/*.md', flags=glob.GLOBSTAR)]
+        results = list(pathlib.Path('docs').glob('**/*.md', flags=glob.GLOBSTAR))
+        self.assertEqual(orig, results)
+
+        orig = [pathlib.Path(x) for x in glob.iglob('**/*.md', flags=glob.GLOBSTAR)]
+        results = list(pathlib.Path('').glob('**/*.md', flags=glob.GLOBSTAR))
+        self.assertEqual(orig, results)
 
 
 class TestPathlibGlobmatch:
@@ -20,6 +70,8 @@ class TestPathlibGlobmatch:
     The default flags are `NEGATE` | `EXTGLOB` | `BRACE`. Any flags passed through via entry are XORed.
     So if any of the default flags are passed via an entry, they will be disabled. All other flags will
     enable the feature.
+
+    NOTE: We are not testing the actual `globmatch` library, just the interface on the `pathlib` object.
 
     """
 
@@ -44,7 +96,6 @@ class TestPathlibGlobmatch:
         # Force a specific platform with a specific `PurePath`.
         ['//?/C:/**/file.log', r'\\?\C:\Path\path\file.log', True, pathlib.G, "windows"],
         ['/usr/*/bin', '/usr/local/bin', True, pathlib.G, "unix"]
-
     ]
 
     @classmethod
@@ -100,7 +151,13 @@ class TestPathlibGlobmatch:
 
 
 class TestPathlibMatch(TestPathlibGlobmatch):
-    """Test match method."""
+    """
+    Test match method.
+
+    NOTE: We are not testing the actual `globmatch` library, just the interface on the `pathlib` object and the
+    additional behavior that match injects (recursive logic).
+
+    """
 
     cases = [
         ['match', 'some/path/to/match', True],
@@ -152,3 +209,88 @@ class TestExceptions(unittest.TestCase):
             obj = pathlib.PurePosixPath if os.name == 'nt' else pathlib.PureWindowsPath
             p = obj('wcmatch')
             p.globmatch('*', flags=pathlib.REALPATH)
+
+    def test_absolute_glob(self):
+        """Test absolute patterns in `pathlib` glob."""
+
+        with self.assertRaises(ValueError):
+            p = pathlib.Path('wcmatch')
+            list(p.glob('/*'))
+
+    def test_inverse_absolute_glob(self):
+        """Test inverse absolute patterns in `pathlib` glob."""
+
+        with self.assertRaises(ValueError):
+            p = pathlib.Path('wcmatch')
+            list(p.glob('!/*', flags=pathlib.NEGATE))
+
+
+class TestComparisons(unittest.TestCase):
+    """Test comparison."""
+
+    def test_instance(self):
+        """Test instance."""
+
+        p1 = pathlib.Path('wcmatch')
+        p2 = pypathlib.Path('wcmatch')
+
+        self.assertTrue(isinstance(p1, pathlib.Path))
+        self.assertTrue(isinstance(p1, pypathlib.Path))
+        self.assertFalse(isinstance(p2, pathlib.Path))
+        self.assertTrue(isinstance(p2, pypathlib.Path))
+
+    def test_equal(self):
+        """Test equivalence."""
+
+        p1 = pathlib.Path('wcmatch')
+        p2 = pypathlib.Path('wcmatch')
+        p3 = pathlib.Path('docs')
+
+        self.assertTrue(p1 == p2)
+        self.assertFalse(p1 == p3)
+        self.assertFalse(p3 == p2)
+
+    def test_pure_equal(self):
+        """Test equivalence."""
+
+        p1 = pathlib.PureWindowsPath('wcmatch')
+        p2 = pathlib.PurePosixPath('wcmatch')
+
+        p3 = pypathlib.PureWindowsPath('wcmatch')
+        p4 = pypathlib.PurePosixPath('wcmatch')
+
+        self.assertTrue(p1 != p2)
+        self.assertTrue(p3 != p4)
+
+        self.assertTrue(p1 == p3)
+        self.assertTrue(p2 == p4)
+
+    def test_flavour_equal(self):
+        """Test that the same flavours equal each other, regardless of path type."""
+
+        p1 = pathlib.PurePath('wcmatch')
+        p2 = pathlib.Path('wcmatch')
+
+        p3 = pypathlib.PurePath('wcmatch')
+        p4 = pypathlib.Path('wcmatch')
+
+        self.assertTrue(p1 == p2)
+        self.assertTrue(p3 == p4)
+        self.assertTrue(p1 == p3)
+        self.assertTrue(p2 == p4)
+        self.assertTrue(p1 == p4)
+        self.assertTrue(p2 == p3)
+
+    def test_pickle(self):
+        """Test pickling."""
+
+        p1 = pathlib.PurePath('wcmatch')
+        p2 = pathlib.Path('wcmatch')
+
+        p3 = pickle.loads(pickle.dumps(p1))
+        p4 = pickle.loads(pickle.dumps(p2))
+
+        self.assertTrue(type(p1) == type(p3))
+        self.assertTrue(type(p2) == type(p4))
+        self.assertTrue(type(p1) != type(p2))
+        self.assertTrue(type(p3) != type(p4))

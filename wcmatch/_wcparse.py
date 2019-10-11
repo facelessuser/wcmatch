@@ -96,6 +96,7 @@ CASE = 0x40000
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
 _ANCHOR = 0x200000000  # The pattern, if it starts with a slash, is anchored to the working directory; strip the slash.
 _RECURSIVEMATCH = 0x400000000  # Internal flag that allows for something similar to `MATCHBASE`, but for relative paths.
+_NOABSOLUTE = 0x800000000  # Do not allow absolute patterns
 
 FLAG_MASK = (
     CASE |
@@ -117,7 +118,8 @@ FLAG_MASK = (
     FORCEUNIX |
     _TRANSLATE |
     _ANCHOR |
-    _RECURSIVEMATCH
+    _RECURSIVEMATCH |
+    _NOABSOLUTE
 )
 CASE_FLAGS = IGNORECASE | CASE
 
@@ -399,6 +401,7 @@ class WcPathSplit(object):
         self.unix = is_unix_style(flags)
         self.flags = flags
         self.pattern = util.norm_pattern(pattern, not self.unix, flags & RAWCHARS)
+        self.no_abs = bool(flags & _NOABSOLUTE)
         self.globstar = bool(flags & GLOBSTAR)
         self.matchbase = bool(flags & MATCHBASE)
         self.recursivematch = bool(flags & _RECURSIVEMATCH) and not self.matchbase
@@ -603,6 +606,9 @@ class WcPathSplit(object):
             self.globstar = True
             parts.insert(0, WcGlob(b'**' if self.is_bytes else '**', True, True, True, False))
 
+        if self.no_abs and parts and parts[0].is_drive:
+            raise ValueError('The pattern must be a relative path pattern')
+
         return parts
 
 
@@ -746,6 +752,7 @@ class WcParse(object):
         """Initialize."""
 
         self.pattern = pattern
+        self.no_abs = bool(flags & _NOABSOLUTE)
         self.braces = bool(flags & BRACE)
         self.is_bytes = isinstance(pattern, bytes)
         self.pathname = bool(flags & PATHNAME)
@@ -1297,6 +1304,9 @@ class WcParse(object):
                 root_specified = True
         elif not self.win_drive_detect and self.pathname and pattern.startswith('/'):
             root_specified = True
+
+        if self.no_abs and root_specified:
+            raise ValueError('The pattern must be a relative path pattern')
 
         if root_specified:
             self.matchbase = False

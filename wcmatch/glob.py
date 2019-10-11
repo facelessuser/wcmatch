@@ -78,7 +78,8 @@ FLAG_MASK = (
     NEGATEALL |
     FORCEWIN |
     FORCEUNIX |
-    _wcparse._RECURSIVEMATCH
+    _wcparse._RECURSIVEMATCH |
+    _wcparse._NOABSOLUTE
 )
 
 
@@ -106,13 +107,12 @@ def _flag_transform(flags):
 class Glob(object):
     """Glob patterns."""
 
-    def __init__(self, pattern, flags=0, curdir=None, pathlib=False):
+    def __init__(self, pattern, flags=0, curdir=None):
         """Initialize the directory walker object."""
 
         self.is_bytes = isinstance(pattern[0], bytes)
         self.current = b'.' if self.is_bytes else '.'
         self.curdir = curdir
-        self.pathlib = pathlib
         self.mark = bool(flags & MARK)
         if self.mark:
             flags ^= MARK
@@ -156,9 +156,7 @@ class Glob(object):
                 self.npatterns.append(re.compile(_wcparse.translate(p, flags=nflags)[1][0]))
             else:
                 self.pattern.append(_wcparse.WcPathSplit(p, self.flags).split())
-                if self.pathlib:
-                    if self.pattern[-1][0].is_drive:
-                        raise ValueError('PathLike objects do not support absolute paths')
+
         if not self.pattern and self.npatterns:
             if self.negateall:
                 default = '**'

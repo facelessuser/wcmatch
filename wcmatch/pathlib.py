@@ -45,7 +45,8 @@ FLAG_MASK = (
     MATCHBASE |
     NODIR |
     NEGATEALL |
-    _wcparse._RECURSIVEMATCH
+    _wcparse._RECURSIVEMATCH |
+    _wcparse._NOABSOLUTE
 )
 
 
@@ -74,8 +75,8 @@ class Path(pathlib.Path):
         """
 
         if self.is_dir():
-            flags = self._translate_flags(flags)
-            for filename in glob.Glob(util.to_tuple(patterns), flags, curdir=str(self), pathlib=True).glob():
+            flags = self._translate_flags(flags | _wcparse._NOABSOLUTE)
+            for filename in glob.Glob(util.to_tuple(patterns), flags, curdir=str(self)).glob():
                 yield self._from_parts([filename])
 
     def rglob(self, patterns, *, flags=0):

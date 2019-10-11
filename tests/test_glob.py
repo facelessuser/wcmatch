@@ -950,15 +950,15 @@ class TestGlobCornerCaseMarked(Testglob):
 class TestGlobEscapes(unittest.TestCase):
     """Test escaping."""
 
-    def check_escape(self, arg, expected, raw=False):
+    def check_escape(self, arg, expected, raw=False, unix=None):
         """Verify escapes."""
 
         if raw:
-            self.assertEqual(glob.raw_escape(arg), expected)
-            self.assertEqual(glob.raw_escape(os.fsencode(arg)), os.fsencode(expected))
+            self.assertEqual(glob.raw_escape(arg, unix=unix), expected)
+            self.assertEqual(glob.raw_escape(os.fsencode(arg), unix=unix), os.fsencode(expected))
         else:
-            self.assertEqual(glob.escape(arg), expected)
-            self.assertEqual(glob.escape(os.fsencode(arg)), os.fsencode(expected))
+            self.assertEqual(glob.escape(arg, unix=unix), expected)
+            self.assertEqual(glob.escape(os.fsencode(arg), unix=unix), os.fsencode(expected))
 
     def test_escape(self):
         """Test path escapes."""
@@ -986,6 +986,7 @@ class TestGlobEscapes(unittest.TestCase):
     @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
     def test_escape_windows(self):
         """Test windows escapes."""
+
         check = self.check_escape
         check('a:\\?', r'a:\\\?')
         check('b:\\*', r'b:\\\*')
@@ -993,6 +994,28 @@ class TestGlobEscapes(unittest.TestCase):
         check(r'\\\\*\\*\\*', r'\\\\*\\*\\\*')
         check('//?/c:/?', r'//?/c:/\?')
         check('//*/*/*', r'//*/*/\*')
+
+    def test_escape_forced_windows(self):
+        """Test forced windows escapes."""
+
+        check = self.check_escape
+        check('a:\\?', r'a:\\\?', unix=False)
+        check('b:\\*', r'b:\\\*', unix=False)
+        check(r'\\\\?\\c:\\?', r'\\\\?\\c:\\\?', unix=False)
+        check(r'\\\\*\\*\\*', r'\\\\*\\*\\\*', unix=False)
+        check('//?/c:/?', r'//?/c:/\?', unix=False)
+        check('//*/*/*', r'//*/*/\*', unix=False)
+
+    def test_escape_forced_unix(self):
+        """Test forced windows Unix."""
+
+        check = self.check_escape
+        check('a:\\?', r'a:\\\?', unix=True)
+        check('b:\\*', r'b:\\\*', unix=True)
+        check(r'\\\\?\\c:\\?', r'\\\\\\\\\?\\\\c:\\\\\?', unix=True)
+        check(r'\\\\*\\*\\*', r'\\\\\\\\\*\\\\\*\\\\\*', unix=True)
+        check('//?/c:/?', r'//\?/c:/\?', unix=True)
+        check('//*/*/*', r'//\*/\*/\*', unix=True)
 
 
 @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
