@@ -20,34 +20,6 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABI
 CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
 """
-from .pep562 import Pep562
-import sys
-import warnings
-from .__meta__ import __version_info__, __version__
+from .__meta__ import __version_info__, __version__  # noqa: F401
 
 __all__ = tuple()
-
-PY37 = (3, 7) <= sys.version_info
-
-__deprecated__ = {
-    "version": ("__version__", __version__),
-    "version_info": ("__version_info__", __version_info__)
-}
-
-
-def __getattr__(name):  # noqa: N807
-    """Get attribute."""
-
-    deprecated = __deprecated__.get(name)
-    if deprecated:
-        warnings.warn(
-            "'{}' is deprecated. Use '{}' instead.".format(name, deprecated[0]),
-            category=DeprecationWarning,
-            stacklevel=(3 if PY37 else 4)
-        )
-        return deprecated[1]
-    raise AttributeError("module '{}' has no attribute '{}'".format(__name__, name))
-
-
-if not PY37:
-    Pep562(__name__)

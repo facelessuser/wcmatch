@@ -95,24 +95,6 @@ def filter(filenames, patterns, *, flags=0):
 ['a.txt', 'b.txt']
 ```
 
-#### `fnmatch.fnsplit`
-
-```py3
-def fnsplit(pattern, *, flags=0):
-```
-
-`fnsplit` is used to take a string of multiple patterns that are divided by `|` and split them into separate patterns. This is provided to help with some interfaces they might need a way to define multiple patterns in one input. It takes into account things like sequences (`[]`) and extended patterns (`*(...)`) and will not parse `|` within them.  You can escape the dividers if needed (`\|`).
-
-```pycon3
->>> from wcmatch import fnmatch
->>> fnmatch.fnsplit(r'*.txt|*(some|file).py', flags=fnmatch.EXTMATCH)
-('*.txt', '*(some|file).py')
-```
-
-
-!!! warning "Deprecated 3.0"
-    `fnsplit` has been deprecated in favor of using the [`SPLIT`](#fnmatchsplit) flag instead.
-
 #### `fnmatch.translate`
 
 ```py3
@@ -133,19 +115,6 @@ def translate(patterns, *, flags=0):
     Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic to how it used to be, but is more efficient.
 
 ## Flags
-
-#### `fnmatch.FORCECASE, fnmatch.F` {: #fnmatchforcecase}
-
-`FORCECASE` forces case sensitivity. `FORCECASE` has higher priority than [`IGNORECASE`](#fnmatchignorecase).
-
-On Windows, this will force names to be treated like Linux/Unix names, and slashes will not be normalized.
-
-!!! warning "Deprecated 4.3.0"
-    `FORCECASE` has been deprecated as of 4.3.0.
-
-    It is recommended to use [`FORCEUNIX`](#fnmatchforceunix) if the desire is to force Linux/Unix style logic. It is more intuitive when reading the code and can allow combinations with `IGNORECASE` if a case insensitive Linux/Unix style is preferred. Currently, Windows is the only system that is treated case insensitively by default.
-
-    If you'd like to force case sensitivity, even on Windows, it is recommended to use [`CASE`](#fnmatchcase). `CASE` can also be paired with the [`FORCEWIN`](#fnmatchforceunix) flag if desired.
 
 #### `fnmatch.CASE, fnmatch.C` {: #fnmatchcase}
 

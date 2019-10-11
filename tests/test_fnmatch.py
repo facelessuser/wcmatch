@@ -6,7 +6,6 @@ import mock
 import wcmatch.fnmatch as fnmatch
 from wcmatch import util
 import wcmatch._wcparse as _wcparse
-import warnings
 
 
 class TestFnMatch:
@@ -74,17 +73,6 @@ class TestFnMatch:
         [r'usr\\bin', 'usr/bin', True, fnmatch.C | fnmatch.W],
         [r'usr\\bin', 'usr\\bin', True, fnmatch.C | fnmatch.W],
 
-        # Deprecated: Force Case
-        ['abc', 'abc', True, fnmatch.F],
-        ['abc', 'AbC', False, fnmatch.F],
-        ['AbC', 'abc', False, fnmatch.F],
-        ['AbC', 'AbC', True, fnmatch.F],
-
-        ['usr/bin', 'usr/bin', True, fnmatch.F],
-        ['usr/bin', 'usr\\bin', False, fnmatch.F],
-        [r'usr\\bin', 'usr/bin', False, fnmatch.F],
-        [r'usr\\bin', 'usr\\bin', True, fnmatch.F],
-
         # Wildcard tests
         [b'te*', b'test', True, 0],
         [b'te*\xff', b'test\xff', True, 0],
@@ -96,7 +84,6 @@ class TestFnMatch:
         ['AbC', 'abc', not util.is_case_sensitive(), 0],
         ['AbC', 'AbC', True, 0],
         ['abc', 'AbC', True, fnmatch.W],
-        ['abc', 'AbC', True, fnmatch.W | fnmatch.F],  # Deprecated: Can't force case if forcing Windows
         ['abc', 'AbC', False, fnmatch.U],
         ['abc', 'AbC', True, fnmatch.U | fnmatch.I],
         ['AbC', 'abc', not util.is_case_sensitive(), fnmatch.W | fnmatch.U],  # Can't force both, just detect system
@@ -513,32 +500,3 @@ class TestFnMatchTranslate(unittest.TestCase):
 
         self.assertTrue(len(fnmatch.translate('!test', flags=fnmatch.N | fnmatch.A)[0]) == 1)
         self.assertTrue(len(fnmatch.translate(b'!test', flags=fnmatch.N | fnmatch.A)[0]) == 1)
-
-
-class TestDeprecated(unittest.TestCase):
-    """Test deprecated."""
-
-    def test_split(self):
-        """Test split."""
-
-        with warnings.catch_warnings(record=True) as w:
-            # Cause all warnings to always be triggered.
-            warnings.simplefilter("always")
-
-            patterns = fnmatch.fnsplit('test|test')
-            self.assertTrue(len(w) == 1)
-            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-            self.assertTrue(patterns, ['test', 'test'])
-
-    def test_forcecase(self):
-        """Test deprecation of force case flag."""
-
-        with warnings.catch_warnings(record=True) as w:
-            # Cause all warnings to always be triggered.
-            warnings.simplefilter("always")
-
-            fnmatch.translate('*', flags=fnmatch.F),
-            fnmatch.fnmatch('path', "*", flags=fnmatch.F)
-            fnmatch.filter(['path'], "*", flags=fnmatch.F)
-            self.assertEqual(len(w), 3)
-            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))

@@ -26,15 +26,14 @@ from . import _wcparse
 from . import util
 
 __all__ = (
-    "CASE", "FORCECASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME",
+    "CASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME",
     "EXTMATCH", "GLOBSTAR", "BRACE", "MINUSNEGATE", "SYMLINKS", "HIDDEN", "RECURSIVE",
     "MATCHBASE",
-    "C", "F", "I", "R", "P", "E", "G", "M", "DP", "FP", "SL", "HD", "RV", "X", "B",
+    "C", "I", "R", "P", "E", "G", "M", "DP", "FP", "SL", "HD", "RV", "X", "B",
     "WcMatch"
 )
 
 C = CASE = _wcparse.CASE
-F = FORCECASE = _wcparse.FORCECASE
 I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
 E = EXTMATCH = _wcparse.EXTMATCH
@@ -55,7 +54,6 @@ P = PATHNAME = DIRPATHNAME | FILEPATHNAME
 
 FLAG_MASK = (
     CASE |
-    FORCECASE |
     IGNORECASE |
     RAWCHARS |
     EXTMATCH |
@@ -103,8 +101,6 @@ class WcMatch(object):
 
     def _parse_flags(self, flags):
         """Parse flags."""
-
-        _wcparse.deprecate_flags(flags)
 
         self.flags = flags & FLAG_MASK
         self.flags |= _wcparse.NEGATE | _wcparse.DOTMATCH | _wcparse.NEGATEALL
