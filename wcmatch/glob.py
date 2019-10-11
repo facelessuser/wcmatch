@@ -113,7 +113,6 @@ class Glob(object):
         self.is_bytes = isinstance(pattern[0], bytes)
         self.current = b'.' if self.is_bytes else '.'
         self.curdir = curdir
-        self.lead_strip = len(curdir) + 1 if curdir and curdir != self.current else 0
         self.pathlib = pathlib
         self.mark = bool(flags & MARK)
         if self.mark:
@@ -401,10 +400,7 @@ class Glob(object):
     def format_path(self, path, is_dir, dir_only):
         """Format path."""
 
-        if self.curdir is not None and self.lead_strip:
-            return (os.path.join(path, self.empty) if dir_only or (self.mark and is_dir) else path)[self.lead_strip:]
-        else:
-            return os.path.join(path, self.empty) if dir_only or (self.mark and is_dir) else path
+        return os.path.join(path, self.empty) if dir_only or (self.mark and is_dir) else path
 
     def glob(self):
         """Starts off the glob iterator."""

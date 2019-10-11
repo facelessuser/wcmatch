@@ -78,7 +78,7 @@ class Path(pathlib.Path):
         if self.is_dir():
             flags = self._translate_flags(flags)
             for filename in glob.Glob(util.to_tuple(patterns), flags, curdir=str(self), pathlib=True).glob():
-                yield self / filename
+                yield self._from_parts([filename])
 
     def rglob(self, patterns, *, flags=0):
         """
