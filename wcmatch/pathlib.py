@@ -6,15 +6,14 @@ from . import _wcparse
 from . import util
 
 __all__ = (
-    "CASE", "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
+    "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "NEGATE", "MINUSNEGATE", "BRACE",
     "REALPATH", "FOLLOW", "MATCHBASE", "NEGATEALL", "NODIR",
-    "C", "F", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A",
+    "C", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A",
     "Path", "PurePath", "WindowsPath", "PosixPath", "PurePosixPath", "PureWindowsPath"
 )
 
 C = CASE = glob.CASE
-F = FORCECASE = glob.FORCECASE
 I = IGNORECASE = glob.IGNORECASE
 R = RAWCHARS = glob.RAWCHARS
 D = DOTGLOB = DOTMATCH = glob.DOTMATCH
@@ -32,7 +31,6 @@ A = NEGATEALL = glob.NEGATEALL
 
 FLAG_MASK = (
     CASE |
-    FORCECASE |
     IGNORECASE |
     RAWCHARS |
     DOTMATCH |

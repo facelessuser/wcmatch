@@ -32,8 +32,7 @@ __all__ = (
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
     "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX",
     "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U",
-    "iglob", "glob", "globmatch", "globfilter", "escape", "raw_escape",
-    "Path", "PurePath", "WindowsPath", "PosixPath", "PurePosixPath", "PureWindowsPath"
+    "iglob", "glob", "globmatch", "globfilter", "escape", "raw_escape"
 )
 
 # We don't use `util.platform` only because we mock it in tests,
