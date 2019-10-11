@@ -95,6 +95,8 @@ CASE = 0x40000
 # Internal flag
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
 _ANCHOR = 0x200000000  # The pattern, if it starts with a slash, is anchored to the working directory; strip the slash.
+_RECURSIVEMATCH = 0x400000000  # Internal flag that allows for something similar to `MATCHBASE`, but for relative paths.
+_NOABSOLUTE = 0x800000000  # Do not allow absolute patterns
 
 FLAG_MASK = (
     CASE |
@@ -115,7 +117,9 @@ FLAG_MASK = (
     FORCEWIN |
     FORCEUNIX |
     _TRANSLATE |
-    _ANCHOR
+    _ANCHOR |
+    _RECURSIVEMATCH |
+    _NOABSOLUTE
 )
 CASE_FLAGS = IGNORECASE | CASE
 
@@ -397,8 +401,10 @@ class WcPathSplit(object):
         self.unix = is_unix_style(flags)
         self.flags = flags
         self.pattern = util.norm_pattern(pattern, not self.unix, flags & RAWCHARS)
+        self.no_abs = bool(flags & _NOABSOLUTE)
         self.globstar = bool(flags & GLOBSTAR)
         self.matchbase = bool(flags & MATCHBASE)
+        self.recursivematch = bool(flags & _RECURSIVEMATCH) and not self.matchbase
         if is_negative(self.pattern, flags):  # pragma: no cover
             # This isn't really used, but we'll keep it around
             # in case we find a reason to directly send inverse patterns
@@ -596,6 +602,13 @@ class WcPathSplit(object):
             self.globstar = True
             parts.insert(0, WcGlob(b'**' if self.is_bytes else '**', True, True, True, False))
 
+        if self.recursivematch and not parts[0].is_drive:
+            self.globstar = True
+            parts.insert(0, WcGlob(b'**' if self.is_bytes else '**', True, True, True, False))
+
+        if self.no_abs and parts and parts[0].is_drive:
+            raise ValueError('The pattern must be a relative path pattern')
+
         return parts
 
 
@@ -739,6 +752,7 @@ class WcParse(object):
         """Initialize."""
 
         self.pattern = pattern
+        self.no_abs = bool(flags & _NOABSOLUTE)
         self.braces = bool(flags & BRACE)
         self.is_bytes = isinstance(pattern, bytes)
         self.pathname = bool(flags & PATHNAME)
@@ -750,6 +764,7 @@ class WcParse(object):
         self.dot = bool(flags & DOTMATCH)
         self.extend = bool(flags & EXTMATCH)
         self.matchbase = bool(flags & MATCHBASE)
+        self.recursivematch = bool(flags & _RECURSIVEMATCH) and not self.matchbase
         self.anchor = bool(flags & _ANCHOR)
         self.case_sensitive = get_case(flags)
         self.in_list = False
@@ -1290,8 +1305,12 @@ class WcParse(object):
         elif not self.win_drive_detect and self.pathname and pattern.startswith('/'):
             root_specified = True
 
+        if self.no_abs and root_specified:
+            raise ValueError('The pattern must be a relative path pattern')
+
         if root_specified:
             self.matchbase = False
+            self.recursivematch = False
 
         if not root_specified and self.realpath:
             current.append(_NO_WIN_ROOT if self.win_drive_detect else _NO_ROOT)
@@ -1367,8 +1386,9 @@ class WcParse(object):
             p, number = (RE_ANCHOR if not self.win_drive_detect else RE_WIN_ANCHOR).subn('', p)
             if number:
                 self.matchbase = False
+                self.recursivematch = False
 
-        if self.matchbase:
+        if self.matchbase or self.recursivematch:
             globstar = self.globstar
             self.globstar = True
             self.root('**', matchbase)
@@ -1377,7 +1397,7 @@ class WcParse(object):
         if p:
             self.root(p, result)
 
-        if p and self.matchbase:
+        if p and (self.matchbase or self.recursivematch):
             result = matchbase + result
 
         case_flag = 'i' if not self.case_sensitive else ''

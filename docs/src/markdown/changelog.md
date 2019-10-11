@@ -2,6 +2,8 @@
 
 ## 5.0.0
 
+- **NEW**: Add `wcmatch.pathlib` which contains `pathlib` variants that uses `wcmatch.glob` instead of the default Python glob.
+- **NEW**: `escape` and `raw_escape` can manually be forced to use Windows or Linux/Unix logic via the keyword only argument by setting to `False` or `True` respectively. The default is `None` which will auto detect the system.
 - **NEW**: The deprecated flag `FORCECASE` has now been removed.
 - **NEW**: The deprecated functions `globsplit` and `fnsplit` have been removed.
 - **NEW**: The deprecated variables `version` and `version_info` have been removed.

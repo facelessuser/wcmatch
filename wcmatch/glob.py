@@ -32,7 +32,7 @@ __all__ = (
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
     "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX",
     "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U",
-    "iglob", "glob", "globmatch", "globfilter", "escape"
+    "iglob", "glob", "globmatch", "globfilter", "escape", "raw_escape"
 )
 
 # We don't use `util.platform` only because we mock it in tests,
@@ -77,7 +77,9 @@ FLAG_MASK = (
     NODIR |
     NEGATEALL |
     FORCEWIN |
-    FORCEUNIX
+    FORCEUNIX |
+    _wcparse._RECURSIVEMATCH |
+    _wcparse._NOABSOLUTE
 )
 
 
@@ -105,9 +107,12 @@ def _flag_transform(flags):
 class Glob(object):
     """Glob patterns."""
 
-    def __init__(self, pattern, flags=0):
+    def __init__(self, pattern, flags=0, curdir=None):
         """Initialize the directory walker object."""
 
+        self.is_bytes = isinstance(pattern[0], bytes)
+        self.current = b'.' if self.is_bytes else '.'
+        self.curdir = curdir
         self.mark = bool(flags & MARK)
         if self.mark:
             flags ^= MARK
@@ -125,10 +130,8 @@ class Glob(object):
         self.braces = bool(flags & _wcparse.BRACE)
         self.matchbase = bool(flags & _wcparse.MATCHBASE)
         self.case_sensitive = _wcparse.get_case(self.flags)
-        self.is_bytes = isinstance(pattern[0], bytes)
         self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
         self.empty = b'' if self.is_bytes else ''
-        self.current = b'.' if self.is_bytes else '.'
         split = _wcparse.split(pattern, flags)
         patterns = []
         for s in split:
@@ -153,6 +156,7 @@ class Glob(object):
                 self.npatterns.append(re.compile(_wcparse.translate(p, flags=nflags)[1][0]))
             else:
                 self.pattern.append(_wcparse.WcPathSplit(p, self.flags).split())
+
         if not self.pattern and self.npatterns:
             if self.negateall:
                 default = '**'
@@ -399,9 +403,9 @@ class Glob(object):
         """Starts off the glob iterator."""
 
         if self.is_bytes:
-            curdir = os.fsencode(os.curdir)
+            curdir = os.fsencode(os.curdir) if self.curdir is None else self.curdir
         else:
-            curdir = os.curdir
+            curdir = os.curdir if self.curdir is None else self.curdir
 
         for pattern in self.pattern:
             # If the pattern ends with `/` we return the files ending with `/`.
@@ -502,20 +506,20 @@ def globfilter(filenames, patterns, *, flags=0):
     return matches
 
 
-def raw_escape(pattern, unix=False):
+def raw_escape(pattern, unix=None):
     """Apply raw character transform before applying escape."""
 
     pattern = util.norm_pattern(pattern, False, True)
     return escape(pattern, unix)
 
 
-def escape(pattern, unix=False):
+def escape(pattern, unix=None):
     """Escape."""
 
     is_bytes = isinstance(pattern, bytes)
     ptype = _wcparse.BYTES if is_bytes else _wcparse.UNICODE
     replace = br'\\\1' if is_bytes else r'\\\1'
-    win = util.platform() == "windows" and not unix
+    win = ((unix is None and util.platform() == "windows") or unix is False)
     magic = _wcparse.RE_WIN_MAGIC[ptype] if win else _wcparse.RE_MAGIC[ptype]
 
     # Handle windows drives special.

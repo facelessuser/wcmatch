@@ -120,7 +120,7 @@ def iglob(patterns, *, flags=0):
 #### `glob.globmatch`
 
 ```py3
-def globmatch(filename, patterns, \*, flags=0):
+def globmatch(filename, patterns, *, flags=0):
 ```
 
 `globmatch` takes a file name, a pattern (or list of patterns), and flags.  It will return a boolean indicating whether the file path was matched by the pattern(s).
@@ -229,7 +229,7 @@ def translate(patterns, *, flags=0):
 #### `glob.escape`
 
 ```py3
-def escape(pattern, unix=False):
+def escape(pattern, unix=None):
 ```
 
 This escapes special glob meta characters so they will be treated as literal characters.  It escapes using backslashes. It will escape `-`, `!`, `*`, `?`, `(`, `[`, `|`, `^`, `{`, and `\`. On Windows, it will specifically only escape `\` when not already escaped (`\\`). `/` and `\\` (on Windows) are not escaped as they are path separators.
@@ -244,25 +244,39 @@ True
 
 On a Windows system, drives are not escaped since meta characters are not parsed in drives. Drives on Windows are generally treated special. This is because a drive could contain special characters like in `\\?\c:\`.
 
-`escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since [`globmatch`](#globglobmatch) allows you to match Unix style paths on a Windows system, you can force Unix style escaping via the `unix` parameter.
+`escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since [`globmatch`](#globglobmatch) allows you to match Unix style paths on a Windows system, and vice versa. You can force Unix style escaping or Windows style escaping via the `unix` parameter. When `unix` is `None`, the escape style will be detected, when `unix` is `True` Linux/Unix style escaping will be used, and when `unix` is `False` Windows style escaping will be used.
+
+```pycon3
+>>> glob.escape('some/path?/**file**{}.txt', platform=glob.UNIX)
+```
+
+!!! new "New 5.0"
+    The `unix` parameter is now `None` by default. Set to `True` to force Linux/Unix style escaping or set to `False` to force Windows style escaping.
 
 #### `glob.raw_escape`
 
 ```py3
-def raw_escape(pattern, unix=False):
+def raw_escape(pattern, unix=None):
 ```
 
 This is like [`escape`](#globescape) except it will apply raw character string escapes before doing meta character escapes.  This is meant for use with the [`RAWCHARS`](#globrawchars) flag.
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.raw_escape('some/path?/\x2a\x2afile\x2a\x2a{}.txt')
+>>> glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt')
 'some/path\\?/\\*\\*file\\*\\*\\{}.txt'
->>> glob.globmatch('some/path?/**file**{}.txt', glob.escape('some/path?/\x2a\x2afile\x2a\x2a{}.txt'), flags=glob.RAWCHARS)
+>>> glob.globmatch('some/path?/**file**{}.txt', glob.escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt'), flags=glob.RAWCHARS)
 True
 ```
 
-`raw_escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since [`globmatch`](#globglobmatch) allows you to match Unix style paths on a Windows system, you can force Unix style escaping via the `unix` parameter.
+`raw_escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since [`globmatch`](#globglobmatch) allows you to match Unix style paths on a Windows system, and vice versa. You can force Unix style escaping or Windows style escaping via the `unix` parameter. When `unix` is `None`, the escape style will be detected, when `unix` is `True` Linux/Unix style escaping will be used, and when `unix` is `False` Windows style escaping will be used.
+
+```pycon3
+>>> glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt', platform=glob.UNIX)
+```
+
+!!! new "New 5.0"
+    The `unix` parameter is now `None` by default. Set to `True` to force Linux/Unix style escaping or set to `False` to force Windows style escaping.
 
 ## Flags
 
@@ -325,7 +339,7 @@ In the past, only `glob` and `iglob` operated on the filesystem, but with `REALP
 
 Normally, functions such as `globmatch` would simply match a path with regular expression and return the result. The functions were not concerned with whether the path existed or not. It didn't care if it was even valid for the operating system.
 
-`REALPATH` forces `globmatch` and `globfilter` to treat the string path as a real file path for the given system it is running on. It will augment the patterns used to match files and enable additional logic that the path must meet in order to match:
+`REALPATH` forces `globmatch` and `globfilter` to treat the string path as a real file path for the given system it is running on. It will augment the patterns used to match files and enable additional logic so that the path must meet the following in order to match:
 
 - Path must exist.
 - Directories that are symlinks will not be matched by `GLOBSTAR` patterns (`**`) unless the `FOLLOW` flag is enabled.
@@ -396,7 +410,7 @@ no trailing slash.
 
 `MATCHBASE`, when a pattern has no slashes in it, will cause [`glob`](#globglob) and [`iglob`](#globiglob) to seek for
 any file anywhere in the tree with a matching basename. When enabled for [`globfilter`](#globglobfilter) and
-[`globmatch`](#globglobmatch), they will match any basename in the tree.
+[`globmatch`](#globglobmatch), any path whose basename matches.
 
 ```pycon3
 >>> from wcmatch import glob

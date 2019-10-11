@@ -2,8 +2,8 @@
 
 ## Overview
 
-Wildcard Match provides an enhanced `fnmatch` and `glob` library. In some ways it is similar to Python's builtin
-`fnmatch` and `glob` as it provides functions to match, filter, and glob the file system. But it adds a number of
+Wildcard Match provides an enhanced `fnmatch`, `glob` and `pathlib` library. In some ways they are similar to Python's
+builtin libraries as they provides functions to match, filter, and glob the file system. But it adds a number of
 features found in Bash's globbing such as backslash escaping, brace expansion, extended glob pattern groups, etc. It
 also adds a path centric matcher called `globmatch` which functions like `fnmatch`, but for paths. Paths that would
 normally be returned when providing `glob` a pattern should also be properly match in `globmatch`.
@@ -40,9 +40,10 @@ pip install wcmatch
 
 ## Libraries
 
-- [`fnmatch`](fnmatch): A file name matching library.
-- [`glob`](glob): A file system searching and file path matching library.
-- [`wcmatch`](wcmatch): An alternative file search library built on `fnmatch` and `globmatch`.
+- [`fnmatch`](./fnmatch.md): A file name matching library.
+- [`glob`](./glob.md): A file system searching and file path matching library.
+- [`pathlib`](./pathlib.md): A implementation of Python's `pathlib` that uses our own `glob` implementation.
+- [`wcmatch`](./wcmatch.md): An alternative file search library built on `fnmatch` and `globmatch`.
 
 --8<--
 refs.txt

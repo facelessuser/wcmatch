@@ -140,7 +140,7 @@ Resets the abort state after running `kill`.
 ['./LICENSE.md', './README.md']
 ```
 
-### `WcMatch.is_aborted`
+#### `WcMatch.is_aborted`
 
 Checks if an abort has been issued.
 
@@ -330,7 +330,7 @@ Be careful with patterns such as `{1..100}` which would generate one hundred pat
 
 #### `wcmatch.MATCHBASE, wcmatch.X` {: #wcmatchmatchbase}
 
-When `FILEPATHNAME` or `DIRPATHNAME` is enabled, `MATCHBASE` will ensure that that the respective file or directory pattern, when there are no slashes in the pattern, seeks for any file anywhere in the tree with a matching basename. This is essentially the behavior when `FILEPATHNAME` and `DIRPATHNAME` is disabled, but with `MATCHBASE`, you can toggle the behavior by included slashes in your pattern.
+When `FILEPATHNAME` or `DIRPATHNAME` is enabled, `MATCHBASE` will ensure that that the respective file or directory pattern, when there are no slashes in the pattern, seeks for any file anywhere in the tree with a matching basename. This is essentially the behavior when `FILEPATHNAME` and `DIRPATHNAME` is disabled, but with `MATCHBASE`, you can toggle the behavior by including slashes in your pattern.
 
 When we include no slashes:
 

@@ -26,6 +26,7 @@ nav:
   - Wildcard Match: index.md
   - Fnmatch: fnmatch.md
   - Glob: glob.md
+  - Pathlib: pathlib.md
   - Wcmatch: wcmatch.md
   - Changelog: changelog.md
   - License: license.md

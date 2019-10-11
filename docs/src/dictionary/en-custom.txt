@@ -12,6 +12,7 @@ MacOS
 MkDocs
 NONINFRINGEMENT
 POSIX
+Pathlib
 Preprocess
 PyPI
 Symlink
@@ -25,6 +26,7 @@ basename
 boolean
 builtin
 centric
+configurability
 deMorgan
 deprecations
 falsy
@@ -41,6 +43,7 @@ macOS
 matcher
 matchers
 paren
+pathlike
 posix
 pre
 prepend
@@ -48,6 +51,9 @@ prerelease
 prereleases
 regex
 sortable
+subclass
+subclassed
+subclasses
 subdirectories
 sublicense
 symlink
@@ -56,4 +62,5 @@ tuple
 un
 unclosed
 unordered
+versa
 wildcard
