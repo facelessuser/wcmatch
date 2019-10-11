@@ -111,7 +111,7 @@ class PurePath(pathlib.PurePath):
 
         flags = (flags & FLAG_MASK) | _wcparse.PATHNAME
         if flags & REALPATH:
-            flags = _wcparse.FORCEWIN if os.name == 'nt' else _wcparse.FORCEUNIX
+            flags |= _wcparse.FORCEWIN if os.name == 'nt' else _wcparse.FORCEUNIX
         if isinstance(self, PureWindowsPath):
             if flags & _wcparse.FORCEUNIX:
                 raise ValueError("Windows pathlike objects cannot be forced to behave like a Posix path")
