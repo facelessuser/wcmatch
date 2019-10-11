@@ -1117,34 +1117,3 @@ class TestGlobPaths(unittest.TestCase):
             sorted(['docs', 'wcmatch', 'readme.md']),
             sorted([each.lower() for each in glob.glob(['BAD', 'docs', 'WCMATCH', 'readme.MD'], flags=glob.I)])
         )
-
-
-class TestDeprecated(unittest.TestCase):
-    """Test deprecated."""
-
-    def test_split(self):
-        """Test split."""
-
-        with warnings.catch_warnings(record=True) as w:
-            # Cause all warnings to always be triggered.
-            warnings.simplefilter("always")
-
-            patterns = glob.globsplit('test|test')
-            self.assertTrue(len(w) == 1)
-            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
-            self.assertTrue(patterns, ['test', 'test'])
-
-    def test_forcecase(self):
-        """Test deprecation of force case flag."""
-
-        with warnings.catch_warnings(record=True) as w:
-            # Cause all warnings to always be triggered.
-            warnings.simplefilter("always")
-
-            glob.glob('*', flags=glob.F)
-            list(glob.iglob('*', flags=glob.F))
-            glob.translate('*', flags=glob.F),
-            glob.globmatch('path', "*", flags=glob.F)
-            glob.globfilter(['path'], "*", flags=glob.F)
-            self.assertEqual(len(w), 5)
-            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))

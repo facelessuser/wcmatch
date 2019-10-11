@@ -73,7 +73,6 @@ EXT_TYPES = frozenset(('*', '?', '+', '@', '!'))
 # Common flags are found between `0x0001 - 0xffff`
 # Implementation specific (`glob` vs `fnmatch` vs `wcmatch`) are found between `0x00010000 - 0xffff0000`
 # Internal special flags are found at `0x100000000` and above
-FORCECASE = 0x0001
 IGNORECASE = 0x0002
 RAWCHARS = 0x0004
 NEGATE = 0x0008
@@ -99,7 +98,6 @@ _ANCHOR = 0x200000000  # The pattern, if it starts with a slash, is anchored to 
 
 FLAG_MASK = (
     CASE |
-    FORCECASE |
     IGNORECASE |
     RAWCHARS |
     NEGATE |
@@ -119,7 +117,7 @@ FLAG_MASK = (
     _TRANSLATE |
     _ANCHOR
 )
-CASE_FLAGS = FORCECASE | IGNORECASE | CASE
+CASE_FLAGS = IGNORECASE | CASE
 
 # Pieces to construct search path
 
@@ -254,7 +252,7 @@ def get_case(flags):
 
     if not bool(flags & CASE_FLAGS):
         case_sensitive = is_case_sensitive(flags)
-    elif flags & FORCECASE or flags & CASE:
+    elif flags & CASE:
         case_sensitive = True
     else:
         case_sensitive = False
@@ -286,21 +284,10 @@ def is_unix_style(flags):
     return (
         (
             (util.platform() != "windows") or
-            (not bool(flags & REALPATH) and (bool(flags & FORCECASE) or bool(flags & FORCEUNIX)))
+            (not bool(flags & REALPATH) and bool(flags & FORCEUNIX))
         ) and
         not flags & FORCEWIN
     )
-
-
-def deprecate_flags(flags):
-    """Deprecate flags."""
-
-    if flags & FORCECASE:
-        util.warn_deprecated(
-            'FORCECASE flag has been deprecated.'
-            'It is recommended to use FORCEUNIX to force Linux/Unix behavior on Windows '
-            ' and/or use CASE to force case sensitive to force case sensitivity on Windows file paths.'
-        )
 
 
 def translate(patterns, flags):

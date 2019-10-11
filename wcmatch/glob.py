@@ -28,11 +28,11 @@ from . import _wcparse
 from . import util
 
 __all__ = (
-    "CASE", "FORCECASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
+    "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
     "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX",
-    "C", "F", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U",
-    "iglob", "glob", "globsplit", "globmatch", "globfilter", "escape"
+    "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U",
+    "iglob", "glob", "globmatch", "globfilter", "escape"
 )
 
 # We don't use `util.platform` only because we mock it in tests,
@@ -41,7 +41,6 @@ WIN = sys.platform.startswith('win')
 NO_SCANDIR_WORKAROUND = util.PY36
 
 C = CASE = _wcparse.CASE
-F = FORCECASE = _wcparse.FORCECASE
 I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
 D = DOTGLOB = DOTMATCH = _wcparse.DOTMATCH
@@ -63,7 +62,6 @@ K = MARK = 0x100000
 
 FLAG_MASK = (
     CASE |
-    FORCECASE |
     IGNORECASE |
     RAWCHARS |
     DOTMATCH |
@@ -86,8 +84,6 @@ FLAG_MASK = (
 def _flag_transform(flags):
     """Transform flags to glob defaults."""
 
-    _wcparse.deprecate_flags(flags)
-
     # Enabling both cancels out
     if flags & _wcparse.FORCEUNIX and flags & _wcparse.FORCEWIN:
         flags ^= _wcparse.FORCEWIN | _wcparse.FORCEUNIX
@@ -102,9 +98,6 @@ def _flag_transform(flags):
         else:
             if flags & _wcparse.FORCEWIN:
                 flags ^= _wcparse.FORCEWIN
-
-    if flags & _wcparse.FORCEWIN and flags & _wcparse.FORCECASE:
-        flags ^= _wcparse.FORCECASE
 
     return flags
 
@@ -469,13 +462,6 @@ def glob(patterns, *, flags=0):
     """Glob."""
 
     return list(iglob(util.to_tuple(patterns), flags=flags))
-
-
-@util.deprecated("Use the 'SPLIT' flag instead.")
-def globsplit(pattern, *, flags=0):
-    """Split pattern by '|'."""
-
-    return _wcparse.WcSplit(pattern, _flag_transform(flags)).split()
 
 
 def translate(patterns, *, flags=0):

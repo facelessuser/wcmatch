@@ -543,14 +543,6 @@ class TestGlobFilter:
         # Slash exclusion
         GlobFiles(['test/test', 'test\\/test']),
 
-        # Deprecated: Force case
-        ['test/test', ['test/test'], glob.F],
-        ['test\\/test', ['test\\/test'], glob.F],
-        ['@(test/test)', [], glob.F],
-        [r'@(test\/test)', [], glob.F],
-        ['test[/]test', [], glob.F],
-        [r'test[\/]test', [], glob.F],
-
         # Force Unix/Linux
         ['test/test', ['test/test'], glob.U],
         ['test\\/test', ['test\\/test'], glob.U],
@@ -1314,12 +1306,6 @@ class TestGlobMatchSpecial(unittest.TestCase):
                 ]
             )
         )
-
-    @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
-    def test_glob_match_real_ignore_forcecase(self):
-        """Ignore `FORCECASE` when using `globmatch` real."""
-
-        self.assertTrue(glob.globmatch('docs/', '**/DOCS/**', flags=self.flags | glob.REALPATH | glob.FORCECASE))
 
     @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
     def test_glob_match_real_ignore_forceunix(self):

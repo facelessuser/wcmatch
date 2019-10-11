@@ -207,23 +207,6 @@ def globfilter(filenames, patterns, *, flags=0):
 
 Like [`globmatch`](#globglobmatch), `globfilter` does not operate directly on the file system, with all the caveats associated. But you can enable the [`REALPATH`](#globrealpath) flag and `globfilter` will use the filesystem to gain context such as: whether the file exists, whether it is a directory or not, or whether it has symlinks that should not be matched by `GLOBSTAR`. See [`globmatch`](#globglobmatch) for examples.
 
-#### `glob.globsplit`
-
-```py3
-def globsplit(pattern, *, flags=0):
-```
-
-`globsplit` is used to take a string of multiple patterns that are divided by `|` and split them into separate patterns. This is provided to help with some interfaces they might need a way to define multiple patterns in one input. It takes into account things like sequences (`[]`) and extended patterns (`*(...)`) and will not parse `|` within them.  You can escape the dividers if needed (`\|`).
-
-```pycon3
->>> from wcmatch import glob
->>> glob.globsplit(r'**/*.txt|source/*(some|file).py')
-('**/*.txt', 'source/*(some|file).py')
-```
-
-!!! warning "Deprecated 3.0"
-    `globsplit` has been deprecated in favor of using the [`SPLIT`](#globsplit) flag instead.
-
 #### `glob.translate`
 
 ```py3
@@ -282,20 +265,6 @@ True
 `raw_escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since [`globmatch`](#globglobmatch) allows you to match Unix style paths on a Windows system, you can force Unix style escaping via the `unix` parameter.
 
 ## Flags
-
-#### `glob.FORCECASE, glob.F` {: #globforcecase}
-
-`FORCECASE` forces case sensitivity. `FORCECASE` has higher priority than [`IGNORECASE`](#globignorecase).
-
-On Windows, `FORCECASE` will also force paths to be treated like Linux/Unix paths in [`globmatch`](#globglobmatch) and [`globfilter`](#globfilter), but only when [`REALPATH`](#globrealpath) is not enabled. `iglob`, `glob`, and cases when `REALPATH` is enabled must normalize paths and use Windows logic as these operations are performed on the current file system of the host machine. File system operations should not enable `FORCECASE` on Windows as it provides no meaningful results. But, if you wish to evaluate Linux/Unix paths on a Windows machine, without touching the file system, then `FORCECASE` might be useful.
-
-!!! warning "Deprecated 4.3.0"
-
-    `FORCECASE` is deprecated in 4.3.0.
-
-    It is recommended to use [`FORCEUNIX`](#globforceunix) if the desire is to force Linux/Unix style logic. It is more intuitive when reading the code and can allow combinations with `IGNORECASE` if a case insensitive Linux/Unix style is preferred.
-
-    If you'd like to force case sensitivity, even on Windows, it is recommended to use [`CASE`](#globcase). `CASE` can also be paired with the [`FORCEWIN`](#globforceunix) flag if desired.
 
 #### `glob.CASE, glob.C` {: #globcase}
 

@@ -273,18 +273,6 @@ is called on every new `match` call.
 !!! new "New 3.0.0"
     Added in 3.0. Additionally, symlinks are now ignored by default moving forward if `SYMLINK` is not enabled.
 
-#### `wcmatch.FORCECASE, wcmatch.F` {: #wcmatchforcecase}
-
-`FORCECASE` forces cased searches. `FORCECASE` has higher priority than [`IGNORECASE`](#wcmatchignorecase). This does **not** affect path normalization. All paths are normalized for the host as it is required to properly access the file system.
-
-`FORCECASE` does not apply to Windows systems.
-
-!!! warning "Deprecated 4.3.0"
-
-    `FORCECASE` is deprecated in 4.3.0.
-
-    If you'd like to force case sensitivity, even on Windows, it is recommended to use [`CASE`](#wcmatchcase).
-
 #### `wcmatch.CASE, wcmatch.C` {: #wcmatchcase}
 
 `CASE` forces case sensitivity. `CASE` has higher priority than [`IGNORECASE`](#wcmatchignorecase).

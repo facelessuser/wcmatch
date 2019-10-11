@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.0.0
+
+- **NEW**: The deprecated flag `FORCECASE` has now been removed.
+- **NEW**: The deprecated functions `globsplit` and `fnsplit` have been removed.
+- **NEW**: The deprecated variables `version` and `version_info` have been removed.
+
 ## 4.3.1
 
 - **FIX**: Regression for root level literal matches in `glob`.

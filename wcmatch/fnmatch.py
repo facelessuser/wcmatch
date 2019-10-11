@@ -20,19 +20,17 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABI
 CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
 """
-from . import util
 from . import _wcparse
 
 __all__ = (
-    "CASE", "EXTMATCH", "FORCECASE", "IGNORECASE", "RAWCHARS",
+    "CASE", "EXTMATCH", "IGNORECASE", "RAWCHARS",
     "NEGATE", "MINUSNEGATE", "DOTMATCH", "BRACE", "SPLIT",
     "NEGATEALL", "FORCEWIN", "FORCEUNIX",
-    "C", "F", "I", "R", "N", "M", "D", "E", "S", "B", "A", "W", "U",
-    "translate", "fnmatch", "filter", "fnsplit"
+    "C", "I", "R", "N", "M", "D", "E", "S", "B", "A", "W", "U",
+    "translate", "fnmatch", "filter"
 )
 
 C = CASE = _wcparse.CASE
-F = FORCECASE = _wcparse.FORCECASE
 I = IGNORECASE = _wcparse.IGNORECASE
 R = RAWCHARS = _wcparse.RAWCHARS
 N = NEGATE = _wcparse.NEGATE
@@ -47,7 +45,6 @@ U = FORCEUNIX = _wcparse.FORCEUNIX
 
 FLAG_MASK = (
     CASE |
-    FORCECASE |
     IGNORECASE |
     RAWCHARS |
     NEGATE |
@@ -65,24 +62,11 @@ FLAG_MASK = (
 def _flag_transform(flags):
     """Transform flags to glob defaults."""
 
-    _wcparse.deprecate_flags(flags)
-
     # Enabling both cancels out
     if flags & _wcparse.FORCEUNIX and flags & _wcparse.FORCEWIN:
         flags ^= _wcparse.FORCEWIN | _wcparse.FORCEUNIX
 
-    # Force ignore case if Windows
-    if flags & _wcparse.FORCEWIN and flags & _wcparse.FORCECASE:
-        flags ^= _wcparse.FORCECASE
-
     return (flags & FLAG_MASK)
-
-
-@util.deprecated("Use the 'SPLIT' flag instead.")
-def fnsplit(pattern, *, flags=0):
-    """Split pattern by '|'."""
-
-    return _wcparse.WcSplit(pattern, _flag_transform(flags)).split()
 
 
 def translate(patterns, *, flags=0):
