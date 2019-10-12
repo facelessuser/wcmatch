@@ -1,0 +1,1304 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="A wildcard file name matching library">
+      
+      
+        <link rel="canonical" href="https://facelessuser.github.io/wcmatch/wcmatch/">
+      
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
+    
+    
+      
+        <title>Wcmatch - Wildcard Match Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/application.30686662.css">
+      
+        <link rel="stylesheet" href="../assets/stylesheets/application-palette.a8b3c06d.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#2196f3">
+      
+    
+    
+      <script src="../assets/javascripts/modernizr.74668098.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../extra-30d8e6755c.css">
+    
+    
+      
+    
+    
+  </head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="blue" data-md-color-accent="blue">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#wcmatchwcmatch" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="https://facelessuser.github.io/wcmatch" title="Wildcard Match Documentation" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon">description</i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Wildcard Match Documentation
+            </span>
+            <span class="md-header-nav__topic">
+              
+                Wcmatch
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="https://github.com/facelessuser/wcmatch/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+        
+
+<nav class="md-tabs" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  <li class="md-tabs__item">
+    
+      <a href=".." class="md-tabs__link md-tabs__link--active">
+        Wildcard Match
+      </a>
+    
+  </li>
+
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </ul>
+  </div>
+</nav>
+      
+      <main class="md-main" role="main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="https://facelessuser.github.io/wcmatch" title="Wildcard Match Documentation" class="md-nav__button md-logo">
+      
+        <i class="md-icon">description</i>
+      
+    </a>
+    Wildcard Match Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="https://github.com/facelessuser/wcmatch/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href=".." title="Wildcard Match" class="md-nav__link">
+      Wildcard Match
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../fnmatch/" title="Fnmatch" class="md-nav__link">
+      Fnmatch
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../glob/" title="Glob" class="md-nav__link">
+      Glob
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../pathlib/" title="Pathlib" class="md-nav__link">
+      Pathlib
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Wcmatch
+      </label>
+    
+    <a href="./" title="Wcmatch" class="md-nav__link md-nav__link--active">
+      Wcmatch
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    Overview
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wcmatchwcmatch_1" class="md-nav__link">
+    wcmatch.WcMatch
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#methods" class="md-nav__link">
+    Methods
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchmatch" class="md-nav__link">
+    WcMatch.match
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchimatch" class="md-nav__link">
+    WcMatch.imatch
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchkill" class="md-nav__link">
+    WcMatch.kill
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchreset" class="md-nav__link">
+    WcMatch.reset
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchis_aborted" class="md-nav__link">
+    WcMatch.is_aborted
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchget_skipped" class="md-nav__link">
+    WcMatch.get_skipped
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hooks" class="md-nav__link">
+    Hooks
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchon_init" class="md-nav__link">
+    WcMatch.on_init
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchon_validate_directory" class="md-nav__link">
+    WcMatch.on_validate_directory
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchon_validate_file" class="md-nav__link">
+    WcMatch.on_validate_file
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchon_skip" class="md-nav__link">
+    WcMatch.on_skip
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchon_error" class="md-nav__link">
+    WcMatch.on_error
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchon_match" class="md-nav__link">
+    WcMatch.on_match
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchon_reset" class="md-nav__link">
+    WcMatch.on_reset
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flags" class="md-nav__link">
+    Flags
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchrecursive" class="md-nav__link">
+    wcmatch.RECURSIVE, wcmatch.RV
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchhidden" class="md-nav__link">
+    wcmatch.HIDDEN, wcmatch.HD
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchsymlink" class="md-nav__link">
+    wcmatch.SYMLINK, wcmatch.SL
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchcase" class="md-nav__link">
+    wcmatch.CASE, wcmatch.C
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchignorecase" class="md-nav__link">
+    wcmatch.IGNORECASE, wcmatch.I
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchrawchars" class="md-nav__link">
+    wcmatch.RAWCHARS, wcmatch.R
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchextmatch" class="md-nav__link">
+    wcmatch.EXTMATCH, wcmatch.E
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchbrace" class="md-nav__link">
+    wcmatch.BRACE, wcmatch.B
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchminusnegate" class="md-nav__link">
+    wcmatch.MINUSNEGATE, wcmatch.M
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchdirpathname" class="md-nav__link">
+    wcmatch.DIRPATHNAME, wcmatch.DP
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchfilepathname" class="md-nav__link">
+    wcmatch.FILEPATHNAME, wcmatch.FP
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchpathname" class="md-nav__link">
+    wcmatch.PATHNAME, wcmatch.P
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchmatchbase" class="md-nav__link">
+    wcmatch.MATCHBASE, wcmatch.X
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchglobstar" class="md-nav__link">
+    wcmatch.GLOBSTAR, wcmatch.G
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../changelog/" title="Changelog" class="md-nav__link">
+      Changelog
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../license/" title="License" class="md-nav__link">
+      License
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    Overview
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wcmatchwcmatch_1" class="md-nav__link">
+    wcmatch.WcMatch
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#methods" class="md-nav__link">
+    Methods
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchmatch" class="md-nav__link">
+    WcMatch.match
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchimatch" class="md-nav__link">
+    WcMatch.imatch
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchkill" class="md-nav__link">
+    WcMatch.kill
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchreset" class="md-nav__link">
+    WcMatch.reset
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchis_aborted" class="md-nav__link">
+    WcMatch.is_aborted
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchget_skipped" class="md-nav__link">
+    WcMatch.get_skipped
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hooks" class="md-nav__link">
+    Hooks
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchon_init" class="md-nav__link">
+    WcMatch.on_init
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchon_validate_directory" class="md-nav__link">
+    WcMatch.on_validate_directory
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchon_validate_file" class="md-nav__link">
+    WcMatch.on_validate_file
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchon_skip" class="md-nav__link">
+    WcMatch.on_skip
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchon_error" class="md-nav__link">
+    WcMatch.on_error
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchon_match" class="md-nav__link">
+    WcMatch.on_match
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchon_reset" class="md-nav__link">
+    WcMatch.on_reset
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flags" class="md-nav__link">
+    Flags
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchrecursive" class="md-nav__link">
+    wcmatch.RECURSIVE, wcmatch.RV
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchhidden" class="md-nav__link">
+    wcmatch.HIDDEN, wcmatch.HD
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchsymlink" class="md-nav__link">
+    wcmatch.SYMLINK, wcmatch.SL
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchcase" class="md-nav__link">
+    wcmatch.CASE, wcmatch.C
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchignorecase" class="md-nav__link">
+    wcmatch.IGNORECASE, wcmatch.I
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchrawchars" class="md-nav__link">
+    wcmatch.RAWCHARS, wcmatch.R
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchextmatch" class="md-nav__link">
+    wcmatch.EXTMATCH, wcmatch.E
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchbrace" class="md-nav__link">
+    wcmatch.BRACE, wcmatch.B
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchminusnegate" class="md-nav__link">
+    wcmatch.MINUSNEGATE, wcmatch.M
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchdirpathname" class="md-nav__link">
+    wcmatch.DIRPATHNAME, wcmatch.DP
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchfilepathname" class="md-nav__link">
+    wcmatch.FILEPATHNAME, wcmatch.FP
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchpathname" class="md-nav__link">
+    wcmatch.PATHNAME, wcmatch.P
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchmatchbase" class="md-nav__link">
+    wcmatch.MATCHBASE, wcmatch.X
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wcmatchglobstar" class="md-nav__link">
+    wcmatch.GLOBSTAR, wcmatch.G
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/facelessuser/wcmatch/tree/master/docs/src/markdown/wcmatch.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                <h1 id="wcmatchwcmatch"><code>wcmatch.wcmatch</code><a class="headerlink" href="#wcmatchwcmatch" title="Permanent link"></a></h1>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+</pre></div>
+
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link"></a></h2>
+<p><code>wcmatch.WcMatch</code> was originally written to provide a simple user interface for searching specific files in <a href="https://github.com/facelessuser/Rummage">Rummage</a>. A class was needed to facilitate a user interface where a user could select a base path, define one or more file patterns they wanted to search for, and provide folders to exclude if needed. It needed to be aware of hidden files on different systems, not just ignoring files that start with <code>.</code>. It also needed to be extendable so we could further filter returned files by size, creation date, or whatever else was decided. While <code>glob</code> is a fantastic file and folder search tool, it just didn't make sense for such a user interface.</p>
+<h2 id="wcmatchwcmatch_1"><code>wcmatch.WcMatch</code><a class="headerlink" href="#wcmatchwcmatch_1" title="Permanent link"></a></h2>
+<p><code>WcMatch</code> is an extendable file search class. It allows you to specify a base path, file patterns, and optional folder exclude patterns. You can specify whether you want to see hidden files and whether the search should be recursive. You can also derive from the class and tap into specific hooks to change what is returned or done when a file is matched, skipped, or when there is an error. There are also hooks where you can inject additional, custom filtering.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>directory</code></td>
+<td></td>
+<td>The base directory to search.</td>
+</tr>
+<tr>
+<td><code>file_pattern</code></td>
+<td><code class="highlight"><span class="s1">&#39;&#39;</span></code></td>
+<td>One or more patterns separated by <code>|</code>. You can define exceptions by starting a pattern with <code>!</code> (or <code>-</code> if <a href="#wcmatchminusnegate"><code>MINUSNEGATE</code></a> is set). The default is an empty string, but if an empty string is used, all files will be matched.</td>
+</tr>
+<tr>
+<td><code>exclude_pattern</code></td>
+<td><code class="highlight"><span class="s1">&#39;&#39;</span></code></td>
+<td>Zero or more folder exclude patterns separated by <code>|</code>. You can define exceptions by starting a pattern with <code>!</code> (or <code>-</code> if <a href="#wcmatchminusnegate"><code>MINUSNEGATE</code></a> is set).</td>
+</tr>
+<tr>
+<td><code>flags</code></td>
+<td><code class="highlight"><span class="mi">0</span></code></td>
+<td>Flags to alter behavior of folder and file matching. See <a href="#flags">Flags</a> for more info.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Dots are not treated special in <code>wcmatch</code>. When the <code>HIDDEN</code> flag is not included, all hidden files (system and dot files) are excluded from the crawling processes, so there is no risk of <code>*</code> matching a dot file as it will not show up in the crawl. If the <code>HIDDEN</code> flag is included, <code>*</code>, <code>?</code>, and <code>[.]</code> will then match dot files.</p>
+</div>
+<div class="admonition danger">
+<p class="admonition-title">Removed in 3.0</p>
+<p><code>show_hidden</code> and <code>recursive</code> were removed to provide a more consistent interface. Hidden files and recursion can be enabled via the <a href="#wcmatchhidden"><code>HIDDEN</code></a> and <a href="#wcmatchrecursive"><code>RECURSIVE</code></a> flag respectively.</p>
+</div>
+<h3 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link"></a></h3>
+<p>Searching for files:</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
+<span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;]</span>
+</pre></div>
+
+<p>Recursively searching for files:</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">RECURSIVE</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
+<span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./docs/src/markdown/changelog.md&#39;, &#39;./docs/src/markdown/fnmatch.md&#39;, &#39;./docs/src/markdown/glob.md&#39;, &#39;./docs/src/markdown/index.md&#39;, &#39;./docs/src/markdown/installation.md&#39;, &#39;./docs/src/markdown/license.md&#39;, &#39;./docs/src/markdown/wcmatch.md&#39;, &#39;./docs/src/markdown/_snippets/abbr.md&#39;, &#39;./docs/src/markdown/_snippets/links.md&#39;, &#39;./docs/src/markdown/_snippets/refs.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>
+</pre></div>
+
+<p>Excluding directories:</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;docs&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">RECURSIVE</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
+<span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>
+</pre></div>
+
+<p>Using file negation patterns:</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt|!README*&#39;</span><span class="p">,</span> <span class="s1">&#39;docs&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">RECURSIVE</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
+<span class="go">[&#39;./LICENSE.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>
+</pre></div>
+
+<p>You can also use negation patterns in directory exclude. Here we avoid all folders with <code>*</code>, but add an exception for <code>requirements</code>. It should be noted that you cannot add an exception for the child of an excluded folder.</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;*|!requirements&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">RECURSIVE</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
+<span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>
+</pre></div>
+
+<p>Negative patterns can be given by themselves.</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;!requirements&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">RECURSIVE</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
+<span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>
+</pre></div>
+
+<p>Enabling hidden files:</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.yml&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
+<span class="go">[&#39;./appveyor.yml&#39;, &#39;./mkdocs.yml&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.yml&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">HIDDEN</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
+<span class="go">[&#39;./.codecov.yml&#39;, &#39;./.travis.yml&#39;, &#39;./appveyor.yml&#39;, &#39;./mkdocs.yml&#39;]</span>
+</pre></div>
+
+<h2 id="methods">Methods<a class="headerlink" href="#methods" title="Permanent link"></a></h2>
+<h4 id="wcmatchmatch"><code>WcMatch.match</code><a class="headerlink" href="#wcmatchmatch" title="Permanent link"></a></h4>
+<p>Perform match returning files that match the patterns.</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
+<span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;]</span>
+</pre></div>
+
+<h4 id="wcmatchimatch"><code>WcMatch.imatch</code><a class="headerlink" href="#wcmatchimatch" title="Permanent link"></a></h4>
+<p>Perform match returning an iterator of files that match the patterns.</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">imatch</span><span class="p">())</span>
+<span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;]</span>
+</pre></div>
+
+<h4 id="wcmatchkill"><code>WcMatch.kill</code><a class="headerlink" href="#wcmatchkill" title="Permanent link"></a></h4>
+<p>If searching with <code>imatch</code>, this provides a way to gracefully kill the internal searching. Internally, you can call <code>is_aborted</code> to check if a request to abort has been made. So if work on a file is being done in an <code>on_match</code>, you can check if there has been a request to kill the process, and tie up loose ends gracefully.</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wcm</span> <span class="o">=</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">wcm</span><span class="o">.</span><span class="n">imatch</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">wcm</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>
+<span class="gp">...</span>
+<span class="go">./LICENSE.md</span>
+</pre></div>
+
+<p>Once a "kill" has been issued, the class will remain in an aborted state. To clear the "kill" state, you must call <a href="#wcmatchreset"><code>reset</code></a>. This allows a process to define a <code>Wcmatch</code> class and reuse it. If a process receives an early kill and sets it before the match is started, when the match is started, it will immediately abort. This helps with race conditions depending on how you are using <code>WcMatch</code>.</p>
+<h4 id="wcmatchreset"><code>WcMatch.reset</code><a class="headerlink" href="#wcmatchreset" title="Permanent link"></a></h4>
+<p>Resets the abort state after running <code>kill</code>.</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wcm</span> <span class="o">=</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">wcm</span><span class="o">.</span><span class="n">imatch</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">wcm</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>
+<span class="gp">...</span>
+<span class="go">./LICENSE.md</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wcm</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">wcm</span><span class="o">.</span><span class="n">imatch</span><span class="p">())</span>
+<span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;]</span>
+</pre></div>
+
+<h4 id="wcmatchis_aborted"><code>WcMatch.is_aborted</code><a class="headerlink" href="#wcmatchis_aborted" title="Permanent link"></a></h4>
+<p>Checks if an abort has been issued.</p>
+<div class="highlight"><pre><span></span>&gt;&gt;&gt; from wcmatch import wcmatch
+&gt;&gt;&gt; wcm = wcmatch.WcMatch(&#39;.&#39;, &#39;*.md|*.txt&#39;)
+&gt;&gt;&gt; for f in wcm.imatch():
+...     wcm.kill()
+...
+&gt;&gt;&gt; wcm.is_aborted()
+True
+</pre></div>
+
+<div class="admonition new">
+<p class="admonition-title">New 4.1.0</p>
+<p><code>is_aborted</code> was added in 4.1.0.</p>
+</div>
+<h4 id="wcmatchget_skipped"><code>WcMatch.get_skipped</code><a class="headerlink" href="#wcmatchget_skipped" title="Permanent link"></a></h4>
+<p>Returns the number of skipped files. Files in skipped folders are not included in the count.</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wcm</span> <span class="o">=</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">wcm</span><span class="o">.</span><span class="n">imatch</span><span class="p">())</span>
+<span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wcm</span><span class="o">.</span><span class="n">get_skipped</span><span class="p">()</span>
+<span class="go">10</span>
+</pre></div>
+
+<h2 id="hooks">Hooks<a class="headerlink" href="#hooks" title="Permanent link"></a></h2>
+<h4 id="wcmatchon_init"><code>WcMatch.on_init</code><a class="headerlink" href="#wcmatchon_init" title="Permanent link"></a></h4>
+<div class="highlight"><pre><span></span>   <span class="k">def</span> <span class="nf">on_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Handle custom init.&quot;&quot;&quot;</span>
+</pre></div>
+
+<p>Any arguments or keyword arguments not processed by the main initializer are sent to <code>on_init</code>. This allows you to specify additional arguments when deriving from <code>WcMatch</code>.</p>
+<h4 id="wcmatchon_validate_directory"><code>WcMatch.on_validate_directory</code><a class="headerlink" href="#wcmatchon_validate_directory" title="Permanent link"></a></h4>
+<div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">on_validate_directory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validate folder override.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+</pre></div>
+
+<p>When validating a directory, if the directory passes validation, it will be sent to <code>on_validate_directory</code> which can be overridden to provide additional validation if required.</p>
+<h4 id="wcmatchon_validate_file"><code>WcMatch.on_validate_file</code><a class="headerlink" href="#wcmatchon_validate_file" title="Permanent link"></a></h4>
+<div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">on_validate_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validate file override.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+</pre></div>
+
+<p>When validating a file, if the file passes validation, it will be sent to <code>on_validate_file</code> which can be overridden to provide additional validation if required.</p>
+<h4 id="wcmatchon_skip"><code>WcMatch.on_skip</code><a class="headerlink" href="#wcmatchon_skip" title="Permanent link"></a></h4>
+<div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">on_skip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;On skip.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+</pre></div>
+
+<p>When a file that must be skipped is encountered (a file that doesn't pass validation), it is sent to <code>on_skip</code>. Here you could abort the search, store away information, or even create a special skip record to return. It is advised to create a special type for skip returns so that you can identify them when they are returned via <code>match</code> or <code>imatch</code>.</p>
+<h4 id="wcmatchon_error"><code>WcMatch.on_error</code><a class="headerlink" href="#wcmatchon_error" title="Permanent link"></a></h4>
+<div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">on_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;On error.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+</pre></div>
+
+<p>When accessing or processing a file throws an error, it is sent to <code>on_error</code>. Here you could abort the search, store away information, or even create a special error record to return. It is advised to create a special type for error returns so that you can identify them when they are returned via <code>match</code> or <code>imatch</code>.</p>
+<h4 id="wcmatchon_match"><code>WcMatch.on_match</code><a class="headerlink" href="#wcmatchon_match" title="Permanent link"></a></h4>
+<div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">on_match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;On match.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+</pre></div>
+
+<p>On match returns the path of the matched file.  You can override <code>on_match</code> and change what is returned.  You could return just the base, you could parse the file and return the content, or return a special match record with additional file meta data. <code>on_match</code> must return something, and all results will be returned via <code>match</code> or <code>imatch</code>.</p>
+<h4 id="wcmatchon_reset"><code>WcMatch.on_reset</code><a class="headerlink" href="#wcmatchon_reset" title="Permanent link"></a></h4>
+<div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">on_reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;On reset.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+</pre></div>
+
+<p><code>on_reset</code> is a hook to provide a way to reset any custom logic in classes that have derived from <code>WcMatch</code>. <code>on_reset</code>
+is called on every new <code>match</code> call.</p>
+<div class="admonition new">
+<p class="admonition-title">New 4.0</p>
+<p><code>on_reset</code> was added in 4.0.</p>
+</div>
+<h2 id="flags">Flags<a class="headerlink" href="#flags" title="Permanent link"></a></h2>
+<h4 id="wcmatchrecursive"><code>wcmatch.RECURSIVE, wcmatch.RV</code><a class="headerlink" href="#wcmatchrecursive" title="Permanent link"></a></h4>
+<p><code>RECURSIVE</code> forces a recursive search that will crawl all subdirectories.</p>
+<div class="admonition new">
+<p class="admonition-title">New 3.0.0</p>
+<p>Added in 3.0 and must be used instead of the old <code>recursive</code> parameter which has also been removed as of 3.0.</p>
+</div>
+<h4 id="wcmatchhidden"><code>wcmatch.HIDDEN, wcmatch.HD</code><a class="headerlink" href="#wcmatchhidden" title="Permanent link"></a></h4>
+<p><code>HIDDEN</code> enables the crawling of hidden directories and will return hidden files if the wildcard pattern matches. This enables not just dot files, but system hidden files as well.</p>
+<div class="admonition new">
+<p class="admonition-title">New 3.0.0</p>
+<p>Added in 3.0 and must be used instead of the old <code>show_hidden</code> parameter which has also been removed as of 3.0.</p>
+</div>
+<h4 id="wcmatchsymlink"><code>wcmatch.SYMLINK, wcmatch.SL</code><a class="headerlink" href="#wcmatchsymlink" title="Permanent link"></a></h4>
+<p><code>SYMLINK</code> enables the crawling of symlink directories. By default, symlink directories are ignored during the file crawl.</p>
+<div class="admonition new">
+<p class="admonition-title">New 3.0.0</p>
+<p>Added in 3.0. Additionally, symlinks are now ignored by default moving forward if <code>SYMLINK</code> is not enabled.</p>
+</div>
+<h4 id="wcmatchcase"><code>wcmatch.CASE, wcmatch.C</code><a class="headerlink" href="#wcmatchcase" title="Permanent link"></a></h4>
+<p><code>CASE</code> forces case sensitivity. <code>CASE</code> has higher priority than <a href="#wcmatchignorecase"><code>IGNORECASE</code></a>.</p>
+<div class="admonition new">
+<p class="admonition-title">New 4.3.0</p>
+<p><code>CASE</code> is new in 4.3.0.</p>
+</div>
+<h4 id="wcmatchignorecase"><code>wcmatch.IGNORECASE, wcmatch.I</code><a class="headerlink" href="#wcmatchignorecase" title="Permanent link"></a></h4>
+<p><code>IGNORECASE</code> forces case insensitive searches. <a href="#wcmatchcase"><code>CASE</code></a> has higher priority than <code>IGNORECASE</code>.</p>
+<h4 id="wcmatchrawchars"><code>wcmatch.RAWCHARS, wcmatch.R</code><a class="headerlink" href="#wcmatchrawchars" title="Permanent link"></a></h4>
+<p><code>RAWCHARS</code> causes string character syntax to be parsed in raw strings: <code class="highlight"><span class="sa">r</span><span class="s1">&#39;\u0040&#39;</span></code> &rarr; <code class="highlight"><span class="sa">r</span><span class="s1">&#39;@&#39;</span></code>. This will handle standard string escapes and Unicode (including <code class="highlight"><span class="sa">r</span><span class="s1">&#39;\N{CHAR NAME}&#39;</span></code>).</p>
+<h4 id="wcmatchextmatch"><code>wcmatch.EXTMATCH, wcmatch.E</code><a class="headerlink" href="#wcmatchextmatch" title="Permanent link"></a></h4>
+<p><code>EXTMATCH</code> enables extended pattern matching which includes special pattern lists such as <code>+(...)</code>, <code>*(...)</code>, <code>?(...)</code>, etc.</p>
+<h4 id="wcmatchbrace"><code>wcmatch.BRACE, wcmatch.B</code><a class="headerlink" href="#wcmatchbrace" title="Permanent link"></a></h4>
+<p><code>BRACE</code> enables Bash style brace expansion: <code>a{b,{c,d}}</code> &rarr; <code>ab ac ad</code>. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.</p>
+<p>For simple patterns, it may make more sense to use <a href="#fnmatchextmatch"><code>EXTMATCH</code></a> which will only generate a single pattern: <code>@(ab|ac|ad)</code>.</p>
+<p>Be careful with patterns such as <code>{1..100}</code> which would generate one hundred patterns that will all get individually parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of patterns.</p>
+<h4 id="wcmatchminusnegate"><code>wcmatch.MINUSNEGATE, wcmatch.M</code><a class="headerlink" href="#wcmatchminusnegate" title="Permanent link"></a></h4>
+<p><code>MINUSNEGATE</code> requires negation patterns to use <code>-</code> instead of <code>!</code>.</p>
+<h4 id="wcmatchdirpathname"><code>wcmatch.DIRPATHNAME, wcmatch.DP</code><a class="headerlink" href="#wcmatchdirpathname" title="Permanent link"></a></h4>
+<p><code>DIRPATHNAME</code> will enable path name searching for excluded folder patterns, but it will not apply to file patterns. This is mainly provided for cases where you may have multiple folders with the same name, but you want to target a specific folder to exclude. The path name compared will be the entire path relative to the base path.  So if the provided base folder was <code>.</code>, and the folder under evaluation is <code>./some/folder</code>, <code>some/folder</code> will be matched against the pattern.</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;docs/src/markdown&#39;</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">DIRPATHNAME</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
+<span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>
+</pre></div>
+
+<h4 id="wcmatchfilepathname"><code>wcmatch.FILEPATHNAME, wcmatch.FP</code><a class="headerlink" href="#wcmatchfilepathname" title="Permanent link"></a></h4>
+<p><code>FILEPATHNAME</code> will enable path name searching for the file patterns, but it will not apply to directory exclude patterns. The path name compared will be the entire path relative to the base path.  So if the provided base folder was <code>.</code>, and the file under evaluation is <code>./some/file.txt</code>, <code>some/file.txt</code> will be matched against the pattern.</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;**/*.md|!**/_snippets/*&#39;</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">FILEPATHNAME</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">GLOBSTAR</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
+<span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./docs/src/markdown/changelog.md&#39;, &#39;./docs/src/markdown/fnmatch.md&#39;, &#39;./docs/src/markdown/glob.md&#39;, &#39;./docs/src/markdown/index.md&#39;, &#39;./docs/src/markdown/license.md&#39;, &#39;./docs/src/markdown/wcmatch.md&#39;]</span>
+</pre></div>
+
+<h4 id="wcmatchpathname"><code>wcmatch.PATHNAME, wcmatch.P</code><a class="headerlink" href="#wcmatchpathname" title="Permanent link"></a></h4>
+<p><code>PATHNAME</code> enables both <a href="#wcmatchdirpathname"><code>DIRPATHNAME</code></a> and <a href="#wcmathfilepathname"><code>FILEPATHNAME</code></a>. It is provided for convenience.</p>
+<h4 id="wcmatchmatchbase"><code>wcmatch.MATCHBASE, wcmatch.X</code><a class="headerlink" href="#wcmatchmatchbase" title="Permanent link"></a></h4>
+<p>When <code>FILEPATHNAME</code> or <code>DIRPATHNAME</code> is enabled, <code>MATCHBASE</code> will ensure that that the respective file or directory pattern, when there are no slashes in the pattern, seeks for any file anywhere in the tree with a matching basename. This is essentially the behavior when <code>FILEPATHNAME</code> and <code>DIRPATHNAME</code> is disabled, but with <code>MATCHBASE</code>, you can toggle the behavior by including slashes in your pattern.</p>
+<p>When we include no slashes:</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">FILEPATHNAME</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">GLOBSTAR</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">MATCHBASE</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">RECURSIVE</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
+<span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./docs/src/markdown/changelog.md&#39;, &#39;./docs/src/markdown/fnmatch.md&#39;, &#39;./docs/src/markdown/glob.md&#39;, &#39;./docs/src/markdown/index.md&#39;, &#39;./docs/src/markdown/license.md&#39;, &#39;./docs/src/markdown/wcmatch.md&#39;]</span>
+</pre></div>
+
+<p>If we include slashes in the pattern, the path, not the basename, must match the pattern:</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;docs/**/*.md&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">FILEPATHNAME</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">GLOBSTAR</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">MATCHBASE</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">RECURSIVE</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
+<span class="go">[&#39;./docs/src/markdown/changelog.md&#39;, &#39;./docs/src/markdown/fnmatch.md&#39;, &#39;./docs/src/markdown/glob.md&#39;, &#39;./docs/src/markdown/index.md&#39;, &#39;./docs/src/markdown/license.md&#39;, &#39;./docs/src/markdown/wcmatch.md&#39;]</span>
+</pre></div>
+
+<p>If we have a leading slash, the pattern will not perform a match on the basename, but will instead be a normal path pattern that is anchored to the current base path, in this case <code>.</code>.</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;/*.md&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">FILEPATHNAME</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">GLOBSTAR</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">MATCHBASE</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">RECURSIVE</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
+<span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;]</span>
+</pre></div>
+
+<h4 id="wcmatchglobstar"><code>wcmatch.GLOBSTAR, wcmatch.G</code><a class="headerlink" href="#wcmatchglobstar" title="Permanent link"></a></h4>
+<p>When the <a href="#wcmatchpathname"><code>PATHNAME</code></a> flag is provided, you can also enable <code>GLOBSTAR</code> to enable the recursive directory pattern matches with <code>**</code>.</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;**/markdown&#39;</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">DIRPATHNAME</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">GLOBSTAR</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
+<span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>
+</pre></div>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../pathlib/" title="Pathlib" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Pathlib
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../changelog/" title="Changelog" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Changelog
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+          <div class="md-footer-copyright__highlight">
+            Copyright &copy; 2018 - 2019 <a href="https://github.com/facelessuser">Isaac Muse</a>
+<br><span class="md-footer-custom-text">emoji provided free by <a href="http://www.emojione.com">EmojiOne</a></span>
+
+          </div>
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="../assets/fonts/font-awesome.css">
+    
+      <a href="https://github.com/facelessuser" class="md-footer-social__link fa fa-github"></a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../assets/javascripts/application.ac79c3b0.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
+      
+        <script src="../extra-0b9b22dd13.js"></script>
+      
+    
+  </body>
+</html>

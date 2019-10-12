@@ -1,0 +1,1080 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="A wildcard file name matching library">
+      
+      
+        <link rel="canonical" href="https://facelessuser.github.io/wcmatch/fnmatch/">
+      
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
+    
+    
+      
+        <title>Fnmatch - Wildcard Match Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/application.30686662.css">
+      
+        <link rel="stylesheet" href="../assets/stylesheets/application-palette.a8b3c06d.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#2196f3">
+      
+    
+    
+      <script src="../assets/javascripts/modernizr.74668098.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../extra-30d8e6755c.css">
+    
+    
+      
+    
+    
+  </head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="blue" data-md-color-accent="blue">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#wcmatchfnmatch" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="https://facelessuser.github.io/wcmatch" title="Wildcard Match Documentation" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon">description</i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Wildcard Match Documentation
+            </span>
+            <span class="md-header-nav__topic">
+              
+                Fnmatch
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="https://github.com/facelessuser/wcmatch/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+        
+
+<nav class="md-tabs" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  <li class="md-tabs__item">
+    
+      <a href=".." class="md-tabs__link md-tabs__link--active">
+        Wildcard Match
+      </a>
+    
+  </li>
+
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </ul>
+  </div>
+</nav>
+      
+      <main class="md-main" role="main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="https://facelessuser.github.io/wcmatch" title="Wildcard Match Documentation" class="md-nav__button md-logo">
+      
+        <i class="md-icon">description</i>
+      
+    </a>
+    Wildcard Match Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="https://github.com/facelessuser/wcmatch/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href=".." title="Wildcard Match" class="md-nav__link">
+      Wildcard Match
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Fnmatch
+      </label>
+    
+    <a href="./" title="Fnmatch" class="md-nav__link md-nav__link--active">
+      Fnmatch
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#syntax" class="md-nav__link">
+    Syntax
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#posix-character-classes" class="md-nav__link">
+    POSIX Character Classes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    API
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchfnmatch" class="md-nav__link">
+    fnmatch.fnmatch
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchfilter" class="md-nav__link">
+    fnmatch.filter
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchtranslate" class="md-nav__link">
+    fnmatch.translate
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flags" class="md-nav__link">
+    Flags
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchcase" class="md-nav__link">
+    fnmatch.CASE, fnmatch.C
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchignorecase" class="md-nav__link">
+    fnmatch.IGNORECASE, fnmatch.I
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchrawchars" class="md-nav__link">
+    fnmatch.RAWCHARS, fnmatch.R
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchnegate" class="md-nav__link">
+    fnmatch.NEGATE, fnmatch.N
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchnegateall" class="md-nav__link">
+    fnmatch.NEGATEALL, fnmatch.A
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchminusnegate" class="md-nav__link">
+    fnmatch.MINUSNEGATE, fnmatch.M
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchdotmatch" class="md-nav__link">
+    fnmatch.DOTMATCH, fnmatch.D
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchextmatch" class="md-nav__link">
+    fnmatch.EXTMATCH, fnmatch.E
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchbrace" class="md-nav__link">
+    fnmatch.BRACE, fnmatch.B
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchsplit" class="md-nav__link">
+    fnmatch.SPLIT, fnmatch.S
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchforcewin" class="md-nav__link">
+    fnmatch.FORCEWIN, fnmatch.W
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchforceunix" class="md-nav__link">
+    fnmatch.FORCEUNIX, fnmatch.U
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../glob/" title="Glob" class="md-nav__link">
+      Glob
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../pathlib/" title="Pathlib" class="md-nav__link">
+      Pathlib
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../wcmatch/" title="Wcmatch" class="md-nav__link">
+      Wcmatch
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../changelog/" title="Changelog" class="md-nav__link">
+      Changelog
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../license/" title="License" class="md-nav__link">
+      License
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#syntax" class="md-nav__link">
+    Syntax
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#posix-character-classes" class="md-nav__link">
+    POSIX Character Classes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    API
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchfnmatch" class="md-nav__link">
+    fnmatch.fnmatch
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchfilter" class="md-nav__link">
+    fnmatch.filter
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchtranslate" class="md-nav__link">
+    fnmatch.translate
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flags" class="md-nav__link">
+    Flags
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchcase" class="md-nav__link">
+    fnmatch.CASE, fnmatch.C
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchignorecase" class="md-nav__link">
+    fnmatch.IGNORECASE, fnmatch.I
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchrawchars" class="md-nav__link">
+    fnmatch.RAWCHARS, fnmatch.R
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchnegate" class="md-nav__link">
+    fnmatch.NEGATE, fnmatch.N
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchnegateall" class="md-nav__link">
+    fnmatch.NEGATEALL, fnmatch.A
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchminusnegate" class="md-nav__link">
+    fnmatch.MINUSNEGATE, fnmatch.M
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchdotmatch" class="md-nav__link">
+    fnmatch.DOTMATCH, fnmatch.D
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchextmatch" class="md-nav__link">
+    fnmatch.EXTMATCH, fnmatch.E
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchbrace" class="md-nav__link">
+    fnmatch.BRACE, fnmatch.B
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchsplit" class="md-nav__link">
+    fnmatch.SPLIT, fnmatch.S
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchforcewin" class="md-nav__link">
+    fnmatch.FORCEWIN, fnmatch.W
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fnmatchforceunix" class="md-nav__link">
+    fnmatch.FORCEUNIX, fnmatch.U
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/facelessuser/wcmatch/tree/master/docs/src/markdown/fnmatch.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                <h1 id="wcmatchfnmatch"><code>wcmatch.fnmatch</code><a class="headerlink" href="#wcmatchfnmatch" title="Permanent link"></a></h1>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
+</pre></div>
+
+<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link"></a></h2>
+<p>The <code>fnmatch</code> library is similar to the builtin <code>fnmatch</code>, but with some enhancements and some differences. It is mainly used for matching filenames with glob patterns. For path names, Wildcard Match's <a href="glob#globglobmatch"><code>globmatch</code></a> is a more appropriate choice. Not all of the features listed below are enabled by default. See <a href="#flags">flags</a> for more information.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a character <code class="highlight"><span class="sa">r</span><span class="s1">&#39;\?&#39;</span></code>.  If you want to represent a literal backslash, you must use two: <code class="highlight"><span class="sa">r</span><span class="s1">&#39;some</span><span class="se">\\</span><span class="s1">path&#39;</span></code>.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>*</code></td>
+<td>Matches everything.</td>
+</tr>
+<tr>
+<td><code>?</code></td>
+<td>Matches any single character.</td>
+</tr>
+<tr>
+<td><code>[seq]</code></td>
+<td>Matches any character in seq.</td>
+</tr>
+<tr>
+<td><code>[!seq]</code></td>
+<td>Matches any character not in seq.</td>
+</tr>
+<tr>
+<td><code>[[:alnum:]]</code></td>
+<td>POSIX style character classes inside sequences. The <code>C</code> locale is used for byte strings and Unicode properties for Unicode strings. See <a href="#posix-character-classes">POSIX Character Classes</a> for more info.</td>
+</tr>
+<tr>
+<td><code>\</code></td>
+<td>Escapes characters. If applied to a meta character, it will be treated as a normal character.</td>
+</tr>
+<tr>
+<td><code>!</code></td>
+<td>Exclusion pattern (with configuration, can use <code>-</code> instead of <code>!</code>).</td>
+</tr>
+<tr>
+<td><code>?(pattern_list)</code></td>
+<td>The pattern matches if zero or one occurrences of any of the patterns in the <code>pattern_list</code> match the input string.</td>
+</tr>
+<tr>
+<td><code>*(pattern_list)</code></td>
+<td>The pattern matches if zero or more occurrences of any of the patterns in the <code>pattern_list</code> match the input string.</td>
+</tr>
+<tr>
+<td><code>+(pattern_list)</code></td>
+<td>The pattern matches if one or more occurrences of any of the patterns in the <code>pattern_list</code> match the input string.</td>
+</tr>
+<tr>
+<td><code>@(pattern_list)</code></td>
+<td>The pattern matches if exactly one occurrence of any of the patterns in the <code>pattern_list</code> match the input string.</td>
+</tr>
+<tr>
+<td><code>!(pattern_list)</code></td>
+<td>The pattern matches if the input string cannot be matched with any of the patterns in the <code>pattern_list</code>.</td>
+</tr>
+<tr>
+<td><code>{}</code></td>
+<td>Bash style brace expansions.  This is applied to patterns before anything else.</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Slashes are generally treated as normal characters, but on windows they will be normalized: <code>/</code> will become <code>\\</code>. There is no need to explicitly use <code>\\</code> in patterns on Windows, but if you do, it will be handled.  This applies to matching patterns and the filenames the patterns are applied to.</li>
+<li>If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern and filenames will be treated as a Linux/Unix filename.</li>
+<li>By default, <code>.</code> is <em>not</em> matched by <code>*</code>, <code>?</code>, and <code>[]</code>. See the <a href="#fnmatchdotmatch"><code>DOTMATCH</code></a> flag to match <code>.</code> at the start of a filename without a literal <code>.</code>.</li>
+</ul>
+<h2 id="posix-character-classes">POSIX Character Classes<a class="headerlink" href="#posix-character-classes" title="Permanent link"></a></h2>
+<p>A number of POSIX style character classes are available in the form <code>[:posix:]</code>. They must be used inside sequences: <code>[[:posix:]]</code>. For byte strings, the <code>C</code> locale is used, and the values will for each character class are found in the table below under <code>ASCII</code>. When used in a Unicode string, Unicode properties will be used.</p>
+<table>
+<thead>
+<tr>
+<th>[:posix:]</th>
+<th>\p{posix}</th>
+<th>ASCII</th>
+<th>Unicode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>alnum</code></td>
+<td><code>Alnum</code></td>
+<td><code>[a-zA-Z0-9]</code></td>
+<td><code>[\p{L&amp;}\p{Nd}]</code></td>
+</tr>
+<tr>
+<td><code>alpha</code></td>
+<td><code>Alpha</code></td>
+<td><code>[a-zA-Z]</code></td>
+<td><code>[\p{L&amp;}]</code></td>
+</tr>
+<tr>
+<td><code>ascii</code></td>
+<td><code>ASCII</code></td>
+<td><code>[\x00-\x7F]</code></td>
+<td><code>[\x00-\x7F]</code></td>
+</tr>
+<tr>
+<td><code>blank</code></td>
+<td><code>Blank</code></td>
+<td><code>[ \t]</code></td>
+<td><code>[\p{Zs}\t]</code></td>
+</tr>
+<tr>
+<td><code>cntrl</code></td>
+<td><code>Cntrl</code></td>
+<td><code>[\x00-\x1F\x7F]</code></td>
+<td><code>[\p{Cc}]</code></td>
+</tr>
+<tr>
+<td><code>digit</code></td>
+<td><code>Digit</code></td>
+<td><code>[0-9]</code></td>
+<td><code>[\p{Nd}]</code></td>
+</tr>
+<tr>
+<td><code>graph</code></td>
+<td><code>Graph</code></td>
+<td><code>[\x21-\x7E]</code></td>
+<td><code>[^\p{Z}\p{C}]</code></td>
+</tr>
+<tr>
+<td><code>lower</code></td>
+<td><code>Lower</code></td>
+<td><code>[a-z]</code></td>
+<td><code>[\p{Ll}]</code></td>
+</tr>
+<tr>
+<td><code>print</code></td>
+<td><code>Print</code></td>
+<td><code>[\x20-\x7E]</code></td>
+<td><code>[\P{C}]</code></td>
+</tr>
+<tr>
+<td><code>punct</code></td>
+<td><code>Punct</code></td>
+<td><code>[!\"\#$%&amp;'()*+,\-./:;&lt;=&gt;?@\[\\\]^_`{}~]</code></td>
+<td><code>[\p{P}\p{S}]</code></td>
+</tr>
+<tr>
+<td><code>space</code></td>
+<td><code>Space</code></td>
+<td><code>[ \t\r\n\v\f]</code></td>
+<td><code>[\p{Z}\t\r\n\v\f]</code></td>
+</tr>
+<tr>
+<td><code>upper</code></td>
+<td><code>Upper</code></td>
+<td><code>[A-Z]</code></td>
+<td><code>[\p{Lu}]</code></td>
+</tr>
+<tr>
+<td><code>xdigit</code></td>
+<td><code>XDigit</code></td>
+<td><code>[A-Fa-f0-9]</code></td>
+<td><code>[A-Fa-f0-9]</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="api">API<a class="headerlink" href="#api" title="Permanent link"></a></h2>
+<h4 id="fnmatchfnmatch"><code>fnmatch.fnmatch</code><a class="headerlink" href="#fnmatchfnmatch" title="Permanent link"></a></h4>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">fnmatch</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+
+<p><code>fnmatch</code> takes a file name, a pattern (or list of patterns), and flags.  It will return a boolean indicating whether the file name was matched by the pattern(s).</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;@(*.txt|*.py)&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">EXTMATCH</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+
+<p>When applying multiple patterns, a file matches if it matches any of the patterns:</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">r</span><span class="s1">&#39;*.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;*.py&#39;</span><span class="p">],</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">EXTMATCH</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+
+<p>Exclusion patterns are allowed as well. When exclusion patterns are used in conjunction with inclusion patterns, a file will be considered matched if one of the inclusion patterns match <strong>and</strong> none of the exclusion patterns match. If an exclusion pattern is given without any inclusion patterns, the pattern will match nothing. Exclusion patterns are meant to filter other patterns, not match anything by themselves.</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.py&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;*|!*.py&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">fnamtch</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;*|!*.py&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">fnamtch</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">r</span><span class="s1">&#39;*.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;!avoid.txt&#39;</span><span class="p">],</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">NEGATE</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;avoid.txt&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">r</span><span class="s1">&#39;*.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;!avoid.txt&#39;</span><span class="p">],</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">NEGATE</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+
+<p>As mentioned, exclusion patterns need to be applied to a inclusion pattern to work, but if it is desired, you can force exclusion patterns to assume all files should be filtered with the exclusion pattern(s) with the <a href="#fnmatchnegateall"><code>NEGATEALL</code></a> flag. Essentially, it means if you use a pattern such as <code>!*.md</code>, it will assume two pattern were given: <code>*</code> and <code>!*.md</code>.</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.py&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;!*.py&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">fnamtch</span><span class="o">.</span><span class="n">NEGATEALL</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;!*.py&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">fnamtch</span><span class="o">.</span><span class="n">NEGATEALL</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+
+<h4 id="fnmatchfilter"><code>fnmatch.filter</code><a class="headerlink" href="#fnmatchfilter" title="Permanent link"></a></h4>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">filenames</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+</pre></div>
+
+<p><code>filter</code> takes a list of filenames, a pattern (or list of patterns), and flags. It returns a list of all files that matched the pattern(s). The same logic used for <a href="#fnmatchfnmatch"><code>fnmatch</code></a> is used for <code>filter</code>, albeit more efficient for processing multiple files.</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">filter</span><span class="p">([</span><span class="s1">&#39;a.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;b.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;c.py&#39;</span><span class="p">],</span> <span class="sa">r</span><span class="s1">&#39;*.txt&#39;</span><span class="p">)</span>
+<span class="go">[&#39;a.txt&#39;, &#39;b.txt&#39;]</span>
+</pre></div>
+
+<h4 id="fnmatchtranslate"><code>fnmatch.translate</code><a class="headerlink" href="#fnmatchtranslate" title="Permanent link"></a></h4>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="n">patterns</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+</pre></div>
+
+<p><code>translate</code> takes a file pattern (or list of patterns) and returns two lists: one for inclusion patterns and one for exclusion patterns. The lists contain the regular expressions used for matching the given patterns. It should be noted that a file is considered matched if it matches at least one inclusion pattern and matches <strong>none</strong> of the exclusion patterns.</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">translate</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;*.{a,{b,c}}&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">BRACE</span><span class="p">)</span>
+<span class="go">([&#39;^(?s:(?=.).*?\\.a)$&#39;, &#39;^(?s:(?=.).*?\\.b)$&#39;, &#39;^(?s:(?=.).*?\\.c)$&#39;], [])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;**|!*.{a,{b,c}}&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">BRACE</span> <span class="o">|</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">)</span>
+<span class="go">([&#39;^(?s:(?=.)(?![.]).*?)$&#39;], [&#39;^(?s:(?=.).*?\\.a)$&#39;, &#39;^(?s:(?=.).*?\\.b)$&#39;, &#39;^(?s:(?=.).*?\\.c)$&#39;])</span>
+</pre></div>
+
+<div class="admonition warning">
+<p class="admonition-title">Changed 4.0</p>
+<p>Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic to how it used to be, but is more efficient.</p>
+</div>
+<h2 id="flags">Flags<a class="headerlink" href="#flags" title="Permanent link"></a></h2>
+<h4 id="fnmatchcase"><code>fnmatch.CASE, fnmatch.C</code><a class="headerlink" href="#fnmatchcase" title="Permanent link"></a></h4>
+<p><code>CASE</code> forces case sensitivity. <code>CASE</code> has higher priority than <a href="#fnmatchignorecase"><code>IGNORECASE</code></a>.</p>
+<div class="admonition new">
+<p class="admonition-title">New 4.3.0</p>
+<p><code>CASE</code> is new in 4.3.0.</p>
+</div>
+<h4 id="fnmatchignorecase"><code>fnmatch.IGNORECASE, fnmatch.I</code><a class="headerlink" href="#fnmatchignorecase" title="Permanent link"></a></h4>
+<p><code>IGNORECASE</code> forces case insensitivity. <a href="#fnmatchcase"><code>CASE</code></a> has higher priority than <code>IGNORECASE</code>.</p>
+<h4 id="fnmatchrawchars"><code>fnmatch.RAWCHARS, fnmatch.R</code><a class="headerlink" href="#fnmatchrawchars" title="Permanent link"></a></h4>
+<p><code>RAWCHARS</code> causes string character syntax to be parsed in raw strings: <code class="highlight"><span class="sa">r</span><span class="s1">&#39;\u0040&#39;</span></code> &rarr; <code class="highlight"><span class="sa">r</span><span class="s1">&#39;@&#39;</span></code>. This will handle standard string escapes and Unicode including <code class="highlight"><span class="sa">r</span><span class="s1">&#39;\N{CHAR NAME}&#39;</span></code>.</p>
+<h4 id="fnmatchnegate"><code>fnmatch.NEGATE, fnmatch.N</code><a class="headerlink" href="#fnmatchnegate" title="Permanent link"></a></h4>
+<p><code>NEGATE</code> causes patterns that start with <code>!</code> to be treated as exclusion patterns. A pattern of <code>!*.py</code> would match any file but Python files. Exclusion patterns cannot be used by themselves though, and must be paired with a normal, inclusion pattern, either by utilizing the <a href="#fnmatchsplit"><code>SPLIT</code></a> flag, or providing multiple patterns in a list. Assuming the <code>SPLIT</code> flag, this means using it in a pattern such as <code>inclusion|!exclusion</code>.</p>
+<p>If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the file matches the excluded pattern. This is done with the <a href="#fnmatchnegateall"><code>NEGATEALL</code></a> flag.</p>
+<p>If used with the extended match feature, patterns like <code>!(inverse|pattern)</code> will be mistakenly parsed as an exclusion pattern instead of as an inverse extended glob group.  See <a href="#fnmatchminusgate"><code>MINUSNEGATE</code></a> for an alternative syntax that plays nice with extended glob.</p>
+<div class="admonition warning">
+<p class="admonition-title">Changes 4.0</p>
+<p>In 4.0, <code>NEGATE</code> now requires a non-exclusion pattern to be paired with it or it will match nothing. If you really
+need something similar to the old behavior, that would assume a default inclusion pattern, you can use the <a href="#fnmatchnegateall"><code>NEGATEALL</code></a>.</p>
+</div>
+<h4 id="fnmatchnegateall"><code>fnmatch.NEGATEALL, fnmatch.A</code><a class="headerlink" href="#fnmatchnegateall" title="Permanent link"></a></h4>
+<p><code>NEGATEALL</code> can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the file matches the excluded pattern. Essentially, it means if you use a pattern such as <code>!*.md</code>, it will assume two patterns were given: <code>*</code> and <code>!*.md</code>, where <code>!*.md</code> is applied to the results of <code>*</code>.</p>
+<p>Dot files will not be returned unless <a href="#fnmatchdotmatch"><code>DOTMATCH</code></a>.</p>
+<h4 id="fnmatchminusnegate"><code>fnmatch.MINUSNEGATE, fnmatch.M</code><a class="headerlink" href="#fnmatchminusnegate" title="Permanent link"></a></h4>
+<p>When <code>MINUSNEGATE</code> is used with <a href="#fnmatchnegate"><code>NEGATE</code></a>, exclusion patterns are recognized by a pattern starting with <code>-</code> instead of <code>!</code>. This plays nice with the <a href="#fnmatchextmatch"><code>EXTMATCH</code></a> option.</p>
+<h4 id="fnmatchdotmatch"><code>fnmatch.DOTMATCH, fnmatch.D</code><a class="headerlink" href="#fnmatchdotmatch" title="Permanent link"></a></h4>
+<p>By default, <a href="#fnmatchfnmatch"><code>fnmatch</code></a> and related functions will not match file or directory names that start with dot <code>.</code> unless matched with a literal dot. <code>DOTMATCH</code> allows the meta characters (such as <code>*</code>) to match dots like any other character. Dots will not be matched in <code>[]</code>, <code>*</code>, or <code>?</code>.</p>
+<h4 id="fnmatchextmatch"><code>fnmatch.EXTMATCH, fnmatch.E</code><a class="headerlink" href="#fnmatchextmatch" title="Permanent link"></a></h4>
+<p><code>EXTMATCH</code> enables extended pattern matching. This includes special pattern lists such as <code>+(...)</code>, <code>*(...)</code>, <code>?(...)</code>, etc. See the <a href="#syntax">syntax overview</a> for more information.</p>
+<h4 id="fnmatchbrace"><code>fnmatch.BRACE, fnmatch.B</code><a class="headerlink" href="#fnmatchbrace" title="Permanent link"></a></h4>
+<p><code>BRACE</code> enables Bash style brace expansion: <code>a{b,{c,d}}</code> &rarr; <code>ab ac ad</code>. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.</p>
+<p>For simple patterns, it may make more sense to use <a href="#fnmatchextmatch"><code>EXTMATCH</code></a> which will only generate a single pattern: <code>@(ab|ac|ad)</code>.</p>
+<p>Be careful with patterns such as <code>{1..100}</code> which would generate one hundred patterns that will all get individually parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of patterns.</p>
+<h4 id="fnmatchsplit"><code>fnmatch.SPLIT, fnmatch.S</code><a class="headerlink" href="#fnmatchsplit" title="Permanent link"></a></h4>
+<p><code>SPLIT</code> is used to take a string of multiple patterns that are delimited by <code>|</code> and split them into separate patterns. This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It takes into account things like sequences (<code>[]</code>) and extended patterns (<code>*(...)</code>) and will not parse <code>|</code> within them.  You can escape the delimiters if needed: <code>\|</code>.</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;*.txt|*.py&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.py&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;*.txt|*.py&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+
+<h4 id="fnmatchforcewin"><code>fnmatch.FORCEWIN, fnmatch.W</code><a class="headerlink" href="#fnmatchforcewin" title="Permanent link"></a></h4>
+<p><code>FORCEWIN</code> will force Windows name and case logic to be used on Linux/Unix systems. It will also cause slashes to be normalized. This is great if you need to match Windows specific names on a Linux/Unix system.</p>
+<p>If <code>FORCEWIN</code> is used along side <a href="#fnmatchforceunix"><code>FORCEUNIX</code></a>, both will be ignored.</p>
+<div class="admonition new">
+<p class="admonition-title">New 4.2.0</p>
+<p><code>FORCEWIN</code> is new in 4.2.0.</p>
+</div>
+<h4 id="fnmatchforceunix"><code>fnmatch.FORCEUNIX, fnmatch.U</code><a class="headerlink" href="#fnmatchforceunix" title="Permanent link"></a></h4>
+<p><code>FORCEUNIX</code> will force Linux/Unix name and case logic to be used on Windows systems. This is great if you need to match Linux/Unix specific names on a Windows system.</p>
+<p>When using <code>FORCEUNIX</code>, the names are assumed to be case sensitive, but you can use <a href="#fnmatchignorecase"><code>IGNORECASE</code></a> to use case insensitivity.</p>
+<p>If <code>FORCEUNIX</code> is used along side <a href="#fnmatchforcewin"><code>FORCEWIN</code></a>, both will be ignored.</p>
+<div class="admonition new">
+<p class="admonition-title">New 4.2.0</p>
+<p><code>FORCEUNIX</code> is new in 4.2.0.</p>
+</div>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href=".." title="Wildcard Match" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Wildcard Match
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../glob/" title="Glob" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Glob
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+          <div class="md-footer-copyright__highlight">
+            Copyright &copy; 2018 - 2019 <a href="https://github.com/facelessuser">Isaac Muse</a>
+<br><span class="md-footer-custom-text">emoji provided free by <a href="http://www.emojione.com">EmojiOne</a></span>
+
+          </div>
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="../assets/fonts/font-awesome.css">
+    
+      <a href="https://github.com/facelessuser" class="md-footer-social__link fa fa-github"></a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../assets/javascripts/application.ac79c3b0.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
+      
+        <script src="../extra-0b9b22dd13.js"></script>
+      
+    
+  </body>
+</html>
