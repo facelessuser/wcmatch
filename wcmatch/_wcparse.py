@@ -73,6 +73,7 @@ EXT_TYPES = frozenset(('*', '?', '+', '@', '!'))
 # Common flags are found between `0x0001 - 0xffff`
 # Implementation specific (`glob` vs `fnmatch` vs `wcmatch`) are found between `0x00010000 - 0xffff0000`
 # Internal special flags are found at `0x100000000` and above
+CASE = 0x0001
 IGNORECASE = 0x0002
 RAWCHARS = 0x0004
 NEGATE = 0x0008
@@ -90,7 +91,6 @@ NODIR = 0x4000
 NEGATEALL = 0x8000
 FORCEWIN = 0x10000
 FORCEUNIX = 0x20000
-CASE = 0x40000
 
 # Internal flag
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
