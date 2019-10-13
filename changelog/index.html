@@ -691,8 +691,10 @@
                 <h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link"></a></h1>
 <h2 id="500">5.0.0<a class="headerlink" href="#500" title="Permanent link"></a></h2>
 <ul>
-<li><strong>NEW</strong>: Add <code>wcmatch.pathlib</code> which contains <code>pathlib</code> variants that uses <code>wcmatch.glob</code> instead of the default Python glob.</li>
-<li><strong>NEW</strong>: <code>escape</code> and <code>raw_escape</code> can manually be forced to use Windows or Linux/Unix logic via the keyword only argument by setting to <code>False</code> or <code>True</code> respectively. The default is <code>None</code> which will auto detect the system.</li>
+<li><strong>NEW</strong>: Add <code>wcmatch.pathlib</code> which contains <code>pathlib</code> variants that uses <code>wcmatch.glob</code> instead of the default
+  Python glob.</li>
+<li><strong>NEW</strong>: <code>escape</code> and <code>raw_escape</code> can manually be forced to use Windows or Linux/Unix logic via the keyword only
+  argument by setting to <code>False</code> or <code>True</code> respectively. The default is <code>None</code> which will auto detect the system.</li>
 <li><strong>NEW</strong>: The deprecated flag <code>FORCECASE</code> has now been removed.</li>
 <li><strong>NEW</strong>: The deprecated functions <code>globsplit</code> and <code>fnsplit</code> have been removed.</li>
 <li><strong>NEW</strong>: The deprecated variables <code>version</code> and <code>version_info</code> have been removed.</li>
@@ -700,23 +702,32 @@
 <h2 id="431">4.3.1<a class="headerlink" href="#431" title="Permanent link"></a></h2>
 <ul>
 <li><strong>FIX</strong>: Regression for root level literal matches in <code>glob</code>.</li>
-<li><strong>FIX</strong>: Bug where <code>glob</code> would mistakenly abort if a pattern started with a literal file or directory and could not match a file or directory. This caused subsequent patterns in the chain to not get evaluated.</li>
+<li><strong>FIX</strong>: Bug where <code>glob</code> would mistakenly abort if a pattern started with a literal file or directory and could not
+  match a file or directory. This caused subsequent patterns in the chain to not get evaluated.</li>
 </ul>
 <h2 id="430">4.3.0<a class="headerlink" href="#430" title="Permanent link"></a></h2>
 <ul>
-<li><strong>NEW</strong>: Add <code>CASE</code> flag which allows for case sensitive paths on Linux, macOS, and Windows. Windows drive letters and UNC <code>//host-name/share-name/</code> portion are still treated insensitively, but all directories will be treated with case sensitivity.</li>
-<li><strong>NEW</strong>: With the recent addition of <code>CASE</code> and <code>FORCEUNIX</code>, <code>FORCECASE</code> is no longer needed. Deprecate <code>FORCECASE</code> which will be removed at some future point.</li>
+<li><strong>NEW</strong>: Add <code>CASE</code> flag which allows for case sensitive paths on Linux, macOS, and Windows. Windows drive letters and
+  UNC <code>//host-name/share-name/</code> portion are still treated insensitively, but all directories will be treated with case
+  sensitivity.</li>
+<li><strong>NEW</strong>: With the recent addition of <code>CASE</code> and <code>FORCEUNIX</code>, <code>FORCECASE</code> is no longer needed. Deprecate <code>FORCECASE</code>
+  which will be removed at some future point.</li>
 </ul>
 <h2 id="420">4.2.0<a class="headerlink" href="#420" title="Permanent link"></a></h2>
 <ul>
 <li><strong>NEW</strong>: Drop Python 3.4 support.</li>
-<li><strong>NEW</strong>: Add flags <code>FORCEWIN</code> and <code>FORCEUNIX</code> to force Windows or Linux/Unix path logic on commands that do not access the file system: <code>translate</code>, <code>fnmatch</code>, <code>filter</code>, <code>globmatch</code>, <code>globfilter</code>, etc. These flags will not work with <code>glob</code>, <code>iglob</code> or with the <code>WcMatch</code> class. It also will not work when using the <code>REALPATH</code> flag with things like <code>fnmatch</code>, <code>filter</code>, <code>globmatch</code>, <code>globfilter</code>.</li>
-<li><strong>FIX</strong>: <code>glob</code> corner case where the first folder, if defined as a literal name (not a magic pattern), would not be treated properly if <code>IGNORECASE</code> was enabled in Linux.</li>
+<li><strong>NEW</strong>: Add flags <code>FORCEWIN</code> and <code>FORCEUNIX</code> to force Windows or Linux/Unix path logic on commands that do not access
+  the file system: <code>translate</code>, <code>fnmatch</code>, <code>filter</code>, <code>globmatch</code>, <code>globfilter</code>, etc. These flags will not work with
+  <code>glob</code>, <code>iglob</code> or with the <code>WcMatch</code> class. It also will not work when using the <code>REALPATH</code> flag with things like
+  <code>fnmatch</code>, <code>filter</code>, <code>globmatch</code>, <code>globfilter</code>.</li>
+<li><strong>FIX</strong>: <code>glob</code> corner case where the first folder, if defined as a literal name (not a magic pattern), would not be
+  treated properly if <code>IGNORECASE</code> was enabled in Linux.</li>
 </ul>
 <h2 id="410">4.1.0<a class="headerlink" href="#410" title="Permanent link"></a></h2>
 <ul>
 <li><strong>NEW</strong>: Add <code>WcMatch.is_aborted</code>.</li>
-<li><strong>FIX</strong>: Remove deprecation of <code>kill</code> and <code>reset</code> in <code>WcMatch</code>. There are legitimate reasons to not deprecate killing via <code>kill</code> instead of simply breaking.</li>
+<li><strong>FIX</strong>: Remove deprecation of <code>kill</code> and <code>reset</code> in <code>WcMatch</code>. There are legitimate reasons to not deprecate killing
+  via <code>kill</code> instead of simply breaking.</li>
 <li><strong>FIX</strong>: If for any reason, a file exists, but fails "is directory" check, consider it as a file.</li>
 </ul>
 <h2 id="401">4.0.1<a class="headerlink" href="#401" title="Permanent link"></a></h2>
@@ -726,13 +737,22 @@
 </ul>
 <h2 id="400">4.0.0<a class="headerlink" href="#400" title="Permanent link"></a></h2>
 <ul>
-<li><strong>NEW</strong>: Deprecated <code>WcMatch</code> class methods <code>kill</code> and <code>reset</code>. <code>WcMatch</code> should be broken with a simple <code>break</code> statement instead.</li>
+<li><strong>NEW</strong>: Deprecated <code>WcMatch</code> class methods <code>kill</code> and <code>reset</code>. <code>WcMatch</code> should be broken with a simple <code>break</code>
+  statement instead.</li>
 <li><strong>NEW</strong>: Add a new flag <code>MARK</code> to force <code>glob</code> to return directories with a trailing slash.</li>
-<li><strong>NEW</strong>: Add <code>MATCHBASE</code> that causes glob glob related functions and <code>WcMatch</code>, when the pattern has no slashes in it, to seek for any file anywhere in the tree with a matching basename.</li>
+<li><strong>NEW</strong>: Add <code>MATCHBASE</code> that causes glob glob related functions and <code>WcMatch</code>, when the pattern has no slashes in it,
+  to seek for any file anywhere in the tree with a matching basename.</li>
 <li><strong>NEW</strong>: Add <code>NODIR</code> that causes <code>glob</code> matchers and crawlers to only match and return files.</li>
-<li><strong>NEW</strong>: Exclusion patterns (enabled with <code>NEGATE</code>) now always enable <code>DOTALL</code> in the exclusion patterns. They also will match symlinks in <code>**</code> patterns. Only non <code>NEGATE</code> patterns that are paired with a <code>NEGATE</code> pattern are subject to symlinks and dot rules. Exclusion patterns themselves allow dots and symlinks to make filtering easier.</li>
-<li><strong>NEW</strong>: Exclusion patterns no longer provide a default inclusion pattern if one is not specified. Exclusion patterns are meant to filter the results of inclusion patterns. You can either use the <code>SPLIT</code> flag and provide an inclusion pattern with your default ('default_pattern|!exclusion'), or feed in a list of multiple patterns instead of a single string (<code>['inclusion', '!exclusion']</code>). If you really need the old behavior, you can use the <code>NEGATEALL</code> flag which will provide a default inclusion pattern that matches all files.</li>
-<li><strong>NEW</strong>: Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic to how it used to be, but is more efficient.</li>
+<li><strong>NEW</strong>: Exclusion patterns (enabled with <code>NEGATE</code>) now always enable <code>DOTALL</code> in the exclusion patterns. They also
+  will match symlinks in <code>**</code> patterns. Only non <code>NEGATE</code> patterns that are paired with a <code>NEGATE</code> pattern are subject
+  to symlinks and dot rules. Exclusion patterns themselves allow dots and symlinks to make filtering easier.</li>
+<li><strong>NEW</strong>: Exclusion patterns no longer provide a default inclusion pattern if one is not specified. Exclusion patterns
+  are meant to filter the results of inclusion patterns. You can either use the <code>SPLIT</code> flag and provide an inclusion
+  pattern with your default ('default_pattern|!exclusion'), or feed in a list of multiple patterns instead of a single
+  string (<code>['inclusion', '!exclusion']</code>). If you really need the old behavior, you can use the <code>NEGATEALL</code> flag which
+  will provide a default inclusion pattern that matches all files.</li>
+<li><strong>NEW</strong>: Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic
+  to how it used to be, but is more efficient.</li>
 <li><strong>FIX</strong>: An empty pattern in <code>glob</code> should not match slashes.</li>
 </ul>
 <h2 id="302">3.0.2<a class="headerlink" href="#302" title="Permanent link"></a></h2>
@@ -742,23 +762,37 @@
 </ul>
 <h2 id="301">3.0.1<a class="headerlink" href="#301" title="Permanent link"></a></h2>
 <ul>
-<li><strong>FIX</strong>: In the <code>WcMatch</code> class, defer hidden file check until after the file or directory is compared against patterns to potentially avoid calling hidden if the pattern doesn't match. The reduced <code>lstat</code> calls improve performance.</li>
+<li><strong>FIX</strong>: In the <code>WcMatch</code> class, defer hidden file check until after the file or directory is compared against
+  patterns to potentially avoid calling hidden if the pattern doesn't match. The reduced <code>lstat</code> calls improve
+  performance.</li>
 </ul>
 <h2 id="300">3.0.0<a class="headerlink" href="#300" title="Permanent link"></a></h2>
 <ul>
-<li><strong>NEW</strong>: <code>globsplit</code> and <code>fnsplit</code> have been deprecated. Users are encouraged to use the new <code>SPLIT</code> flag to allow functions to use multiple wildcard paths delimited by <code>|</code>.</li>
-<li><strong>NEW</strong>: <code>globmatch</code> and <code>globfilter</code> will now parse provided paths as real paths if the new <code>REALPATH</code> flag is set. This has the advantage of allowing the commands to be aware of symlinks and properly apply related logic (whether to follow the links or not). It also helps to clarify ambiguous cases where it isn't clear if a file path references a directory because the trailing slash was omitted. It also allows the command to be aware of Windows drives evaluate the path in proper context compared to the current working directory.</li>
-<li><strong>NEW</strong>: <code>WcMatch</code> class no longer accepts the <code>recursive</code> or <code>show_hidden</code> parameter, instead the <code>RECURSIVE</code> or <code>HIDDEN</code> flag must be used.</li>
+<li><strong>NEW</strong>: <code>globsplit</code> and <code>fnsplit</code> have been deprecated. Users are encouraged to use the new <code>SPLIT</code> flag to allow
+  functions to use multiple wildcard paths delimited by <code>|</code>.</li>
+<li><strong>NEW</strong>: <code>globmatch</code> and <code>globfilter</code> will now parse provided paths as real paths if the new <code>REALPATH</code> flag is set.
+  This has the advantage of allowing the commands to be aware of symlinks and properly apply related logic (whether to
+  follow the links or not). It also helps to clarify ambiguous cases where it isn't clear if a file path references a
+  directory because the trailing slash was omitted. It also allows the command to be aware of Windows drives evaluate
+  the path in proper context compared to the current working directory.</li>
+<li><strong>NEW</strong>: <code>WcMatch</code> class no longer accepts the <code>recursive</code> or <code>show_hidden</code> parameter, instead the <code>RECURSIVE</code> or
+  <code>HIDDEN</code> flag must be used.</li>
 <li><strong>NEW</strong>: <code>WcMatch</code> class now can search symlink directories with the new <code>SYMLINK</code> flag.</li>
-<li><strong>NEW</strong>: <code>glob</code> and <code>iglob</code> functions now behave like Bash 5.0 in regards to symlinks in <code>GLOBSTAR</code> (<code>**</code>). <code>GLOBSTAR</code> will ignore symlink directories. This affects other functions such as <code>globmatch</code> and <code>globfilter</code> when the <code>REALPATH</code> flag is enabled.</li>
-<li><strong>NEW</strong>: New flag called <code>FOLLOW</code> was added to force related <code>glob</code> commands to recognize and follow symlink directories.</li>
-<li><strong>FIX</strong>: Fix <code>glob</code> regression where inverse patterns such as <code>!**/test/**</code> would allow a directory <code>base/test</code> to match when it should have excluded it.</li>
-<li><strong>FIX</strong>: <code>glob</code> should handle root paths (<code>/</code>) properly, and on Windows, it should assume the drive of the current working directory.</li>
+<li><strong>NEW</strong>: <code>glob</code> and <code>iglob</code> functions now behave like Bash 5.0 in regards to symlinks in <code>GLOBSTAR</code> (<code>**</code>). <code>GLOBSTAR</code>
+  will ignore symlink directories. This affects other functions such as <code>globmatch</code> and <code>globfilter</code> when the <code>REALPATH</code>
+  flag is enabled.</li>
+<li><strong>NEW</strong>: New flag called <code>FOLLOW</code> was added to force related <code>glob</code> commands to recognize and follow symlink
+  directories.</li>
+<li><strong>FIX</strong>: Fix <code>glob</code> regression where inverse patterns such as <code>!**/test/**</code> would allow a directory <code>base/test</code> to
+  match when it should have excluded it.</li>
+<li><strong>FIX</strong>: <code>glob</code> should handle root paths (<code>/</code>) properly, and on Windows, it should assume the drive of the current
+  working directory.</li>
 </ul>
 <h2 id="221">2.2.1<a class="headerlink" href="#221" title="Permanent link"></a></h2>
 <ul>
 <li><strong>FIX</strong>: <code>EXTMATCH</code>/<code>EXTGLOB</code> should allow literal dots and should not treat dots like sequences do.</li>
-<li><strong>FIX</strong>: Fix <code>!(...)</code> extended match patterns in <code>glob</code> and <code>globmatch</code> so that they properly match <code>.</code> and <code>..</code> if their pattern starts with <code>.</code>.</li>
+<li><strong>FIX</strong>: Fix <code>!(...)</code> extended match patterns in <code>glob</code> and <code>globmatch</code> so that they properly match <code>.</code> and <code>..</code> if
+  their pattern starts with <code>.</code>.</li>
 <li><strong>FIX</strong>: Fix <code>!(...)</code> extended match patterns so that they handle path separators correctly.</li>
 <li><strong>FIX</strong>: Patterns such as <code>?</code> or <code>[.]</code> should not trigger matching directories <code>.</code> and <code>..</code> in <code>glob</code> and <code>globmatch</code>.</li>
 </ul>
@@ -774,11 +808,13 @@
 </ul>
 <h2 id="203">2.0.3<a class="headerlink" href="#203" title="Permanent link"></a></h2>
 <ul>
-<li><strong>FIX</strong>: In <code>glob</code>, properly handle files in the current working directory when give a literal pattern that matches it.</li>
+<li><strong>FIX</strong>: In <code>glob</code>, properly handle files in the current working directory when give a literal pattern that matches
+  it.</li>
 </ul>
 <h2 id="202">2.0.2<a class="headerlink" href="#202" title="Permanent link"></a></h2>
 <ul>
-<li><strong>FIX</strong>: <code>wcmatch</code> override events (<code>on_error</code> and <code>on_skip</code>) should verify the return  is <strong>not None</strong> and not <strong>not falsy</strong>.</li>
+<li><strong>FIX</strong>: <code>wcmatch</code> override events (<code>on_error</code> and <code>on_skip</code>) should verify the return  is <strong>not None</strong> and not <strong>not
+  falsy</strong>.</li>
 </ul>
 <h2 id="201">2.0.1<a class="headerlink" href="#201" title="Permanent link"></a></h2>
 <ul>
@@ -787,14 +823,19 @@
 <h2 id="200">2.0.0<a class="headerlink" href="#200" title="Permanent link"></a></h2>
 <div class="admonition danger">
 <p class="admonition-title">Breaking Changes</p>
-<p>Version 2.0.0 introduces breaking changes in regards to flags.  This is meant to bring about consistency amongst the provided libraries. Flag names have been changed in some cases, and logic has been inverted in some cases.</p>
+<p>Version 2.0.0 introduces breaking changes in regards to flags.  This is meant to bring about consistency amongst the
+provided libraries. Flag names have been changed in some cases, and logic has been inverted in some cases.</p>
 </div>
 <ul>
-<li><strong>NEW</strong>: Glob's <code>NOBRACE</code>, <code>NOGLOBSTAR</code>, and <code>NOEXTGLOB</code> flags are now <code>BRACE</code>, <code>GLOBSTAR</code>, and <code>EXTGLOB</code> and now enable the features instead of disabling the features. This logic matches the provided <code>fnmatch</code> and <code>wcmatch</code>.</li>
-<li><strong>NEW</strong>: Glob's <code>DOTGLOB</code> and <code>EXTGLOB</code> also have the respective aliases <code>DOTMATCH</code> and <code>EXTMATCH</code> to provide consistent flags across provided libraries, but the <code>GLOB</code> variants that match Bash's feature names can still be used.</li>
-<li><strong>NEW</strong>: <code>fnmatch</code>'s <code>PERIOD</code> flag has been replaced with <code>DOTMATCH</code> with inverted logic from what was originally provided.</li>
+<li><strong>NEW</strong>: Glob's <code>NOBRACE</code>, <code>NOGLOBSTAR</code>, and <code>NOEXTGLOB</code> flags are now <code>BRACE</code>, <code>GLOBSTAR</code>, and <code>EXTGLOB</code> and now
+  enable the features instead of disabling the features. This logic matches the provided <code>fnmatch</code> and <code>wcmatch</code>.</li>
+<li><strong>NEW</strong>: Glob's <code>DOTGLOB</code> and <code>EXTGLOB</code> also have the respective aliases <code>DOTMATCH</code> and <code>EXTMATCH</code> to provide
+  consistent flags across provided libraries, but the <code>GLOB</code> variants that match Bash's feature names can still be used.</li>
+<li><strong>NEW</strong>: <code>fnmatch</code>'s <code>PERIOD</code> flag has been replaced with <code>DOTMATCH</code> with inverted logic from what was originally
+  provided.</li>
 <li><strong>NEW</strong>: Documentation exposes the shorthand form of flags: <code>FORCECASE</code> &rarr; <code>F</code>, etc.</li>
-<li><strong>FIX</strong>: Wcmatch always documented that it had the flag named <code>EXTMATCH</code>, but internally it was actually <code>EXTGLOB</code>, this was a bug though. <code>EXTMATCH</code> is now the documented and the actual flag to use.</li>
+<li><strong>FIX</strong>: Wcmatch always documented that it had the flag named <code>EXTMATCH</code>, but internally it was actually <code>EXTGLOB</code>,
+  this was a bug though. <code>EXTMATCH</code> is now the documented and the actual flag to use.</li>
 </ul>
 <h2 id="102">1.0.2<a class="headerlink" href="#102" title="Permanent link"></a></h2>
 <ul>
@@ -802,11 +843,16 @@
 </ul>
 <h2 id="101">1.0.1<a class="headerlink" href="#101" title="Permanent link"></a></h2>
 <ul>
-<li><strong>FIX</strong>: Ensure that all patterns in <code>glob</code> that have a directory preceding <code>**</code> but also end with <code>**</code> returns the preceding directory.</li>
+<li><strong>FIX</strong>: Ensure that all patterns in <code>glob</code> that have a directory preceding <code>**</code> but also end with <code>**</code> returns the
+  preceding directory.</li>
 <li><strong>FIX</strong>: Fix byte conversion in path normalization.</li>
-<li><strong>FIX</strong>: Ensure POSIX character classes, when at the start of a sequence, properly have hyphens escaped following it. <code>[[:ascii:]-z]</code> should convert to <code>[\x00-\x7f\\-b]</code> not <code>[\x00-\x7f-b]</code>.</li>
-<li><strong>FIX</strong>: Fix an issue where we would fail because we couldn't covert raw characters even though raw character parsing was disabled.</li>
-<li><strong>FIX</strong>: Better default for file patterns.  Before if no pattern was provided for files, <code>'*'</code> was assumed, now it is <code>''</code>, and if <code>''</code> is used, all files will be matched. This works better for when full path is enabled as you get the same file matching logic.</li>
+<li><strong>FIX</strong>: Ensure POSIX character classes, when at the start of a sequence, properly have hyphens escaped following it.
+  <code>[[:ascii:]-z]</code> should convert to <code>[\x00-\x7f\\-b]</code> not <code>[\x00-\x7f-b]</code>.</li>
+<li><strong>FIX</strong>: Fix an issue where we would fail because we couldn't covert raw characters even though raw character parsing
+  was disabled.</li>
+<li><strong>FIX</strong>: Better default for file patterns.  Before if no pattern was provided for files, <code>'*'</code> was assumed, now it is
+  <code>''</code>, and if <code>''</code> is used, all files will be matched. This works better for when full path is enabled as you get the
+  same file matching logic.</li>
 </ul>
 <h2 id="100">1.0.0<a class="headerlink" href="#100" title="Permanent link"></a></h2>
 <ul>

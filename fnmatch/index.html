@@ -703,10 +703,14 @@
 </pre></div>
 
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link"></a></h2>
-<p>The <code>fnmatch</code> library is similar to the builtin <code>fnmatch</code>, but with some enhancements and some differences. It is mainly used for matching filenames with glob patterns. For path names, Wildcard Match's <a href="glob#globglobmatch"><code>globmatch</code></a> is a more appropriate choice. Not all of the features listed below are enabled by default. See <a href="#flags">flags</a> for more information.</p>
+<p>The <code>fnmatch</code> library is similar to the builtin <code>fnmatch</code>, but with some enhancements and some differences. It is mainly
+used for matching filenames with glob patterns. For path names, Wildcard Match's <a href="glob#globglobmatch"><code>globmatch</code></a> is a
+more appropriate choice. Not all of the features listed below are enabled by default. See <a href="#flags">flags</a> for more
+information.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a character <code class="highlight"><span class="sa">r</span><span class="s1">&#39;\?&#39;</span></code>.  If you want to represent a literal backslash, you must use two: <code class="highlight"><span class="sa">r</span><span class="s1">&#39;some</span><span class="se">\\</span><span class="s1">path&#39;</span></code>.</p>
+<p>When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a
+character <code class="highlight"><span class="sa">r</span><span class="s1">&#39;\?&#39;</span></code>.  If you want to represent a literal backslash, you must use two: <code class="highlight"><span class="sa">r</span><span class="s1">&#39;some</span><span class="se">\\</span><span class="s1">path&#39;</span></code>.</p>
 </div>
 <table>
 <thead>
@@ -771,9 +775,13 @@
 </tbody>
 </table>
 <ul>
-<li>Slashes are generally treated as normal characters, but on windows they will be normalized: <code>/</code> will become <code>\\</code>. There is no need to explicitly use <code>\\</code> in patterns on Windows, but if you do, it will be handled.  This applies to matching patterns and the filenames the patterns are applied to.</li>
-<li>If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern and filenames will be treated as a Linux/Unix filename.</li>
-<li>By default, <code>.</code> is <em>not</em> matched by <code>*</code>, <code>?</code>, and <code>[]</code>. See the <a href="#fnmatchdotmatch"><code>DOTMATCH</code></a> flag to match <code>.</code> at the start of a filename without a literal <code>.</code>.</li>
+<li>Slashes are generally treated as normal characters, but on windows they will be normalized: <code>/</code> will become <code>\\</code>.
+  There is no need to explicitly use <code>\\</code> in patterns on Windows, but if you do, it will be handled.  This applies to
+  matching patterns and the filenames the patterns are applied to.</li>
+<li>If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern and filenames will be
+  treated as a Linux/Unix filename.</li>
+<li>By default, <code>.</code> is <em>not</em> matched by <code>*</code>, <code>?</code>, and <code>[]</code>. See the <a href="#fnmatchdotmatch"><code>DOTMATCH</code></a> flag to match <code>.</code> at
+  the start of a filename without a literal <code>.</code>.</li>
 </ul>
 <h2 id="posix-character-classes">POSIX Character Classes<a class="headerlink" href="#posix-character-classes" title="Permanent link"></a></h2>
 <p>A number of POSIX style character classes are available in the form <code>[:posix:]</code>. They must be used inside sequences: <code>[[:posix:]]</code>. For byte strings, the <code>C</code> locale is used, and the values will for each character class are found in the table below under <code>ASCII</code>. When used in a Unicode string, Unicode properties will be used.</p>
@@ -872,7 +880,8 @@
 <div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">fnmatch</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 
-<p><code>fnmatch</code> takes a file name, a pattern (or list of patterns), and flags.  It will return a boolean indicating whether the file name was matched by the pattern(s).</p>
+<p><code>fnmatch</code> takes a file name, a pattern (or list of patterns), and flags.  It will return a boolean indicating whether
+the file name was matched by the pattern(s).</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;@(*.txt|*.py)&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">EXTMATCH</span><span class="p">)</span>
 <span class="go">True</span>
@@ -884,7 +893,10 @@
 <span class="go">True</span>
 </pre></div>
 
-<p>Exclusion patterns are allowed as well. When exclusion patterns are used in conjunction with inclusion patterns, a file will be considered matched if one of the inclusion patterns match <strong>and</strong> none of the exclusion patterns match. If an exclusion pattern is given without any inclusion patterns, the pattern will match nothing. Exclusion patterns are meant to filter other patterns, not match anything by themselves.</p>
+<p>Exclusion patterns are allowed as well. When exclusion patterns are used in conjunction with inclusion patterns, a file
+will be considered matched if one of the inclusion patterns match <strong>and</strong> none of the exclusion patterns match. If an
+exclusion pattern is given without any inclusion patterns, the pattern will match nothing. Exclusion patterns are meant
+to filter other patterns, not match anything by themselves.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.py&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;*|!*.py&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">fnamtch</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">)</span>
 <span class="go">False</span>
@@ -896,7 +908,10 @@
 <span class="go">False</span>
 </pre></div>
 
-<p>As mentioned, exclusion patterns need to be applied to a inclusion pattern to work, but if it is desired, you can force exclusion patterns to assume all files should be filtered with the exclusion pattern(s) with the <a href="#fnmatchnegateall"><code>NEGATEALL</code></a> flag. Essentially, it means if you use a pattern such as <code>!*.md</code>, it will assume two pattern were given: <code>*</code> and <code>!*.md</code>.</p>
+<p>As mentioned, exclusion patterns need to be applied to a inclusion pattern to work, but if it is desired, you can force
+exclusion patterns to assume all files should be filtered with the exclusion pattern(s) with the
+<a href="#fnmatchnegateall"><code>NEGATEALL</code></a> flag. Essentially, it means if you use a pattern such as <code>!*.md</code>, it will assume two
+pattern were given: <code>*</code> and <code>!*.md</code>.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.py&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;!*.py&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">fnamtch</span><span class="o">.</span><span class="n">NEGATEALL</span><span class="p">)</span>
 <span class="go">False</span>
@@ -908,7 +923,9 @@
 <div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">filenames</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 </pre></div>
 
-<p><code>filter</code> takes a list of filenames, a pattern (or list of patterns), and flags. It returns a list of all files that matched the pattern(s). The same logic used for <a href="#fnmatchfnmatch"><code>fnmatch</code></a> is used for <code>filter</code>, albeit more efficient for processing multiple files.</p>
+<p><code>filter</code> takes a list of filenames, a pattern (or list of patterns), and flags. It returns a list of all files that
+matched the pattern(s). The same logic used for <a href="#fnmatchfnmatch"><code>fnmatch</code></a> is used for <code>filter</code>, albeit more efficient
+for processing multiple files.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">filter</span><span class="p">([</span><span class="s1">&#39;a.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;b.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;c.py&#39;</span><span class="p">],</span> <span class="sa">r</span><span class="s1">&#39;*.txt&#39;</span><span class="p">)</span>
 <span class="go">[&#39;a.txt&#39;, &#39;b.txt&#39;]</span>
@@ -918,7 +935,10 @@
 <div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="n">patterns</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 </pre></div>
 
-<p><code>translate</code> takes a file pattern (or list of patterns) and returns two lists: one for inclusion patterns and one for exclusion patterns. The lists contain the regular expressions used for matching the given patterns. It should be noted that a file is considered matched if it matches at least one inclusion pattern and matches <strong>none</strong> of the exclusion patterns.</p>
+<p><code>translate</code> takes a file pattern (or list of patterns) and returns two lists: one for inclusion patterns and one for
+exclusion patterns. The lists contain the regular expressions used for matching the given patterns. It should be noted
+that a file is considered matched if it matches at least one inclusion pattern and matches <strong>none</strong> of the exclusion
+patterns.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">translate</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;*.{a,{b,c}}&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">BRACE</span><span class="p">)</span>
 <span class="go">([&#39;^(?s:(?=.).*?\\.a)$&#39;, &#39;^(?s:(?=.).*?\\.b)$&#39;, &#39;^(?s:(?=.).*?\\.c)$&#39;], [])</span>
@@ -928,7 +948,8 @@
 
 <div class="admonition warning">
 <p class="admonition-title">Changed 4.0</p>
-<p>Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic to how it used to be, but is more efficient.</p>
+<p>Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic to how
+it used to be, but is more efficient.</p>
 </div>
 <h2 id="flags">Flags<a class="headerlink" href="#flags" title="Permanent link"></a></h2>
 <h4 id="fnmatchcase"><code>fnmatch.CASE, fnmatch.C</code><a class="headerlink" href="#fnmatchcase" title="Permanent link"></a></h4>
@@ -940,31 +961,52 @@
 <h4 id="fnmatchignorecase"><code>fnmatch.IGNORECASE, fnmatch.I</code><a class="headerlink" href="#fnmatchignorecase" title="Permanent link"></a></h4>
 <p><code>IGNORECASE</code> forces case insensitivity. <a href="#fnmatchcase"><code>CASE</code></a> has higher priority than <code>IGNORECASE</code>.</p>
 <h4 id="fnmatchrawchars"><code>fnmatch.RAWCHARS, fnmatch.R</code><a class="headerlink" href="#fnmatchrawchars" title="Permanent link"></a></h4>
-<p><code>RAWCHARS</code> causes string character syntax to be parsed in raw strings: <code class="highlight"><span class="sa">r</span><span class="s1">&#39;\u0040&#39;</span></code> &rarr; <code class="highlight"><span class="sa">r</span><span class="s1">&#39;@&#39;</span></code>. This will handle standard string escapes and Unicode including <code class="highlight"><span class="sa">r</span><span class="s1">&#39;\N{CHAR NAME}&#39;</span></code>.</p>
+<p><code>RAWCHARS</code> causes string character syntax to be parsed in raw strings: <code class="highlight"><span class="sa">r</span><span class="s1">&#39;\u0040&#39;</span></code> &rarr; <code class="highlight"><span class="sa">r</span><span class="s1">&#39;@&#39;</span></code>. This will
+handle standard string escapes and Unicode including <code class="highlight"><span class="sa">r</span><span class="s1">&#39;\N{CHAR NAME}&#39;</span></code>.</p>
 <h4 id="fnmatchnegate"><code>fnmatch.NEGATE, fnmatch.N</code><a class="headerlink" href="#fnmatchnegate" title="Permanent link"></a></h4>
-<p><code>NEGATE</code> causes patterns that start with <code>!</code> to be treated as exclusion patterns. A pattern of <code>!*.py</code> would match any file but Python files. Exclusion patterns cannot be used by themselves though, and must be paired with a normal, inclusion pattern, either by utilizing the <a href="#fnmatchsplit"><code>SPLIT</code></a> flag, or providing multiple patterns in a list. Assuming the <code>SPLIT</code> flag, this means using it in a pattern such as <code>inclusion|!exclusion</code>.</p>
-<p>If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the file matches the excluded pattern. This is done with the <a href="#fnmatchnegateall"><code>NEGATEALL</code></a> flag.</p>
-<p>If used with the extended match feature, patterns like <code>!(inverse|pattern)</code> will be mistakenly parsed as an exclusion pattern instead of as an inverse extended glob group.  See <a href="#fnmatchminusgate"><code>MINUSNEGATE</code></a> for an alternative syntax that plays nice with extended glob.</p>
+<p><code>NEGATE</code> causes patterns that start with <code>!</code> to be treated as exclusion patterns. A pattern of <code>!*.py</code> would match any
+file but Python files. Exclusion patterns cannot be used by themselves though, and must be paired with a normal,
+inclusion pattern, either by utilizing the <a href="#fnmatchsplit"><code>SPLIT</code></a> flag, or providing multiple patterns in a list.
+Assuming the <code>SPLIT</code> flag, this means using it in a pattern such as <code>inclusion|!exclusion</code>.</p>
+<p>If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match
+unless the file matches the excluded pattern. This is done with the <a href="#fnmatchnegateall"><code>NEGATEALL</code></a> flag.</p>
+<p>If used with the extended match feature, patterns like <code>!(inverse|pattern)</code> will be mistakenly parsed as an exclusion
+pattern instead of as an inverse extended glob group.  See <a href="#fnmatchminusgate"><code>MINUSNEGATE</code></a> for an alternative syntax
+that plays nice with extended glob.</p>
 <div class="admonition warning">
 <p class="admonition-title">Changes 4.0</p>
 <p>In 4.0, <code>NEGATE</code> now requires a non-exclusion pattern to be paired with it or it will match nothing. If you really
-need something similar to the old behavior, that would assume a default inclusion pattern, you can use the <a href="#fnmatchnegateall"><code>NEGATEALL</code></a>.</p>
+need something similar to the old behavior, that would assume a default inclusion pattern, you can use the
+<a href="#fnmatchnegateall"><code>NEGATEALL</code></a>.</p>
 </div>
 <h4 id="fnmatchnegateall"><code>fnmatch.NEGATEALL, fnmatch.A</code><a class="headerlink" href="#fnmatchnegateall" title="Permanent link"></a></h4>
-<p><code>NEGATEALL</code> can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the file matches the excluded pattern. Essentially, it means if you use a pattern such as <code>!*.md</code>, it will assume two patterns were given: <code>*</code> and <code>!*.md</code>, where <code>!*.md</code> is applied to the results of <code>*</code>.</p>
+<p><code>NEGATEALL</code> can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the
+file matches the excluded pattern. Essentially, it means if you use a pattern such as <code>!*.md</code>, it will assume two
+patterns were given: <code>*</code> and <code>!*.md</code>, where <code>!*.md</code> is applied to the results of <code>*</code>.</p>
 <p>Dot files will not be returned unless <a href="#fnmatchdotmatch"><code>DOTMATCH</code></a>.</p>
 <h4 id="fnmatchminusnegate"><code>fnmatch.MINUSNEGATE, fnmatch.M</code><a class="headerlink" href="#fnmatchminusnegate" title="Permanent link"></a></h4>
-<p>When <code>MINUSNEGATE</code> is used with <a href="#fnmatchnegate"><code>NEGATE</code></a>, exclusion patterns are recognized by a pattern starting with <code>-</code> instead of <code>!</code>. This plays nice with the <a href="#fnmatchextmatch"><code>EXTMATCH</code></a> option.</p>
+<p>When <code>MINUSNEGATE</code> is used with <a href="#fnmatchnegate"><code>NEGATE</code></a>, exclusion patterns are recognized by a pattern starting with
+<code>-</code> instead of <code>!</code>. This plays nice with the <a href="#fnmatchextmatch"><code>EXTMATCH</code></a> option.</p>
 <h4 id="fnmatchdotmatch"><code>fnmatch.DOTMATCH, fnmatch.D</code><a class="headerlink" href="#fnmatchdotmatch" title="Permanent link"></a></h4>
-<p>By default, <a href="#fnmatchfnmatch"><code>fnmatch</code></a> and related functions will not match file or directory names that start with dot <code>.</code> unless matched with a literal dot. <code>DOTMATCH</code> allows the meta characters (such as <code>*</code>) to match dots like any other character. Dots will not be matched in <code>[]</code>, <code>*</code>, or <code>?</code>.</p>
+<p>By default, <a href="#fnmatchfnmatch"><code>fnmatch</code></a> and related functions will not match file or directory names that start with
+dot <code>.</code> unless matched with a literal dot. <code>DOTMATCH</code> allows the meta characters (such as <code>*</code>) to match dots like any
+other character. Dots will not be matched in <code>[]</code>, <code>*</code>, or <code>?</code>.</p>
 <h4 id="fnmatchextmatch"><code>fnmatch.EXTMATCH, fnmatch.E</code><a class="headerlink" href="#fnmatchextmatch" title="Permanent link"></a></h4>
-<p><code>EXTMATCH</code> enables extended pattern matching. This includes special pattern lists such as <code>+(...)</code>, <code>*(...)</code>, <code>?(...)</code>, etc. See the <a href="#syntax">syntax overview</a> for more information.</p>
+<p><code>EXTMATCH</code> enables extended pattern matching. This includes special pattern lists such as <code>+(...)</code>, <code>*(...)</code>, <code>?(...)</code>,
+etc. See the <a href="#syntax">syntax overview</a> for more information.</p>
 <h4 id="fnmatchbrace"><code>fnmatch.BRACE, fnmatch.B</code><a class="headerlink" href="#fnmatchbrace" title="Permanent link"></a></h4>
-<p><code>BRACE</code> enables Bash style brace expansion: <code>a{b,{c,d}}</code> &rarr; <code>ab ac ad</code>. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.</p>
-<p>For simple patterns, it may make more sense to use <a href="#fnmatchextmatch"><code>EXTMATCH</code></a> which will only generate a single pattern: <code>@(ab|ac|ad)</code>.</p>
-<p>Be careful with patterns such as <code>{1..100}</code> which would generate one hundred patterns that will all get individually parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of patterns.</p>
+<p><code>BRACE</code> enables Bash style brace expansion: <code>a{b,{c,d}}</code> &rarr; <code>ab ac ad</code>. Brace expansion is applied before anything
+else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.</p>
+<p>For simple patterns, it may make more sense to use <a href="#fnmatchextmatch"><code>EXTMATCH</code></a> which will only generate a single
+pattern: <code>@(ab|ac|ad)</code>.</p>
+<p>Be careful with patterns such as <code>{1..100}</code> which would generate one hundred patterns that will all get individually
+parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of
+patterns.</p>
 <h4 id="fnmatchsplit"><code>fnmatch.SPLIT, fnmatch.S</code><a class="headerlink" href="#fnmatchsplit" title="Permanent link"></a></h4>
-<p><code>SPLIT</code> is used to take a string of multiple patterns that are delimited by <code>|</code> and split them into separate patterns. This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It takes into account things like sequences (<code>[]</code>) and extended patterns (<code>*(...)</code>) and will not parse <code>|</code> within them.  You can escape the delimiters if needed: <code>\|</code>.</p>
+<p><code>SPLIT</code> is used to take a string of multiple patterns that are delimited by <code>|</code> and split them into separate patterns.
+This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It takes
+into account things like sequences (<code>[]</code>) and extended patterns (<code>*(...)</code>) and will not parse <code>|</code> within them.  You can
+escape the delimiters if needed: <code>\|</code>.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;*.txt|*.py&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">)</span>
 <span class="go">True</span>
@@ -973,15 +1015,18 @@ need something similar to the old behavior, that would assume a default inclusio
 </pre></div>
 
 <h4 id="fnmatchforcewin"><code>fnmatch.FORCEWIN, fnmatch.W</code><a class="headerlink" href="#fnmatchforcewin" title="Permanent link"></a></h4>
-<p><code>FORCEWIN</code> will force Windows name and case logic to be used on Linux/Unix systems. It will also cause slashes to be normalized. This is great if you need to match Windows specific names on a Linux/Unix system.</p>
+<p><code>FORCEWIN</code> will force Windows name and case logic to be used on Linux/Unix systems. It will also cause slashes to be
+normalized. This is great if you need to match Windows specific names on a Linux/Unix system.</p>
 <p>If <code>FORCEWIN</code> is used along side <a href="#fnmatchforceunix"><code>FORCEUNIX</code></a>, both will be ignored.</p>
 <div class="admonition new">
 <p class="admonition-title">New 4.2.0</p>
 <p><code>FORCEWIN</code> is new in 4.2.0.</p>
 </div>
 <h4 id="fnmatchforceunix"><code>fnmatch.FORCEUNIX, fnmatch.U</code><a class="headerlink" href="#fnmatchforceunix" title="Permanent link"></a></h4>
-<p><code>FORCEUNIX</code> will force Linux/Unix name and case logic to be used on Windows systems. This is great if you need to match Linux/Unix specific names on a Windows system.</p>
-<p>When using <code>FORCEUNIX</code>, the names are assumed to be case sensitive, but you can use <a href="#fnmatchignorecase"><code>IGNORECASE</code></a> to use case insensitivity.</p>
+<p><code>FORCEUNIX</code> will force Linux/Unix name and case logic to be used on Windows systems. This is great if you need to match
+Linux/Unix specific names on a Windows system.</p>
+<p>When using <code>FORCEUNIX</code>, the names are assumed to be case sensitive, but you can use <a href="#fnmatchignorecase"><code>IGNORECASE</code></a>
+to use case insensitivity.</p>
 <p>If <code>FORCEUNIX</code> is used along side <a href="#fnmatchforcewin"><code>FORCEWIN</code></a>, both will be ignored.</p>
 <div class="admonition new">
 <p class="admonition-title">New 4.2.0</p>

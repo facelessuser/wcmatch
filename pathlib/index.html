@@ -860,25 +860,27 @@
 </div>
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link"></a></h2>
 <p><code>pathlib</code> is a library that contains subclasses of Python's <a href="https://docs.python.org/3/library/pathlib.html"><code>pathlib</code></a> <code>Path</code> and <code>PurePath</code> classes, and
-their Posix and Windows subclasses, with purpose of overriding the default <code>glob</code> behavior with Wildcard Match's very
-own <a href="../glob/"><code>glob</code></a>. This allows a user of <code>pathlib</code> to use all of the glob enhancements such as extended glob
-patterns, and other great features.</p>
+their Posix and Windows subclasses, with the purpose of overriding the default <code>glob</code> behavior with Wildcard Match's
+very own <a href="../glob/"><code>glob</code></a>. This allows a user of <code>pathlib</code> to use all of the glob enhancements that Wildcard Match
+provides. This includes features such as extended glob patterns, brace expansions, and more.</p>
 <p>This documentation does not mean to exhaustively describe the <code>pathlib</code> library, just the differences introduced by
 Wildcard Match's implementation. Please check out Python's <a href="https://docs.python.org/3/library/pathlib.html"><code>pathlib</code></a> documentation to learn more about
-<code>pathlib</code> in general.</p>
-<p>The API the same as Python's default <code>pathlib</code> except for the few differences related to file globbing and matching:</p>
+<code>pathlib</code> in general. Also, to learn more about the underlying glob library being used, check out the documentation for
+Wildcard Match's <a href="../glob/"><code>glob</code></a>.</p>
+<p>The API is the same as Python's default <code>pathlib</code> except for the few differences related to file globbing and matching:</p>
 <ul>
 <li>
-<p>Each <code>pathlib</code> object's <code>glob</code>, <code>rglob</code>, and <code>match</code> methods are now driven by the <code>wcmatch.glob</code> library.</p>
+<p>Each <code>pathlib</code> object's <code>glob</code>, <code>rglob</code>, and <code>match</code> methods are now driven by the <a href="../glob/"><code>wcmatch.glob</code></a>
+  library.</p>
 </li>
 <li>
-<p><code>glob</code> and <code>rglob</code> can take a single string pattern or a list of patterns. They also accept flags via the <code>flags</code>
-  keyword. This matches the interfaces found in <code>wcmatch.glob</code>.</p>
+<p><code>glob</code> and <code>rglob</code> can take a single string pattern or a list of patterns. They also accept <a href="#flags">flags</a> via the
+  <code>flags</code> keyword. This matches the interfaces found detailed in <a href="../glob/"><code>wcmatch.glob</code></a>.</p>
 </li>
 <li>
-<p><code>globmatch</code> method is also added to <code>PurePath</code> classes (and <code>Path</code> classes which are derived from <code>PurePath</code>) which is
-  like <code>match</code> except without the recursive behavior. See <a href="#purepathmatch"><code>match</code></a> and <a href="purepathglobmatch"><code>globmatch</code></a>
-  for more information.</p>
+<p>A <code>globmatch</code> method has been added to <code>PurePath</code> classes (and <code>Path</code> classes which are derived from <code>PurePath</code>) which
+  is like <code>match</code> except without the recursive behavior. See <a href="#purepathmatch"><code>match</code></a> and
+  <a href="purepathglobmatch"><code>globmatch</code></a> for more information.</p>
 </li>
 <li>
 <p><code>glob</code> and <code>rglob</code> do not enable <a href="#pathlibglobstar"><code>GLOBSTAR</code></a> or <a href="#pathlibdotglob"><code>DOTGLOB</code></a> by default. These
@@ -1171,7 +1173,7 @@ path whose basename matches.</p>
 <h4 id="pathlibnodir"><code>pathlib.NODIR, pathlib.O</code><a class="headerlink" href="#pathlibnodir" title="Permanent link"></a></h4>
 <p><code>NODIR</code> will cause all glob related functions to return only matched files. In the case of <code>PurePath</code> classes, this may
 not be possible as those classes do not access the file system, nor will they retain trailing slashes.</p>
-<div class="highlight"><pre><span></span><span class="go">from wcmatch import glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">NODIR</span><span class="p">)</span>
 <span class="go">[&#39;appveyor.yml&#39;, &#39;LICENSE.md&#39;, &#39;MANIFEST.in&#39;, &#39;mkdocs.yml&#39;, &#39;README.md&#39;, &#39;setup.cfg&#39;, &#39;setup.py&#39;, &#39;spell.log&#39;, &#39;tox.ini&#39;]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>

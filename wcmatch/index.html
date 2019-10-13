@@ -923,9 +923,17 @@
 </pre></div>
 
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link"></a></h2>
-<p><code>wcmatch.WcMatch</code> was originally written to provide a simple user interface for searching specific files in <a href="https://github.com/facelessuser/Rummage">Rummage</a>. A class was needed to facilitate a user interface where a user could select a base path, define one or more file patterns they wanted to search for, and provide folders to exclude if needed. It needed to be aware of hidden files on different systems, not just ignoring files that start with <code>.</code>. It also needed to be extendable so we could further filter returned files by size, creation date, or whatever else was decided. While <code>glob</code> is a fantastic file and folder search tool, it just didn't make sense for such a user interface.</p>
+<p><code>wcmatch.WcMatch</code> was originally written to provide a simple user interface for searching specific files in
+<a href="https://github.com/facelessuser/Rummage">Rummage</a>. A class was needed to facilitate a user interface where a user could
+select a base path, define one or more file patterns they wanted to search for, and provide folders to exclude if
+needed. It needed to be aware of hidden files on different systems, not just ignoring files that start with <code>.</code>. It also
+needed to be extendable so we could further filter returned files by size, creation date, or whatever else was decided.
+While <code>glob</code> is a fantastic file and folder search tool, it just didn't make sense for such a user interface.</p>
 <h2 id="wcmatchwcmatch_1"><code>wcmatch.WcMatch</code><a class="headerlink" href="#wcmatchwcmatch_1" title="Permanent link"></a></h2>
-<p><code>WcMatch</code> is an extendable file search class. It allows you to specify a base path, file patterns, and optional folder exclude patterns. You can specify whether you want to see hidden files and whether the search should be recursive. You can also derive from the class and tap into specific hooks to change what is returned or done when a file is matched, skipped, or when there is an error. There are also hooks where you can inject additional, custom filtering.</p>
+<p><code>WcMatch</code> is an extendable file search class. It allows you to specify a base path, file patterns, and optional folder
+exclude patterns. You can specify whether you want to see hidden files and whether the search should be recursive. You
+can also derive from the class and tap into specific hooks to change what is returned or done when a file is matched,
+skipped, or when there is an error. There are also hooks where you can inject additional, custom filtering.</p>
 <table>
 <thead>
 <tr>
@@ -959,11 +967,14 @@
 </table>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Dots are not treated special in <code>wcmatch</code>. When the <code>HIDDEN</code> flag is not included, all hidden files (system and dot files) are excluded from the crawling processes, so there is no risk of <code>*</code> matching a dot file as it will not show up in the crawl. If the <code>HIDDEN</code> flag is included, <code>*</code>, <code>?</code>, and <code>[.]</code> will then match dot files.</p>
+<p>Dots are not treated special in <code>wcmatch</code>. When the <code>HIDDEN</code> flag is not included, all hidden files (system and dot
+files) are excluded from the crawling processes, so there is no risk of <code>*</code> matching a dot file as it will not show
+up in the crawl. If the <code>HIDDEN</code> flag is included, <code>*</code>, <code>?</code>, and <code>[.]</code> will then match dot files.</p>
 </div>
 <div class="admonition danger">
 <p class="admonition-title">Removed in 3.0</p>
-<p><code>show_hidden</code> and <code>recursive</code> were removed to provide a more consistent interface. Hidden files and recursion can be enabled via the <a href="#wcmatchhidden"><code>HIDDEN</code></a> and <a href="#wcmatchrecursive"><code>RECURSIVE</code></a> flag respectively.</p>
+<p><code>show_hidden</code> and <code>recursive</code> were removed to provide a more consistent interface. Hidden files and recursion can be
+enabled via the <a href="#wcmatchhidden"><code>HIDDEN</code></a> and <a href="#wcmatchrecursive"><code>RECURSIVE</code></a> flag respectively.</p>
 </div>
 <h3 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link"></a></h3>
 <p>Searching for files:</p>
@@ -990,7 +1001,8 @@
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>
 </pre></div>
 
-<p>You can also use negation patterns in directory exclude. Here we avoid all folders with <code>*</code>, but add an exception for <code>requirements</code>. It should be noted that you cannot add an exception for the child of an excluded folder.</p>
+<p>You can also use negation patterns in directory exclude. Here we avoid all folders with <code>*</code>, but add an exception for
+<code>requirements</code>. It should be noted that you cannot add an exception for the child of an excluded folder.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;*|!requirements&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">RECURSIVE</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>
@@ -1026,7 +1038,9 @@
 </pre></div>
 
 <h4 id="wcmatchkill"><code>WcMatch.kill</code><a class="headerlink" href="#wcmatchkill" title="Permanent link"></a></h4>
-<p>If searching with <code>imatch</code>, this provides a way to gracefully kill the internal searching. Internally, you can call <code>is_aborted</code> to check if a request to abort has been made. So if work on a file is being done in an <code>on_match</code>, you can check if there has been a request to kill the process, and tie up loose ends gracefully.</p>
+<p>If searching with <code>imatch</code>, this provides a way to gracefully kill the internal searching. Internally, you can call
+<code>is_aborted</code> to check if a request to abort has been made. So if work on a file is being done in an <code>on_match</code>, you can
+check if there has been a request to kill the process, and tie up loose ends gracefully.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcm</span> <span class="o">=</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">wcm</span><span class="o">.</span><span class="n">imatch</span><span class="p">():</span>
@@ -1036,7 +1050,10 @@
 <span class="go">./LICENSE.md</span>
 </pre></div>
 
-<p>Once a "kill" has been issued, the class will remain in an aborted state. To clear the "kill" state, you must call <a href="#wcmatchreset"><code>reset</code></a>. This allows a process to define a <code>Wcmatch</code> class and reuse it. If a process receives an early kill and sets it before the match is started, when the match is started, it will immediately abort. This helps with race conditions depending on how you are using <code>WcMatch</code>.</p>
+<p>Once a "kill" has been issued, the class will remain in an aborted state. To clear the "kill" state, you must call
+<a href="#wcmatchreset"><code>reset</code></a>. This allows a process to define a <code>Wcmatch</code> class and reuse it. If a process receives an early
+kill and sets it before the match is started, when the match is started, it will immediately abort. This helps with race
+conditions depending on how you are using <code>WcMatch</code>.</p>
 <h4 id="wcmatchreset"><code>WcMatch.reset</code><a class="headerlink" href="#wcmatchreset" title="Permanent link"></a></h4>
 <p>Resets the abort state after running <code>kill</code>.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
@@ -1082,7 +1099,8 @@ True
         <span class="sd">&quot;&quot;&quot;Handle custom init.&quot;&quot;&quot;</span>
 </pre></div>
 
-<p>Any arguments or keyword arguments not processed by the main initializer are sent to <code>on_init</code>. This allows you to specify additional arguments when deriving from <code>WcMatch</code>.</p>
+<p>Any arguments or keyword arguments not processed by the main initializer are sent to <code>on_init</code>. This allows you to
+specify additional arguments when deriving from <code>WcMatch</code>.</p>
 <h4 id="wcmatchon_validate_directory"><code>WcMatch.on_validate_directory</code><a class="headerlink" href="#wcmatchon_validate_directory" title="Permanent link"></a></h4>
 <div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">on_validate_directory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Validate folder override.&quot;&quot;&quot;</span>
@@ -1090,7 +1108,8 @@ True
         <span class="k">return</span> <span class="kc">True</span>
 </pre></div>
 
-<p>When validating a directory, if the directory passes validation, it will be sent to <code>on_validate_directory</code> which can be overridden to provide additional validation if required.</p>
+<p>When validating a directory, if the directory passes validation, it will be sent to <code>on_validate_directory</code> which can be
+overridden to provide additional validation if required.</p>
 <h4 id="wcmatchon_validate_file"><code>WcMatch.on_validate_file</code><a class="headerlink" href="#wcmatchon_validate_file" title="Permanent link"></a></h4>
 <div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">on_validate_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Validate file override.&quot;&quot;&quot;</span>
@@ -1098,7 +1117,8 @@ True
         <span class="k">return</span> <span class="kc">True</span>
 </pre></div>
 
-<p>When validating a file, if the file passes validation, it will be sent to <code>on_validate_file</code> which can be overridden to provide additional validation if required.</p>
+<p>When validating a file, if the file passes validation, it will be sent to <code>on_validate_file</code> which can be overridden to
+provide additional validation if required.</p>
 <h4 id="wcmatchon_skip"><code>WcMatch.on_skip</code><a class="headerlink" href="#wcmatchon_skip" title="Permanent link"></a></h4>
 <div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">on_skip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;On skip.&quot;&quot;&quot;</span>
@@ -1106,7 +1126,9 @@ True
         <span class="k">return</span> <span class="kc">None</span>
 </pre></div>
 
-<p>When a file that must be skipped is encountered (a file that doesn't pass validation), it is sent to <code>on_skip</code>. Here you could abort the search, store away information, or even create a special skip record to return. It is advised to create a special type for skip returns so that you can identify them when they are returned via <code>match</code> or <code>imatch</code>.</p>
+<p>When a file that must be skipped is encountered (a file that doesn't pass validation), it is sent to <code>on_skip</code>. Here you
+could abort the search, store away information, or even create a special skip record to return. It is advised to create
+a special type for skip returns so that you can identify them when they are returned via <code>match</code> or <code>imatch</code>.</p>
 <h4 id="wcmatchon_error"><code>WcMatch.on_error</code><a class="headerlink" href="#wcmatchon_error" title="Permanent link"></a></h4>
 <div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">on_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;On error.&quot;&quot;&quot;</span>
@@ -1114,7 +1136,9 @@ True
         <span class="k">return</span> <span class="kc">None</span>
 </pre></div>
 
-<p>When accessing or processing a file throws an error, it is sent to <code>on_error</code>. Here you could abort the search, store away information, or even create a special error record to return. It is advised to create a special type for error returns so that you can identify them when they are returned via <code>match</code> or <code>imatch</code>.</p>
+<p>When accessing or processing a file throws an error, it is sent to <code>on_error</code>. Here you could abort the search, store
+away information, or even create a special error record to return. It is advised to create a special type for error
+returns so that you can identify them when they are returned via <code>match</code> or <code>imatch</code>.</p>
 <h4 id="wcmatchon_match"><code>WcMatch.on_match</code><a class="headerlink" href="#wcmatchon_match" title="Permanent link"></a></h4>
 <div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">on_match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;On match.&quot;&quot;&quot;</span>
@@ -1122,7 +1146,9 @@ True
         <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 </pre></div>
 
-<p>On match returns the path of the matched file.  You can override <code>on_match</code> and change what is returned.  You could return just the base, you could parse the file and return the content, or return a special match record with additional file meta data. <code>on_match</code> must return something, and all results will be returned via <code>match</code> or <code>imatch</code>.</p>
+<p>On match returns the path of the matched file.  You can override <code>on_match</code> and change what is returned.  You could
+return just the base, you could parse the file and return the content, or return a special match record with additional
+file meta data. <code>on_match</code> must return something, and all results will be returned via <code>match</code> or <code>imatch</code>.</p>
 <h4 id="wcmatchon_reset"><code>WcMatch.on_reset</code><a class="headerlink" href="#wcmatchon_reset" title="Permanent link"></a></h4>
 <div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">on_reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;On reset.&quot;&quot;&quot;</span>
@@ -1143,13 +1169,15 @@ is called on every new <code>match</code> call.</p>
 <p>Added in 3.0 and must be used instead of the old <code>recursive</code> parameter which has also been removed as of 3.0.</p>
 </div>
 <h4 id="wcmatchhidden"><code>wcmatch.HIDDEN, wcmatch.HD</code><a class="headerlink" href="#wcmatchhidden" title="Permanent link"></a></h4>
-<p><code>HIDDEN</code> enables the crawling of hidden directories and will return hidden files if the wildcard pattern matches. This enables not just dot files, but system hidden files as well.</p>
+<p><code>HIDDEN</code> enables the crawling of hidden directories and will return hidden files if the wildcard pattern matches. This
+enables not just dot files, but system hidden files as well.</p>
 <div class="admonition new">
 <p class="admonition-title">New 3.0.0</p>
 <p>Added in 3.0 and must be used instead of the old <code>show_hidden</code> parameter which has also been removed as of 3.0.</p>
 </div>
 <h4 id="wcmatchsymlink"><code>wcmatch.SYMLINK, wcmatch.SL</code><a class="headerlink" href="#wcmatchsymlink" title="Permanent link"></a></h4>
-<p><code>SYMLINK</code> enables the crawling of symlink directories. By default, symlink directories are ignored during the file crawl.</p>
+<p><code>SYMLINK</code> enables the crawling of symlink directories. By default, symlink directories are ignored during the file
+crawl.</p>
 <div class="admonition new">
 <p class="admonition-title">New 3.0.0</p>
 <p>Added in 3.0. Additionally, symlinks are now ignored by default moving forward if <code>SYMLINK</code> is not enabled.</p>
@@ -1163,33 +1191,48 @@ is called on every new <code>match</code> call.</p>
 <h4 id="wcmatchignorecase"><code>wcmatch.IGNORECASE, wcmatch.I</code><a class="headerlink" href="#wcmatchignorecase" title="Permanent link"></a></h4>
 <p><code>IGNORECASE</code> forces case insensitive searches. <a href="#wcmatchcase"><code>CASE</code></a> has higher priority than <code>IGNORECASE</code>.</p>
 <h4 id="wcmatchrawchars"><code>wcmatch.RAWCHARS, wcmatch.R</code><a class="headerlink" href="#wcmatchrawchars" title="Permanent link"></a></h4>
-<p><code>RAWCHARS</code> causes string character syntax to be parsed in raw strings: <code class="highlight"><span class="sa">r</span><span class="s1">&#39;\u0040&#39;</span></code> &rarr; <code class="highlight"><span class="sa">r</span><span class="s1">&#39;@&#39;</span></code>. This will handle standard string escapes and Unicode (including <code class="highlight"><span class="sa">r</span><span class="s1">&#39;\N{CHAR NAME}&#39;</span></code>).</p>
+<p><code>RAWCHARS</code> causes string character syntax to be parsed in raw strings: <code class="highlight"><span class="sa">r</span><span class="s1">&#39;\u0040&#39;</span></code> &rarr; <code class="highlight"><span class="sa">r</span><span class="s1">&#39;@&#39;</span></code>. This will
+handle standard string escapes and Unicode (including <code class="highlight"><span class="sa">r</span><span class="s1">&#39;\N{CHAR NAME}&#39;</span></code>).</p>
 <h4 id="wcmatchextmatch"><code>wcmatch.EXTMATCH, wcmatch.E</code><a class="headerlink" href="#wcmatchextmatch" title="Permanent link"></a></h4>
-<p><code>EXTMATCH</code> enables extended pattern matching which includes special pattern lists such as <code>+(...)</code>, <code>*(...)</code>, <code>?(...)</code>, etc.</p>
+<p><code>EXTMATCH</code> enables extended pattern matching which includes special pattern lists such as <code>+(...)</code>, <code>*(...)</code>, <code>?(...)</code>,
+etc.</p>
 <h4 id="wcmatchbrace"><code>wcmatch.BRACE, wcmatch.B</code><a class="headerlink" href="#wcmatchbrace" title="Permanent link"></a></h4>
-<p><code>BRACE</code> enables Bash style brace expansion: <code>a{b,{c,d}}</code> &rarr; <code>ab ac ad</code>. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.</p>
-<p>For simple patterns, it may make more sense to use <a href="#fnmatchextmatch"><code>EXTMATCH</code></a> which will only generate a single pattern: <code>@(ab|ac|ad)</code>.</p>
-<p>Be careful with patterns such as <code>{1..100}</code> which would generate one hundred patterns that will all get individually parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of patterns.</p>
+<p><code>BRACE</code> enables Bash style brace expansion: <code>a{b,{c,d}}</code> &rarr; <code>ab ac ad</code>. Brace expansion is applied before anything
+else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.</p>
+<p>For simple patterns, it may make more sense to use <a href="#fnmatchextmatch"><code>EXTMATCH</code></a> which will only generate a single
+pattern: <code>@(ab|ac|ad)</code>.</p>
+<p>Be careful with patterns such as <code>{1..100}</code> which would generate one hundred patterns that will all get individually
+parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of
+patterns.</p>
 <h4 id="wcmatchminusnegate"><code>wcmatch.MINUSNEGATE, wcmatch.M</code><a class="headerlink" href="#wcmatchminusnegate" title="Permanent link"></a></h4>
 <p><code>MINUSNEGATE</code> requires negation patterns to use <code>-</code> instead of <code>!</code>.</p>
 <h4 id="wcmatchdirpathname"><code>wcmatch.DIRPATHNAME, wcmatch.DP</code><a class="headerlink" href="#wcmatchdirpathname" title="Permanent link"></a></h4>
-<p><code>DIRPATHNAME</code> will enable path name searching for excluded folder patterns, but it will not apply to file patterns. This is mainly provided for cases where you may have multiple folders with the same name, but you want to target a specific folder to exclude. The path name compared will be the entire path relative to the base path.  So if the provided base folder was <code>.</code>, and the folder under evaluation is <code>./some/folder</code>, <code>some/folder</code> will be matched against the pattern.</p>
+<p><code>DIRPATHNAME</code> will enable path name searching for excluded folder patterns, but it will not apply to file patterns. This
+is mainly provided for cases where you may have multiple folders with the same name, but you want to target a specific
+folder to exclude. The path name compared will be the entire path relative to the base path.  So if the provided base
+folder was <code>.</code>, and the folder under evaluation is <code>./some/folder</code>, <code>some/folder</code> will be matched against the pattern.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;docs/src/markdown&#39;</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">DIRPATHNAME</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>
 </pre></div>
 
 <h4 id="wcmatchfilepathname"><code>wcmatch.FILEPATHNAME, wcmatch.FP</code><a class="headerlink" href="#wcmatchfilepathname" title="Permanent link"></a></h4>
-<p><code>FILEPATHNAME</code> will enable path name searching for the file patterns, but it will not apply to directory exclude patterns. The path name compared will be the entire path relative to the base path.  So if the provided base folder was <code>.</code>, and the file under evaluation is <code>./some/file.txt</code>, <code>some/file.txt</code> will be matched against the pattern.</p>
+<p><code>FILEPATHNAME</code> will enable path name searching for the file patterns, but it will not apply to directory exclude
+patterns. The path name compared will be the entire path relative to the base path.  So if the provided base folder was
+<code>.</code>, and the file under evaluation is <code>./some/file.txt</code>, <code>some/file.txt</code> will be matched against the pattern.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;**/*.md|!**/_snippets/*&#39;</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">FILEPATHNAME</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">GLOBSTAR</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./docs/src/markdown/changelog.md&#39;, &#39;./docs/src/markdown/fnmatch.md&#39;, &#39;./docs/src/markdown/glob.md&#39;, &#39;./docs/src/markdown/index.md&#39;, &#39;./docs/src/markdown/license.md&#39;, &#39;./docs/src/markdown/wcmatch.md&#39;]</span>
 </pre></div>
 
 <h4 id="wcmatchpathname"><code>wcmatch.PATHNAME, wcmatch.P</code><a class="headerlink" href="#wcmatchpathname" title="Permanent link"></a></h4>
-<p><code>PATHNAME</code> enables both <a href="#wcmatchdirpathname"><code>DIRPATHNAME</code></a> and <a href="#wcmathfilepathname"><code>FILEPATHNAME</code></a>. It is provided for convenience.</p>
+<p><code>PATHNAME</code> enables both <a href="#wcmatchdirpathname"><code>DIRPATHNAME</code></a> and <a href="#wcmathfilepathname"><code>FILEPATHNAME</code></a>. It is provided
+for convenience.</p>
 <h4 id="wcmatchmatchbase"><code>wcmatch.MATCHBASE, wcmatch.X</code><a class="headerlink" href="#wcmatchmatchbase" title="Permanent link"></a></h4>
-<p>When <code>FILEPATHNAME</code> or <code>DIRPATHNAME</code> is enabled, <code>MATCHBASE</code> will ensure that that the respective file or directory pattern, when there are no slashes in the pattern, seeks for any file anywhere in the tree with a matching basename. This is essentially the behavior when <code>FILEPATHNAME</code> and <code>DIRPATHNAME</code> is disabled, but with <code>MATCHBASE</code>, you can toggle the behavior by including slashes in your pattern.</p>
+<p>When <code>FILEPATHNAME</code> or <code>DIRPATHNAME</code> is enabled, <code>MATCHBASE</code> will ensure that that the respective file or directory
+pattern, when there are no slashes in the pattern, seeks for any file anywhere in the tree with a matching basename.
+This is essentially the behavior when <code>FILEPATHNAME</code> and <code>DIRPATHNAME</code> is disabled, but with <code>MATCHBASE</code>, you can toggle
+the behavior by including slashes in your pattern.</p>
 <p>When we include no slashes:</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">FILEPATHNAME</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">GLOBSTAR</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">MATCHBASE</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">RECURSIVE</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./docs/src/markdown/changelog.md&#39;, &#39;./docs/src/markdown/fnmatch.md&#39;, &#39;./docs/src/markdown/glob.md&#39;, &#39;./docs/src/markdown/index.md&#39;, &#39;./docs/src/markdown/license.md&#39;, &#39;./docs/src/markdown/wcmatch.md&#39;]</span>
@@ -1200,13 +1243,15 @@ is called on every new <code>match</code> call.</p>
 <span class="go">[&#39;./docs/src/markdown/changelog.md&#39;, &#39;./docs/src/markdown/fnmatch.md&#39;, &#39;./docs/src/markdown/glob.md&#39;, &#39;./docs/src/markdown/index.md&#39;, &#39;./docs/src/markdown/license.md&#39;, &#39;./docs/src/markdown/wcmatch.md&#39;]</span>
 </pre></div>
 
-<p>If we have a leading slash, the pattern will not perform a match on the basename, but will instead be a normal path pattern that is anchored to the current base path, in this case <code>.</code>.</p>
+<p>If we have a leading slash, the pattern will not perform a match on the basename, but will instead be a normal path
+pattern that is anchored to the current base path, in this case <code>.</code>.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;/*.md&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">FILEPATHNAME</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">GLOBSTAR</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">MATCHBASE</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">RECURSIVE</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;]</span>
 </pre></div>
 
 <h4 id="wcmatchglobstar"><code>wcmatch.GLOBSTAR, wcmatch.G</code><a class="headerlink" href="#wcmatchglobstar" title="Permanent link"></a></h4>
-<p>When the <a href="#wcmatchpathname"><code>PATHNAME</code></a> flag is provided, you can also enable <code>GLOBSTAR</code> to enable the recursive directory pattern matches with <code>**</code>.</p>
+<p>When the <a href="#wcmatchpathname"><code>PATHNAME</code></a> flag is provided, you can also enable <code>GLOBSTAR</code> to enable the recursive
+directory pattern matches with <code>**</code>.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;**/markdown&#39;</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">DIRPATHNAME</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">GLOBSTAR</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>

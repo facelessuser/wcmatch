@@ -294,6 +294,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    Features
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#installation" class="md-nav__link">
     Installation
   </a>
@@ -418,6 +425,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    Features
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#installation" class="md-nav__link">
     Installation
   </a>
@@ -452,29 +466,36 @@
                 
                 <h1 id="wildcard-match">Wildcard Match<a class="headerlink" href="#wildcard-match" title="Permanent link"></a></h1>
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link"></a></h2>
-<p>Wildcard Match provides an enhanced <code>fnmatch</code>, <code>glob</code> and <code>pathlib</code> library. In some ways they are similar to Python's
-builtin libraries as they provides functions to match, filter, and glob the file system. But it adds a number of
-features found in Bash's globbing such as backslash escaping, brace expansion, extended glob pattern groups, etc. It
-also adds a path centric matcher called <code>globmatch</code> which functions like <code>fnmatch</code>, but for paths. Paths that would
-normally be returned when providing <code>glob</code> a pattern should also be properly match in <code>globmatch</code>.</p>
+<p>Wildcard Match provides an enhanced <code>fnmatch</code>, <code>glob</code> and <code>pathlib</code> library in order to provide file matching and
+globbing that more closely follows the features found in Bash. In some ways these libraries are similar to Python's
+builtin libraries as they provide a similar interface to match, filter, and glob the file system. But they also include
+a number of features found in Bash's globbing such as backslash escaping, brace expansion, extended glob pattern groups,
+etc. They also add a number of new useful functions as well, such as <code>globmatch</code> which functions like <code>fnmatch</code>, but for
+paths. Paths that would normally be returned when providing <code>glob</code> a pattern should also be properly match in
+<code>globmatch</code>.</p>
 <p>Wildcard Match uses Bash as a guide when making decisions on behavior in <code>fnmatch</code> and <code>glob</code>. Behavior may differ from
 Bash version to Bash version, but an attempt is made to keep Wildcard Match up with the latest relevant changes. With
 all of this said, there may be a few corner cases in which we've intentionally chosen to not <em>exactly</em> mirror Bash. If
 an issue is found where Wildcard Match seems to deviate in an illogical way, we'd love to hear about it in the
 <a href="https://github.com/facelessuser/wcmatch/issues">issue tracker</a>.</p>
-<p>If all you are looking for is an alternative <code>fnmatch</code> and/or <code>glob</code> that follows much more closely to Bash, Wildcard
-Match has you covered, but Wildcard Match also adds a file search utility called <code>wcmatch</code> that is built on top of
-<code>fnmatch</code> and <code>globmatch</code>. It was originally written for <a href="https://github.com/facelessuser/Rummage">Rummage</a>, but split
-out into this project to be used by other projects that may find its approach useful.</p>
+<p>If all you are looking for is an alternative <code>fnmatch</code> and/or <code>glob</code> library that follows much more closely to Bash, or
+even a <code>pathlib</code> library that taps into a more advanced <code>glob</code> library,  Wildcard Match has you covered, but Wildcard
+Match also adds a file search utility called <code>wcmatch</code> that is built on top of <code>fnmatch</code> and <code>globmatch</code>. It was
+originally written for <a href="https://github.com/facelessuser/Rummage">Rummage</a>, but split out into this project to be used by
+other projects that may find its approach useful.</p>
+<h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link"></a></h2>
+<p>A quick overview of Wildcard Match's Features:</p>
 <ul>
-<li>Provides features comparable to Python's builtin in <code>fnamtch</code> and <code>glob</code>.</li>
+<li>Provides an interface comparable to Python's builtin in <code>fnamtch</code> and <code>glob</code>.</li>
+<li>Allows for a much more configurable experience when matching or globbing with many more features.</li>
 <li>Adds support for <code>**</code> in glob.</li>
 <li>Adds support for escaping characters with <code>\</code>.</li>
 <li>Add support for POSIX style character classes inside sequences: <code>[[:alnum:]]</code>, etc. The <code>C</code> locale is used for byte
-strings and Unicode properties for Unicode strings.</li>
+  strings and Unicode properties for Unicode strings.</li>
 <li>Adds support for brace expansion: <code>a{b,{c,d}}</code> &rarr; <code>ab ac ad</code>.</li>
 <li>Adds support for extended match patterns: <code>@(...)</code>, <code>+(...)</code>, <code>*(...)</code>, <code>?(...)</code>, and <code>!(...)</code>.</li>
 <li>Adds ability to match path names via the path centric <code>globmatch</code>.</li>
+<li>Provides a <code>pathlib</code> variant that uses Wildcard Match's <code>glob</code> library instead of Python's default.</li>
 <li>Provides an alternative file crawler called <code>wcmatch</code>.</li>
 <li>And more&hellip;</li>
 </ul>
