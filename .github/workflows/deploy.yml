@@ -1,6 +1,9 @@
-name: Python package
+name: Deploy
 
-on: [release]
+on:
+  push:
+    tags:
+    - '*'
 
 jobs:
 
