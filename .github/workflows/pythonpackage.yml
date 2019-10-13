@@ -28,6 +28,10 @@ jobs:
         python -m pytest --cov wcmatch --cov-append tests
         python -m coverage html -d coverage
         python -m coverage report --show-missing
+    - name: Coverage Report
+      uses: codecov/codecov-action@v1.0.2
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
 
   lint:
     strategy:

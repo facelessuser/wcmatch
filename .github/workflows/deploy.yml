@@ -34,3 +34,47 @@ jobs:
         git fetch gh-token && git fetch gh-token gh-pages:gh-pages
         python -m mkdocs gh-deploy -v --clean --remote-name gh-token
         git push gh-token gh-pages
+
+  wheel:
+    strategy:
+      matrix:
+        python-version: [3.7]
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Package
+        run: |
+          pip install --upgrade setuptools wheel
+          python setup.py bdist_wheel
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_PWD }}
+
+  sdist:
+    strategy:
+      matrix:
+        python-version: [3.7]
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Package
+        run: |
+          pip install --upgrade setuptools
+          python setup.py sdist
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_PWD }}
