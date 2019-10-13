@@ -1,5 +1,4 @@
 [![Master Health][github-ci-image]][github-ci-link]
-[![Windows Build Status][appveyor-image]][appveyor-link]
 [![Coverage][codecov-image]][codecov-link]
 [![PyPI Version][pypi-image]][pypi-link]
 ![License][license-image-mit]
@@ -82,8 +81,8 @@ SOFTWARE.
 
 [github-ci-image]: https://github.com/facelessuser/wcmatch/workflows/Master%20Health/badge.svg
 [github-ci-link]: https://github.com/facelessuser/wcmatch/actions?workflow=Master+Health
-[appveyor-image]: https://img.shields.io/appveyor/ci/facelessuser/wcmatch/master.svg?label=Windows%20Build&logo=appveyor
-[appveyor-link]: https://ci.appveyor.com/project/facelessuser/wcmatch
+[codecov-image]: https://img.shields.io/codecov/c/github/facelessuser/wcmatch/master.svg
+[codecov-link]: https://codecov.io/github/facelessuser/wcmatch
 [pypi-image]: https://img.shields.io/pypi/v/wcmatch.svg?logo=python&logoColor=white
 [pypi-link]: https://pypi.python.org/pypi/wcmatch
 [license-image-mit]: https://img.shields.io/badge/license-MIT-blue.svg
