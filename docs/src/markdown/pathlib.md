@@ -10,24 +10,26 @@ from wcmatch import pathlib
 ## Overview
 
 `pathlib` is a library that contains subclasses of Python's [`pathlib`][pathlib] `Path` and `PurePath` classes, and
-their Posix and Windows subclasses, with purpose of overriding the default `glob` behavior with Wildcard Match's very
-own [`glob`](./glob.md). This allows a user of `pathlib` to use all of the glob enhancements such as extended glob
-patterns, and other great features.
+their Posix and Windows subclasses, with the purpose of overriding the default `glob` behavior with Wildcard Match's
+very own [`glob`](./glob.md). This allows a user of `pathlib` to use all of the glob enhancements that Wildcard Match
+provides. This includes features such as extended glob patterns, brace expansions, and more.
 
 This documentation does not mean to exhaustively describe the `pathlib` library, just the differences introduced by
 Wildcard Match's implementation. Please check out Python's [`pathlib`][pathlib] documentation to learn more about
-`pathlib` in general.
+`pathlib` in general. Also, to learn more about the underlying glob library being used, check out the documentation for
+Wildcard Match's [`glob`](./glob.md).
 
-The API the same as Python's default `pathlib` except for the few differences related to file globbing and matching:
+The API is the same as Python's default `pathlib` except for the few differences related to file globbing and matching:
 
-- Each `pathlib` object's `glob`, `rglob`, and `match` methods are now driven by the `wcmatch.glob` library.
+- Each `pathlib` object's `glob`, `rglob`, and `match` methods are now driven by the [`wcmatch.glob`](./glob.md)
+  library.
 
-- `glob` and `rglob` can take a single string pattern or a list of patterns. They also accept flags via the `flags`
-  keyword. This matches the interfaces found in `wcmatch.glob`.
+- `glob` and `rglob` can take a single string pattern or a list of patterns. They also accept [flags](#flags) via the
+  `flags` keyword. This matches the interfaces found detailed in [`wcmatch.glob`](./glob.md).
 
-- `globmatch` method is also added to `PurePath` classes (and `Path` classes which are derived from `PurePath`) which is
-  like `match` except without the recursive behavior. See [`match`](#purepathmatch) and [`globmatch`](purepathglobmatch)
-  for more information.
+- A `globmatch` method has been added to `PurePath` classes (and `Path` classes which are derived from `PurePath`) which
+  is like `match` except without the recursive behavior. See [`match`](#purepathmatch) and
+  [`globmatch`](purepathglobmatch) for more information.
 
 - `glob` and `rglob` do not enable [`GLOBSTAR`](#pathlibglobstar) or [`DOTGLOB`](#pathlibdotglob) by default. These
   flags must be passed in to take advantage of this functionality.
@@ -411,7 +413,7 @@ path whose basename matches.
 not be possible as those classes do not access the file system, nor will they retain trailing slashes.
 
 ```pycon3
-from wcmatch import glob
+>>> from wcmatch import glob
 >>> glob.glob('*', flags=glob.NODIR)
 ['appveyor.yml', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'setup.cfg', 'setup.py', 'spell.log', 'tox.ini']
 >>> glob.glob('*')

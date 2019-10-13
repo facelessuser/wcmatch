@@ -6,11 +6,19 @@ from wcmatch import wcmatch
 
 ## Overview
 
-`wcmatch.WcMatch` was originally written to provide a simple user interface for searching specific files in [Rummage](https://github.com/facelessuser/Rummage). A class was needed to facilitate a user interface where a user could select a base path, define one or more file patterns they wanted to search for, and provide folders to exclude if needed. It needed to be aware of hidden files on different systems, not just ignoring files that start with `.`. It also needed to be extendable so we could further filter returned files by size, creation date, or whatever else was decided. While `glob` is a fantastic file and folder search tool, it just didn't make sense for such a user interface.
+`wcmatch.WcMatch` was originally written to provide a simple user interface for searching specific files in
+[Rummage](https://github.com/facelessuser/Rummage). A class was needed to facilitate a user interface where a user could
+select a base path, define one or more file patterns they wanted to search for, and provide folders to exclude if
+needed. It needed to be aware of hidden files on different systems, not just ignoring files that start with `.`. It also
+needed to be extendable so we could further filter returned files by size, creation date, or whatever else was decided.
+While `glob` is a fantastic file and folder search tool, it just didn't make sense for such a user interface.
 
 ## `wcmatch.WcMatch`
 
-`WcMatch` is an extendable file search class. It allows you to specify a base path, file patterns, and optional folder exclude patterns. You can specify whether you want to see hidden files and whether the search should be recursive. You can also derive from the class and tap into specific hooks to change what is returned or done when a file is matched, skipped, or when there is an error. There are also hooks where you can inject additional, custom filtering.
+`WcMatch` is an extendable file search class. It allows you to specify a base path, file patterns, and optional folder
+exclude patterns. You can specify whether you want to see hidden files and whether the search should be recursive. You
+can also derive from the class and tap into specific hooks to change what is returned or done when a file is matched,
+skipped, or when there is an error. There are also hooks where you can inject additional, custom filtering.
 
 Parameter         | Default       | Description
 ----------------- | ------------- | -----------
@@ -20,10 +28,13 @@ Parameter         | Default       | Description
 `flags`           | `#!py3 0`     | Flags to alter behavior of folder and file matching. See [Flags](#flags) for more info.
 
 !!! note
-    Dots are not treated special in `wcmatch`. When the `HIDDEN` flag is not included, all hidden files (system and dot files) are excluded from the crawling processes, so there is no risk of `*` matching a dot file as it will not show up in the crawl. If the `HIDDEN` flag is included, `*`, `?`, and `[.]` will then match dot files.
+    Dots are not treated special in `wcmatch`. When the `HIDDEN` flag is not included, all hidden files (system and dot
+    files) are excluded from the crawling processes, so there is no risk of `*` matching a dot file as it will not show
+    up in the crawl. If the `HIDDEN` flag is included, `*`, `?`, and `[.]` will then match dot files.
 
 !!! danger "Removed in 3.0"
-    `show_hidden` and `recursive` were removed to provide a more consistent interface. Hidden files and recursion can be enabled via the [`HIDDEN`](#wcmatchhidden) and [`RECURSIVE`](#wcmatchrecursive) flag respectively.
+    `show_hidden` and `recursive` were removed to provide a more consistent interface. Hidden files and recursion can be
+    enabled via the [`HIDDEN`](#wcmatchhidden) and [`RECURSIVE`](#wcmatchrecursive) flag respectively.
 
 ### Examples
 
@@ -59,7 +70,8 @@ Using file negation patterns:
 ['./LICENSE.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
-You can also use negation patterns in directory exclude. Here we avoid all folders with `*`, but add an exception for `requirements`. It should be noted that you cannot add an exception for the child of an excluded folder.
+You can also use negation patterns in directory exclude. Here we avoid all folders with `*`, but add an exception for
+`requirements`. It should be noted that you cannot add an exception for the child of an excluded folder.
 
 ```pycon3
 >>> from wcmatch import wcmatch
@@ -109,7 +121,9 @@ Perform match returning an iterator of files that match the patterns.
 
 #### `WcMatch.kill`
 
-If searching with `imatch`, this provides a way to gracefully kill the internal searching. Internally, you can call `is_aborted` to check if a request to abort has been made. So if work on a file is being done in an `on_match`, you can check if there has been a request to kill the process, and tie up loose ends gracefully.
+If searching with `imatch`, this provides a way to gracefully kill the internal searching. Internally, you can call
+`is_aborted` to check if a request to abort has been made. So if work on a file is being done in an `on_match`, you can
+check if there has been a request to kill the process, and tie up loose ends gracefully.
 
 ```pycon3
 >>> from wcmatch import wcmatch
@@ -121,7 +135,10 @@ If searching with `imatch`, this provides a way to gracefully kill the internal 
 ./LICENSE.md
 ```
 
-Once a "kill" has been issued, the class will remain in an aborted state. To clear the "kill" state, you must call [`reset`](#wcmatchreset). This allows a process to define a `Wcmatch` class and reuse it. If a process receives an early kill and sets it before the match is started, when the match is started, it will immediately abort. This helps with race conditions depending on how you are using `WcMatch`.
+Once a "kill" has been issued, the class will remain in an aborted state. To clear the "kill" state, you must call
+[`reset`](#wcmatchreset). This allows a process to define a `Wcmatch` class and reuse it. If a process receives an early
+kill and sets it before the match is started, when the match is started, it will immediately abort. This helps with race
+conditions depending on how you are using `WcMatch`.
 
 #### `WcMatch.reset`
 
@@ -179,7 +196,8 @@ Returns the number of skipped files. Files in skipped folders are not included i
         """Handle custom init."""
 ```
 
-Any arguments or keyword arguments not processed by the main initializer are sent to `on_init`. This allows you to specify additional arguments when deriving from `WcMatch`.
+Any arguments or keyword arguments not processed by the main initializer are sent to `on_init`. This allows you to
+specify additional arguments when deriving from `WcMatch`.
 
 #### `WcMatch.on_validate_directory`
 
@@ -190,7 +208,8 @@ Any arguments or keyword arguments not processed by the main initializer are sen
         return True
 ```
 
-When validating a directory, if the directory passes validation, it will be sent to `on_validate_directory` which can be overridden to provide additional validation if required.
+When validating a directory, if the directory passes validation, it will be sent to `on_validate_directory` which can be
+overridden to provide additional validation if required.
 
 #### `WcMatch.on_validate_file`
 
@@ -201,7 +220,8 @@ When validating a directory, if the directory passes validation, it will be sent
         return True
 ```
 
-When validating a file, if the file passes validation, it will be sent to `on_validate_file` which can be overridden to provide additional validation if required.
+When validating a file, if the file passes validation, it will be sent to `on_validate_file` which can be overridden to
+provide additional validation if required.
 
 #### `WcMatch.on_skip`
 
@@ -212,7 +232,9 @@ When validating a file, if the file passes validation, it will be sent to `on_va
         return None
 ```
 
-When a file that must be skipped is encountered (a file that doesn't pass validation), it is sent to `on_skip`. Here you could abort the search, store away information, or even create a special skip record to return. It is advised to create a special type for skip returns so that you can identify them when they are returned via `match` or `imatch`.
+When a file that must be skipped is encountered (a file that doesn't pass validation), it is sent to `on_skip`. Here you
+could abort the search, store away information, or even create a special skip record to return. It is advised to create
+a special type for skip returns so that you can identify them when they are returned via `match` or `imatch`.
 
 #### `WcMatch.on_error`
 
@@ -223,7 +245,9 @@ When a file that must be skipped is encountered (a file that doesn't pass valida
         return None
 ```
 
-When accessing or processing a file throws an error, it is sent to `on_error`. Here you could abort the search, store away information, or even create a special error record to return. It is advised to create a special type for error returns so that you can identify them when they are returned via `match` or `imatch`.
+When accessing or processing a file throws an error, it is sent to `on_error`. Here you could abort the search, store
+away information, or even create a special error record to return. It is advised to create a special type for error
+returns so that you can identify them when they are returned via `match` or `imatch`.
 
 #### `WcMatch.on_match`
 
@@ -234,7 +258,9 @@ When accessing or processing a file throws an error, it is sent to `on_error`. H
         return os.path.join(base, name)
 ```
 
-On match returns the path of the matched file.  You can override `on_match` and change what is returned.  You could return just the base, you could parse the file and return the content, or return a special match record with additional file meta data. `on_match` must return something, and all results will be returned via `match` or `imatch`.
+On match returns the path of the matched file.  You can override `on_match` and change what is returned.  You could
+return just the base, you could parse the file and return the content, or return a special match record with additional
+file meta data. `on_match` must return something, and all results will be returned via `match` or `imatch`.
 
 #### `WcMatch.on_reset`
 
@@ -261,14 +287,16 @@ is called on every new `match` call.
 
 #### `wcmatch.HIDDEN, wcmatch.HD` {: #wcmatchhidden}
 
-`HIDDEN` enables the crawling of hidden directories and will return hidden files if the wildcard pattern matches. This enables not just dot files, but system hidden files as well.
+`HIDDEN` enables the crawling of hidden directories and will return hidden files if the wildcard pattern matches. This
+enables not just dot files, but system hidden files as well.
 
 !!! new "New 3.0.0"
     Added in 3.0 and must be used instead of the old `show_hidden` parameter which has also been removed as of 3.0.
 
 #### `wcmatch.SYMLINK, wcmatch.SL` {: #wcmatchsymlink}
 
-`SYMLINK` enables the crawling of symlink directories. By default, symlink directories are ignored during the file crawl.
+`SYMLINK` enables the crawling of symlink directories. By default, symlink directories are ignored during the file
+crawl.
 
 !!! new "New 3.0.0"
     Added in 3.0. Additionally, symlinks are now ignored by default moving forward if `SYMLINK` is not enabled.
@@ -286,19 +314,25 @@ is called on every new `match` call.
 
 #### `wcmatch.RAWCHARS, wcmatch.R` {: #wcmatchrawchars}
 
-`RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will handle standard string escapes and Unicode (including `#!py3 r'\N{CHAR NAME}'`).
+`RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will
+handle standard string escapes and Unicode (including `#!py3 r'\N{CHAR NAME}'`).
 
 #### `wcmatch.EXTMATCH, wcmatch.E` {: #wcmatchextmatch}
 
-`EXTMATCH` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`, etc.
+`EXTMATCH` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`,
+etc.
 
 #### `wcmatch.BRACE, wcmatch.B` {: #wcmatchbrace}
 
-`BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
+`BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything
+else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
-For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch) which will only generate a single pattern: `@(ab|ac|ad)`.
+For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch) which will only generate a single
+pattern: `@(ab|ac|ad)`.
 
-Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of patterns.
+Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually
+parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of
+patterns.
 
 #### `wcmatch.MINUSNEGATE, wcmatch.M` {: #wcmatchminusnegate}
 
@@ -306,7 +340,10 @@ Be careful with patterns such as `{1..100}` which would generate one hundred pat
 
 #### `wcmatch.DIRPATHNAME, wcmatch.DP` {: #wcmatchdirpathname}
 
-`DIRPATHNAME` will enable path name searching for excluded folder patterns, but it will not apply to file patterns. This is mainly provided for cases where you may have multiple folders with the same name, but you want to target a specific folder to exclude. The path name compared will be the entire path relative to the base path.  So if the provided base folder was `.`, and the folder under evaluation is `./some/folder`, `some/folder` will be matched against the pattern.
+`DIRPATHNAME` will enable path name searching for excluded folder patterns, but it will not apply to file patterns. This
+is mainly provided for cases where you may have multiple folders with the same name, but you want to target a specific
+folder to exclude. The path name compared will be the entire path relative to the base path.  So if the provided base
+folder was `.`, and the folder under evaluation is `./some/folder`, `some/folder` will be matched against the pattern.
 
 ```pycon3
 >>> from wcmatch import wcmatch
@@ -316,7 +353,9 @@ Be careful with patterns such as `{1..100}` which would generate one hundred pat
 
 #### `wcmatch.FILEPATHNAME, wcmatch.FP` {: #wcmatchfilepathname}
 
-`FILEPATHNAME` will enable path name searching for the file patterns, but it will not apply to directory exclude patterns. The path name compared will be the entire path relative to the base path.  So if the provided base folder was `.`, and the file under evaluation is `./some/file.txt`, `some/file.txt` will be matched against the pattern.
+`FILEPATHNAME` will enable path name searching for the file patterns, but it will not apply to directory exclude
+patterns. The path name compared will be the entire path relative to the base path.  So if the provided base folder was
+`.`, and the file under evaluation is `./some/file.txt`, `some/file.txt` will be matched against the pattern.
 
 ```pycon3
 >>> from wcmatch import wcmatch
@@ -326,11 +365,15 @@ Be careful with patterns such as `{1..100}` which would generate one hundred pat
 
 #### `wcmatch.PATHNAME, wcmatch.P` {: #wcmatchpathname}
 
-`PATHNAME` enables both [`DIRPATHNAME`](#wcmatchdirpathname) and [`FILEPATHNAME`](#wcmathfilepathname). It is provided for convenience.
+`PATHNAME` enables both [`DIRPATHNAME`](#wcmatchdirpathname) and [`FILEPATHNAME`](#wcmathfilepathname). It is provided
+for convenience.
 
 #### `wcmatch.MATCHBASE, wcmatch.X` {: #wcmatchmatchbase}
 
-When `FILEPATHNAME` or `DIRPATHNAME` is enabled, `MATCHBASE` will ensure that that the respective file or directory pattern, when there are no slashes in the pattern, seeks for any file anywhere in the tree with a matching basename. This is essentially the behavior when `FILEPATHNAME` and `DIRPATHNAME` is disabled, but with `MATCHBASE`, you can toggle the behavior by including slashes in your pattern.
+When `FILEPATHNAME` or `DIRPATHNAME` is enabled, `MATCHBASE` will ensure that that the respective file or directory
+pattern, when there are no slashes in the pattern, seeks for any file anywhere in the tree with a matching basename.
+This is essentially the behavior when `FILEPATHNAME` and `DIRPATHNAME` is disabled, but with `MATCHBASE`, you can toggle
+the behavior by including slashes in your pattern.
 
 When we include no slashes:
 
@@ -346,7 +389,8 @@ If we include slashes in the pattern, the path, not the basename, must match the
 ['./docs/src/markdown/changelog.md', './docs/src/markdown/fnmatch.md', './docs/src/markdown/glob.md', './docs/src/markdown/index.md', './docs/src/markdown/license.md', './docs/src/markdown/wcmatch.md']
 ```
 
-If we have a leading slash, the pattern will not perform a match on the basename, but will instead be a normal path pattern that is anchored to the current base path, in this case `.`.
+If we have a leading slash, the pattern will not perform a match on the basename, but will instead be a normal path
+pattern that is anchored to the current base path, in this case `.`.
 
 ```pycon3
 >>> wcmatch.WcMatch('.', '/*.md', flags=wcmatch.FILEPATHNAME | wcmatch.GLOBSTAR | wcmatch.MATCHBASE | wcmatch.RECURSIVE).match()
@@ -355,7 +399,8 @@ If we have a leading slash, the pattern will not perform a match on the basename
 
 #### `wcmatch.GLOBSTAR, wcmatch.G` {: #wcmatchglobstar}
 
-When the [`PATHNAME`](#wcmatchpathname) flag is provided, you can also enable `GLOBSTAR` to enable the recursive directory pattern matches with `**`.
+When the [`PATHNAME`](#wcmatchpathname) flag is provided, you can also enable `GLOBSTAR` to enable the recursive
+directory pattern matches with `**`.
 
 ```pycon3
 >>> from wcmatch import wcmatch
