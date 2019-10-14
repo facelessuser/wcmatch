@@ -1,4 +1,4 @@
-name: Master Health
+name: master
 
 on:
   push:
