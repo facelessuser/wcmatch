@@ -45,7 +45,7 @@ class Api:
 
             assert resp.status_code == 204
 
-        except Exception as e:
+        except Exception:
             raise RuntimeError('DELETE command failed: {}'.format(self.url + command))
 
     def _patch(self, command, payload, timeout=60):

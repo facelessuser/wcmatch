@@ -1,4 +1,4 @@
-[![Master Build][github-ci-image]][github-ci-link]
+[![Build][github-ci-image]][github-ci-link]
 [![Coverage][codecov-image]][codecov-link]
 [![PyPI Version][pypi-image]][pypi-link]
 ![License][license-image-mit]
@@ -79,8 +79,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-[github-ci-image]: https://github.com/facelessuser/wcmatch/workflows/master/badge.svg
-[github-ci-link]: https://github.com/facelessuser/wcmatch/actions?workflow=master
+[github-ci-image]: https://github.com/facelessuser/wcmatch/workflows/build/badge.svg
+[github-ci-link]: https://github.com/facelessuser/wcmatch/actions?workflow=build
 [codecov-image]: https://img.shields.io/codecov/c/github/facelessuser/wcmatch/master.svg
 [codecov-link]: https://codecov.io/github/facelessuser/wcmatch
 [pypi-image]: https://img.shields.io/pypi/v/wcmatch.svg?logo=python&logoColor=white
