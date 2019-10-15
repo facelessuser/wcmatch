@@ -1,0 +1,22 @@
+language: python
+dist: xenial
+sudo: true
+
+# Limit git depth to speed up build
+git:
+  depth: 5
+
+matrix:
+  include:
+    - python: 3.8-dev
+      env: TOXENV=py38
+
+install:
+  - pip install tox
+  - pip install codecov
+
+script:
+  - tox
+
+after_success:
+  - codecov
