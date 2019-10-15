@@ -28,8 +28,6 @@ class Api:
     def _delete(self, command, timeout=60):
         """Send a DELETE REST command."""
 
-        err = False
-
         if timeout == 0:
             timeout = None
 
@@ -47,15 +45,11 @@ class Api:
 
             assert resp.status_code == 204
 
-        except Exception:
-            err = True
-
-        return err
+        except Exception as e:
+            raise RuntimeError('DELETE command failed: {}'.format(self.url + command))
 
     def _patch(self, command, payload, timeout=60):
         """Send a PATCH REST command."""
-
-        err = False
 
         if timeout == 0:
             timeout = None
@@ -80,14 +74,10 @@ class Api:
             assert resp.status_code == 200
 
         except Exception:
-            err = True
-
-        return err
+            raise RuntimeError('PATCH command failed: {}'.format(self.url + command))
 
     def _post(self, command, payload, timeout=60):
         """Send a POST REST command."""
-
-        err = False
 
         if timeout == 0:
             timeout = None
@@ -112,9 +102,7 @@ class Api:
             assert resp.status_code == 201
 
         except Exception:
-            err = True
-
-        return err
+            raise RuntimeError('POST command failed: {}'.format(self.url + command))
 
     def _get(self, command, timeout=60, pages=False):
         """Send a GET REST request."""
@@ -127,25 +115,26 @@ class Api:
             'Accept': 'application/vnd.github.symmetra-preview+json'
         }
 
-        next_page = self.url + command
+        cmd = self.url + command
         data = None
 
-        while next_page:
+        while cmd:
             try:
                 resp = requests.get(
-                    next_page,
+                    cmd,
                     headers=headers,
                     timeout=timeout
                 )
-                next_page = ''
-                if pages:
-                    next_page = resp.links.get('next', {}).get('url', '')
+
+                assert resp.status_code == 200
+
+                cmd = resp.links.get('next', {}).get('url', '') if pages else ''
                 if pages and data is not None:
                     data.extend(json.loads(resp.text))
                 else:
                     data = json.loads(resp.text)
             except Exception:
-                data = None
+                raise RuntimeError('GET command failed: {}'.format(cmd))
 
         return data
 
@@ -157,7 +146,7 @@ class Api:
     def create_label(self, name, color, description):
         """Create label."""
 
-        return self._post(
+        self._post(
             '/'.join(['repos', self.user, self.repo, 'labels']),
             {'name': name, 'color': color, 'description': description}
         )
@@ -165,7 +154,7 @@ class Api:
     def edit_label(self, old_name, new_name, color, description):
         """Edit label."""
 
-        return self._patch(
+        self._patch(
             '/'.join(['repos', self.user, self.repo, 'labels', urllib.parse.quote(old_name)]),
             {'new_name': new_name, 'color': color, 'description': description}
         )
@@ -173,7 +162,7 @@ class Api:
     def delete_label(self, name):
         """Delete a label."""
 
-        return self._delete('/'.join(['repos', self.user, self.repo, 'labels', urllib.parse.quote(name)]))
+        self._delete('/'.join(['repos', self.user, self.repo, 'labels', urllib.parse.quote(name)]))
 
 
 # Label handling
