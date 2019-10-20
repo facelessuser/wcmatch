@@ -1,4 +1,6 @@
 [![Build][github-ci-image]][github-ci-link]
+[![Unix Build Status][travis-image]][travis-link]
+[![Windows Build Status][appveyor-image]][appveyor-link]
 [![Coverage][codecov-image]][codecov-link]
 [![PyPI Version][pypi-image]][pypi-link]
 ![License][license-image-mit]
@@ -81,6 +83,10 @@ SOFTWARE.
 
 [github-ci-image]: https://github.com/facelessuser/wcmatch/workflows/build/badge.svg
 [github-ci-link]: https://github.com/facelessuser/wcmatch/actions?workflow=build
+[travis-image]: https://img.shields.io/travis/facelessuser/wcmatch/master.svg?label=Unix%20Build&logo=travis
+[travis-link]: https://travis-ci.org/facelessuser/wcmatch
+[appveyor-image]: https://img.shields.io/appveyor/ci/facelessuser/wcmatch/master.svg?label=Windows%20Build&logo=appveyor
+[appveyor-link]: https://ci.appveyor.com/project/facelessuser/wcmatch
 [codecov-image]: https://img.shields.io/codecov/c/github/facelessuser/wcmatch/master.svg
 [codecov-link]: https://codecov.io/github/facelessuser/wcmatch
 [pypi-image]: https://img.shields.io/pypi/v/wcmatch.svg?logo=python&logoColor=white
