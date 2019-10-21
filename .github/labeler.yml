@@ -1,0 +1,30 @@
+brace_expansion: true
+extended_glob: true
+
+rules:
+  - labels: [infrastructure]
+    patterns: ['*|{tools,requirements,.github}/**|-README.md']
+
+  - labels: [source]
+    patterns: ['wcmatch/**']
+
+  - labels: [tests]
+    patterns: ['tests/**']
+
+  - labels: [docs]
+    patterns: ['docs/**|README.md']
+
+  - labels: [glob]
+    patterns: ['**/?(test_)glob*']
+
+  - labels: [fnmatch]
+    patterns: ['**/?(test_)fnmatch*']
+
+  - labels: [wcmatch]
+    patterns: ['**/?(test_)wcmatch*']
+
+  - labels: [pathlib]
+    patterns: ['**/?(test_)pathlib*']
+
+  - labels: [pattern-parser]
+    patterns: ['**/?(test_|_)wcparse*']

@@ -27,13 +27,17 @@ labels:
   color: support
   description: Support request.
 
-- name: core
+- name: tests
   color: category
-  description: Related to the core.
+  description: Related to testing.
 
-- name: integration
+- name: infrastructure
   color: category
-  description: Related to packaging and/or testing.
+  description: Related to project infrastructure.
+
+- name: source
+  color: category
+  description: Related to source code.
 
 - name: docs
   color: category
@@ -54,6 +58,10 @@ labels:
 - name: pathlib
   color: subcategory
   description: Pathlib library.
+
+- name: pattern-parser
+  color: subcategory
+  description: Related to pattern parsing.
 
 - name: more-info-needed
   color: pending
