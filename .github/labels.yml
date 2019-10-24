@@ -142,6 +142,10 @@ labels:
   color: rejected
   description: Invalid report (user error, upstream issue, etc).
 
+- name: triage
+  color: pending
+  description: Issue needs triage.
+
 - name: work-in-progress
   color: pending
   description: A partial solution. More changes will be coming.
