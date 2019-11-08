@@ -6,52 +6,57 @@ brace_expansion: true
 extended_glob: true
 
 rules:
-  - labels: [infrastructure]
+  - labels: ['C: infrastructure']
     patterns: ['*|{tools,requirements,.github}/**|-*.md']
 
-  - labels: [source]
+  - labels: ['C: source']
     patterns: ['wcmatch/**']
 
-  - labels: [tests]
+  - labels: ['C: tests']
     patterns: ['tests/**']
 
-  - labels: [docs]
+  - labels: ['C: docs']
     patterns: ['docs/**|*.md']
 
-  - labels: [glob]
+  - labels: ['C: glob']
     patterns: ['**/?(test_)glob*|-docs/**']
 
-  - labels: [fnmatch]
+  - labels: ['C: fnmatch']
     patterns: ['**/?(test_)fnmatch*|-docs/**']
 
-  - labels: [wcmatch]
+  - labels: ['C: wcmatch']
     patterns: ['**/?(test_)wcmatch*|-docs/**']
 
-  - labels: [pathlib]
+  - labels: ['C: pathlib']
     patterns: ['**/?(test_)pathlib*|-docs/**']
 
-  - labels: [pattern-parser]
+  - labels: ['C: pattern-parser']
     patterns: ['**/?(test_|_)wcparse*|-docs/**']
 
 # Label management
 
 labels:
-- name: glob
+- name: 'C: glob'
+  renamed: glob
   color: subcategory
   description: Glob library.
 
-- name: fnmatch
+- name: 'C: fnmatch'
+  renamed: fnmatch
   color: subcategory
   description: Fnmatch library.
 
-- name: wcmatch
+- name: 'C: wcmatch'
+  renamed: wcmatch
   color: subcategory
   description: Wcmatch library.
 
-- name: pathlib
+- name: 'C: pathlib'
+  renamed: pathlib
   color: subcategory
   description: Pathlib library.
 
-- name: pattern-parser
+- name: 'C: pattern-parser'
+  renamed: pattern-parser
   color: subcategory
   description: Related to pattern parsing.
