@@ -388,11 +388,9 @@ into account things like sequences (`[]`) and extended patterns (`*(...)`) and w
 escape the delimiters if needed: `\|`.
 
 ```pycon3
->>> from wcmatch import glob
->>> glob.globmatch('test.txt', r'*.txt|*.py', flags=fnmatch.SPLIT)
-True
->>> glob.globmatch('test.py', r'*.txt|*.py', flags=fnmatch.SPLIT)
-True
+>>> from wcmatch import pathlib
+>>> list(pathlib.Path('.').glob('README.md|LICENSE.md', flags=pathlib.SPLIT))
+[WindowsPath('README.md'), WindowsPath('LICENSE.md')]
 ```
 
 #### `pathlib.MATCHBASE, pathlib.X` {: #pathlibmatchbase}
@@ -402,9 +400,9 @@ the tree with a matching basename, or in the case of [`match`](#purepathmatch) a
 path whose basename matches.
 
 ```pycon3
->>> from wcmatch import glob
->>> glob.glob('*.txt', flags=glob.MATCHBASE)
-['docs/src/dictionary/en-custom.txt', 'docs/src/markdown/_snippets/abbr.txt', 'docs/src/markdown/_snippets/links.txt', 'docs/src/markdown/_snippets/posix.txt', 'docs/src/markdown/_snippets/refs.txt', 'requirements/docs.txt', 'requirements/lint.txt', 'requirements/setup.txt', 'requirements/test.txt', 'requirements/tools.txt']
+>>> from wcmatch import pathlib
+>>> list(pathlib.Path('.').glob('*.txt', flags=pathlib.MATCHBASE))
+[WindowsPath('docs/src/dictionary/en-custom.txt'), WindowsPath('docs/src/markdown/_snippets/abbr.txt'), WindowsPath('docs/src/markdown/_snippets/links.txt'), WindowsPath('docs/src/markdown/_snippets/posix.txt'), WindowsPath('docs/src/markdown/_snippets/refs.txt'), WindowsPath('requirements/docs.txt'), WindowsPath('requirements/lint.txt'), WindowsPath('requirements/setup.txt'), WindowsPath('requirements/test.txt'), WindowsPath('requirements/tools.txt'), WindowsPath('site/_snippets/abbr.txt'), WindowsPath('site/_snippets/links.txt'), WindowsPath('site/_snippets/posix.txt'), WindowsPath('site/_snippets/refs.txt')]  
 ```
 
 #### `pathlib.NODIR, pathlib.O` {: #pathlibnodir}
@@ -413,11 +411,11 @@ path whose basename matches.
 not be possible as those classes do not access the file system, nor will they retain trailing slashes.
 
 ```pycon3
->>> from wcmatch import glob
->>> glob.glob('*', flags=glob.NODIR)
-['appveyor.yml', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'setup.cfg', 'setup.py', 'spell.log', 'tox.ini']
->>> glob.glob('*')
-['appveyor.yml', 'docs', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'requirements', 'setup.cfg', 'setup.py', 'spell.log', 'tests', 'tools', 'tox.ini', 'wcmatch']
+>>> from wcmatch import pathlib
+>>> list(pathlib.Path('.').glob('*', flags=pathlib.NODIR))
+[WindowsPath('appveyor.yml'), WindowsPath('LICENSE.md'), WindowsPath('MANIFEST.in'), WindowsPath('mkdocs.yml'), WindowsPath('README.md'), WindowsPath('setup.cfg'), WindowsPath('setup.py'), WindowsPath('tox.ini')] 
+>>> list(pathlib.Path('.').glob('*'))
+[WindowsPath('appveyor.yml'), WindowsPath('docs'), WindowsPath('LICENSE.md'), WindowsPath('MANIFEST.in'), WindowsPath('mkdocs.yml'), WindowsPath('README.md'), WindowsPath('requirements'), WindowsPath('setup.cfg'), WindowsPath('setup.py'), WindowsPath('site'), WindowsPath('tests'), WindowsPath('tox.ini'), WindowsPath('wcmatch')]
 ```
 
 --8<--

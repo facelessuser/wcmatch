@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.0.1
+
+- **FIX**: In `glob`, avoid the risk of leaking file descriptors by acquiring all file/folder names under a directory in
+  one batch.
+
 ## 5.0.0
 
 - **NEW**: Add `wcmatch.pathlib` which contains `pathlib` variants that uses `wcmatch.glob` instead of the default

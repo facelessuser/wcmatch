@@ -225,16 +225,14 @@ class Glob(object):
             matcher = target.match
         return matcher
 
-    def _glob_dir(self, curdir, matcher, dir_only=False, deep=False):
-        """Non recursive directory glob."""
+    def _iter(self, curdir, dir_only, deep):
+        """Iterate the directory."""
 
         scandir = self.current if not curdir else curdir
 
         # Python will never return . or .., so fake it.
-        if matcher is not None:
-            for special in self.specials:
-                if matcher(special):
-                    yield os.path.join(curdir, special), True
+        for special in self.specials:
+            yield special, True
 
         try:
             if NO_SCANDIR_WORKAROUND:
@@ -247,7 +245,6 @@ class Glob(object):
                             # Quicker to just test this way than to run through `fnmatch`.
                             if deep and self._is_hidden(f.name):
                                 continue
-                            path = os.path.join(curdir, f.name)
                             try:
                                 is_dir = f.is_dir()
                             except OSError:  # pragma: no cover
@@ -259,10 +256,8 @@ class Glob(object):
                                 is_link = False
                             if deep and not self.follow_links and is_link:
                                 continue
-                            if (not dir_only or is_dir) and (matcher is None or matcher(f.name)):
-                                yield path, is_dir
-                            if deep and is_dir:
-                                yield from self._glob_dir(path, matcher, dir_only, deep)
+                            if (not dir_only or is_dir):
+                                yield f.name, is_dir
                         except OSError:  # pragma: no cover
                             pass
             else:
@@ -281,12 +276,28 @@ class Glob(object):
                         is_link = False
                     if deep and not self.follow_links and is_link:
                         continue
-                    if (not dir_only or is_dir) and (matcher is None or matcher(f)):
-                        yield path, is_dir
-                    if deep and is_dir:
-                        yield from self._glob_dir(path, matcher, dir_only, deep)
+                    if (not dir_only or is_dir):
+                        yield f, is_dir
+
         except OSError:  # pragma: no cover
             pass
+
+    def _glob_dir(self, curdir, matcher, dir_only=False, deep=False):
+        """Recursive directory glob."""
+
+        files = list(self._iter(curdir, dir_only, deep))
+        for file, is_dir in files:
+            if file in self.specials:
+                if matcher is not None and matcher(file):
+                    yield os.path.join(curdir, file), True
+                continue
+
+            path = os.path.join(curdir, file)
+            if matcher is None or matcher(file):
+                yield path, is_dir
+
+            if deep and is_dir:
+                yield from self._glob_dir(path, matcher, dir_only, deep)
 
     def _glob(self, curdir, this, rest):
         """
