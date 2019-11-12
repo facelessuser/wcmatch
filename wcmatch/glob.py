@@ -30,8 +30,8 @@ from . import util
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
-    "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX",
-    "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U",
+    "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX", "SORT",
+    "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T",
     "iglob", "glob", "globmatch", "globfilter", "escape", "raw_escape"
 )
 
@@ -59,6 +59,7 @@ W = FORCEWIN = _wcparse.FORCEWIN
 U = FORCEUNIX = _wcparse.FORCEUNIX
 
 K = MARK = 0x100000
+T = SORT = 0x200000
 
 FLAG_MASK = (
     CASE |
@@ -78,6 +79,7 @@ FLAG_MASK = (
     NEGATEALL |
     FORCEWIN |
     FORCEUNIX |
+    SORT |
     _wcparse._RECURSIVEMATCH |
     _wcparse._NOABSOLUTE
 )
@@ -114,6 +116,7 @@ class Glob(object):
         self.current = b'.' if self.is_bytes else '.'
         self.curdir = curdir if curdir is not None else self.current
         self.mark = bool(flags & MARK)
+        self.sort = bool(flags & SORT)
         if self.mark:
             flags ^= MARK
         self.negateall = bool(flags & NEGATEALL)
@@ -285,7 +288,7 @@ class Glob(object):
     def _glob_dir(self, curdir, matcher, dir_only=False, deep=False):
         """Recursive directory glob."""
 
-        files = list(self._iter(curdir, dir_only, deep))
+        files = list(sorted(self._iter(curdir, dir_only, deep)) if self.sort else self._iter(curdir, dir_only, deep))
         for file, is_dir in files:
             if file in self.specials:
                 if matcher is not None and matcher(file):

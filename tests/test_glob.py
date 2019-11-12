@@ -1140,3 +1140,15 @@ class TestGlobPaths(unittest.TestCase):
             sorted(['docs', 'wcmatch', 'readme.md']),
             sorted([each.lower() for each in glob.glob(['BAD', 'docs', 'WCMATCH', 'readme.MD'], flags=glob.I)])
         )
+
+
+class TestGlobSorted(unittest.TestCase):
+    """Test that glob paths are sorted with `SORT` flag."""
+
+    def test_sort(self):
+        """Test sorting."""
+
+        files = glob.glob('*')
+        sorted_files = glob.glob('*', flags=glob.SORT)
+        self.assertNotEqual(files, sorted_files)
+        self.assertEqual(sorted(files), sorted_files)

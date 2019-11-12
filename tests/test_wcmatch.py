@@ -566,3 +566,15 @@ class TestWcmatchSymlink(_TestWcmatch):
                 ['a.txt', '.hidden/a.txt']
             )
         )
+
+
+class TestWcmatchSorted(unittest.TestCase):
+    """Test that paths are sorted with `SORT` flag."""
+
+    def test_sort(self):
+        """Test sorting."""
+
+        files = wcmatch.WcMatch('.', '*').match()
+        sorted_files = wcmatch.WcMatch('.', '*', flags=wcmatch.SORT).match()
+        self.assertNotEqual(files, sorted_files)
+        self.assertEqual(sorted(files), sorted_files)

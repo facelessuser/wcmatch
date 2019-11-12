@@ -9,7 +9,8 @@ __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "NEGATE", "MINUSNEGATE", "BRACE",
     "REALPATH", "FOLLOW", "MATCHBASE", "NEGATEALL", "NODIR",
-    "C", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A",
+    "SORT",
+    "C", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A", "T",
     "Path", "PurePath", "WindowsPath", "PosixPath", "PurePosixPath", "PureWindowsPath"
 )
 
@@ -28,6 +29,7 @@ S = SPLIT = glob.SPLIT
 X = MATCHBASE = glob.MATCHBASE
 O = NODIR = glob.NODIR
 A = NEGATEALL = glob.NEGATEALL
+T = SORT = glob.SORT
 
 FLAG_MASK = (
     CASE |
@@ -45,6 +47,7 @@ FLAG_MASK = (
     MATCHBASE |
     NODIR |
     NEGATEALL |
+    SORT |
     _wcparse._RECURSIVEMATCH |
     _wcparse._NOABSOLUTE
 )

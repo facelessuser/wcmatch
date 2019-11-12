@@ -578,6 +578,41 @@ any file anywhere in the tree with a matching basename. When enabled for [`globf
 ['appveyor.yml', 'docs', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'requirements', 'setup.cfg', 'setup.py', 'spell.log', 'tests', 'tools', 'tox.ini', 'wcmatch']
 ```
 
+#### `glob.SORT, glob.T` {: #globsort}
+
+`SORT` will cause the returned files to be sorted. Files are sorted alphabetically using Python's default sort.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob('*')
+['appveyor.yml', 'docs', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'requirements', 'setup.cfg', 'setup.py', 'site', 'tests', 'tox.ini', 'wcmatch']
+>>> glob.glob('*', flags=glob.SORT)
+['LICENSE.md', 'MANIFEST.in', 'README.md', 'appveyor.yml', 'docs', 'mkdocs.yml', 'requirements', 'setup.cfg', 'setup.py', 'site', 'tests', 'tox.ini', 'wcmatch']
+```
+
+It is important to note that `SORT` will not sort across multiple patterns, but will sort the results for each pattern
+separately. For instance, the following patterns will have the results for each pattern sorted separately. In the
+results below, the pattern returning folders is evaluated first, followed by the pattern for Markdown files.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob(['*/', '*.md'], flags=glob.SORT)
+['docs/', 'requirements/', 'site/', 'tests/', 'wcmatch/', 'LICENSE.md', 'README.md']
+```
+
+This applies to using [`SPLIT`](#globsplit) and [`BRACE`](#globbrace) as well:
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob('*/|*.md', flags=glob.SPLIT | glob.SORT)
+['docs/', 'requirements/', 'site/', 'tests/', 'wcmatch/', 'LICENSE.md', 'README.md']
+>>> glob.glob('{*/,*.md}', flags=glob.BRACE | glob.SORT)
+['docs/', 'requirements/', 'site/', 'tests/', 'wcmatch/', 'LICENSE.md', 'README.md']
+```
+
+!!! new "New 5.1.0"
+    `SORT` was added in 5.1.0.
+
 #### `glob.FORCEWIN, glob.W` {: #globforcewin}
 
 `FORCEWIN` will force Windows path and case logic to be used on Linux/Unix systems. It will also cause slashes to be

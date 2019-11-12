@@ -28,8 +28,8 @@ from . import util
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME",
     "EXTMATCH", "GLOBSTAR", "BRACE", "MINUSNEGATE", "SYMLINKS", "HIDDEN", "RECURSIVE",
-    "MATCHBASE",
-    "C", "I", "R", "P", "E", "G", "M", "DP", "FP", "SL", "HD", "RV", "X", "B",
+    "MATCHBASE", "SORT",
+    "C", "I", "R", "P", "E", "G", "M", "DP", "FP", "SL", "HD", "RV", "X", "B", "T",
     "WcMatch"
 )
 
@@ -48,6 +48,7 @@ FP = FILEPATHNAME = 0x200000
 SL = SYMLINKS = 0x400000
 HD = HIDDEN = 0x800000
 RV = RECURSIVE = 0x1000000
+T = SORT = 0x2000000
 
 # Control `PATHNAME` for file and folder
 P = PATHNAME = DIRPATHNAME | FILEPATHNAME
@@ -65,7 +66,8 @@ FLAG_MASK = (
     SYMLINKS |
     HIDDEN |
     RECURSIVE |
-    MATCHBASE
+    MATCHBASE |
+    SORT
 )
 
 
@@ -104,6 +106,7 @@ class WcMatch(object):
 
         self.flags = flags & FLAG_MASK
         self.flags |= _wcparse.NEGATE | _wcparse.DOTMATCH | _wcparse.NEGATEALL
+        self.sort = bool(self.flags & SORT)
         self.follow_links = bool(self.flags & SYMLINKS)
         self.show_hidden = bool(self.flags & HIDDEN)
         self.recursive = bool(self.flags & RECURSIVE)
@@ -236,6 +239,10 @@ class WcMatch(object):
         for base, dirs, files in os.walk(self.base, followlinks=self.follow_links):
             if self.is_aborted():
                 break
+
+            if self.sort:
+                dirs.sort()
+                files.sort()
 
             # Remove child folders based on exclude rules
             for name in dirs[:]:

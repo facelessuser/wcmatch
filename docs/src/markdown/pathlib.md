@@ -429,6 +429,41 @@ will they retain trailing slashes.
 [WindowsPath('appveyor.yml'), WindowsPath('docs'), WindowsPath('LICENSE.md'), WindowsPath('MANIFEST.in'), WindowsPath('mkdocs.yml'), WindowsPath('README.md'), WindowsPath('requirements'), WindowsPath('setup.cfg'), WindowsPath('setup.py'), WindowsPath('site'), WindowsPath('tests'), WindowsPath('tox.ini'), WindowsPath('wcmatch')]
 ```
 
+#### `pathlib.SORT, pathlib.T` {: #pathlibsort}
+
+`SORT` will cause the returned files to be sorted. Files are sorted alphabetically using Python's default sort.
+
+```pycon3
+>>> from wcmatch import pathlib
+>>> list(pathlib.Path('.').glob('*'))
+[WindowsPath('appveyor.yml'), WindowsPath('docs'), WindowsPath('LICENSE.md'), WindowsPath('MANIFEST.in'), WindowsPath('mkdocs.yml'), WindowsPath('README.md'), WindowsPath('requirements'), WindowsPath('setup.cfg'), WindowsPath('setup.py'), WindowsPath('site'), WindowsPath('tests'), WindowsPath('tox.ini'), WindowsPath('wcmatch')]
+>>> list(pathlib.Path('.').glob('*', flags=pathlib.SORT))
+[WindowsPath('LICENSE.md'), WindowsPath('MANIFEST.in'), WindowsPath('README.md'), WindowsPath('appveyor.yml'), WindowsPath('docs'), WindowsPath('mkdocs.yml'), WindowsPath('requirements'), WindowsPath('setup.cfg'), WindowsPath('setup.py'), WindowsPath('site'), WindowsPath('tests'), WindowsPath('tox.ini'), WindowsPath('wcmatch')]
+```
+
+It is important to note that `SORT` will not sort across multiple patterns, but will sort the results for each pattern
+separately. For instance, the following patterns will have the results for each pattern sorted separately. In the
+results below, the pattern returning folders is evaluated first, followed by the pattern for Markdown files.
+
+```pycon3
+>>> from wcmatch import pathlib
+>>> list(pathlib.Path('.').glob(['*/', '*.md'], flags=pathlib.SORT))
+[WindowsPath('docs'), WindowsPath('requirements'), WindowsPath('site'), WindowsPath('tests'), WindowsPath('wcmatch'), WindowsPath('LICENSE.md'), WindowsPath('README.md')]   
+```
+
+This applies to using [`SPLIT`](#pathlibsplit) and [`BRACE`](#pathlibbrace) as well:
+
+```pycon3
+>>> from wcmatch import pathlib
+>>> list(pathlib.Path('.').glob('*/|*.md', flags=pathlib.SPLIT | pathlib.SORT))
+[WindowsPath('docs'), WindowsPath('requirements'), WindowsPath('site'), WindowsPath('tests'), WindowsPath('wcmatch'), WindowsPath('LICENSE.md'), WindowsPath('README.md')]   
+>>> list(pathlib.Path('.').glob('{*/,*.md}', flags=pathlib.BRACE | pathlib.SORT))
+[WindowsPath('docs'), WindowsPath('requirements'), WindowsPath('site'), WindowsPath('tests'), WindowsPath('wcmatch'), WindowsPath('LICENSE.md'), WindowsPath('README.md')]   
+```
+
+!!! new "New 5.1.0"
+    `SORT` was added in 5.1.0.
+
 --8<--
 refs.txt
 --8<--

@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.1.0
+
+- **NEW**: Add flag `SORT` to the `glob`, `pathlib`, and `wcmatch` libraries. `SORT` is only relevant in commands that
+  touch the file system. For instance, `SORT` would work in `glob`, but not `globmatch`.
+
 ## 5.0.2
 
 - **FIX**: Fix case where a `GLOBSTAR` pattern, followed by a slash, was not disabling `MATCHBASE`.
