@@ -11,7 +11,8 @@ from wcmatch import wcmatch
 select a base path, define one or more file patterns they wanted to search for, and provide folders to exclude if
 needed. It needed to be aware of hidden files on different systems, not just ignoring files that start with `.`. It also
 needed to be extendable so we could further filter returned files by size, creation date, or whatever else was decided.
-While `glob` is a fantastic file and folder search tool, it just didn't make sense for such a user interface.
+While [`glob`](./glob.md) is a fantastic file and folder search tool, it just didn't make sense for such a user
+interface.
 
 ## `wcmatch.WcMatch`
 

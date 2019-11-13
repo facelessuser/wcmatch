@@ -252,7 +252,7 @@ class WcMatch(object):
                     break
 
             # Search files if they were found
-            if len(files):
+            if files:
                 # Only search files that are in the include rules
                 for name in files:
                     try:
