@@ -49,17 +49,20 @@ Pattern           | Meaning
 - If [`FORCEUNIX`](#globforceunix) is applied on a Windows system, match and filter commands that do not touch the file
   system will not have slashes normalized. In addition, drive letters will also not be handled. Essentially, paths will
   be treated as if on Linux/Unix. Commands that do touch the file system ([`glob`](#globglob) and [`iglob`](#globiglob))
-  will ignore `FORCEUNIX` and [`FORCEWIN`](#globforcewin). [`globmatch`](#globglobmatch) and
-  [`globfilter`](#globglobfilter), will also ignore `FORCEUNIX` and `FORCEWIN` if the [`REALPATH`](#globrealpath) flag
-  is enabled.
+  will ignore [`FORCEUNIX`](#globforceunix) and [`FORCEWIN`](#globforcewin). [`globmatch`](#globglobmatch) and
+  [`globfilter`](#globglobfilter), will also ignore [`FORCEUNIX`](#globforceunix) and [`FORCEWIN`](#globforcewin) if the
+  [`REALPATH`](#globrealpath) flag is enabled.
 
     [`FORCEWIN`](#globforcewin) will do the opposite on a Linux/Unix system, and will force non-Windows logic on a
-    Windows system. Like with `FORCEUNIX`, it only applies to commands that don't touch the file system.
+    Windows system. Like with [`FORCEUNIX`](#globforceunix), it only applies to commands that don't touch the file
+    system.
 
 - By default, file and directory names starting with `.` are only matched with literal `.`.  The patterns `*`, `**`,
-  `?`, and `[]` will not match a leading `.`.  To alter this behavior, you can use the [`DOTGLOB`](#globdotglob) flag,
-  but even with `DOTGLOB` these special tokens will not match a special directory (`.` or `..`).  But when a literal `.`
-  is used at the start of the filename, for instance in the pattern `.*`, `.` and `..` can potentially be matched.
+  `?`, and `[]` will not match a leading `.`.  To alter this behavior, you can use the [`DOTGLOB`](#globdotglob) flag.
+
+  Even with [`DOTGLOB`](#globdotglob) enabled, special tokens will not match a special directory (`.` or `..`).  But
+  when a literal `.` is used at the start of the pattern (`.*`, `.`, `..`, etc.), `.` and `..` can potentially be
+  matched.
 
 - In general, Wildcard Match's behavior is modeled off of Bash's, so unlike Python's default `glob`, Wildcard Match's
   `glob` will match and return `.` and `..` in certain cases just like Bash does.
@@ -97,9 +100,7 @@ Pattern           | Meaning
 def glob(patterns, *, flags=0):
 ```
 
-`glob` takes a pattern (or list of patterns) and will crawl the file system returning matching files. If a file/folder
-matches any regular patterns, it is considered a match.  If it matches *any* exclusion pattern (when enabling the
-[`NEGATE`](#globnegate) flag), then it will be not be returned.
+`glob` takes a pattern (or list of patterns) and will crawl the file system returning matching files.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -107,7 +108,7 @@ matches any regular patterns, it is considered a match.  If it matches *any* exc
 ['docs/src/markdown/_snippets/abbr.md', 'docs/src/markdown/_snippets/links.md', 'docs/src/markdown/_snippets/refs.md', 'docs/src/markdown/changelog.md', 'docs/src/markdown/fnmatch.md', 'docs/src/markdown/glob.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md', 'README.md']
 ```
 
-We can also exclude directories and/or files:
+Using a list, we can add exclusion patterns and also exclude directories and/or files:
 
 ```pycon3
 >>> from wcmatch import glob
@@ -121,6 +122,48 @@ When a glob pattern ends with a slash, it will only return directories:
 >>> from wcmatch import glob
 >>> glob.glob(r'**/')
 ['__pycache__/', 'docs/', 'docs/src/', 'docs/src/markdown/', 'docs/src/markdown/_snippets/', 'docs/theme/', 'requirements/', 'stuff/', 'tests/', 'tests/__pycache__/', 'wcmatch/', 'wcmatch/__pycache__/']
+```
+
+When providing a list, all patterns are run in the same context, but will not be run in the same pass. Each pattern is
+run in a separate pass, except for exclusion patterns (see the [`NEGATE`](#globnegate) flag) which are applied as
+filters to the inclusion patterns. Since each pattern is run in its own pass, it is possible to get duplicates. It is
+no different than if you ran something like the following in Bash:
+
+```console
+$ echo *.md README.md
+LICENSE.md README.md README.md
+```
+
+And we see that Wildcard Match's `glob` behaves the same:
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob(['*.md', 'README.md'])
+['LICENSE.md', 'README.md', 'README.md']
+```
+
+And if we apply an exclusion pattern, since the patterns share the same context, the exclusion applies to both:
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob(['*.md', 'README.md', '!README.md'], flags=glob.NEGATE)
+['LICENSE.md']
+```
+
+Features like [`BRACE`](#globbrace) and [`SPLIT`](#globsplit) actually take a single string and breaks them up into
+multiple patterns. These features, when enabled and used, will also exhibit this behavior:
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob('{*,README}.md', flags=glob.BRACE)
+['LICENSE.md', 'README.md', 'README.md']
+```
+
+This also aligns with Bash's behavior:
+
+```console
+$ echo {*,README}.md
+LICENSE.md README.md README.md
 ```
 
 #### `glob.iglob`
