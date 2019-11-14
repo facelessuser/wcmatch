@@ -7,9 +7,9 @@ from wcmatch import glob
 ## Syntax
 
 The `glob` library provides methods for traversing the file system and returning files that matched a defined set of
-glob patterns.  The library also provides functions for matching file paths which is similar to
-[`fnmatch`](./fnmatch.md#fnmatchfnmatch), but for paths. In short, [`globmatch`](#globglobmatch) matches what
-[`glob`](#globglob) globs :slight_smile:. `globmatch`'s features are similar to `fnmatch`'s.
+glob patterns.  The library also provides a function called [`globmatch`](#globglobmatch) for matching file paths which
+is similar to [`fnmatch`](./fnmatch.md#fnmatchfnmatch), but for paths. In short, [`globmatch`](#globglobmatch) matches
+what [`glob`](#globglob) globs :slight_smile:.
 
 !!! tip
     When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a
@@ -41,31 +41,31 @@ Pattern           | Meaning
 - On Windows, drives are treated special and must come at the beginning of the pattern and cannot be matched with `*`,
   `[]`, `?`, or even extended match patterns like `+(...)`.
 
-- Windows drives are recognized as either `C:\` or `\\Server\mount\` (or `C:/` and `//Server/mount/`). If a path uses an
-  ambiguous root (`\some\path` or `/some/path`), the system will assume the drive of the current working directory.
+- Windows drives are recognized as either `C:/` and `//Server/mount/`. If a path uses an ambiguous root (`/some/path`),
+  the system will assume the drive of the current working directory.
 
-- Meta characters have no effect when inside a UNC path: `\\\\Server?\\mount*\\`.
+- Meta characters have no effect when inside a UNC path: `//Server?/mount*/`.
 
 - If [`FORCEUNIX`](#globforceunix) is applied on a Windows system, match and filter commands that do not touch the file
-  system will not have slashes normalized. In addition, drive letters will also not be handled. Essentially, paths will
-  be treated as if on Linux/Unix. Commands that do touch the file system ([`glob`](#globglob) and [`iglob`](#globiglob))
-  will ignore [`FORCEUNIX`](#globforceunix) and [`FORCEWIN`](#globforcewin). [`globmatch`](#globglobmatch) and
-  [`globfilter`](#globglobfilter), will also ignore [`FORCEUNIX`](#globforceunix) and [`FORCEWIN`](#globforcewin) if the
-  [`REALPATH`](#globrealpath) flag is enabled.
+  system will **not** have slashes normalized. In addition, drive letters will also not be handled. Essentially, paths
+  will be treated as if on a Linux/Unix system. Commands that do touch the file system ([`glob`](#globglob) and
+  [`iglob`](#globiglob)) will ignore [`FORCEUNIX`](#globforceunix) and [`FORCEWIN`](#globforcewin).
+  [`globmatch`](#globglobmatch) and [`globfilter`](#globglobfilter), will also ignore [`FORCEUNIX`](#globforceunix) and
+  [`FORCEWIN`](#globforcewin) if the [`REALPATH`](#globrealpath) flag is enabled.
 
-    [`FORCEWIN`](#globforcewin) will do the opposite on a Linux/Unix system, and will force non-Windows logic on a
-    Windows system. Like with [`FORCEUNIX`](#globforceunix), it only applies to commands that don't touch the file
+    [`FORCEWIN`](#globforcewin) will do the opposite on a Linux/Unix system, and will force Windows logic on a
+    Linux/Unix system. Like with [`FORCEUNIX`](#globforceunix), it only applies to commands that don't touch the file
     system.
 
 - By default, file and directory names starting with `.` are only matched with literal `.`.  The patterns `*`, `**`,
   `?`, and `[]` will not match a leading `.`.  To alter this behavior, you can use the [`DOTGLOB`](#globdotglob) flag.
 
-  Even with [`DOTGLOB`](#globdotglob) enabled, special tokens will not match a special directory (`.` or `..`).  But
+- Even with [`DOTGLOB`](#globdotglob) enabled, special tokens will not match a special directory (`.` or `..`).  But
   when a literal `.` is used at the start of the pattern (`.*`, `.`, `..`, etc.), `.` and `..` can potentially be
   matched.
 
-- In general, Wildcard Match's behavior is modeled off of Bash's, so unlike Python's default `glob`, Wildcard Match's
-  `glob` will match and return `.` and `..` in certain cases just like Bash does.
+- In general, Wildcard Match's behavior is modeled off of Bash's, so unlike Python's default [`glob`][glob], Wildcard
+  Match's `glob` will match and return `.` and `..` in certain cases just like Bash does.
 
     Python's default:
 
@@ -224,7 +224,7 @@ As mentioned, exclusion patterns need to be applied to a inclusion pattern to wo
 exclusion patterns to assume all files should be filtered with the exclusion pattern(s) with the
 [`NEGATEALL`](#globnegateall) flag. Essentially, it means if you use a pattern such as `!*.md`, it means if you use a
 pattern such as `!*.md`, it will assume two pattern were given: `*` and `!*.md` (where `**` is specifically treated as
-if `GLOBSTAR` was enabled).
+if [`GLOBSTAR`](#globglobstar) was enabled).
 
 ```pycon3
 >>> from wcmatch import glob
@@ -234,12 +234,12 @@ True
 False
 ```
 
-By default, `globmatch` and `globfilter` do not operate on the file system. This is to allow you to process paths from
-any source, even paths that are not on your current system. So if you are trying to explicitly match a directory with a
-pattern such as `*/`, your path must end with a slash (`my_directory/`) to be recognized as a directory. It also won't
-be able to evaluate whether a directory is a symlink or not as it will have no way of checking. Here we see that
-`globmatch` fails to match the filepath as the pattern is explicitly looking for a directory and our filepath does not
-end with `/`.
+By default, `globmatch` and [`globfilter`](#globglobfilter) do not operate on the file system. This is to allow you to
+process paths from any source, even paths that are not on your current system. So if you are trying to explicitly match
+a directory with a pattern such as `*/`, your path must end with a slash (`my_directory/`) to be recognized as a
+directory. It also won't be able to evaluate whether a directory is a symlink or not as it will have no way of checking.
+Here we see that `globmatch` fails to match the filepath as the pattern is explicitly looking for a directory and our
+filepath does not end with `/`.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -247,12 +247,13 @@ end with `/`.
 False
 ```
 
-If you would like for `globmatch` (or `globfilter`) to operate on your current filesystem directly, simply pass in the
-[`REALPATH`](#globrealpath) flag. When enabled, the path under consideration will be analyzed and will use that context
-to determine if the file exists, if it is a directory, does it's context make sense compared to what the pattern is
-looking vs the current working directory, or if it has symlinks that should not be matched by `GLOBSTAR`.
+If you would like for `globmatch` (or [`globfilter`](#globglobfilter)) to operate on your current filesystem directly,
+simply pass in the [`REALPATH`](#globrealpath) flag. When enabled, the path under consideration will be analyzed and
+will use that context to determine if the file exists, if it is a directory, does it's context make sense compared to
+what the pattern is looking vs the current working directory, or if it has symlinks that should not be matched by
+[`GLOBSTAR`](#globglobstar).
 
-Here we use `REALPATH` and can see that `globmatch` now knows that `doc` is a directory.
+Here we use [`REALPATH`](#globrealpath) and can see that `globmatch` now knows that `doc` is a directory.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -262,8 +263,8 @@ True
 
 It also can tell if a file doesn't exist or is out of scope compared to what is being asked. For instance, the below
 example fails because the pattern is looking for any folder that is relative to the current path, which `/usr` is not.
-When we disable `REALPATH`, it will match just fine. Both cases can be useful depending on how you plan to use
-`globmatch`.
+When we disable [`REALPATH`](#globrealpath), it will match just fine. Both cases can be useful depending on how you plan
+to use `globmatch`.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -409,7 +410,7 @@ handle standard string escapes and Unicode including `#!py3 r'\N{CHAR NAME}'`.
 `NEGATE` causes patterns that start with `!` to be treated as exclusion patterns. A pattern of `!*.py` would match any
 file but Python files. Exclusion patterns cannot be used by themselves though, and must be paired with a normal,
 inclusion pattern, either by utilizing the [`SPLIT`](#globSPLIT) flag, or providing multiple patterns in a list.
-Assuming the `SPLIT` flag, this means using it in a pattern such as `inclusion|!exclusion`.
+Assuming the [`SPLIT`](#globsplit) flag, this means using it in a pattern such as `inclusion|!exclusion`.
 
 If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match
 unless the file matches the excluded pattern. This is done with the [`NEGATEALL`](#globnegateall) flag.
@@ -448,26 +449,27 @@ When `MINUSNEGATE` is used with [`NEGATE`](#globnegate), exclusion patterns are 
 
 #### `glob.FOLLOW, glob.FL` {: #globfollow}
 
-`FOLLOW` will cause `GLOBSTAR` patterns (`**`) to match and traverse symlink directories.
+`FOLLOW` will cause [`GLOBSTAR`](#globglobstar) patterns (`**`) to match and traverse symlink directories.
 
 !!! new "New 3.0"
     `FOLLOW` was added in 3.0.
 
 #### `glob.REALPATH, glob.P` {: #globrealpath}
 
-In the past, only `glob` and `iglob` operated on the filesystem, but with `REALPATH`, other functions will now operate
-on the filesystem as well: `globmatch` and `globfilter`.
+In the past, only [`glob`](#globglob) and [`iglob`](#globiglob) operated on the filesystem, but with `REALPATH`, other
+functions will now operate on the filesystem as well: [`globmatch`](#globglobmatch) and [`globfilter`](#globglobfilter).
 
-Normally, functions such as `globmatch` would simply match a path with regular expression and return the result. The
-functions were not concerned with whether the path existed or not. It didn't care if it was even valid for the operating
-system.
+Normally, functions such as [`globmatch`](#globglobmatch) would simply match a path with regular expression and return
+the result. The functions were not concerned with whether the path existed or not. It didn't care if it was even valid
+for the operating system.
 
-`REALPATH` forces `globmatch` and `globfilter` to treat the string path as a real file path for the given system it is
-running on. It will augment the patterns used to match files and enable additional logic so that the path must meet the
-following in order to match:
+`REALPATH` forces [`globmatch`](#globglobmatch) and [`globfilter`](#globglobfilter) to treat the string path as a real
+file path for the given system it is running on. It will augment the patterns used to match files and enable additional
+logic so that the path must meet the following in order to match:
 
 - Path must exist.
-- Directories that are symlinks will not be matched by `GLOBSTAR` patterns (`**`) unless the `FOLLOW` flag is enabled.
+- Directories that are symlinks will not be matched by [`GLOBSTAR`](#globglobstar) patterns (`**`) unless the
+  [`FOLLOW`](#globfollow) flag is enabled.
 - When presented with a pattern where the match must be a directory, but the file path being compared doesn't indicate
   the file is a directory with a trailing slash, the command will look at the filesystem to determine if it is a
   directory.
@@ -534,9 +536,9 @@ for a path separator at the end of the path. This flag only applies to calls to 
 
 If you are passing the returned files from `glob` to [`globfilter`](#globglobfilter) or [`globmatch`](#globglobmatch),
 it is important to ensure directory paths have trailing slashes as these functions have no way of telling the path is a
-directory otherwise (except when [`REALPATH`](#globrealpath) is enabled). If you have `REALPATH` enabled, ensuring the
-files have trailing slashes can still save you a call to `os.path.isdir` as `REALPATH` resorts to calling it if there is
-no trailing slash.
+directory otherwise (except when [`REALPATH`](#globrealpath) is enabled). If you have [`REALPATH`](#globrealpath)
+enabled, ensuring the files have trailing slashes can still save you a call to `os.path.isdir` as
+[`REALPATH`](#globrealpath) resorts to calling it if there is no trailing slash.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -580,9 +582,10 @@ any file anywhere in the tree with a matching basename. When enabled for [`globf
 
 `FORCEWIN` will force Windows path and case logic to be used on Linux/Unix systems. It will also cause slashes to be
 normalized and Windows drive syntax to be handled special. This is great if you need to match Windows specific paths on
-a Linux/Unix system. This will only work on commands that do not access the file system: `translate`, `globmatch`,
-`globfilter`, etc. These flags will not work with `glob` or `iglob`. It also will not work when using the
-[`REALPATH`](#globrealpath) flag with things like `globmatch` and `globfilter`.
+a Linux/Unix system. This will only work on commands that do not access the file system: [`translate`](#globtranslate),
+[`globmatch`](#globglobmatch), [`globfilter`](#globglobfilter), etc. These flags will not work with [`glob`](#globglob)
+or [`iglob`](#globiglob). It also will not work when using the [`REALPATH`](#globrealpath) flag with things like
+[`globmatch`](#globglobmatch) and [`globfilter`](#globglobfilter).
 
 If `FORCEWIN` is used along side [`FORCEUNIX`](#globforceunix), both will be ignored.
 
@@ -593,8 +596,9 @@ If `FORCEWIN` is used along side [`FORCEUNIX`](#globforceunix), both will be ign
 
 `FORCEUNIX` will force Linux/Unix path and case logic to be used on Windows systems. This is great if you need to match
 Linux/Unix specific paths on a Windows system. This will only work on commands that do not access the file system:
-`translate`, `globmatch`, `globfilter`, etc. These flags will not work with `glob` or `iglob`. It also will not work
-when using the [`REALPATH`](#globrealpath) flag with things like `globmatch` and `globfilter`.
+[`translate`](#globtranslate), [`globmatch`](#globglobmatch), [`globfilter`](#globglobfilter), etc. These flags will not
+work with [`glob`](#globglob) or [`iglob`](#globiglob). It also will not work when using the [`REALPATH`](#globrealpath)
+flag with things like [`globmatch`](#globglobmatch) and [`globfilter`](#globglobfilter).
 
 When using `FORCEUNIX`, the paths are assumed to be case sensitive, but you can use [`IGNORECASE`](#globignorecase) to
 use case insensitivity.

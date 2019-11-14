@@ -5,7 +5,7 @@ edit_uri: tree/master/docs/src/markdown
 site_description: A wildcard file name matching library
 copyright: |
   Copyright &copy; 2018 - 2019 <a href="https://github.com/facelessuser">Isaac Muse</a>
-  <br><span class="md-footer-custom-text">emoji provided free by <a href="http://www.emojione.com">EmojiOne</a></span>
+  <br><span class="md-footer-custom-text">emoji provided free by <a href="https://github.com/twitter/twemoji">Twemoji</a></span>
 
 docs_dir: docs/src/markdown
 theme:
@@ -68,7 +68,8 @@ markdown_extensions:
   - pymdownx.caret:
   - pymdownx.smartsymbols:
   - pymdownx.emoji:
-      emoji_generator: !!python/name:pymdownx.emoji.to_png
+      emoji_index: !!python/name:pymdownx.emoji.twemoji
+      emoji_generator: !!python/name:pymdownx.emoji.to_svg
   - pymdownx.escapeall:
       hardbreak: True
       nbsp: True

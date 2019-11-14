@@ -14,28 +14,36 @@ their Posix and Windows subclasses, with the purpose of overriding the default `
 very own [`glob`](./glob.md). This allows a user of `pathlib` to use all of the glob enhancements that Wildcard Match
 provides. This includes features such as extended glob patterns, brace expansions, and more.
 
-This documentation does not mean to exhaustively describe the `pathlib` library, just the differences introduced by
-Wildcard Match's implementation. Please check out Python's [`pathlib`][pathlib] documentation to learn more about
-`pathlib` in general. Also, to learn more about the underlying glob library being used, check out the documentation for
-Wildcard Match's [`glob`](./glob.md).
+This documentation does not mean to exhaustively describe the [`pathlib`][pathlib] library, just the differences
+introduced by Wildcard Match's implementation. Please check out Python's [`pathlib`][pathlib] documentation to learn
+more about [`pathlib`][pathlib] in general. Also, to learn more about the underlying glob library being used, check out
+the documentation for Wildcard Match's [`glob`](./glob.md).
 
-The API is the same as Python's default `pathlib` except for the few differences related to file globbing and matching:
+### Differences
 
-- Each `pathlib` object's `glob`, `rglob`, and `match` methods are now driven by the [`wcmatch.glob`](./glob.md)
-  library.
+The API is the same as Python's default [`pathlib`][pathlib] except for the few differences related to file globbing and
+matching:
 
-- `glob` and `rglob` can take a single string pattern or a list of patterns. They also accept [flags](#flags) via the
-  `flags` keyword. This matches the interfaces found detailed in [`wcmatch.glob`](./glob.md).
+- Each `pathlib` object's [`glob`](#pathglob), [`rglob`](#pathrglob), and [`match`](#purepathmatch) methods are now
+  driven by the [`wcmatch.glob`](./glob.md) library.
 
-- A `globmatch` method has been added to `PurePath` classes (and `Path` classes which are derived from `PurePath`) which
-  is like `match` except without the recursive behavior. See [`match`](#purepathmatch) and
-  [`globmatch`](purepathglobmatch) for more information.
+- [`glob`](#pathglob) and [`rglob`](#pathrglob) can take a single string pattern or a list of patterns. They also accept
+  [flags](#flags) via the `flags` keyword. This matches the interfaces found detailed in our [`glob`](./glob.md)
+  documentation.
 
-- `glob` and `rglob` do not enable [`GLOBSTAR`](#pathlibglobstar) or [`DOTGLOB`](#pathlibdotglob) by default. These
-  flags must be passed in to take advantage of this functionality.
+- A [`globmatch`](#purepathglobmatch) method has been added to `PurePath` classes (and `Path` classes which are derived
+  from `PurePath`) which is like [`match`](#purepathmatch) except without the recursive behavior. See
+  [`match`](#purepathmatch) and [`globmatch`](purepathglobmatch) for more information.
 
-As far as similarities, `glob`, `rglob`, and `match` should mimic the basic behavior of Python's original `pathlib`
-library, just with the enhancements and configurability that Wildcard Match's [`glob`](./glob.md) provides:
+- [`glob`](#pathglob) and [`rglob`](#pathrglob) do not enable [`GLOBSTAR`](#pathlibglobstar) or
+  [`DOTGLOB`](#pathlibdotglob) by default. These flags must be passed in to take advantage of this functionality.
+
+### Similarities
+
+As far as similarities, all non-glob related methods should behave exactly like Python's as our version is derived from
+theirs. [`glob`](#pathglob), [`rglob`](#pathrglob), and [`match`](#purepathmatch) should mimic the basic behavior of
+Python's original [`pathlib`][pathlib] library as well, just with the enhancements and configurability that Wildcard
+Match's [`glob`](./glob.md) provides:
 
 - [`glob`](#pathglob) and [`rglob`](#pathrglob) will yield an iterator of the results.
 
@@ -77,8 +85,8 @@ True
 
 `PureWindowsPath` is Wildcard Match's version of Python's `PureWindowsPath`. The `PureWindowsPath` class is useful if
 you'd like to have the ease that `pathlib` offers when working with a path, but don't want it to access the filesystem.
-This is also useful if you'd like to manipulate Windows paths on a Posix system. This class will utilize
-[`wcmatch.glob`](./glob.md) for all glob related actions. The class is subclassed from [`PurePath`](#pathlibpurepath).
+This is also useful if you'd like to manipulate Windows path strings on a Posix system. This class will utilize Wildcard
+Match's [`glob`](./glob.md) for all glob related actions. The class is subclassed from [`PurePath`](#pathlibpurepath).
 
 ```pycon3
 >>> from wcmatch import pathlib
@@ -92,8 +100,8 @@ PureWindowsPath('c:/some/path')
 
 `PurePosixPath` is Wildcard Match's version of Python's `PurePosixPath`. The `PurePosixPath` class is useful if
 you'd like to have the ease that `pathlib` offers when working with a path, but don't want it to access the filesystem.
-This is also useful if you'd like to manipulate Posix paths on a Windows system. This class will utilize
-[`wcmatch.glob`](./glob.md) for all glob related actions. The class is subclassed from [`PurePath`](#pathlibpurepath).
+This is also useful if you'd like to manipulate Posix path strings on a Windows system. This class will utilize Wildcard
+Match's [`glob`](./glob.md) for all glob related actions. The class is subclassed from [`PurePath`](#pathlibpurepath).
 
 ```pycon3
 >>> from wcmatch import pathlib
@@ -109,13 +117,13 @@ PurePosixPath('/usr/local/bin')
 [`WindowsPath`](#pathlibwindowspath) or a [`PosixPath`](#pathlibposixpath) object. Both objects will
 utilize [`wcmatch.glob`](./glob.md) for all glob related actions.
 
-`Path` classes are subclassed from the `PurePath` objects, so you get all the features of the `Path` class in addition
-to the `PurePath` class features. `Path` objects have access to the filesystem. They include the `PurePath` methods 
-[`match`](#purepathmatch) and [`globmatch`](#purepathglobmatch) (amongst others). Since these methods are `PurePath`
-methods, they do not touch the filesystem. But, you can force them to access the filesystem if you give either
-function the [`REALPATH`](#pathlibrealpath) flag. We do not restrict this, but we do not enable it by default.
-[`REALPATH`](#pathlibrealpath) simply forces the match to check the filesystem to see if the file exists and is a
-directory or not.
+`Path` classes are subclassed from the [`PurePath`](#pathlibpurepath) objects, so you get all the features of the `Path`
+class in addition to the [`PurePath`](#pathlibpurepath) class features. `Path` objects have access to the filesystem.
+They include the [`PurePath`](#pathlibpurepath) methods [`match`](#purepathmatch) and [`globmatch`](#purepathglobmatch)
+(amongst others). Since these methods are [`PurePath`](#pathlibpurepath) methods, they do not touch the filesystem. But,
+you can force them to access the filesystem if you give either function the [`REALPATH`](#pathlibrealpath) flag. We do
+not restrict this, but we do not enable it by default. [`REALPATH`](#pathlibrealpath) simply forces the match to check
+the filesystem to see if the file exists and is a directory or not.
 
 ```pycon3
 >>> from wcmatch import pathlib
@@ -142,8 +150,8 @@ True
 
 `WindowsPath` is Wildcard Match's version of Python's `WindowsPath`. The `WindowsPath` class is useful if you'd like to
 have the ease that `pathlib` offers when working with a path and be able to manipulate or gain access to to information
-about that file. You cannot instantiate this class on a Posix system. This class will utilize
-[`wcmatch.glob`](./glob.md) for all glob related actions. The class is subclassed from [`Path`](#pathlibpath).
+about that file. You cannot instantiate this class on a Posix system. This class will utilize Wildcard Match's
+[`glob`](./glob.md) for all glob related actions. The class is subclassed from [`Path`](#pathlibpath).
 
 ```pycon3
 >>> from wcmatch import pathlib
@@ -155,13 +163,10 @@ WindowsPath('c:/some/path')
 
 #### `pathlib.PosixPath`
 
-`PosixPath` is Wildcard Match's version of Python's `PosixPath`. This class will utilize `wcmatch.glob` for
-all glob related actions. The class is subclassed from `pathlib.Path`.
-
 `PosixPath` is Wildcard Match's version of Python's `PosixPath`. The `PosixPath` class is useful if you'd like to
 have the ease that `pathlib` offers when working with a path and be able to manipulate or gain access to to information
-about that file. You cannot instantiate this class on a Windows system. This class will utilize
-[`wcmatch.glob`](./glob.md) for all glob related actions. The class is subclassed from [`Path`](#pathlibpath).
+about that file. You cannot instantiate this class on a Windows system. This class will utilize Wildcard Match's
+[`glob`](./glob.md) for all glob related actions. The class is subclassed from [`Path`](#pathlibpath).
 
 ```pycon3
 >>> from wcmatch import pathlib
@@ -192,7 +197,8 @@ was added at the beginning of the pattern.
 [`REALPATH`](#pathlibrealpath) simply forces the match to check the filesystem to see if the file exists and is a
 directory or not.
 
-Since [`Path`](#pathlibpath) is derived from `PurePath`, this method is also available in `Path` objects.
+Since [`Path`](#pathlibpath) is derived from [`PurePath`](#pathlibpurepath), this method is also available in
+[`Path`](#pathlibpath) objects.
 
 ```pycon3
 >>> from wcmatch import pathlib
@@ -218,7 +224,8 @@ file path was matched by the pattern(s).
 [`REALPATH`](#pathlibrealpath) simply forces the match to check the filesystem to see if the file exists and is a
 directory or not.
 
-Since [`Path`](#pathlibpath) is derived from `PurePath`, this method is also available in `Path` objects.
+Since [`Path`](#pathlibpath) is derived from  [`PurePath`](#pathlibpurepath), this method is also available in
+[`Path`](#pathlibpath) objects.
 
 ```pycon3
 >>> from wcmatch import pathlib
@@ -237,10 +244,10 @@ def rglob(self, patterns, *, flags=0):
 matches any regular patterns, it is considered a match.  If a file matches *any* exclusion pattern (when enabling the
 [`NEGATE`](#pathlibnegate) flag), then it will be not be returned.
 
-`rglob` mimics Python's `pathlib` version of `rglob` in that it uses a recursive logic. What this means is when you are
-matching a path in the form `some/path/name`, the patterns `name`, `path/name` and `some/path/name` will all match.
-Essentially, the pattern behaves as if a [`GLOBSTAR`](#pathlibglobstar) pattern of `**/` was added at the beginning of
-the pattern.
+`rglob` mimics Python's [`pathlib`][pathlib] version of `rglob` in that it uses a recursive logic. What this means is
+when you are matching a path in the form `some/path/name`, the patterns `name`, `path/name` and `some/path/name` will
+all match. Essentially, the pattern behaves as if a [`GLOBSTAR`](#pathlibglobstar) pattern of `**/` was added at the
+beginning of the pattern.
 
 All paths returned are relative to the `pathlib` object. For this reason, absolute patterns are not supported.
 
@@ -296,7 +303,7 @@ handle standard string escapes and Unicode including `#!py3 r'\N{CHAR NAME}'`.
 `NEGATE` causes patterns that start with `!` to be treated as exclusion patterns. A pattern of `!*.py` would match any
 file but Python files. Exclusion patterns cannot be used by themselves though, and must be paired with a normal,
 inclusion pattern, either by utilizing the [`SPLIT`](#pathlibsplit) flag, or providing multiple patterns in a list.
-Assuming the `SPLIT` flag, this means using it in a pattern such as `inclusion|!exclusion`.
+Assuming the [`SPLIT`](#pathlibsplit) flag, this means using it in a pattern such as `inclusion|!exclusion`.
 
 If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match
 unless the file matches the excluded pattern. This is done with the [`NEGATEALL`](#pathlibnegateall) flag.
@@ -342,7 +349,8 @@ for the given system it is running on. It will augment the patterns used to matc
 that the path must meet the following in order to match:
 
 - Path must exist.
-- Directories that are symlinks will not be matched by `GLOBSTAR` patterns (`**`) unless the `FOLLOW` flag is enabled.
+- Directories that are symlinks will not be matched by [`GLOBSTAR`](#pathlibglobstar) patterns (`**`) unless the
+  [`FOLLOW`](#pathlibfollow) flag is enabled.
 - When presented with a pattern where the match must be a directory, but the file path being compared doesn't indicate
   the file is a directory with a trailing slash, the command will look at the filesystem to determine if it is a
   directory.
@@ -407,8 +415,9 @@ path whose basename matches.
 
 #### `pathlib.NODIR, pathlib.O` {: #pathlibnodir}
 
-`NODIR` will cause all glob related functions to return only matched files. In the case of `PurePath` classes, this may
-not be possible as those classes do not access the file system, nor will they retain trailing slashes.
+`NODIR` will cause all glob related functions to return only matched files. In the case of
+[`PurePath`](#pathlibpurepath) classes, this may not be possible as those classes do not access the file system, nor
+will they retain trailing slashes.
 
 ```pycon3
 >>> from wcmatch import pathlib

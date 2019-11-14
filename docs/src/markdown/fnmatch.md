@@ -6,10 +6,10 @@ from wcmatch import fnmatch
 
 ## Syntax
 
-The `fnmatch` library is similar to the builtin `fnmatch`, but with some enhancements and some differences. It is mainly
-used for matching filenames with glob patterns. For path names, Wildcard Match's [`globmatch`](glob#globglobmatch) is a
-more appropriate choice. Not all of the features listed below are enabled by default. See [flags](#flags) for more
-information.
+The `fnmatch` library is similar to the builtin [`fnmatch`][fnmatch], but with some enhancements and some differences.
+It is mainly used for matching filenames with glob patterns. For path names, Wildcard Match's
+[`globmatch`](./glob.md#globglobmatch) is a more appropriate choice. Not all of the features listed below are enabled by
+default. See [flags](#flags) for more information.
 
 !!! tip
     When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a
@@ -23,7 +23,7 @@ Pattern           | Meaning
 `[!seq]`          | Matches any character not in seq.
 `[[:alnum:]]`     | POSIX style character classes inside sequences. The `C` locale is used for byte strings and Unicode properties for Unicode strings. See [POSIX Character Classes](#posix-character-classes) for more info.
 `\`               | Escapes characters. If applied to a meta character, it will be treated as a normal character.
-`!`               | Exclusion pattern (with configuration, can use `-` instead of `!`).
+`!`               | Pattern will be treated as an exclusion pattern when used at the start of the pattern (with configuration, can use `-` instead of `!`).
 `?(pattern_list)` | The pattern matches if zero or one occurrences of any of the patterns in the `pattern_list` match the input string.
 `*(pattern_list)` | The pattern matches if zero or more occurrences of any of the patterns in the `pattern_list` match the input string.
 `+(pattern_list)` | The pattern matches if one or more occurrences of any of the patterns in the `pattern_list` match the input string.
@@ -34,8 +34,6 @@ Pattern           | Meaning
 - Slashes are generally treated as normal characters, but on windows they will be normalized: `/` will become `\\`.
   There is no need to explicitly use `\\` in patterns on Windows, but if you do, it will be handled.  This applies to
   matching patterns and the filenames the patterns are applied to.
-- If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern and filenames will be
-  treated as a Linux/Unix filename.
 - By default, `.` is *not* matched by `*`, `?`, and `[]`. See the [`DOTMATCH`](#fnmatchdotmatch) flag to match `.` at
   the start of a filename without a literal `.`.
 

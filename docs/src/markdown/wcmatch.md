@@ -122,9 +122,10 @@ Perform match returning an iterator of files that match the patterns.
 
 #### `WcMatch.kill`
 
-If searching with `imatch`, this provides a way to gracefully kill the internal searching. Internally, you can call
-`is_aborted` to check if a request to abort has been made. So if work on a file is being done in an `on_match`, you can
-check if there has been a request to kill the process, and tie up loose ends gracefully.
+If searching with [`imatch`](#wcmatchimatch), this provides a way to gracefully kill the internal searching. Internally,
+you can call [`is_aborted`](#wcmatchis_aborted) to check if a request to abort has been made. So if work on a file is
+being done in an [`on_match`](#wcmatchon_match), you can check if there has been a request to kill the process, and tie
+up loose ends gracefully.
 
 ```pycon3
 >>> from wcmatch import wcmatch
@@ -235,7 +236,8 @@ provide additional validation if required.
 
 When a file that must be skipped is encountered (a file that doesn't pass validation), it is sent to `on_skip`. Here you
 could abort the search, store away information, or even create a special skip record to return. It is advised to create
-a special type for skip returns so that you can identify them when they are returned via `match` or `imatch`.
+a special type for skip returns so that you can identify them when they are returned via [`match`](#wcmatchmatch) or
+[`imatch`](#wcmatchimatch).
 
 #### `WcMatch.on_error`
 
@@ -248,7 +250,7 @@ a special type for skip returns so that you can identify them when they are retu
 
 When accessing or processing a file throws an error, it is sent to `on_error`. Here you could abort the search, store
 away information, or even create a special error record to return. It is advised to create a special type for error
-returns so that you can identify them when they are returned via `match` or `imatch`.
+returns so that you can identify them when they are returned via [`match`](#wcmatchmatch) or [`imatch`](#wcmatchimatch).
 
 #### `WcMatch.on_match`
 
@@ -261,7 +263,8 @@ returns so that you can identify them when they are returned via `match` or `ima
 
 On match returns the path of the matched file.  You can override `on_match` and change what is returned.  You could
 return just the base, you could parse the file and return the content, or return a special match record with additional
-file meta data. `on_match` must return something, and all results will be returned via `match` or `imatch`.
+file meta data. `on_match` must return something, and all results will be returned via [`match`](#wcmatchmatch) or
+[`imatch`](#wcmatchimatch).
 
 #### `WcMatch.on_reset`
 
@@ -272,7 +275,7 @@ file meta data. `on_match` must return something, and all results will be return
 ```
 
 `on_reset` is a hook to provide a way to reset any custom logic in classes that have derived from `WcMatch`. `on_reset`
-is called on every new `match` call.
+is called on every new [`match`](#wcmatchmatch) call.
 
 !!! new "New 4.0"
     `on_reset` was added in 4.0.
@@ -328,7 +331,7 @@ etc.
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything
 else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
-For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch) which will only generate a single
+For simple patterns, it may make more sense to use [`EXTMATCH`](#wcmatchextmatch) which will only generate a single
 pattern: `@(ab|ac|ad)`.
 
 Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually
@@ -371,10 +374,11 @@ for convenience.
 
 #### `wcmatch.MATCHBASE, wcmatch.X` {: #wcmatchmatchbase}
 
-When `FILEPATHNAME` or `DIRPATHNAME` is enabled, `MATCHBASE` will ensure that that the respective file or directory
-pattern, when there are no slashes in the pattern, seeks for any file anywhere in the tree with a matching basename.
-This is essentially the behavior when `FILEPATHNAME` and `DIRPATHNAME` is disabled, but with `MATCHBASE`, you can toggle
-the behavior by including slashes in your pattern.
+When [`FILEPATHNAME`](#wcmatchfilepathname) or [`DIRPATHNAME`](#wcmatchdirpathname) is enabled, `MATCHBASE` will ensure
+that that the respective file or directory pattern, when there are no slashes in the pattern, seeks for any file
+anywhere in the tree with a matching basename. This is essentially the behavior when
+[`FILEPATHNAME`](#wcmatchfilepathname) and [`DIRPATHNAME`](#wcmatchdirpathname) is disabled, but with `MATCHBASE`, you
+can toggle the behavior by including slashes in your pattern.
 
 When we include no slashes:
 
