@@ -2,8 +2,8 @@
 
 ## 5.0.1
 
-- **FIX**: In `glob`, avoid the risk of leaking file descriptors by acquiring all file/folder names under a directory in
-  one batch.
+- **FIX**: In `glob`, avoid using up too many file descriptors by acquiring all file/folder names under a directory in
+  one batch before recursing into other folders.
 
 ## 5.0.0
 
