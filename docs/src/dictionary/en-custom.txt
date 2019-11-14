@@ -49,6 +49,7 @@ pre
 prepend
 prerelease
 prereleases
+recursing
 regex
 sortable
 subclass
