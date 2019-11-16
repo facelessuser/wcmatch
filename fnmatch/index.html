@@ -36,7 +36,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.5.0">
     
     
       
@@ -44,7 +44,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application.30686662.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application.1b62728e.css">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -55,7 +55,7 @@
       
     
     
-      <script src="../assets/javascripts/modernizr.74668098.js"></script>
+      <script src="../assets/javascripts/modernizr.268332fc.js"></script>
     
     
       
@@ -703,10 +703,10 @@
 </pre></div>
 
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link"></a></h2>
-<p>The <code>fnmatch</code> library is similar to the builtin <code>fnmatch</code>, but with some enhancements and some differences. It is mainly
-used for matching filenames with glob patterns. For path names, Wildcard Match's <a href="glob#globglobmatch"><code>globmatch</code></a> is a
-more appropriate choice. Not all of the features listed below are enabled by default. See <a href="#flags">flags</a> for more
-information.</p>
+<p>The <code>fnmatch</code> library is similar to the builtin <a href="https://docs.python.org/3/library/fnmatch.html"><code>fnmatch</code></a>, but with some enhancements and some differences.
+It is mainly used for matching filenames with glob patterns. For path names, Wildcard Match's
+<a href="../glob/#globglobmatch"><code>globmatch</code></a> is a more appropriate choice. Not all of the features listed below are enabled by
+default. See <a href="#flags">flags</a> for more information.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a
@@ -746,7 +746,7 @@ character <code class="highlight"><span class="sa">r</span><span class="s1">&#39
 </tr>
 <tr>
 <td><code>!</code></td>
-<td>Exclusion pattern (with configuration, can use <code>-</code> instead of <code>!</code>).</td>
+<td>Pattern will be treated as an exclusion pattern when used at the start of the pattern (with configuration, can use <code>-</code> instead of <code>!</code>).</td>
 </tr>
 <tr>
 <td><code>?(pattern_list)</code></td>
@@ -778,8 +778,6 @@ character <code class="highlight"><span class="sa">r</span><span class="s1">&#39
 <li>Slashes are generally treated as normal characters, but on windows they will be normalized: <code>/</code> will become <code>\\</code>.
   There is no need to explicitly use <code>\\</code> in patterns on Windows, but if you do, it will be handled.  This applies to
   matching patterns and the filenames the patterns are applied to.</li>
-<li>If case sensitivity is applied on a Windows system, slashes will not be normalized and pattern and filenames will be
-  treated as a Linux/Unix filename.</li>
 <li>By default, <code>.</code> is <em>not</em> matched by <code>*</code>, <code>?</code>, and <code>[]</code>. See the <a href="#fnmatchdotmatch"><code>DOTMATCH</code></a> flag to match <code>.</code> at
   the start of a filename without a literal <code>.</code>.</li>
 </ul>
@@ -1090,7 +1088,7 @@ to use case insensitivity.</p>
         
           <div class="md-footer-copyright__highlight">
             Copyright &copy; 2018 - 2019 <a href="https://github.com/facelessuser">Isaac Muse</a>
-<br><span class="md-footer-custom-text">emoji provided free by <a href="http://www.emojione.com">EmojiOne</a></span>
+<br><span class="md-footer-custom-text">emoji provided free by <a href="https://github.com/twitter/twemoji">Twemoji</a></span>
 
           </div>
         
@@ -1114,7 +1112,7 @@ to use case insensitivity.</p>
       
     </div>
     
-      <script src="../assets/javascripts/application.ac79c3b0.js"></script>
+      <script src="../assets/javascripts/application.a8b5e56f.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       

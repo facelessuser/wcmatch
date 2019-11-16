@@ -36,7 +36,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.5.0">
     
     
       
@@ -44,7 +44,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application.30686662.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application.1b62728e.css">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -55,7 +55,7 @@
       
     
     
-      <script src="../assets/javascripts/modernizr.74668098.js"></script>
+      <script src="../assets/javascripts/modernizr.268332fc.js"></script>
     
     
       
@@ -928,7 +928,8 @@
 select a base path, define one or more file patterns they wanted to search for, and provide folders to exclude if
 needed. It needed to be aware of hidden files on different systems, not just ignoring files that start with <code>.</code>. It also
 needed to be extendable so we could further filter returned files by size, creation date, or whatever else was decided.
-While <code>glob</code> is a fantastic file and folder search tool, it just didn't make sense for such a user interface.</p>
+While <a href="../glob/"><code>glob</code></a> is a fantastic file and folder search tool, it just didn't make sense for such a user
+interface.</p>
 <h2 id="wcmatchwcmatch_1"><code>wcmatch.WcMatch</code><a class="headerlink" href="#wcmatchwcmatch_1" title="Permanent link"></a></h2>
 <p><code>WcMatch</code> is an extendable file search class. It allows you to specify a base path, file patterns, and optional folder
 exclude patterns. You can specify whether you want to see hidden files and whether the search should be recursive. You
@@ -1038,9 +1039,10 @@ enabled via the <a href="#wcmatchhidden"><code>HIDDEN</code></a> and <a href="#w
 </pre></div>
 
 <h4 id="wcmatchkill"><code>WcMatch.kill</code><a class="headerlink" href="#wcmatchkill" title="Permanent link"></a></h4>
-<p>If searching with <code>imatch</code>, this provides a way to gracefully kill the internal searching. Internally, you can call
-<code>is_aborted</code> to check if a request to abort has been made. So if work on a file is being done in an <code>on_match</code>, you can
-check if there has been a request to kill the process, and tie up loose ends gracefully.</p>
+<p>If searching with <a href="#wcmatchimatch"><code>imatch</code></a>, this provides a way to gracefully kill the internal searching. Internally,
+you can call <a href="#wcmatchis_aborted"><code>is_aborted</code></a> to check if a request to abort has been made. So if work on a file is
+being done in an <a href="#wcmatchon_match"><code>on_match</code></a>, you can check if there has been a request to kill the process, and tie
+up loose ends gracefully.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcm</span> <span class="o">=</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">wcm</span><span class="o">.</span><span class="n">imatch</span><span class="p">():</span>
@@ -1128,7 +1130,8 @@ provide additional validation if required.</p>
 
 <p>When a file that must be skipped is encountered (a file that doesn't pass validation), it is sent to <code>on_skip</code>. Here you
 could abort the search, store away information, or even create a special skip record to return. It is advised to create
-a special type for skip returns so that you can identify them when they are returned via <code>match</code> or <code>imatch</code>.</p>
+a special type for skip returns so that you can identify them when they are returned via <a href="#wcmatchmatch"><code>match</code></a> or
+<a href="#wcmatchimatch"><code>imatch</code></a>.</p>
 <h4 id="wcmatchon_error"><code>WcMatch.on_error</code><a class="headerlink" href="#wcmatchon_error" title="Permanent link"></a></h4>
 <div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">on_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;On error.&quot;&quot;&quot;</span>
@@ -1138,7 +1141,7 @@ a special type for skip returns so that you can identify them when they are retu
 
 <p>When accessing or processing a file throws an error, it is sent to <code>on_error</code>. Here you could abort the search, store
 away information, or even create a special error record to return. It is advised to create a special type for error
-returns so that you can identify them when they are returned via <code>match</code> or <code>imatch</code>.</p>
+returns so that you can identify them when they are returned via <a href="#wcmatchmatch"><code>match</code></a> or <a href="#wcmatchimatch"><code>imatch</code></a>.</p>
 <h4 id="wcmatchon_match"><code>WcMatch.on_match</code><a class="headerlink" href="#wcmatchon_match" title="Permanent link"></a></h4>
 <div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">on_match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;On match.&quot;&quot;&quot;</span>
@@ -1148,7 +1151,8 @@ returns so that you can identify them when they are returned via <code>match</co
 
 <p>On match returns the path of the matched file.  You can override <code>on_match</code> and change what is returned.  You could
 return just the base, you could parse the file and return the content, or return a special match record with additional
-file meta data. <code>on_match</code> must return something, and all results will be returned via <code>match</code> or <code>imatch</code>.</p>
+file meta data. <code>on_match</code> must return something, and all results will be returned via <a href="#wcmatchmatch"><code>match</code></a> or
+<a href="#wcmatchimatch"><code>imatch</code></a>.</p>
 <h4 id="wcmatchon_reset"><code>WcMatch.on_reset</code><a class="headerlink" href="#wcmatchon_reset" title="Permanent link"></a></h4>
 <div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">on_reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;On reset.&quot;&quot;&quot;</span>
@@ -1156,7 +1160,7 @@ file meta data. <code>on_match</code> must return something, and all results wil
 </pre></div>
 
 <p><code>on_reset</code> is a hook to provide a way to reset any custom logic in classes that have derived from <code>WcMatch</code>. <code>on_reset</code>
-is called on every new <code>match</code> call.</p>
+is called on every new <a href="#wcmatchmatch"><code>match</code></a> call.</p>
 <div class="admonition new">
 <p class="admonition-title">New 4.0</p>
 <p><code>on_reset</code> was added in 4.0.</p>
@@ -1199,7 +1203,7 @@ etc.</p>
 <h4 id="wcmatchbrace"><code>wcmatch.BRACE, wcmatch.B</code><a class="headerlink" href="#wcmatchbrace" title="Permanent link"></a></h4>
 <p><code>BRACE</code> enables Bash style brace expansion: <code>a{b,{c,d}}</code> &rarr; <code>ab ac ad</code>. Brace expansion is applied before anything
 else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.</p>
-<p>For simple patterns, it may make more sense to use <a href="#fnmatchextmatch"><code>EXTMATCH</code></a> which will only generate a single
+<p>For simple patterns, it may make more sense to use <a href="#wcmatchextmatch"><code>EXTMATCH</code></a> which will only generate a single
 pattern: <code>@(ab|ac|ad)</code>.</p>
 <p>Be careful with patterns such as <code>{1..100}</code> which would generate one hundred patterns that will all get individually
 parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of
@@ -1229,10 +1233,11 @@ patterns. The path name compared will be the entire path relative to the base pa
 <p><code>PATHNAME</code> enables both <a href="#wcmatchdirpathname"><code>DIRPATHNAME</code></a> and <a href="#wcmathfilepathname"><code>FILEPATHNAME</code></a>. It is provided
 for convenience.</p>
 <h4 id="wcmatchmatchbase"><code>wcmatch.MATCHBASE, wcmatch.X</code><a class="headerlink" href="#wcmatchmatchbase" title="Permanent link"></a></h4>
-<p>When <code>FILEPATHNAME</code> or <code>DIRPATHNAME</code> is enabled, <code>MATCHBASE</code> will ensure that that the respective file or directory
-pattern, when there are no slashes in the pattern, seeks for any file anywhere in the tree with a matching basename.
-This is essentially the behavior when <code>FILEPATHNAME</code> and <code>DIRPATHNAME</code> is disabled, but with <code>MATCHBASE</code>, you can toggle
-the behavior by including slashes in your pattern.</p>
+<p>When <a href="#wcmatchfilepathname"><code>FILEPATHNAME</code></a> or <a href="#wcmatchdirpathname"><code>DIRPATHNAME</code></a> is enabled, <code>MATCHBASE</code> will ensure
+that that the respective file or directory pattern, when there are no slashes in the pattern, seeks for any file
+anywhere in the tree with a matching basename. This is essentially the behavior when
+<a href="#wcmatchfilepathname"><code>FILEPATHNAME</code></a> and <a href="#wcmatchdirpathname"><code>DIRPATHNAME</code></a> is disabled, but with <code>MATCHBASE</code>, you
+can toggle the behavior by including slashes in your pattern.</p>
 <p>When we include no slashes:</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">FILEPATHNAME</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">GLOBSTAR</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">MATCHBASE</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">RECURSIVE</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./docs/src/markdown/changelog.md&#39;, &#39;./docs/src/markdown/fnmatch.md&#39;, &#39;./docs/src/markdown/glob.md&#39;, &#39;./docs/src/markdown/index.md&#39;, &#39;./docs/src/markdown/license.md&#39;, &#39;./docs/src/markdown/wcmatch.md&#39;]</span>
@@ -1314,7 +1319,7 @@ directory pattern matches with <code>**</code>.</p>
         
           <div class="md-footer-copyright__highlight">
             Copyright &copy; 2018 - 2019 <a href="https://github.com/facelessuser">Isaac Muse</a>
-<br><span class="md-footer-custom-text">emoji provided free by <a href="http://www.emojione.com">EmojiOne</a></span>
+<br><span class="md-footer-custom-text">emoji provided free by <a href="https://github.com/twitter/twemoji">Twemoji</a></span>
 
           </div>
         
@@ -1338,7 +1343,7 @@ directory pattern matches with <code>**</code>.</p>
       
     </div>
     
-      <script src="../assets/javascripts/application.ac79c3b0.js"></script>
+      <script src="../assets/javascripts/application.a8b5e56f.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       

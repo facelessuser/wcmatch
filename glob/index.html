@@ -36,7 +36,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.5.0">
     
     
       
@@ -44,7 +44,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application.30686662.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application.1b62728e.css">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -55,7 +55,7 @@
       
     
     
-      <script src="../assets/javascripts/modernizr.74668098.js"></script>
+      <script src="../assets/javascripts/modernizr.268332fc.js"></script>
     
     
       
@@ -844,9 +844,9 @@
 
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link"></a></h2>
 <p>The <code>glob</code> library provides methods for traversing the file system and returning files that matched a defined set of
-glob patterns.  The library also provides functions for matching file paths which is similar to
-<a href="../fnmatch/#fnmatchfnmatch"><code>fnmatch</code></a>, but for paths. In short, <a href="#globglobmatch"><code>globmatch</code></a> matches what
-<a href="#globglob"><code>glob</code></a> globs <img alt="🙂" class="emojione" src="https://cdn.jsdelivr.net/emojione/assets/4.5/png/64/1f642.png" title=":slight_smile:" />. <code>globmatch</code>'s features are similar to <code>fnmatch</code>'s.</p>
+glob patterns.  The library also provides a function called <a href="#globglobmatch"><code>globmatch</code></a> for matching file paths which
+is similar to <a href="../fnmatch/#fnmatchfnmatch"><code>fnmatch</code></a>, but for paths. In short, <a href="#globglobmatch"><code>globmatch</code></a> matches
+what <a href="#globglob"><code>glob</code></a> globs <img alt="🙂" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f642.svg" title=":slight_smile:" />.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a
@@ -932,31 +932,35 @@ character <code class="highlight"><span class="sa">r</span><span class="s1">&#39
   <code>[]</code>, <code>?</code>, or even extended match patterns like <code>+(...)</code>.</p>
 </li>
 <li>
-<p>Windows drives are recognized as either <code>C:\</code> or <code>\\Server\mount\</code> (or <code>C:/</code> and <code>//Server/mount/</code>). If a path uses an
-  ambiguous root (<code>\some\path</code> or <code>/some/path</code>), the system will assume the drive of the current working directory.</p>
+<p>Windows drives are recognized as either <code>C:/</code> and <code>//Server/mount/</code>. If a path uses an ambiguous root (<code>/some/path</code>),
+  the system will assume the drive of the current working directory.</p>
 </li>
 <li>
-<p>Meta characters have no effect when inside a UNC path: <code>\\\\Server?\\mount*\\</code>.</p>
+<p>Meta characters have no effect when inside a UNC path: <code>//Server?/mount*/</code>.</p>
 </li>
 <li>
 <p>If <a href="#globforceunix"><code>FORCEUNIX</code></a> is applied on a Windows system, match and filter commands that do not touch the file
-  system will not have slashes normalized. In addition, drive letters will also not be handled. Essentially, paths will
-  be treated as if on Linux/Unix. Commands that do touch the file system (<a href="#globglob"><code>glob</code></a> and <a href="#globiglob"><code>iglob</code></a>)
-  will ignore <code>FORCEUNIX</code> and <a href="#globforcewin"><code>FORCEWIN</code></a>. <a href="#globglobmatch"><code>globmatch</code></a> and
-  <a href="#globglobfilter"><code>globfilter</code></a>, will also ignore <code>FORCEUNIX</code> and <code>FORCEWIN</code> if the <a href="#globrealpath"><code>REALPATH</code></a> flag
-  is enabled.</p>
-<p><a href="#globforcewin"><code>FORCEWIN</code></a> will do the opposite on a Linux/Unix system, and will force non-Windows logic on a
-Windows system. Like with <code>FORCEUNIX</code>, it only applies to commands that don't touch the file system.</p>
+  system will <strong>not</strong> have slashes normalized. In addition, drive letters will also not be handled. Essentially, paths
+  will be treated as if on a Linux/Unix system. Commands that do touch the file system (<a href="#globglob"><code>glob</code></a> and
+  <a href="#globiglob"><code>iglob</code></a>) will ignore <a href="#globforceunix"><code>FORCEUNIX</code></a> and <a href="#globforcewin"><code>FORCEWIN</code></a>.
+  <a href="#globglobmatch"><code>globmatch</code></a> and <a href="#globglobfilter"><code>globfilter</code></a>, will also ignore <a href="#globforceunix"><code>FORCEUNIX</code></a> and
+  <a href="#globforcewin"><code>FORCEWIN</code></a> if the <a href="#globrealpath"><code>REALPATH</code></a> flag is enabled.</p>
+<p><a href="#globforcewin"><code>FORCEWIN</code></a> will do the opposite on a Linux/Unix system, and will force Windows logic on a
+Linux/Unix system. Like with <a href="#globforceunix"><code>FORCEUNIX</code></a>, it only applies to commands that don't touch the file
+system.</p>
 </li>
 <li>
 <p>By default, file and directory names starting with <code>.</code> are only matched with literal <code>.</code>.  The patterns <code>*</code>, <code>**</code>,
-  <code>?</code>, and <code>[]</code> will not match a leading <code>.</code>.  To alter this behavior, you can use the <a href="#globdotglob"><code>DOTGLOB</code></a> flag,
-  but even with <code>DOTGLOB</code> these special tokens will not match a special directory (<code>.</code> or <code>..</code>).  But when a literal <code>.</code>
-  is used at the start of the filename, for instance in the pattern <code>.*</code>, <code>.</code> and <code>..</code> can potentially be matched.</p>
+  <code>?</code>, and <code>[]</code> will not match a leading <code>.</code>.  To alter this behavior, you can use the <a href="#globdotglob"><code>DOTGLOB</code></a> flag.</p>
 </li>
 <li>
-<p>In general, Wildcard Match's behavior is modeled off of Bash's, so unlike Python's default <code>glob</code>, Wildcard Match's
-  <code>glob</code> will match and return <code>.</code> and <code>..</code> in certain cases just like Bash does.</p>
+<p>Even with <a href="#globdotglob"><code>DOTGLOB</code></a> enabled, special tokens will not match a special directory (<code>.</code> or <code>..</code>).  But
+  when a literal <code>.</code> is used at the start of the pattern (<code>.*</code>, <code>.</code>, <code>..</code>, etc.), <code>.</code> and <code>..</code> can potentially be
+  matched.</p>
+</li>
+<li>
+<p>In general, Wildcard Match's behavior is modeled off of Bash's, so unlike Python's default <a href="https://docs.python.org/3/library/glob.html"><code>glob</code></a>, Wildcard
+  Match's <code>glob</code> will match and return <code>.</code> and <code>..</code> in certain cases just like Bash does.</p>
 <p>Python's default:</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;docs/.*&#39;</span><span class="p">)</span>
@@ -1073,15 +1077,13 @@ Windows system. Like with <code>FORCEUNIX</code>, it only applies to commands th
 <div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">glob</span><span class="p">(</span><span class="n">patterns</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 </pre></div>
 
-<p><code>glob</code> takes a pattern (or list of patterns) and will crawl the file system returning matching files. If a file/folder
-matches any regular patterns, it is considered a match.  If it matches <em>any</em> exclusion pattern (when enabling the
-<a href="#globnegate"><code>NEGATE</code></a> flag), then it will be not be returned.</p>
+<p><code>glob</code> takes a pattern (or list of patterns) and will crawl the file system returning matching files.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;**/*.md&#39;</span><span class="p">)</span>
 <span class="go">[&#39;docs/src/markdown/_snippets/abbr.md&#39;, &#39;docs/src/markdown/_snippets/links.md&#39;, &#39;docs/src/markdown/_snippets/refs.md&#39;, &#39;docs/src/markdown/changelog.md&#39;, &#39;docs/src/markdown/fnmatch.md&#39;, &#39;docs/src/markdown/glob.md&#39;, &#39;docs/src/markdown/index.md&#39;, &#39;docs/src/markdown/installation.md&#39;, &#39;docs/src/markdown/license.md&#39;, &#39;README.md&#39;]</span>
 </pre></div>
 
-<p>We can also exclude directories and/or files:</p>
+<p>Using a list, we can add exclusion patterns and also exclude directories and/or files:</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">([</span><span class="sa">r</span><span class="s1">&#39;**/*.md&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;!README.md&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;!**/_snippets&#39;</span><span class="p">],</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">NEGATE</span><span class="p">)</span>
 <span class="go">[&#39;docs/src/markdown/changelog.md&#39;, &#39;docs/src/markdown/fnmatch.md&#39;, &#39;docs/src/markdown/glob.md&#39;, &#39;docs/src/markdown/index.md&#39;, &#39;docs/src/markdown/installation.md&#39;, &#39;docs/src/markdown/license.md&#39;]</span>
@@ -1091,6 +1093,38 @@ matches any regular patterns, it is considered a match.  If it matches <em>any</
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;**/&#39;</span><span class="p">)</span>
 <span class="go">[&#39;__pycache__/&#39;, &#39;docs/&#39;, &#39;docs/src/&#39;, &#39;docs/src/markdown/&#39;, &#39;docs/src/markdown/_snippets/&#39;, &#39;docs/theme/&#39;, &#39;requirements/&#39;, &#39;stuff/&#39;, &#39;tests/&#39;, &#39;tests/__pycache__/&#39;, &#39;wcmatch/&#39;, &#39;wcmatch/__pycache__/&#39;]</span>
+</pre></div>
+
+<p>When providing a list, all patterns are run in the same context, but will not be run in the same pass. Each pattern is
+run in a separate pass, except for exclusion patterns (see the <a href="#globnegate"><code>NEGATE</code></a> flag) which are applied as
+filters to the inclusion patterns. Since each pattern is run in its own pass, it is possible to get duplicates. It is
+no different than if you ran something like the following in Bash:</p>
+<div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">echo</span> *.md README.md
+<span class="go">LICENSE.md README.md README.md</span>
+</pre></div>
+
+<p>And we see that Wildcard Match's <code>glob</code> behaves the same:</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">([</span><span class="s1">&#39;*.md&#39;</span><span class="p">,</span> <span class="s1">&#39;README.md&#39;</span><span class="p">])</span>
+<span class="go">[&#39;LICENSE.md&#39;, &#39;README.md&#39;, &#39;README.md&#39;]</span>
+</pre></div>
+
+<p>And if we apply an exclusion pattern, since the patterns share the same context, the exclusion applies to both:</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">([</span><span class="s1">&#39;*.md&#39;</span><span class="p">,</span> <span class="s1">&#39;README.md&#39;</span><span class="p">,</span> <span class="s1">&#39;!README.md&#39;</span><span class="p">],</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">NEGATE</span><span class="p">)</span>
+<span class="go">[&#39;LICENSE.md&#39;]</span>
+</pre></div>
+
+<p>Features like <a href="#globbrace"><code>BRACE</code></a> and <a href="#globsplit"><code>SPLIT</code></a> actually take a single string and breaks them up into
+multiple patterns. These features, when enabled and used, will also exhibit this behavior:</p>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;{*,README}.md&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">BRACE</span><span class="p">)</span>
+<span class="go">[&#39;LICENSE.md&#39;, &#39;README.md&#39;, &#39;README.md&#39;]</span>
+</pre></div>
+
+<p>This also aligns with Bash's behavior:</p>
+<div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">echo</span> <span class="o">{</span>*,README<span class="o">}</span>.md
+<span class="go">LICENSE.md README.md README.md</span>
 </pre></div>
 
 <h4 id="globiglob"><code>glob.iglob</code><a class="headerlink" href="#globiglob" title="Permanent link"></a></h4>
@@ -1139,7 +1173,7 @@ to filter other patterns, not match anything by themselves.</p>
 exclusion patterns to assume all files should be filtered with the exclusion pattern(s) with the
 <a href="#globnegateall"><code>NEGATEALL</code></a> flag. Essentially, it means if you use a pattern such as <code>!*.md</code>, it means if you use a
 pattern such as <code>!*.md</code>, it will assume two pattern were given: <code>*</code> and <code>!*.md</code> (where <code>**</code> is specifically treated as
-if <code>GLOBSTAR</code> was enabled).</p>
+if <a href="#globglobstar"><code>GLOBSTAR</code></a> was enabled).</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;some/path/test.py&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;!**/*.txt&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">glob</span><span class="o">.</span><span class="n">GLOBSTAR</span> <span class="o">|</span> <span class="n">glob</span><span class="o">.</span><span class="n">NEGATEALL</span><span class="p">)</span>
 <span class="go">True</span>
@@ -1147,22 +1181,23 @@ if <code>GLOBSTAR</code> was enabled).</p>
 <span class="go">False</span>
 </pre></div>
 
-<p>By default, <code>globmatch</code> and <code>globfilter</code> do not operate on the file system. This is to allow you to process paths from
-any source, even paths that are not on your current system. So if you are trying to explicitly match a directory with a
-pattern such as <code>*/</code>, your path must end with a slash (<code>my_directory/</code>) to be recognized as a directory. It also won't
-be able to evaluate whether a directory is a symlink or not as it will have no way of checking. Here we see that
-<code>globmatch</code> fails to match the filepath as the pattern is explicitly looking for a directory and our filepath does not
-end with <code>/</code>.</p>
+<p>By default, <code>globmatch</code> and <a href="#globglobfilter"><code>globfilter</code></a> do not operate on the file system. This is to allow you to
+process paths from any source, even paths that are not on your current system. So if you are trying to explicitly match
+a directory with a pattern such as <code>*/</code>, your path must end with a slash (<code>my_directory/</code>) to be recognized as a
+directory. It also won't be able to evaluate whether a directory is a symlink or not as it will have no way of checking.
+Here we see that <code>globmatch</code> fails to match the filepath as the pattern is explicitly looking for a directory and our
+filepath does not end with <code>/</code>.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;docs&#39;</span><span class="p">,</span> <span class="s1">&#39;*/&#39;</span><span class="p">)</span>
 <span class="go">False</span>
 </pre></div>
 
-<p>If you would like for <code>globmatch</code> (or <code>globfilter</code>) to operate on your current filesystem directly, simply pass in the
-<a href="#globrealpath"><code>REALPATH</code></a> flag. When enabled, the path under consideration will be analyzed and will use that context
-to determine if the file exists, if it is a directory, does it's context make sense compared to what the pattern is
-looking vs the current working directory, or if it has symlinks that should not be matched by <code>GLOBSTAR</code>.</p>
-<p>Here we use <code>REALPATH</code> and can see that <code>globmatch</code> now knows that <code>doc</code> is a directory.</p>
+<p>If you would like for <code>globmatch</code> (or <a href="#globglobfilter"><code>globfilter</code></a>) to operate on your current filesystem directly,
+simply pass in the <a href="#globrealpath"><code>REALPATH</code></a> flag. When enabled, the path under consideration will be analyzed and
+will use that context to determine if the file exists, if it is a directory, does it's context make sense compared to
+what the pattern is looking vs the current working directory, or if it has symlinks that should not be matched by
+<a href="#globglobstar"><code>GLOBSTAR</code></a>.</p>
+<p>Here we use <a href="#globrealpath"><code>REALPATH</code></a> and can see that <code>globmatch</code> now knows that <code>doc</code> is a directory.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;docs&#39;</span><span class="p">,</span> <span class="s1">&#39;*/&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">REALPATH</span><span class="p">)</span>
 <span class="go">True</span>
@@ -1170,8 +1205,8 @@ looking vs the current working directory, or if it has symlinks that should not 
 
 <p>It also can tell if a file doesn't exist or is out of scope compared to what is being asked. For instance, the below
 example fails because the pattern is looking for any folder that is relative to the current path, which <code>/usr</code> is not.
-When we disable <code>REALPATH</code>, it will match just fine. Both cases can be useful depending on how you plan to use
-<code>globmatch</code>.</p>
+When we disable <a href="#globrealpath"><code>REALPATH</code></a>, it will match just fine. Both cases can be useful depending on how you plan
+to use <code>globmatch</code>.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;/usr&#39;</span><span class="p">,</span> <span class="s1">&#39;**/&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">G</span> <span class="o">|</span> <span class="n">glob</span><span class="o">.</span><span class="n">REALPATH</span><span class="p">)</span>
 <span class="go">False</span>
@@ -1288,7 +1323,7 @@ handle standard string escapes and Unicode including <code class="highlight"><sp
 <p><code>NEGATE</code> causes patterns that start with <code>!</code> to be treated as exclusion patterns. A pattern of <code>!*.py</code> would match any
 file but Python files. Exclusion patterns cannot be used by themselves though, and must be paired with a normal,
 inclusion pattern, either by utilizing the <a href="#globSPLIT"><code>SPLIT</code></a> flag, or providing multiple patterns in a list.
-Assuming the <code>SPLIT</code> flag, this means using it in a pattern such as <code>inclusion|!exclusion</code>.</p>
+Assuming the <a href="#globsplit"><code>SPLIT</code></a> flag, this means using it in a pattern such as <code>inclusion|!exclusion</code>.</p>
 <p>If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match
 unless the file matches the excluded pattern. This is done with the <a href="#globnegateall"><code>NEGATEALL</code></a> flag.</p>
 <p>If used with the extended glob feature, patterns like <code>!(inverse|pattern)</code> will be mistakenly parsed as an exclusion
@@ -1318,23 +1353,24 @@ unless <a href="#globfollow"><code>FOLLOW</code></a> is enabled.</p>
 crawl symlink directories, the new <a href="#globfollow"><code>FOLLOW</code></a> flag must be enabled.</p>
 </div>
 <h4 id="globfollow"><code>glob.FOLLOW, glob.FL</code><a class="headerlink" href="#globfollow" title="Permanent link"></a></h4>
-<p><code>FOLLOW</code> will cause <code>GLOBSTAR</code> patterns (<code>**</code>) to match and traverse symlink directories.</p>
+<p><code>FOLLOW</code> will cause <a href="#globglobstar"><code>GLOBSTAR</code></a> patterns (<code>**</code>) to match and traverse symlink directories.</p>
 <div class="admonition new">
 <p class="admonition-title">New 3.0</p>
 <p><code>FOLLOW</code> was added in 3.0.</p>
 </div>
 <h4 id="globrealpath"><code>glob.REALPATH, glob.P</code><a class="headerlink" href="#globrealpath" title="Permanent link"></a></h4>
-<p>In the past, only <code>glob</code> and <code>iglob</code> operated on the filesystem, but with <code>REALPATH</code>, other functions will now operate
-on the filesystem as well: <code>globmatch</code> and <code>globfilter</code>.</p>
-<p>Normally, functions such as <code>globmatch</code> would simply match a path with regular expression and return the result. The
-functions were not concerned with whether the path existed or not. It didn't care if it was even valid for the operating
-system.</p>
-<p><code>REALPATH</code> forces <code>globmatch</code> and <code>globfilter</code> to treat the string path as a real file path for the given system it is
-running on. It will augment the patterns used to match files and enable additional logic so that the path must meet the
-following in order to match:</p>
+<p>In the past, only <a href="#globglob"><code>glob</code></a> and <a href="#globiglob"><code>iglob</code></a> operated on the filesystem, but with <code>REALPATH</code>, other
+functions will now operate on the filesystem as well: <a href="#globglobmatch"><code>globmatch</code></a> and <a href="#globglobfilter"><code>globfilter</code></a>.</p>
+<p>Normally, functions such as <a href="#globglobmatch"><code>globmatch</code></a> would simply match a path with regular expression and return
+the result. The functions were not concerned with whether the path existed or not. It didn't care if it was even valid
+for the operating system.</p>
+<p><code>REALPATH</code> forces <a href="#globglobmatch"><code>globmatch</code></a> and <a href="#globglobfilter"><code>globfilter</code></a> to treat the string path as a real
+file path for the given system it is running on. It will augment the patterns used to match files and enable additional
+logic so that the path must meet the following in order to match:</p>
 <ul>
 <li>Path must exist.</li>
-<li>Directories that are symlinks will not be matched by <code>GLOBSTAR</code> patterns (<code>**</code>) unless the <code>FOLLOW</code> flag is enabled.</li>
+<li>Directories that are symlinks will not be matched by <a href="#globglobstar"><code>GLOBSTAR</code></a> patterns (<code>**</code>) unless the
+  <a href="#globfollow"><code>FOLLOW</code></a> flag is enabled.</li>
 <li>When presented with a pattern where the match must be a directory, but the file path being compared doesn't indicate
   the file is a directory with a trailing slash, the command will look at the filesystem to determine if it is a
   directory.</li>
@@ -1386,9 +1422,9 @@ makes it very clear which paths are directories and allows you to save calling <
 for a path separator at the end of the path. This flag only applies to calls to <code>glob</code> or <code>iglob</code>.</p>
 <p>If you are passing the returned files from <code>glob</code> to <a href="#globglobfilter"><code>globfilter</code></a> or <a href="#globglobmatch"><code>globmatch</code></a>,
 it is important to ensure directory paths have trailing slashes as these functions have no way of telling the path is a
-directory otherwise (except when <a href="#globrealpath"><code>REALPATH</code></a> is enabled). If you have <code>REALPATH</code> enabled, ensuring the
-files have trailing slashes can still save you a call to <code>os.path.isdir</code> as <code>REALPATH</code> resorts to calling it if there is
-no trailing slash.</p>
+directory otherwise (except when <a href="#globrealpath"><code>REALPATH</code></a> is enabled). If you have <a href="#globrealpath"><code>REALPATH</code></a>
+enabled, ensuring the files have trailing slashes can still save you a call to <code>os.path.isdir</code> as
+<a href="#globrealpath"><code>REALPATH</code></a> resorts to calling it if there is no trailing slash.</p>
 <div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">MARK</span><span class="p">)</span>
 <span class="go">[&#39;appveyor.yml&#39;, &#39;base.patch&#39;, &#39;basematch.diff&#39;, &#39;docs/&#39;, &#39;LICENSE.md&#39;, &#39;MANIFEST.in&#39;, &#39;mkdocs.yml&#39;, &#39;README.md&#39;, &#39;requirements/&#39;, &#39;setup.cfg&#39;, &#39;setup.py&#39;, &#39;tests/&#39;, &#39;tools/&#39;, &#39;tox.ini&#39;, &#39;wcmatch/&#39;]</span>
@@ -1425,9 +1461,10 @@ any file anywhere in the tree with a matching basename. When enabled for <a href
 <h4 id="globforcewin"><code>glob.FORCEWIN, glob.W</code><a class="headerlink" href="#globforcewin" title="Permanent link"></a></h4>
 <p><code>FORCEWIN</code> will force Windows path and case logic to be used on Linux/Unix systems. It will also cause slashes to be
 normalized and Windows drive syntax to be handled special. This is great if you need to match Windows specific paths on
-a Linux/Unix system. This will only work on commands that do not access the file system: <code>translate</code>, <code>globmatch</code>,
-<code>globfilter</code>, etc. These flags will not work with <code>glob</code> or <code>iglob</code>. It also will not work when using the
-<a href="#globrealpath"><code>REALPATH</code></a> flag with things like <code>globmatch</code> and <code>globfilter</code>.</p>
+a Linux/Unix system. This will only work on commands that do not access the file system: <a href="#globtranslate"><code>translate</code></a>,
+<a href="#globglobmatch"><code>globmatch</code></a>, <a href="#globglobfilter"><code>globfilter</code></a>, etc. These flags will not work with <a href="#globglob"><code>glob</code></a>
+or <a href="#globiglob"><code>iglob</code></a>. It also will not work when using the <a href="#globrealpath"><code>REALPATH</code></a> flag with things like
+<a href="#globglobmatch"><code>globmatch</code></a> and <a href="#globglobfilter"><code>globfilter</code></a>.</p>
 <p>If <code>FORCEWIN</code> is used along side <a href="#globforceunix"><code>FORCEUNIX</code></a>, both will be ignored.</p>
 <div class="admonition new">
 <p class="admonition-title">New 4.2.0</p>
@@ -1436,8 +1473,9 @@ a Linux/Unix system. This will only work on commands that do not access the file
 <h4 id="globforceunix"><code>glob.FORCEUNIX, glob.U</code><a class="headerlink" href="#globforceunix" title="Permanent link"></a></h4>
 <p><code>FORCEUNIX</code> will force Linux/Unix path and case logic to be used on Windows systems. This is great if you need to match
 Linux/Unix specific paths on a Windows system. This will only work on commands that do not access the file system:
-<code>translate</code>, <code>globmatch</code>, <code>globfilter</code>, etc. These flags will not work with <code>glob</code> or <code>iglob</code>. It also will not work
-when using the <a href="#globrealpath"><code>REALPATH</code></a> flag with things like <code>globmatch</code> and <code>globfilter</code>.</p>
+<a href="#globtranslate"><code>translate</code></a>, <a href="#globglobmatch"><code>globmatch</code></a>, <a href="#globglobfilter"><code>globfilter</code></a>, etc. These flags will not
+work with <a href="#globglob"><code>glob</code></a> or <a href="#globiglob"><code>iglob</code></a>. It also will not work when using the <a href="#globrealpath"><code>REALPATH</code></a>
+flag with things like <a href="#globglobmatch"><code>globmatch</code></a> and <a href="#globglobfilter"><code>globfilter</code></a>.</p>
 <p>When using <code>FORCEUNIX</code>, the paths are assumed to be case sensitive, but you can use <a href="#globignorecase"><code>IGNORECASE</code></a> to
 use case insensitivity.</p>
 <p>If <code>FORCEUNIX</code> is used along side <a href="#globforcewin"><code>FORCEWIN</code></a>, both will be ignored.</p>
@@ -1503,7 +1541,7 @@ use case insensitivity.</p>
         
           <div class="md-footer-copyright__highlight">
             Copyright &copy; 2018 - 2019 <a href="https://github.com/facelessuser">Isaac Muse</a>
-<br><span class="md-footer-custom-text">emoji provided free by <a href="http://www.emojione.com">EmojiOne</a></span>
+<br><span class="md-footer-custom-text">emoji provided free by <a href="https://github.com/twitter/twemoji">Twemoji</a></span>
 
           </div>
         
@@ -1527,7 +1565,7 @@ use case insensitivity.</p>
       
     </div>
     
-      <script src="../assets/javascripts/application.ac79c3b0.js"></script>
+      <script src="../assets/javascripts/application.a8b5e56f.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       
