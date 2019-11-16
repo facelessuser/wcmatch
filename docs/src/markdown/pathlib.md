@@ -245,7 +245,7 @@ def glob(self, patterns, *, flags=0):
 regular, inclusion pattern, it is considered a match.  If a file matches *any* exclusion pattern (when enabling the
 [`NEGATE`](#pathlibnegate) flag), then it will not be returned.
 
-This method calls our own [`iglob`](./glob.md#glob.glob) implementation, and as such, should behave in the same manner
+This method calls our own [`iglob`](./glob.md#globiglob) implementation, and as such, should behave in the same manner
 in respect to features, the one exception being that instead of returning path strings in the generator, it will return
 [`Path`](#pathlibpath) objects.
 
