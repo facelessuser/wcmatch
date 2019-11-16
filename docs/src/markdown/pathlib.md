@@ -234,49 +234,51 @@ Since [`Path`](#pathlibpath) is derived from  [`PurePath`](#pathlibpurepath), th
 True
 ```
 
-#### `Path.rglob`
-
-```py3
-def rglob(self, patterns, *, flags=0):
-```
-
-`rglob` takes a pattern (or list of patterns) and will crawl the file system returning matching files. If a file/folder
-matches any regular patterns, it is considered a match.  If a file matches *any* exclusion pattern (when enabling the
-[`NEGATE`](#pathlibnegate) flag), then it will be not be returned.
-
-`rglob` mimics Python's [`pathlib`][pathlib] version of `rglob` in that it uses a recursive logic. What this means is
-when you are matching a path in the form `some/path/name`, the patterns `name`, `path/name` and `some/path/name` will
-all match. Essentially, the pattern behaves as if a [`GLOBSTAR`](#pathlibglobstar) pattern of `**/` was added at the
-beginning of the pattern.
-
-All paths returned are relative to the `pathlib` object. For this reason, absolute patterns are not supported.
-
-```pycon3
->>> from wcmatch import pathlib
->>> p = pathlib.Path('docs/src')
->>> list(p.rglob('*.txt'))
-[PosixPath('docs/src/dictionary/en-custom.txt'), PosixPath('docs/src/markdown/_snippets/links.txt'), PosixPath('docs/src/markdown/_snippets/refs.txt'), PosixPath('docs/src/markdown/_snippets/abbr.txt'), PosixPath('docs/src/markdown/_snippets/posix.txt')]
-```
-
 #### `Path.glob`
 
 ```py3
 def glob(self, patterns, *, flags=0):
 ```
 
-`glob` takes a pattern (or list of patterns) and will crawl the file system returning matching files. If a file/folder
-matches any regular patterns, it is considered a match.  If a file matches *any* exclusion pattern (when enabling the
-[`NEGATE`](#pathlibnegate) flag), then it will be not be returned.
+`glob` takes a pattern (or list of patterns) and will crawl the file system, relative to the current
+[`Path`](#pathlibpath) object, returning a generator of [`Path`](#pathlibpath) objects. If a file/folder matches any
+regular, inclusion pattern, it is considered a match.  If a file matches *any* exclusion pattern (when enabling the
+[`NEGATE`](#pathlibnegate) flag), then it will not be returned.
 
-`glob` is similar to [`rglob`](#pathrglob) except it does not use the same recursive logic that [`rglob`](#pathrglob)
-does. In all other respects, it behaves the same.
-
-All paths returned are relative to the `pathlib` object. For this reason, absolute patterns are not supported.
+This method calls our own [`iglob`](./glob.md#glob.glob) implementation, and as such, should behave in the same manner
+in respect to features, the one exception being that instead of returning path strings in the generator, it will return
+[`Path`](#pathlibpath) objects.
 
 ```pycon3
 >>> from wcmatch import pathlib
 >>> p = pathlib.Path('docs/src')
 >>> list(p.glob('**/*.txt', flags=pathlib.GLOBSTAR))
+[PosixPath('docs/src/dictionary/en-custom.txt'), PosixPath('docs/src/markdown/_snippets/links.txt'), PosixPath('docs/src/markdown/_snippets/refs.txt'), PosixPath('docs/src/markdown/_snippets/abbr.txt'), PosixPath('docs/src/markdown/_snippets/posix.txt')]
+```
+
+#### `Path.rglob`
+
+```py3
+def rglob(self, patterns, *, flags=0):
+```
+
+`rglob` takes a pattern (or list of patterns) and will crawl the file system, relative to the current
+[`Path`](#pathlibpath) object, returning a generator of [`Path`](#pathlibpath) objects. If a file/folder matches any
+regular patterns, it is considered a match.  If a file matches *any* exclusion pattern (when enabling the
+[`NEGATE`](#pathlibnegate) flag), then it will be not be returned.
+
+`rglob` mimics Python's [`pathlib`][pathlib] version of `rglob` in that it uses a recursive logic. What this means is
+that when you are matching a path in the form `some/path/name`, the patterns `name`, `path/name` and `some/path/name`
+will all match. Essentially, the pattern behaves as if a [`GLOBSTAR`](#pathlibglobstar) pattern of `**/` was added at
+the beginning of the pattern.
+
+`rglob` is similar to [`glob`](#pathlibglob) except for the use of recursive logic. In all other respects, it behaves
+the same.
+
+```pycon3
+>>> from wcmatch import pathlib
+>>> p = pathlib.Path('docs/src')
+>>> list(p.rglob('*.txt'))
 [PosixPath('docs/src/dictionary/en-custom.txt'), PosixPath('docs/src/markdown/_snippets/links.txt'), PosixPath('docs/src/markdown/_snippets/refs.txt'), PosixPath('docs/src/markdown/_snippets/abbr.txt'), PosixPath('docs/src/markdown/_snippets/posix.txt')]
 ```
 
