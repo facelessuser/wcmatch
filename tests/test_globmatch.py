@@ -400,6 +400,21 @@ class TestGlobFilter:
             ['x/y/acb', 'acb/', 'acb/d/e', 'x/y/acb/d']
         ],
 
+        # Test that `MATCHBASE` isn't enabled after `GLOBSTAR` patterns with slashes
+        # If `MATCHBASE` was still enabled, the `.y` folder would be gobbled up.
+        [
+            '**/acb',
+            ['acb/'],
+            glob.X,
+            ['x/.y/acb', 'acb/', 'acb/d/e', 'x/.y/acb/d']
+        ],
+        [
+            '**/acb',
+            ['x/.y/acb', 'acb/'],
+            glob.X | glob.D,
+            ['x/.y/acb', 'acb/', 'acb/d/e', 'x/.y/acb/d']
+        ],
+
         ['#*', ['#a', '#b'], 0, ['#a', '#b', 'c#d']],
 
         # begin channelling Boole and deMorgan...
