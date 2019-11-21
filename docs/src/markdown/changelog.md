@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.0.2
+
+- **FIX**: Fix case where a `GLOBSTAR` pattern, followed by a slash, was not disabling `MATCHBASE`.
+
 ## 5.0.1
 
 - **FIX**: In `glob`, avoid using up too many file descriptors by acquiring all file/folder names under a directory in
