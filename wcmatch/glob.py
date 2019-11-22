@@ -268,7 +268,7 @@ class Glob(object):
                     # Quicker to just test this way than to run through `fnmatch`.
                     if deep and self._is_hidden(f):
                         continue
-                    path = os.path.join(curdir, f)
+                    path = os.path.join(scandir, f)
                     try:
                         is_dir = os.path.isdir(path)
                     except OSError:  # pragma: no cover
