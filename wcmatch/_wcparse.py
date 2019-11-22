@@ -1070,13 +1070,16 @@ class WcParse(object):
                             # Looks like escape was a valid slash
                             # Store pattern accordingly
                             value = globstar
+                            self.matchbase = False
                         except StopIteration:
                             # Ran out of characters so assume backslash
                             # count as a double star
                             if self.sep == '\\':
                                 value = globstar
+                                self.matchbase = False
                     elif c == '/' and not self.bslash_abort:
                         value = globstar
+                        self.matchbase = False
 
                     if value != globstar:
                         i.rewind(i.index - index)
