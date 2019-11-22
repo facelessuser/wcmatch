@@ -3,7 +3,7 @@
 ## 5.0.2
 
 - **FIX**: Fix case where a `GLOBSTAR` pattern, followed by a slash, was not disabling `MATCHBASE`.
-- **FIX**: Fix pathlib relative path resolution in glob implementations.
+- **FIX**: Fix `pathlib` relative path resolution in glob implementations.
 
 ## 5.0.1
 
