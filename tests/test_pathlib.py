@@ -55,6 +55,16 @@ class TestGlob(unittest.TestCase):
         self.assertTrue(len(results))
         self.assertTrue(all([file.suffix == '.md' for file in results]))
 
+    def test_relative_exclude(self):
+        """Test relative path exclude."""
+
+        abspath = os.path.abspath('.')
+        p = pathlib.Path(abspath)
+        with change_cwd(os.path.dirname(abspath)):
+            results = list(p.glob('docs/**/*.md|!**/index.md', flags=pathlib.GLOBSTAR | pathlib.NEGATE | pathlib.SPLIT))
+        self.assertTrue(len(results))
+        self.assertTrue(all([file.name != 'index.md' for file in results]))
+
     def test_glob(self):
         """Test globbing function."""
 
