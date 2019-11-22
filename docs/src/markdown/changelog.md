@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.0.3
+
+- **FIX**: Rework `glob` relative path handling so internally it is indistinguishable from when it is given no relative
+  path and uses the current working directory. This fixes an issue where `pathlib` couldn't handle negate patterns
+  properly (`!negate`).
+
 ## 5.0.2
 
 - **FIX**: Fix case where a `GLOBSTAR` pattern, followed by a slash, was not disabling `MATCHBASE`.

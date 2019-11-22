@@ -228,7 +228,10 @@ class Glob(object):
     def _iter(self, curdir, dir_only, deep):
         """Iterate the directory."""
 
-        scandir = self.curdir if not curdir else curdir
+        if not curdir:
+            scandir = self.curdir
+        else:
+            scandir = os.path.join(self.curdir, curdir)
 
         # Python will never return . or .., so fake it.
         for special in self.specials:
@@ -399,14 +402,9 @@ class Glob(object):
             dirname = os.path.dirname(fullpath)
             if basename:
                 matcher = self._get_matcher(basename)
-                if base not in ('.', b'.'):
-                    results = [
-                        (name, is_dir) for name, is_dir in self._glob_dir(dirname, matcher, dir_only)
-                    ]
-                else:
-                    results = [
-                        (os.path.basename(name), is_dir) for name, is_dir in self._glob_dir(dirname, matcher, dir_only)
-                    ]
+                results = [
+                    (os.path.basename(name), is_dir) for name, is_dir in self._glob_dir(dirname, matcher, dir_only)
+                ]
 
         return results
 
@@ -418,11 +416,8 @@ class Glob(object):
     def glob(self):
         """Starts off the glob iterator."""
 
-        if self.is_bytes:
-            curdir = self.curdir
-        else:
-            curdir = self.curdir
-        base = curdir
+        curdir = self.current
+        base = self.curdir
 
         for pattern in self.pattern:
             # If the pattern ends with `/` we return the files ending with `/`.
@@ -462,7 +457,7 @@ class Glob(object):
                     else:
                         # Return the file(s) and finish.
                         for match, is_dir in results:
-                            if os.path.lexists(match) and not self._is_excluded(match, is_dir):
+                            if os.path.lexists(os.path.join(base, match)) and not self._is_excluded(match, is_dir):
                                 yield self.format_path(match, is_dir, dir_only)
                 else:
                     # Path starts with a magic pattern, let's get globbing
