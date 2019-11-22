@@ -1,10 +1,39 @@
 """Test `pathlib`."""
+import contextlib
 import pytest
 import unittest
 import os
 from wcmatch import pathlib, glob
 import pathlib as pypathlib
 import pickle
+import warnings
+
+
+@contextlib.contextmanager
+def change_cwd(path, quiet=False):
+    """
+    Return a context manager that changes the current working directory.
+
+    Arguments:
+      path: the directory to use as the temporary current working directory.
+      quiet: if False (the default), the context manager raises an exception
+        on error.  Otherwise, it issues only a warning and keeps the current
+        working directory the same.
+
+    """
+
+    saved_dir = os.getcwd()
+    try:
+        os.chdir(path)
+    except OSError:
+        if not quiet:
+            raise
+        warnings.warn('tests may fail, unable to change CWD to: ' + path,
+                      RuntimeWarning, stacklevel=3)
+    try:
+        yield os.getcwd()
+    finally:
+        os.chdir(saved_dir)
 
 
 class TestGlob(unittest.TestCase):
@@ -15,6 +44,16 @@ class TestGlob(unittest.TestCase):
     introduced by the particular function.
 
     """
+
+    def test_relative(self):
+        """Test relative path."""
+
+        abspath = os.path.abspath('.')
+        p = pathlib.Path(abspath)
+        with change_cwd(os.path.dirname(abspath)):
+            results = list(p.glob('docs/**/*.md', flags=pathlib.GLOBSTAR))
+        self.assertTrue(len(results))
+        self.assertTrue(all([file.suffix == '.md' for file in results]))
 
     def test_glob(self):
         """Test globbing function."""

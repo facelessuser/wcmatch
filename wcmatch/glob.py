@@ -112,7 +112,7 @@ class Glob(object):
 
         self.is_bytes = isinstance(pattern[0], bytes)
         self.current = b'.' if self.is_bytes else '.'
-        self.curdir = curdir
+        self.curdir = curdir if curdir is not None else self.current
         self.mark = bool(flags & MARK)
         if self.mark:
             flags ^= MARK
@@ -228,7 +228,7 @@ class Glob(object):
     def _iter(self, curdir, dir_only, deep):
         """Iterate the directory."""
 
-        scandir = self.current if not curdir else curdir
+        scandir = self.curdir if not curdir else curdir
 
         # Python will never return . or .., so fake it.
         for special in self.specials:
@@ -381,7 +381,7 @@ class Glob(object):
                 else:
                     yield path, is_dir
 
-    def _get_starting_paths(self, curdir, dir_only):
+    def _get_starting_paths(self, curdir, dir_only, base):
         """
         Get the starting location.
 
@@ -394,14 +394,19 @@ class Glob(object):
         results = [(curdir, True)]
 
         if not self._is_parent(curdir) and not self._is_this(curdir):
-            fullpath = os.path.abspath(curdir)
+            fullpath = os.path.abspath(os.path.join(base, curdir))
             basename = os.path.basename(fullpath)
             dirname = os.path.dirname(fullpath)
             if basename:
                 matcher = self._get_matcher(basename)
-                results = [
-                    (os.path.basename(name), is_dir) for name, is_dir in self._glob_dir(dirname, matcher, dir_only)
-                ]
+                if base not in ('.', b'.'):
+                    results = [
+                        (name, is_dir) for name, is_dir in self._glob_dir(dirname, matcher, dir_only)
+                    ]
+                else:
+                    results = [
+                        (os.path.basename(name), is_dir) for name, is_dir in self._glob_dir(dirname, matcher, dir_only)
+                    ]
 
         return results
 
@@ -414,9 +419,10 @@ class Glob(object):
         """Starts off the glob iterator."""
 
         if self.is_bytes:
-            curdir = os.fsencode(os.curdir) if self.curdir is None else self.curdir
+            curdir = self.curdir
         else:
-            curdir = os.curdir if self.curdir is None else self.curdir
+            curdir = self.curdir
+        base = curdir
 
         for pattern in self.pattern:
             # If the pattern ends with `/` we return the files ending with `/`.
@@ -431,13 +437,13 @@ class Glob(object):
                     curdir = this[0]
 
                     # Abort if we cannot find the drive, or if current directory is empty
-                    if not curdir or (this.is_drive and not os.path.lexists(curdir)):
+                    if not curdir or (this.is_drive and not os.path.lexists(os.path.join(base, curdir))):
                         continue
 
                     # Make sure case matches, but running case insensitive
                     # on a case sensitive file system may return more than
                     # one starting location.
-                    results = [(curdir, True)] if this.is_drive else self._get_starting_paths(curdir, dir_only)
+                    results = [(curdir, True)] if this.is_drive else self._get_starting_paths(curdir, dir_only, base)
                     if not results:
                         continue
 
