@@ -4,7 +4,7 @@ Wild Card Match.
 A custom implementation of `glob`.
 
 Licensed under MIT
-Copyright (c) 2018 Isaac Muse <isaacmuse@gmail.com>
+Copyright (c) 2018 - 2019 Isaac Muse <isaacmuse@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -107,12 +107,12 @@ def _flag_transform(flags):
 class Glob(object):
     """Glob patterns."""
 
-    def __init__(self, pattern, flags=0, curdir=None):
+    def __init__(self, pattern, flags=0, root_dir=None):
         """Initialize the directory walker object."""
 
         self.is_bytes = isinstance(pattern[0], bytes)
         self.current = b'.' if self.is_bytes else '.'
-        self.curdir = curdir if curdir is not None else self.current
+        self.root_dir = util.fspath(root_dir) if root_dir is not None else self.current
         self.mark = bool(flags & MARK)
         if self.mark:
             flags ^= MARK
@@ -229,9 +229,9 @@ class Glob(object):
         """Iterate the directory."""
 
         if not curdir:
-            scandir = self.curdir
+            scandir = self.root_dir
         else:
-            scandir = os.path.join(self.curdir, curdir)
+            scandir = os.path.join(self.root_dir, curdir)
 
         # Python will never return . or .., so fake it.
         for special in self.specials:
@@ -417,7 +417,7 @@ class Glob(object):
         """Starts off the glob iterator."""
 
         curdir = self.current
-        base = self.curdir
+        base = self.root_dir
 
         for pattern in self.pattern:
             # If the pattern ends with `/` we return the files ending with `/`.
@@ -468,16 +468,16 @@ class Glob(object):
                             yield self.format_path(match, is_dir, dir_only)
 
 
-def iglob(patterns, *, flags=0):
+def iglob(patterns, *, flags=0, root_dir=None):
     """Glob."""
 
-    yield from Glob(util.to_tuple(patterns), flags).glob()
+    yield from Glob(util.to_tuple(patterns), flags, root_dir).glob()
 
 
-def glob(patterns, *, flags=0):
+def glob(patterns, *, flags=0, root_dir=None):
     """Glob."""
 
-    return list(iglob(util.to_tuple(patterns), flags=flags))
+    return list(iglob(util.to_tuple(patterns), flags=flags, root_dir=root_dir))
 
 
 def translate(patterns, *, flags=0):
@@ -487,7 +487,7 @@ def translate(patterns, *, flags=0):
     return _wcparse.translate(_wcparse.split(patterns, flags), flags)
 
 
-def globmatch(filename, patterns, *, flags=0):
+def globmatch(filename, patterns, *, flags=0, root_dir=None):
     """
     Check if filename matches pattern.
 
@@ -498,10 +498,10 @@ def globmatch(filename, patterns, *, flags=0):
     flags = _flag_transform(flags)
     if not _wcparse.is_unix_style(flags):
         filename = _wcparse.norm_slash(filename, flags)
-    return _wcparse.compile(_wcparse.split(patterns, flags), flags).match(filename)
+    return _wcparse.compile(_wcparse.split(patterns, flags), flags).match(filename, root_dir=root_dir)
 
 
-def globfilter(filenames, patterns, *, flags=0):
+def globfilter(filenames, patterns, *, flags=0, root_dir=None):
     """Filter names using pattern."""
 
     matches = []
@@ -513,7 +513,7 @@ def globfilter(filenames, patterns, *, flags=0):
     for filename in filenames:
         if not unix:
             filename = _wcparse.norm_slash(filename, flags)
-        if obj.match(filename):
+        if obj.match(filename, root_dir):
             matches.append(filename)
     return matches
 

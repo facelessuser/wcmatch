@@ -4,7 +4,7 @@ Wild Card Match.
 A custom implementation of `fnmatch`.
 
 Licensed under MIT
-Copyright (c) 2018 Isaac Muse <isaacmuse@gmail.com>
+Copyright (c) 2018 - 2019 Isaac Muse <isaacmuse@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -1415,7 +1415,7 @@ class WcParse(object):
         return pattern
 
 
-def _fs_match(pattern, filename, is_dir, sep, follow, symlinks):
+def _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root):
     """
     Match path against the pattern.
 
@@ -1450,7 +1450,7 @@ def _fs_match(pattern, filename, is_dir, sep, follow, symlinks):
                     at_end = m.end(i) == end
                     parts = star.strip(sep).split(sep)
                     if base is None:
-                        base = filename[:m.start(i)]
+                        base = os.path.join(root, filename[:m.start(i)])
                     for part in parts:
                         base = os.path.join(base, part)
                         if is_dir or i != last or not at_end:
@@ -1468,7 +1468,7 @@ def _fs_match(pattern, filename, is_dir, sep, follow, symlinks):
     return matched
 
 
-def _match_real(filename, include, exclude, follow, symlinks):
+def _match_real(filename, include, exclude, follow, symlinks, root):
     """Match real filename includes and excludes."""
 
     sep = '\\' if util.platform() == "windows" else '/'
@@ -1477,7 +1477,7 @@ def _match_real(filename, include, exclude, follow, symlinks):
 
     is_dir = filename.endswith(sep)
     try:
-        is_file_dir = os.path.isdir(filename)
+        is_file_dir = os.path.isdir(os.path.join(root, filename))
     except OSError:  # pragma: no cover
         is_file_dir = False
 
@@ -1487,7 +1487,7 @@ def _match_real(filename, include, exclude, follow, symlinks):
 
     matched = False
     for pattern in include:
-        if _fs_match(pattern, filename, is_dir, sep, follow, symlinks):
+        if _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root):
             matched = True
             break
 
@@ -1495,34 +1495,38 @@ def _match_real(filename, include, exclude, follow, symlinks):
         matched = True
         if exclude:
             for pattern in exclude:
-                if _fs_match(pattern, filename, is_dir, sep, True, symlinks):
+                if _fs_match(pattern, filename, is_dir, sep, True, symlinks, root):
                     matched = False
                     break
     return matched
 
 
-def _match_pattern(filename, include, exclude, real, path, follow):
+def _match_pattern(filename, include, exclude, real, path, follow, root_dir=None):
     """Match includes and excludes."""
 
+    filename = util.fspath(filename)
+
     if real:
+
         symlinks = {}
         if isinstance(filename, bytes):
-            curdir = os.fsencode(os.curdir)
+            root = os.fspath(root_dir) if root_dir else b'.'
             ptype = BYTES
         else:
-            curdir = os.curdir
+            root = os.fspath(root_dir) if root_dir else '.'
             ptype = UNICODE
+
         mount = RE_WIN_MOUNT[ptype] if util.platform() == "windows" else RE_MOUNT[ptype]
 
         if not mount.match(filename):
-            exists = os.path.lexists(os.path.join(curdir, filename))
+            exists = os.path.lexists(os.path.join(root, filename))
         else:
             exists = os.path.lexists(filename)
 
         if not exists:
             return False
         if path:
-            return _match_real(filename, include, exclude, follow, symlinks)
+            return _match_real(filename, include, exclude, follow, symlinks, root)
 
     matched = False
     for pattern in include:
@@ -1595,10 +1599,18 @@ class WcRegexp(util.Immutable):
             self._follow != other._follow
         )
 
-    def match(self, filename):
+    def match(self, filename, root_dir=None):
         """Match filename."""
 
-        return _match_pattern(filename, self._include, self._exclude, self._real, self._path, self._follow)
+        return _match_pattern(
+            filename,
+            self._include,
+            self._exclude,
+            self._real,
+            self._path,
+            self._follow,
+            root_dir=root_dir
+        )
 
 
 def _pickle(p):

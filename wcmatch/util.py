@@ -253,3 +253,24 @@ def warn_deprecated(message, stacklevel=2):  # pragma: no cover
         category=DeprecationWarning,
         stacklevel=stacklevel
     )
+
+
+def fspath(path):
+    """
+    Provide common interface when using `fspath`.
+
+    Python 3.5 does not support `os.PathLike` interfaces, so we only return strings and bytes.
+    """
+
+    if PY36:
+        return os.fspath(path)
+
+    elif isinstance(path, (str, bytes)):
+        return path
+
+    else:
+        raise TypeError(
+            "expected str or bytes, not {} (Python 3.5 does not support 'os.PathLike' interfaces)".format(
+                type(path).__name__
+            )
+        )
