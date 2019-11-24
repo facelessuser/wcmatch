@@ -225,11 +225,21 @@ class Glob(object):
             matcher = target.match
         return matcher
 
+    def prepend_base(self, path):
+        """Join path to base if pattern is not absolute."""
+
+        if self.is_abs_pattern:
+            return path
+        else:
+            return os.path.join(self.root_dir, path)
+
     def _iter(self, curdir, dir_only, deep):
         """Iterate the directory."""
 
         if not curdir:
             scandir = self.root_dir
+        elif self.is_abs_pattern:
+            scandir = curdir
         else:
             scandir = os.path.join(self.root_dir, curdir)
 
@@ -384,7 +394,7 @@ class Glob(object):
                 else:
                     yield path, is_dir
 
-    def _get_starting_paths(self, curdir, dir_only, base):
+    def _get_starting_paths(self, curdir, dir_only):
         """
         Get the starting location.
 
@@ -397,7 +407,7 @@ class Glob(object):
         results = [(curdir, True)]
 
         if not self._is_parent(curdir) and not self._is_this(curdir):
-            fullpath = os.path.abspath(os.path.join(base, curdir))
+            fullpath = os.path.abspath(self.prepend_base(curdir))
             basename = os.path.basename(fullpath)
             dirname = os.path.dirname(fullpath)
             if basename:
@@ -417,28 +427,27 @@ class Glob(object):
         """Starts off the glob iterator."""
 
         curdir = self.current
-        base = self.root_dir
 
         for pattern in self.pattern:
             # If the pattern ends with `/` we return the files ending with `/`.
             dir_only = pattern[-1].dir_only if pattern else False
+            self.is_abs_pattern = pattern[0].is_drive if pattern else False
 
             if pattern:
                 if not pattern[0].is_magic:
                     # Path starts with normal plain text
                     # Lets verify the case of the starting directory (if possible)
                     this = pattern[0]
-
                     curdir = this[0]
 
                     # Abort if we cannot find the drive, or if current directory is empty
-                    if not curdir or (this.is_drive and not os.path.lexists(os.path.join(base, curdir))):
+                    if not curdir or (self.is_abs_pattern and not os.path.lexists(self.prepend_base(curdir))):
                         continue
 
                     # Make sure case matches, but running case insensitive
                     # on a case sensitive file system may return more than
                     # one starting location.
-                    results = [(curdir, True)] if this.is_drive else self._get_starting_paths(curdir, dir_only, base)
+                    results = [(curdir, True)] if self.is_abs_pattern else self._get_starting_paths(curdir, dir_only)
                     if not results:
                         continue
 
@@ -457,7 +466,7 @@ class Glob(object):
                     else:
                         # Return the file(s) and finish.
                         for match, is_dir in results:
-                            if os.path.lexists(os.path.join(base, match)) and not self._is_excluded(match, is_dir):
+                            if os.path.lexists(self.prepend_base(match)) and not self._is_excluded(match, is_dir):
                                 yield self.format_path(match, is_dir, dir_only)
                 else:
                     # Path starts with a magic pattern, let's get globbing
