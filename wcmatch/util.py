@@ -255,22 +255,13 @@ def warn_deprecated(message, stacklevel=2):  # pragma: no cover
     )
 
 
-def fspath(path):
+def fscodec(path, encode=False):
     """
-    Provide common interface when using `fspath`.
+    Provide common interface when using to translate path-like files.
 
     Python 3.5 does not support `os.PathLike` interfaces, so we only return strings and bytes.
     """
 
-    if PY36:
-        return os.fspath(path)
-
-    elif isinstance(path, (str, bytes)):
-        return path
-
-    else:
-        raise TypeError(
-            "expected str or bytes, not {} (Python 3.5 does not support 'os.PathLike' interfaces)".format(
-                type(path).__name__
-            )
-        )
+    if not isinstance(path, (str, bytes)):
+        path = os.fsencode(path) if encode else os.fsdecode(path)
+    return path
