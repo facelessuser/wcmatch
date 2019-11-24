@@ -1346,6 +1346,23 @@ class TestGlobMatchSpecial(unittest.TestCase):
             self.assertFalse(glob.globmatch('docs/', '**/DOCS/**', flags=self.flags | glob.FORCEWIN | glob.FORCEUNIX))
             self.assertTrue(glob.globmatch('docs/', '**/docs/**', flags=self.flags | glob.FORCEWIN | glob.FORCEUNIX))
 
+    def test_root_dir(self):
+        """Test root directory with `globmatch`."""
+
+        self.assertFalse(glob.globmatch('markdown', 'markdown', flags=glob.REALPATH))
+        self.assertTrue(glob.globmatch('markdown', 'markdown', flags=glob.REALPATH, root_dir='docs/src'))
+
+    @pytest.mark.skipif(not util.PY36, reason="path-like interface not supported on Python < 3.6")
+    def test_root_dir_pathlib(self):
+        """Test root directory with `globmatch`."""
+
+        from wcmatch import pathlib
+
+        self.assertFalse(glob.globmatch(pathlib.Path('markdown'), 'markdown', flags=glob.REALPATH))
+        self.assertTrue(
+            glob.globmatch(pathlib.Path('markdown'), 'markdown', flags=glob.REALPATH, root_dir=pathlib.Path('docs/src'))
+        )
+
 
 @skip_unless_symlink
 class TestGlobmatchSymlink(_TestGlobmatch):

@@ -1504,16 +1504,14 @@ def _match_real(filename, include, exclude, follow, symlinks, root):
 def _match_pattern(filename, include, exclude, real, path, follow, root_dir=None):
     """Match includes and excludes."""
 
-    filename = util.fspath(filename)
-
     if real:
 
         symlinks = {}
         if isinstance(filename, bytes):
-            root = os.fspath(root_dir) if root_dir else b'.'
+            root = root_dir if root_dir else b'.'
             ptype = BYTES
         else:
-            root = os.fspath(root_dir) if root_dir else '.'
+            root = root_dir if root_dir else '.'
             ptype = UNICODE
 
         mount = RE_WIN_MOUNT[ptype] if util.platform() == "windows" else RE_MOUNT[ptype]

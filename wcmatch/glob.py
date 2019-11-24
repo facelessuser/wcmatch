@@ -112,7 +112,7 @@ class Glob(object):
 
         self.is_bytes = isinstance(pattern[0], bytes)
         self.current = b'.' if self.is_bytes else '.'
-        self.root_dir = util.fspath(root_dir) if root_dir is not None else self.current
+        self.root_dir = util.fscodec(root_dir, self.is_bytes) if root_dir is not None else self.current
         self.mark = bool(flags & MARK)
         if self.mark:
             flags ^= MARK
@@ -504,7 +504,12 @@ def globmatch(filename, patterns, *, flags=0, root_dir=None):
     but if `case_sensitive` is set, respect that instead.
     """
 
+    is_bytes = isinstance(patterns[0], bytes) if not isinstance(patterns, (bytes, str)) else isinstance(patterns, bytes)
+    if root_dir is not None:
+        root_dir = util.fscodec(root_dir, is_bytes)
+
     flags = _flag_transform(flags)
+    filename = util.fscodec(filename, is_bytes)
     if not _wcparse.is_unix_style(flags):
         filename = _wcparse.norm_slash(filename, flags)
     return _wcparse.compile(_wcparse.split(patterns, flags), flags).match(filename, root_dir=root_dir)
@@ -513,13 +518,17 @@ def globmatch(filename, patterns, *, flags=0, root_dir=None):
 def globfilter(filenames, patterns, *, flags=0, root_dir=None):
     """Filter names using pattern."""
 
-    matches = []
+    is_bytes = isinstance(patterns[0], bytes) if not isinstance(patterns, (bytes, str)) else isinstance(patterns, bytes)
+    if root_dir is not None:
+        root_dir = util.fscodec(root_dir, is_bytes)
 
+    matches = []
     flags = _flag_transform(flags)
     unix = _wcparse.is_unix_style(flags)
     obj = _wcparse.compile(_wcparse.split(patterns, flags), flags)
 
     for filename in filenames:
+        filename = util.fscodec(filename, is_bytes)
         if not unix:
             filename = _wcparse.norm_slash(filename, flags)
         if obj.match(filename, root_dir):
