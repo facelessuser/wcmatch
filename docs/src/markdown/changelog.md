@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.1.0
+
+- **NEW**: Add new parameter to `glob` related functions (except in `pathlib`) called `root_dir` that allows a user to
+  specify a different working directory with either a string or path-like object.
+- **NEW**: Support path-like objects for `globmatch` and `globfilter` path inputs.
+
 ## 5.0.3
 
 - **FIX**: Rework `glob` relative path handling so internally it is indistinguishable from when it is given no relative

@@ -97,10 +97,11 @@ Pattern           | Meaning
 #### `glob.glob`
 
 ```py3
-def glob(patterns, *, flags=0):
+def glob(patterns, *, flags=0, root_dir=None):
 ```
 
-`glob` takes a pattern (or list of patterns) and will crawl the file system returning matching files.
+`glob` takes a pattern (or list of patterns) and will crawl the file system returning matching files, flags, and an
+optional root directory (string or path-like object).
 
 ```pycon3
 >>> from wcmatch import glob
@@ -166,10 +167,25 @@ $ echo {*,README}.md
 LICENSE.md README.md README.md
 ```
 
+By default, `glob` uses the current working directory to evaluate relative patterns. Normally you'd have to use
+`#!py3 os.chdir('/new/path')` to evaluate patterns relative to a different path. By setting `root_dir` parameter you can
+change the root path without using `os.chdir`.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob('*')
+['appveyor.yml', 'docs', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'requirements', 'setup.cfg', 'setup.py', 'tests', 'tox.ini', 'wcmatch']
+>>> glob.glob('*', root_dir='docs/src')
+['dictionary', 'markdown']
+```
+
+!!! new "New 5.1"
+    `root_dir` was added in 5.1.0.
+
 #### `glob.iglob`
 
 ```py3
-def iglob(patterns, *, flags=0):
+def iglob(patterns, *, flags=0, root_dir=None):
 ```
 
 `iglob` is just like [`glob`](#globglob) except it returns an iterator.
@@ -180,14 +196,17 @@ def iglob(patterns, *, flags=0):
 ['docs/src/markdown/_snippets/abbr.md', 'docs/src/markdown/_snippets/links.md', 'docs/src/markdown/_snippets/refs.md', 'docs/src/markdown/changelog.md', 'docs/src/markdown/fnmatch.md', 'docs/src/markdown/glob.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md', 'README.md']
 ```
 
+!!! new "New 5.1"
+    `root_dir` was added in 5.1.0.
+
 #### `glob.globmatch`
 
 ```py3
-def globmatch(filename, patterns, *, flags=0):
+def globmatch(filename, patterns, *, flags=0, root_dir=None):
 ```
 
-`globmatch` takes a file name, a pattern (or list of patterns), and flags.  It will return a boolean indicating whether
-the file path was matched by the pattern(s).
+`globmatch` takes a file name (string or path-like object), a pattern (or list of patterns), flags, and an optional root
+directory.  It will return a boolean indicating whether the file path was matched by the pattern(s).
 
 ```pycon3
 >>> from wcmatch import glob
@@ -274,15 +293,30 @@ False
 True
 ```
 
+If you are using [`REALPATH`](#globrealpath) and want to evaluate the paths relative to a different directory, you can
+set the `root_dir` parameter.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.globmatch('markdown', 'markdown', flags=glob.REALPATH)
+False
+>>> glob.globmatch('markdown', 'markdown', flags=glob.REALPATH, root_dir='docs/src')
+True
+```
+
+!!! new "New 5.1.0"
+    - `root_dir` was added in 5.1.0.
+    - path-like object support for file path inputs was added in 5.1.0
+
 #### `glob.globfilter`
 
 ```py3
-def globfilter(filenames, patterns, *, flags=0):
+def globfilter(filenames, patterns, *, flags=0, root_dir=None):
 ```
 
-`globfilter` takes a list of file paths, a pattern (or list of patterns), and flags. It returns a list of all files
-paths that matched the pattern(s). The same logic used for [`globmatch`](#globglobmatch) is used for `globfilter`,
-albeit more efficient for processing multiple files.
+`globfilter` takes a list of file paths (strings or path-like objects), a pattern (or list of patterns), and flags. It
+returns a list of all files paths that matched the pattern(s). The same logic used for [`globmatch`](#globglobmatch) is
+used for `globfilter`, albeit more efficient for processing multiple files.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -294,6 +328,10 @@ Like [`globmatch`](#globglobmatch), `globfilter` does not operate directly on th
 associated. But you can enable the [`REALPATH`](#globrealpath) flag and `globfilter` will use the filesystem to gain
 context such as: whether the file exists, whether it is a directory or not, or whether it has symlinks that should not
 be matched by `GLOBSTAR`. See [`globmatch`](#globglobmatch) for examples.
+
+!!! new "New 5.1"
+    - `root_dir` was added in 5.1.0.
+    - path-like object support for file path inputs was added in 5.1.0
 
 #### `glob.translate`
 
