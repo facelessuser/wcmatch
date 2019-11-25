@@ -1364,6 +1364,21 @@ class TestGlobMatchSpecial(unittest.TestCase):
         )
 
     @pytest.mark.skipif(not util.PY36, reason="path-like interface not supported on Python < 3.6")
+    def test_match_root_dir_pathlib_bytes(self):
+        """Test root directory with `globmatch` using `pathlib`."""
+
+        from wcmatch import pathlib
+
+        self.assertFalse(glob.globmatch(pathlib.Path('markdown'), b'markdown', flags=glob.REALPATH))
+        self.assertTrue(
+            glob.globmatch(
+                pathlib.Path('markdown'),
+                b'markdown', flags=glob.REALPATH,
+                root_dir=pathlib.Path('docs/src')
+            )
+        )
+
+    @pytest.mark.skipif(not util.PY36, reason="path-like interface not supported on Python < 3.6")
     def test_filter_root_dir_pathlib(self):
         """Test root directory with `globfilter`."""
 
@@ -1372,6 +1387,21 @@ class TestGlobMatchSpecial(unittest.TestCase):
         results = glob.globfilter(
             [pathlib.Path('markdown')],
             'markdown',
+            flags=glob.REALPATH,
+            root_dir=pathlib.Path('docs/src')
+        )
+
+        self.assertTrue(all([isinstance(result, pathlib.Path) for result in results]))
+
+    @pytest.mark.skipif(not util.PY36, reason="path-like interface not supported on Python < 3.6")
+    def test_filter_root_dir_pathlib_bytes(self):
+        """Test root directory with `globfilter`."""
+
+        from wcmatch import pathlib
+
+        results = glob.globfilter(
+            [pathlib.Path('markdown')],
+            b'markdown',
             flags=glob.REALPATH,
             root_dir=pathlib.Path('docs/src')
         )
