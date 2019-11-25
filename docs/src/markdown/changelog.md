@@ -3,8 +3,10 @@
 ## 5.1.0
 
 - **NEW**: Add new parameter to `glob` related functions (except in `pathlib`) called `root_dir` that allows a user to
-  specify a different working directory with either a string or path-like object.
-- **NEW**: Support path-like objects for `globmatch` and `globfilter` path inputs.
+  specify a different working directory with either a string or path-like object. Path-like inputs are only supported on
+  Python 3.6+.
+- **NEW**: Support path-like objects for `globmatch` and `globfilter` path inputs. Path-like inputs are only supported
+  on Python 3.6+.
 - **FIX**: Filter functions should not alter the slashes of files it filters. Filtered strings and paths should be
   returned unaltered.
 

@@ -139,7 +139,7 @@ patterns.
 
 `CASE` forces case sensitivity. `CASE` has higher priority than [`IGNORECASE`](#fnmatchignorecase).
 
-!!! new "New 4.3.0"
+!!! new "New 4.3"
     `CASE` is new in 4.3.0.
 
 #### `fnmatch.IGNORECASE, fnmatch.I` {: #fnmatchignorecase}
@@ -228,7 +228,7 @@ normalized. This is great if you need to match Windows specific names on a Linux
 
 If `FORCEWIN` is used along side [`FORCEUNIX`](#fnmatchforceunix), both will be ignored.
 
-!!! new "New 4.2.0"
+!!! new "New 4.2"
     `FORCEWIN` is new in 4.2.0.
 
 #### `fnmatch.FORCEUNIX, fnmatch.U` {: #fnmatchforceunix}
@@ -241,7 +241,7 @@ to use case insensitivity.
 
 If `FORCEUNIX` is used along side [`FORCEWIN`](#fnmatchforcewin), both will be ignored.
 
-!!! new "New 4.2.0"
+!!! new "New 4.2"
     `FORCEUNIX` is new in 4.2.0.
 
 --8<--
