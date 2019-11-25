@@ -239,13 +239,13 @@ class TestFnMatchFilter:
         [
             'usr/*',
             ['usr/bin', 'usr', 'usr\\lib'],
-            (['usr\\bin', 'usr\\lib'] if not util.is_case_sensitive() else ['usr/bin']),
+            (['usr/bin', 'usr\\lib'] if not util.is_case_sensitive() else ['usr/bin']),
             0
         ],
         [
             r'usr\\*',
             ['usr/bin', 'usr', 'usr\\lib'],
-            (['usr\\bin', 'usr\\lib'] if not util.is_case_sensitive() else ['usr\\lib']),
+            (['usr/bin', 'usr\\lib'] if not util.is_case_sensitive() else ['usr\\lib']),
             0
         ],
         [r'te\st[ma]', ['testm', 'test\\3', 'testa'], ['testm', 'testa'], fnmatch.I],

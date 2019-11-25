@@ -528,10 +528,10 @@ def globfilter(filenames, patterns, *, flags=0, root_dir=None):
     obj = _wcparse.compile(_wcparse.split(patterns, flags), flags)
 
     for filename in filenames:
-        filename = util.fscodec(filename, is_bytes)
+        temp = util.fscodec(filename, is_bytes)
         if not unix:
-            filename = _wcparse.norm_slash(filename, flags)
-        if obj.match(filename, root_dir):
+            temp = _wcparse.norm_slash(temp, flags)
+        if obj.match(temp, root_dir):
             matches.append(filename)
     return matches
 

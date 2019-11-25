@@ -100,8 +100,6 @@ def filter(filenames, patterns, *, flags=0):  # noqa A001
     obj = _wcparse.compile(_wcparse.split(patterns, flags), flags)
 
     for filename in filenames:
-        if not unix:
-            filename = _wcparse.norm_slash(filename, flags)
-        if obj.match(filename):
+        if obj.match(_wcparse.norm_slash(filename, flags) if not unix else filename):
             matches.append(filename)
     return matches
