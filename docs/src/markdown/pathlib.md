@@ -249,6 +249,10 @@ This method calls our own [`iglob`](./glob.md#globiglob) implementation, and as 
 in respect to features, the one exception being that instead of returning path strings in the generator, it will return
 [`Path`](#pathlibpath) objects.
 
+The one difference between this `glob` and the [`iglob`](./glob.md#globiglob) API is that this function does not accept
+the `root_dir` parameter. All searches are relative to the object's path, which is evaluated relative to the current
+working directory.
+
 ```pycon3
 >>> from wcmatch import pathlib
 >>> p = pathlib.Path('docs/src')

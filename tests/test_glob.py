@@ -11,6 +11,7 @@ made difference in implementation.
 """
 import contextlib
 from wcmatch import glob
+from wcmatch import pathlib
 from wcmatch import util
 import re
 import types
@@ -248,6 +249,9 @@ class _TestGlob:
             cls.assert_equal({type(r) for r in res}, {str})
         cls.assert_count_equal(glob.iglob(p, **kwargs), res)
 
+        if 'root_dir' in kwargs and kwargs['root_dir'] is not None:
+            kwargs['root_dir'] = os.fsencode(kwargs['root_dir'])
+
         bres = [os.fsencode(x) for x in res]
         cls.assert_count_equal(glob.glob(os.fsencode(p), **kwargs), bres)
         cls.assert_count_equal(glob.iglob(os.fsencode(p), **kwargs), bres)
@@ -282,6 +286,9 @@ class _TestGlob:
         if res:
             cls.assert_equal({type(r) for r in res}, {str})
         cls.assert_count_equal(glob.iglob(p, **kwargs), res)
+
+        if 'root_dir' in kwargs and kwargs['root_dir'] is not None:
+            kwargs['root_dir'] = os.fsencode(kwargs['root_dir'])
 
         bres = [os.fsencode(x) for x in res]
         cls.assert_count_equal(glob.glob([os.fsencode(x) for x in p], **kwargs), bres)
@@ -345,8 +352,10 @@ class _TestGlob:
         print("EXPECTED: ", results)
 
         if cls.cwd_temp:
-            with change_cwd(cls.tempdir):
-                res = cls.nglob(*pattern, flags=flags) if negative else cls.glob(*pattern, flags=flags)
+            if negative:
+                res = cls.nglob(*pattern, flags=flags, root_dir=cls.tempdir)
+            else:
+                res = cls.glob(*pattern, flags=flags, root_dir=cls.tempdir)
         else:
             res = cls.nglob(*pattern, flags=flags) if negative else cls.glob(*pattern, flags=flags)
         if results is not None:
@@ -854,16 +863,14 @@ class Testglob(_TestGlob):
     def test_negateall(self):
         """Negate applied to all files."""
 
-        with change_cwd(self.tempdir):
-            for file in glob.glob('!**/', flags=glob.N | glob.NEGATEALL | glob.G):
-                self.assertFalse(os.path.isdir(file))
+        for file in glob.glob('!**/', flags=glob.N | glob.NEGATEALL | glob.G, root_dir=self.tempdir):
+            self.assertFalse(os.path.isdir(file))
 
     def test_negateall_bytes(self):
         """Negate applied to all files."""
 
-        with change_cwd(self.tempdir):
-            for file in glob.glob(b'!**/', flags=glob.N | glob.NEGATEALL | glob.G):
-                self.assertFalse(os.path.isdir(file))
+        for file in glob.glob(b'!**/', flags=glob.N | glob.NEGATEALL | glob.G, root_dir=os.fsencode(self.tempdir)):
+            self.assertFalse(os.path.isdir(file))
 
 
 class TestGlobMarked(Testglob):
@@ -895,10 +902,27 @@ class TestCWD(_TestGlob):
             os.symlink(os.path.join('a', 'bcd'), cls.norm('sym3'))
 
     def test_cwd(self):
-        """Test glob cases."""
+        """Test root level glob on current working directory."""
 
         with change_cwd(self.tempdir):
             self.assert_equal(glob.glob('EF'), ['EF'])
+
+    def test_cwd_root_dir(self):
+        """Test root level glob when we switch directory via `root_dir`."""
+
+        self.assert_equal(glob.glob('EF', root_dir=self.tempdir), ['EF'])
+
+    @pytest.mark.skipif(not util.PY36, reason="path-like interface not supported on Python < 3.6")
+    def test_cwd_root_dir_pathlike(self):
+        """Test root level glob when we switch directory via `root_dir` with a path-like object."""
+
+        self.assert_equal(glob.glob('EF', root_dir=pathlib.Path(self.tempdir)), ['EF'])
+
+    @pytest.mark.skipif(not util.PY36, reason="path-like interface not supported on Python < 3.6")
+    def test_cwd_root_dir_pathlike_bytes(self):
+        """Test root level glob when we switch directory via `root_dir` with a path-like object."""
+
+        self.assert_equal(glob.glob(b'EF', root_dir=pathlib.Path(self.tempdir)), [b'EF'])
 
 
 class TestGlobCornerCase(_TestGlob):

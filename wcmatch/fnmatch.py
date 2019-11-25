@@ -4,7 +4,7 @@ Wild Card Match.
 A custom implementation of `fnmatch`.
 
 Licensed under MIT
-Copyright (c) 2018 Isaac Muse <isaacmuse@gmail.com>
+Copyright (c) 2018 - 2019 Isaac Muse <isaacmuse@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -100,8 +100,6 @@ def filter(filenames, patterns, *, flags=0):  # noqa A001
     obj = _wcparse.compile(_wcparse.split(patterns, flags), flags)
 
     for filename in filenames:
-        if not unix:
-            filename = _wcparse.norm_slash(filename, flags)
-        if obj.match(filename):
+        if obj.match(_wcparse.norm_slash(filename, flags) if not unix else filename):
             matches.append(filename)
     return matches

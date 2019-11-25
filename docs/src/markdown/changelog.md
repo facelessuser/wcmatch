@@ -4,6 +4,19 @@
 
 - **NEW**: Add flag `SORT` to the `glob`, `pathlib`, and `wcmatch` libraries. `SORT` is only relevant in commands that
   touch the file system. For instance, `SORT` would work in `glob`, but not `globmatch`.
+- **NEW**: Add new parameter to `glob` related functions (except in `pathlib`) called `root_dir` that allows a user to
+  specify a different working directory with either a string or path-like object. Path-like inputs are only supported on
+  Python 3.6+.
+- **NEW**: Support path-like objects for `globmatch` and `globfilter` path inputs. Path-like inputs are only supported
+  on Python 3.6+.
+- **FIX**: Filter functions should not alter the slashes of files it filters. Filtered strings and paths should be
+  returned unaltered.
+
+## 5.0.3
+
+- **FIX**: Rework `glob` relative path handling so internally it is indistinguishable from when it is given no relative
+  path and uses the current working directory. This fixes an issue where `pathlib` couldn't handle negate patterns
+  properly (`!negate`).
 
 ## 5.0.2
 

@@ -4,7 +4,7 @@ Wild Card Match.
 A custom implementation of `glob`.
 
 Licensed under MIT
-Copyright (c) 2018 Isaac Muse <isaacmuse@gmail.com>
+Copyright (c) 2018 - 2019 Isaac Muse <isaacmuse@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -109,12 +109,12 @@ def _flag_transform(flags):
 class Glob(object):
     """Glob patterns."""
 
-    def __init__(self, pattern, flags=0, curdir=None):
+    def __init__(self, pattern, flags=0, root_dir=None):
         """Initialize the directory walker object."""
 
         self.is_bytes = isinstance(pattern[0], bytes)
         self.current = b'.' if self.is_bytes else '.'
-        self.curdir = curdir if curdir is not None else self.current
+        self.root_dir = util.fscodec(root_dir, self.is_bytes) if root_dir is not None else self.current
         self.mark = bool(flags & MARK)
         self.sort = bool(flags & SORT)
         if self.mark:
@@ -228,10 +228,23 @@ class Glob(object):
             matcher = target.match
         return matcher
 
+    def prepend_base(self, path):
+        """Join path to base if pattern is not absolute."""
+
+        if self.is_abs_pattern:
+            return path
+        else:
+            return os.path.join(self.root_dir, path)
+
     def _iter(self, curdir, dir_only, deep):
         """Iterate the directory."""
 
-        scandir = self.curdir if not curdir else curdir
+        if not curdir:
+            scandir = self.root_dir
+        elif self.is_abs_pattern:
+            scandir = curdir
+        else:
+            scandir = os.path.join(self.root_dir, curdir)
 
         # Python will never return . or .., so fake it.
         for special in self.specials:
@@ -268,7 +281,7 @@ class Glob(object):
                     # Quicker to just test this way than to run through `fnmatch`.
                     if deep and self._is_hidden(f):
                         continue
-                    path = os.path.join(curdir, f)
+                    path = os.path.join(scandir, f)
                     try:
                         is_dir = os.path.isdir(path)
                     except OSError:  # pragma: no cover
@@ -384,7 +397,7 @@ class Glob(object):
                 else:
                     yield path, is_dir
 
-    def _get_starting_paths(self, curdir, dir_only, base):
+    def _get_starting_paths(self, curdir, dir_only):
         """
         Get the starting location.
 
@@ -397,19 +410,14 @@ class Glob(object):
         results = [(curdir, True)]
 
         if not self._is_parent(curdir) and not self._is_this(curdir):
-            fullpath = os.path.abspath(os.path.join(base, curdir))
+            fullpath = os.path.abspath(self.prepend_base(curdir))
             basename = os.path.basename(fullpath)
             dirname = os.path.dirname(fullpath)
             if basename:
                 matcher = self._get_matcher(basename)
-                if base not in ('.', b'.'):
-                    results = [
-                        (name, is_dir) for name, is_dir in self._glob_dir(dirname, matcher, dir_only)
-                    ]
-                else:
-                    results = [
-                        (os.path.basename(name), is_dir) for name, is_dir in self._glob_dir(dirname, matcher, dir_only)
-                    ]
+                results = [
+                    (os.path.basename(name), is_dir) for name, is_dir in self._glob_dir(dirname, matcher, dir_only)
+                ]
 
         return results
 
@@ -421,32 +429,28 @@ class Glob(object):
     def glob(self):
         """Starts off the glob iterator."""
 
-        if self.is_bytes:
-            curdir = self.curdir
-        else:
-            curdir = self.curdir
-        base = curdir
+        curdir = self.current
 
         for pattern in self.pattern:
             # If the pattern ends with `/` we return the files ending with `/`.
             dir_only = pattern[-1].dir_only if pattern else False
+            self.is_abs_pattern = pattern[0].is_drive if pattern else False
 
             if pattern:
                 if not pattern[0].is_magic:
                     # Path starts with normal plain text
                     # Lets verify the case of the starting directory (if possible)
                     this = pattern[0]
-
                     curdir = this[0]
 
                     # Abort if we cannot find the drive, or if current directory is empty
-                    if not curdir or (this.is_drive and not os.path.lexists(os.path.join(base, curdir))):
+                    if not curdir or (self.is_abs_pattern and not os.path.lexists(self.prepend_base(curdir))):
                         continue
 
                     # Make sure case matches, but running case insensitive
                     # on a case sensitive file system may return more than
                     # one starting location.
-                    results = [(curdir, True)] if this.is_drive else self._get_starting_paths(curdir, dir_only, base)
+                    results = [(curdir, True)] if self.is_abs_pattern else self._get_starting_paths(curdir, dir_only)
                     if not results:
                         continue
 
@@ -465,7 +469,7 @@ class Glob(object):
                     else:
                         # Return the file(s) and finish.
                         for match, is_dir in results:
-                            if os.path.lexists(match) and not self._is_excluded(match, is_dir):
+                            if os.path.lexists(self.prepend_base(match)) and not self._is_excluded(match, is_dir):
                                 yield self.format_path(match, is_dir, dir_only)
                 else:
                     # Path starts with a magic pattern, let's get globbing
@@ -476,16 +480,16 @@ class Glob(object):
                             yield self.format_path(match, is_dir, dir_only)
 
 
-def iglob(patterns, *, flags=0):
+def iglob(patterns, *, flags=0, root_dir=None):
     """Glob."""
 
-    yield from Glob(util.to_tuple(patterns), flags).glob()
+    yield from Glob(util.to_tuple(patterns), flags, root_dir).glob()
 
 
-def glob(patterns, *, flags=0):
+def glob(patterns, *, flags=0, root_dir=None):
     """Glob."""
 
-    return list(iglob(util.to_tuple(patterns), flags=flags))
+    return list(iglob(util.to_tuple(patterns), flags=flags, root_dir=root_dir))
 
 
 def translate(patterns, *, flags=0):
@@ -495,7 +499,7 @@ def translate(patterns, *, flags=0):
     return _wcparse.translate(_wcparse.split(patterns, flags), flags)
 
 
-def globmatch(filename, patterns, *, flags=0):
+def globmatch(filename, patterns, *, flags=0, root_dir=None):
     """
     Check if filename matches pattern.
 
@@ -503,25 +507,34 @@ def globmatch(filename, patterns, *, flags=0):
     but if `case_sensitive` is set, respect that instead.
     """
 
+    is_bytes = isinstance(patterns[0], bytes) if not isinstance(patterns, (bytes, str)) else isinstance(patterns, bytes)
+    if root_dir is not None:
+        root_dir = util.fscodec(root_dir, is_bytes)
+
     flags = _flag_transform(flags)
+    filename = util.fscodec(filename, is_bytes)
     if not _wcparse.is_unix_style(flags):
         filename = _wcparse.norm_slash(filename, flags)
-    return _wcparse.compile(_wcparse.split(patterns, flags), flags).match(filename)
+    return _wcparse.compile(_wcparse.split(patterns, flags), flags).match(filename, root_dir=root_dir)
 
 
-def globfilter(filenames, patterns, *, flags=0):
+def globfilter(filenames, patterns, *, flags=0, root_dir=None):
     """Filter names using pattern."""
 
-    matches = []
+    is_bytes = isinstance(patterns[0], bytes) if not isinstance(patterns, (bytes, str)) else isinstance(patterns, bytes)
+    if root_dir is not None:
+        root_dir = util.fscodec(root_dir, is_bytes)
 
+    matches = []
     flags = _flag_transform(flags)
     unix = _wcparse.is_unix_style(flags)
     obj = _wcparse.compile(_wcparse.split(patterns, flags), flags)
 
     for filename in filenames:
+        temp = util.fscodec(filename, is_bytes)
         if not unix:
-            filename = _wcparse.norm_slash(filename, flags)
-        if obj.match(filename):
+            temp = _wcparse.norm_slash(temp, flags)
+        if obj.match(temp, root_dir):
             matches.append(filename)
     return matches
 

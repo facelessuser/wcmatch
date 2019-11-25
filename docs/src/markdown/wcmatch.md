@@ -173,7 +173,7 @@ Checks if an abort has been issued.
 True
 ```
 
-!!! new "New 4.1.0"
+!!! new "New 4.1"
     `is_aborted` was added in 4.1.0.
 
 #### `WcMatch.get_skipped`
@@ -286,7 +286,7 @@ is called on every new [`match`](#wcmatchmatch) call.
 
 `RECURSIVE` forces a recursive search that will crawl all subdirectories.
 
-!!! new "New 3.0.0"
+!!! new "New 3.0"
     Added in 3.0 and must be used instead of the old `recursive` parameter which has also been removed as of 3.0.
 
 #### `wcmatch.HIDDEN, wcmatch.HD` {: #wcmatchhidden}
@@ -294,7 +294,7 @@ is called on every new [`match`](#wcmatchmatch) call.
 `HIDDEN` enables the crawling of hidden directories and will return hidden files if the wildcard pattern matches. This
 enables not just dot files, but system hidden files as well.
 
-!!! new "New 3.0.0"
+!!! new "New 3.0"
     Added in 3.0 and must be used instead of the old `show_hidden` parameter which has also been removed as of 3.0.
 
 #### `wcmatch.SYMLINK, wcmatch.SL` {: #wcmatchsymlink}
@@ -302,14 +302,14 @@ enables not just dot files, but system hidden files as well.
 `SYMLINK` enables the crawling of symlink directories. By default, symlink directories are ignored during the file
 crawl.
 
-!!! new "New 3.0.0"
+!!! new "New 3.0"
     Added in 3.0. Additionally, symlinks are now ignored by default moving forward if `SYMLINK` is not enabled.
 
 #### `wcmatch.CASE, wcmatch.C` {: #wcmatchcase}
 
 `CASE` forces case sensitivity. `CASE` has higher priority than [`IGNORECASE`](#wcmatchignorecase).
 
-!!! new "New 4.3.0"
+!!! new "New 4.3"
     `CASE` is new in 4.3.0.
 
 #### `wcmatch.IGNORECASE, wcmatch.I` {: #wcmatchignorecase}
