@@ -103,6 +103,9 @@ def glob(patterns, *, flags=0, root_dir=None):
 `glob` takes a pattern (or list of patterns) and will crawl the file system returning matching files, flags, and an
 optional root directory (string or path-like object).
 
+!!! warning "Path-like Input Support"
+    Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
+
 ```pycon3
 >>> from wcmatch import glob
 >>> glob.glob(r'**/*.md')
@@ -208,6 +211,9 @@ def globmatch(filename, patterns, *, flags=0, root_dir=None):
 `globmatch` takes a file name (string or path-like object), a pattern (or list of patterns), flags, and an optional root
 directory.  It will return a boolean indicating whether the file path was matched by the pattern(s).
 
+!!! warning "Path-like Input Support"
+    Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
+
 ```pycon3
 >>> from wcmatch import glob
 >>> glob.globmatch('some/path/test.txt', r'**/*/@(*.txt|*.py)')
@@ -304,7 +310,7 @@ False
 True
 ```
 
-!!! new "New 5.1.0"
+!!! new "New 5.1"
     - `root_dir` was added in 5.1.0.
     - path-like object support for file path inputs was added in 5.1.0
 
@@ -317,6 +323,9 @@ def globfilter(filenames, patterns, *, flags=0, root_dir=None):
 `globfilter` takes a list of file paths (strings or path-like objects), a pattern (or list of patterns), and flags. It
 returns a list of all files paths that matched the pattern(s). The same logic used for [`globmatch`](#globglobmatch) is
 used for `globfilter`, albeit more efficient for processing multiple files.
+
+!!! warning "Path-like Input Support"
+    Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -431,7 +440,7 @@ escaping will be used.
 On Windows, drive letters (`C:`) and UNC host/share (`//host/share`) portions of a path will still be treated case
 insensitively, but the rest of the path will have case sensitive logic applied.
 
-!!! new "New 4.3.0"
+!!! new "New 4.3"
     `CASE` is new in 4.3.0.
 
 #### `glob.IGNORECASE, glob.I` {: #globignorecase}
@@ -517,7 +526,7 @@ logic so that the path must meet the following in order to match:
 Since `REALPATH` causes the file system to be referenced when matching a path, flags such as
 [`FORCEUNIX`](#globforceunix) and [`FORCEWIN`](#globforcewin) are not allowed with this flag and will be ignored.
 
-!!! new "NEW 3.0"
+!!! new "New 3.0"
     `REALPATH` was added in 3.0.
 
 #### `glob.DOTGLOB, glob.D` {: #globdotglob}
@@ -627,7 +636,7 @@ or [`iglob`](#globiglob). It also will not work when using the [`REALPATH`](#glo
 
 If `FORCEWIN` is used along side [`FORCEUNIX`](#globforceunix), both will be ignored.
 
-!!! new "New 4.2.0"
+!!! new "New 4.2"
     `FORCEWIN` is new in 4.2.0.
 
 #### `glob.FORCEUNIX, glob.U` {: #globforceunix}
@@ -643,7 +652,7 @@ use case insensitivity.
 
 If `FORCEUNIX` is used along side [`FORCEWIN`](#globforcewin), both will be ignored.
 
-!!! new "New 4.2.0"
+!!! new "New 4.2"
     `FORCEUNIX` is new in 4.2.0.
 
 --8<--
