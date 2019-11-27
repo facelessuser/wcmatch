@@ -919,7 +919,7 @@
                 
                 
                 <h1 id="wcmatchwcmatch"><code>wcmatch.wcmatch</code><a class="headerlink" href="#wcmatchwcmatch" title="Permanent link"></a></h1>
-<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">wcmatch</span>
 </pre></div>
 
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link"></a></h2>
@@ -979,44 +979,44 @@ enabled via the <a href="#wcmatchhidden"><code>HIDDEN</code></a> and <a href="#w
 </div>
 <h3 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link"></a></h3>
 <p>Searching for files:</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;]</span>
 </pre></div>
 
 <p>Recursively searching for files:</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">RECURSIVE</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./docs/src/markdown/changelog.md&#39;, &#39;./docs/src/markdown/fnmatch.md&#39;, &#39;./docs/src/markdown/glob.md&#39;, &#39;./docs/src/markdown/index.md&#39;, &#39;./docs/src/markdown/installation.md&#39;, &#39;./docs/src/markdown/license.md&#39;, &#39;./docs/src/markdown/wcmatch.md&#39;, &#39;./docs/src/markdown/_snippets/abbr.md&#39;, &#39;./docs/src/markdown/_snippets/links.md&#39;, &#39;./docs/src/markdown/_snippets/refs.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>
 </pre></div>
 
 <p>Excluding directories:</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;docs&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">RECURSIVE</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>
 </pre></div>
 
 <p>Using file negation patterns:</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt|!README*&#39;</span><span class="p">,</span> <span class="s1">&#39;docs&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">RECURSIVE</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>
 </pre></div>
 
 <p>You can also use negation patterns in directory exclude. Here we avoid all folders with <code>*</code>, but add an exception for
 <code>requirements</code>. It should be noted that you cannot add an exception for the child of an excluded folder.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;*|!requirements&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">RECURSIVE</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>
 </pre></div>
 
 <p>Negative patterns can be given by themselves.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;!requirements&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">RECURSIVE</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>
 </pre></div>
 
 <p>Enabling hidden files:</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.yml&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./appveyor.yml&#39;, &#39;./mkdocs.yml&#39;]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.yml&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">HIDDEN</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
@@ -1026,14 +1026,14 @@ enabled via the <a href="#wcmatchhidden"><code>HIDDEN</code></a> and <a href="#w
 <h2 id="methods">Methods<a class="headerlink" href="#methods" title="Permanent link"></a></h2>
 <h4 id="wcmatchmatch"><code>WcMatch.match</code><a class="headerlink" href="#wcmatchmatch" title="Permanent link"></a></h4>
 <p>Perform match returning files that match the patterns.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;]</span>
 </pre></div>
 
 <h4 id="wcmatchimatch"><code>WcMatch.imatch</code><a class="headerlink" href="#wcmatchimatch" title="Permanent link"></a></h4>
 <p>Perform match returning an iterator of files that match the patterns.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">imatch</span><span class="p">())</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;]</span>
 </pre></div>
@@ -1043,7 +1043,7 @@ enabled via the <a href="#wcmatchhidden"><code>HIDDEN</code></a> and <a href="#w
 you can call <a href="#wcmatchis_aborted"><code>is_aborted</code></a> to check if a request to abort has been made. So if work on a file is
 being done in an <a href="#wcmatchon_match"><code>on_match</code></a>, you can check if there has been a request to kill the process, and tie
 up loose ends gracefully.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcm</span> <span class="o">=</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">wcm</span><span class="o">.</span><span class="n">imatch</span><span class="p">():</span>
 <span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
@@ -1058,7 +1058,7 @@ kill and sets it before the match is started, when the match is started, it will
 conditions depending on how you are using <code>WcMatch</code>.</p>
 <h4 id="wcmatchreset"><code>WcMatch.reset</code><a class="headerlink" href="#wcmatchreset" title="Permanent link"></a></h4>
 <p>Resets the abort state after running <code>kill</code>.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcm</span> <span class="o">=</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">wcm</span><span class="o">.</span><span class="n">imatch</span><span class="p">():</span>
 <span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
@@ -1082,12 +1082,12 @@ True
 </pre></div>
 
 <div class="admonition new">
-<p class="admonition-title">New 4.1.0</p>
+<p class="admonition-title">New 4.1</p>
 <p><code>is_aborted</code> was added in 4.1.0.</p>
 </div>
 <h4 id="wcmatchget_skipped"><code>WcMatch.get_skipped</code><a class="headerlink" href="#wcmatchget_skipped" title="Permanent link"></a></h4>
 <p>Returns the number of skipped files. Files in skipped folders are not included in the count.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcm</span> <span class="o">=</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">wcm</span><span class="o">.</span><span class="n">imatch</span><span class="p">())</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;]</span>
@@ -1169,27 +1169,27 @@ is called on every new <a href="#wcmatchmatch"><code>match</code></a> call.</p>
 <h4 id="wcmatchrecursive"><code>wcmatch.RECURSIVE, wcmatch.RV</code><a class="headerlink" href="#wcmatchrecursive" title="Permanent link"></a></h4>
 <p><code>RECURSIVE</code> forces a recursive search that will crawl all subdirectories.</p>
 <div class="admonition new">
-<p class="admonition-title">New 3.0.0</p>
+<p class="admonition-title">New 3.0</p>
 <p>Added in 3.0 and must be used instead of the old <code>recursive</code> parameter which has also been removed as of 3.0.</p>
 </div>
 <h4 id="wcmatchhidden"><code>wcmatch.HIDDEN, wcmatch.HD</code><a class="headerlink" href="#wcmatchhidden" title="Permanent link"></a></h4>
 <p><code>HIDDEN</code> enables the crawling of hidden directories and will return hidden files if the wildcard pattern matches. This
 enables not just dot files, but system hidden files as well.</p>
 <div class="admonition new">
-<p class="admonition-title">New 3.0.0</p>
+<p class="admonition-title">New 3.0</p>
 <p>Added in 3.0 and must be used instead of the old <code>show_hidden</code> parameter which has also been removed as of 3.0.</p>
 </div>
 <h4 id="wcmatchsymlink"><code>wcmatch.SYMLINK, wcmatch.SL</code><a class="headerlink" href="#wcmatchsymlink" title="Permanent link"></a></h4>
 <p><code>SYMLINK</code> enables the crawling of symlink directories. By default, symlink directories are ignored during the file
 crawl.</p>
 <div class="admonition new">
-<p class="admonition-title">New 3.0.0</p>
+<p class="admonition-title">New 3.0</p>
 <p>Added in 3.0. Additionally, symlinks are now ignored by default moving forward if <code>SYMLINK</code> is not enabled.</p>
 </div>
 <h4 id="wcmatchcase"><code>wcmatch.CASE, wcmatch.C</code><a class="headerlink" href="#wcmatchcase" title="Permanent link"></a></h4>
 <p><code>CASE</code> forces case sensitivity. <code>CASE</code> has higher priority than <a href="#wcmatchignorecase"><code>IGNORECASE</code></a>.</p>
 <div class="admonition new">
-<p class="admonition-title">New 4.3.0</p>
+<p class="admonition-title">New 4.3</p>
 <p><code>CASE</code> is new in 4.3.0.</p>
 </div>
 <h4 id="wcmatchignorecase"><code>wcmatch.IGNORECASE, wcmatch.I</code><a class="headerlink" href="#wcmatchignorecase" title="Permanent link"></a></h4>
@@ -1215,7 +1215,7 @@ patterns.</p>
 is mainly provided for cases where you may have multiple folders with the same name, but you want to target a specific
 folder to exclude. The path name compared will be the entire path relative to the base path.  So if the provided base
 folder was <code>.</code>, and the folder under evaluation is <code>./some/folder</code>, <code>some/folder</code> will be matched against the pattern.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;docs/src/markdown&#39;</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">DIRPATHNAME</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>
 </pre></div>
@@ -1224,7 +1224,7 @@ folder was <code>.</code>, and the folder under evaluation is <code>./some/folde
 <p><code>FILEPATHNAME</code> will enable path name searching for the file patterns, but it will not apply to directory exclude
 patterns. The path name compared will be the entire path relative to the base path.  So if the provided base folder was
 <code>.</code>, and the file under evaluation is <code>./some/file.txt</code>, <code>some/file.txt</code> will be matched against the pattern.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;**/*.md|!**/_snippets/*&#39;</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">FILEPATHNAME</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">GLOBSTAR</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./docs/src/markdown/changelog.md&#39;, &#39;./docs/src/markdown/fnmatch.md&#39;, &#39;./docs/src/markdown/glob.md&#39;, &#39;./docs/src/markdown/index.md&#39;, &#39;./docs/src/markdown/license.md&#39;, &#39;./docs/src/markdown/wcmatch.md&#39;]</span>
 </pre></div>
@@ -1257,7 +1257,7 @@ pattern that is anchored to the current base path, in this case <code>.</code>.<
 <h4 id="wcmatchglobstar"><code>wcmatch.GLOBSTAR, wcmatch.G</code><a class="headerlink" href="#wcmatchglobstar" title="Permanent link"></a></h4>
 <p>When the <a href="#wcmatchpathname"><code>PATHNAME</code></a> flag is provided, you can also enable <code>GLOBSTAR</code> to enable the recursive
 directory pattern matches with <code>**</code>.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">wcmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">wcmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">wcmatch</span><span class="o">.</span><span class="n">WcMatch</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;*.md|*.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;**/markdown&#39;</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">wcmatch</span><span class="o">.</span><span class="n">DIRPATHNAME</span> <span class="o">|</span> <span class="n">wcmatch</span><span class="o">.</span><span class="n">GLOBSTAR</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">()</span>
 <span class="go">[&#39;./LICENSE.md&#39;, &#39;./README.md&#39;, &#39;./requirements/docs.txt&#39;, &#39;./requirements/lint.txt&#39;, &#39;./requirements/setup.txt&#39;, &#39;./requirements/test.txt&#39;]</span>
 </pre></div>
