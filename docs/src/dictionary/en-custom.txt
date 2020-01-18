@@ -17,6 +17,7 @@ Pathlib
 Preprocess
 PyPI
 Symlink
+Twemoji
 UNC
 Wcmatch
 Wildcard
