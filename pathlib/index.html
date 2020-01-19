@@ -36,7 +36,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.5.0">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
     
     
       
@@ -44,7 +44,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application.1b62728e.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application.30686662.css">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -55,7 +55,7 @@
       
     
     
-      <script src="../assets/javascripts/modernizr.268332fc.js"></script>
+      <script src="../assets/javascripts/modernizr.74668098.js"></script>
     
     
       
@@ -891,7 +891,7 @@
                 
                 
                 <h1 id="wcmatchpathlib"><code>wcmatch.pathlib</code><a class="headerlink" href="#wcmatchpathlib" title="Permanent link"></a></h1>
-<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
 </pre></div>
 
 <div class="admonition new">
@@ -954,13 +954,13 @@ utilize <a href="../glob/"><code>wcmatch.glob</code></a> for all glob related ac
 function the <a href="#pathlibrealpath"><code>REALPATH</code></a> flag. We do not restrict this, but we do not enable it by default.
 <a href="#pathlibrealpath"><code>REALPATH</code></a> simply forces the match to check the filesystem to see if the file exists and is a
 directory or not.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pathlib</span><span class="o">.</span><span class="n">PurePath</span><span class="p">(</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
 <span class="go">PurePosixPath(&#39;docs/src&#39;)</span>
 </pre></div>
 
 <p><code>PurePath</code> classes implement the <a href="#purepathmatch"><code>match</code></a> and <a href="#purepathglobmatch"><code>globmatch</code></a> methods:</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">PurePath</span><span class="p">(</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;src&#39;</span><span class="p">)</span>
 <span class="go">True</span>
@@ -973,7 +973,7 @@ directory or not.</p>
 you'd like to have the ease that <code>pathlib</code> offers when working with a path, but don't want it to access the filesystem.
 This is also useful if you'd like to manipulate Windows path strings on a Posix system. This class will utilize Wildcard
 Match's <a href="../glob/"><code>glob</code></a> for all glob related actions. The class is subclassed from <a href="#pathlibpurepath"><code>PurePath</code></a>.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">name</span>
 <span class="go">&#39;posix&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pathlib</span><span class="o">.</span><span class="n">PureWindowsPath</span><span class="p">(</span><span class="s1">&#39;c:/some/path&#39;</span><span class="p">)</span>
@@ -985,7 +985,7 @@ Match's <a href="../glob/"><code>glob</code></a> for all glob related actions. T
 you'd like to have the ease that <code>pathlib</code> offers when working with a path, but don't want it to access the filesystem.
 This is also useful if you'd like to manipulate Posix path strings on a Windows system. This class will utilize Wildcard
 Match's <a href="../glob/"><code>glob</code></a> for all glob related actions. The class is subclassed from <a href="#pathlibpurepath"><code>PurePath</code></a>.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">name</span>
 <span class="go">&#39;nt&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pathlib</span><span class="o">.</span><span class="n">PureWindowsPath</span><span class="p">(</span><span class="s1">&#39;/usr/local/bin&#39;</span><span class="p">)</span>
@@ -1003,13 +1003,13 @@ They include the <a href="#pathlibpurepath"><code>PurePath</code></a> methods <a
 you can force them to access the filesystem if you give either function the <a href="#pathlibrealpath"><code>REALPATH</code></a> flag. We do
 not restrict this, but we do not enable it by default. <a href="#pathlibrealpath"><code>REALPATH</code></a> simply forces the match to check
 the filesystem to see if the file exists and is a directory or not.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pathlib</span><span class="o">.</span><span class="n">PurePath</span><span class="p">(</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
 <span class="go">PosixPath(&#39;docs/src&#39;)</span>
 </pre></div>
 
 <p><code>Path</code> classes implement the <a href="#pathglob"><code>glob</code></a> and <a href="#pathrglob"><code>globmatch</code></a> methods:</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;src&#39;</span><span class="p">)</span>
 <span class="go">True</span>
@@ -1026,7 +1026,7 @@ the filesystem to see if the file exists and is a directory or not.</p>
 have the ease that <code>pathlib</code> offers when working with a path and be able to manipulate or gain access to to information
 about that file. You cannot instantiate this class on a Posix system. This class will utilize Wildcard Match's
 <a href="../glob/"><code>glob</code></a> for all glob related actions. The class is subclassed from <a href="#pathlibpath"><code>Path</code></a>.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">name</span>
 <span class="go">&#39;posix&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;c:/some/path&#39;</span><span class="p">)</span>
@@ -1038,7 +1038,7 @@ about that file. You cannot instantiate this class on a Posix system. This class
 have the ease that <code>pathlib</code> offers when working with a path and be able to manipulate or gain access to to information
 about that file. You cannot instantiate this class on a Windows system. This class will utilize Wildcard Match's
 <a href="../glob/"><code>glob</code></a> for all glob related actions. The class is subclassed from <a href="#pathlibpath"><code>Path</code></a>.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">name</span>
 <span class="go">&#39;posix&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;/usr/local/bin&#39;</span><span class="p">)</span>
@@ -1062,7 +1062,7 @@ was added at the beginning of the pattern.</p>
 directory or not.</p>
 <p>Since <a href="#pathlibpath"><code>Path</code></a> is derived from <a href="#pathlibpurepath"><code>PurePath</code></a>, this method is also available in
 <a href="#pathlibpath"><code>Path</code></a> objects.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">PurePath</span><span class="p">(</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;src&#39;</span><span class="p">)</span>
 <span class="go">True</span>
@@ -1082,7 +1082,7 @@ file path was matched by the pattern(s).</p>
 directory or not.</p>
 <p>Since <a href="#pathlibpath"><code>Path</code></a> is derived from  <a href="#pathlibpurepath"><code>PurePath</code></a>, this method is also available in
 <a href="#pathlibpath"><code>Path</code></a> objects.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">PurePath</span><span class="p">(</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;**/src&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">pathlib</span><span class="o">.</span><span class="n">GLOBSTAR</span><span class="p">)</span>
 <span class="go">True</span>
@@ -1102,7 +1102,7 @@ in respect to features, the one exception being that instead of returning path s
 <p>The one difference between this <code>glob</code> and the <a href="../glob/#globiglob"><code>iglob</code></a> API is that this function does not accept
 the <code>root_dir</code> parameter. All searches are relative to the object's path, which is evaluated relative to the current
 working directory.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;**/*.txt&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">pathlib</span><span class="o">.</span><span class="n">GLOBSTAR</span><span class="p">))</span>
 <span class="go">[PosixPath(&#39;docs/src/dictionary/en-custom.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/links.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/refs.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/abbr.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/posix.txt&#39;)]</span>
@@ -1122,7 +1122,7 @@ will all match. Essentially, the pattern behaves as if a <a href="#pathlibglobst
 the beginning of the pattern.</p>
 <p><code>rglob</code> is similar to <a href="#pathlibglob"><code>glob</code></a> except for the use of recursive logic. In all other respects, it behaves
 the same.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s1">&#39;*.txt&#39;</span><span class="p">))</span>
 <span class="go">[PosixPath(&#39;docs/src/dictionary/en-custom.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/links.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/refs.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/abbr.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/posix.txt&#39;)]</span>
@@ -1207,7 +1207,7 @@ patterns.</p>
 This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It takes
 into account things like sequences (<code>[]</code>) and extended patterns (<code>*(...)</code>) and will not parse <code>|</code> within them.  You can
 escape the delimiters if needed: <code>\|</code>.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;README.md|LICENSE.md&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">pathlib</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">))</span>
 <span class="go">[WindowsPath(&#39;README.md&#39;), WindowsPath(&#39;LICENSE.md&#39;)]</span>
 </pre></div>
@@ -1216,7 +1216,7 @@ escape the delimiters if needed: <code>\|</code>.</p>
 <p><code>MATCHBASE</code>, when a pattern has no slashes in it, will cause all glob related functions to seek for any file anywhere in
 the tree with a matching basename, or in the case of <a href="#purepathmatch"><code>match</code></a> and <a href="#purepathglobmatch"><code>globmatch</code></a>,
 path whose basename matches.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*.txt&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">pathlib</span><span class="o">.</span><span class="n">MATCHBASE</span><span class="p">))</span>
 <span class="go">[WindowsPath(&#39;docs/src/dictionary/en-custom.txt&#39;), WindowsPath(&#39;docs/src/markdown/_snippets/abbr.txt&#39;), WindowsPath(&#39;docs/src/markdown/_snippets/links.txt&#39;), WindowsPath(&#39;docs/src/markdown/_snippets/posix.txt&#39;), WindowsPath(&#39;docs/src/markdown/_snippets/refs.txt&#39;), WindowsPath(&#39;requirements/docs.txt&#39;), WindowsPath(&#39;requirements/lint.txt&#39;), WindowsPath(&#39;requirements/setup.txt&#39;), WindowsPath(&#39;requirements/test.txt&#39;), WindowsPath(&#39;requirements/tools.txt&#39;), WindowsPath(&#39;site/_snippets/abbr.txt&#39;), WindowsPath(&#39;site/_snippets/links.txt&#39;), WindowsPath(&#39;site/_snippets/posix.txt&#39;), WindowsPath(&#39;site/_snippets/refs.txt&#39;)]  </span>
 </pre></div>
@@ -1225,7 +1225,7 @@ path whose basename matches.</p>
 <p><code>NODIR</code> will cause all glob related functions to return only matched files. In the case of
 <a href="#pathlibpurepath"><code>PurePath</code></a> classes, this may not be possible as those classes do not access the file system, nor
 will they retain trailing slashes.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">pathlib</span><span class="o">.</span><span class="n">NODIR</span><span class="p">))</span>
 <span class="go">[WindowsPath(&#39;appveyor.yml&#39;), WindowsPath(&#39;LICENSE.md&#39;), WindowsPath(&#39;MANIFEST.in&#39;), WindowsPath(&#39;mkdocs.yml&#39;), WindowsPath(&#39;README.md&#39;), WindowsPath(&#39;setup.cfg&#39;), WindowsPath(&#39;setup.py&#39;), WindowsPath(&#39;tox.ini&#39;)] </span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">))</span>
@@ -1288,8 +1288,9 @@ will they retain trailing slashes.</p>
       <div class="md-footer-copyright">
         
           <div class="md-footer-copyright__highlight">
-            Copyright &copy; 2014 - 2019 <a href="https://github.com/facelessuser">Isaac Muse</a>
-<br><span class="md-footer-custom-text">emoji provided free by <a href="https://github.com/twitter/twemoji">Twemoji</a></span>
+            Copyright &copy; 2014 - 2020 <a href="https://github.com/facelessuser">Isaac Muse</a>
+<br><span class="md-footer-custom-text">emoji provided free by </span>
+<a href="https://github.com/twitter/twemoji">Twemoji</a>
 
           </div>
         
@@ -1313,7 +1314,7 @@ will they retain trailing slashes.</p>
       
     </div>
     
-      <script src="../assets/javascripts/application.a8b5e56f.js"></script>
+      <script src="../assets/javascripts/application.ac79c3b0.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       

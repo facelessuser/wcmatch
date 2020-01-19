@@ -36,7 +36,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.5.0">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
     
     
       
@@ -44,7 +44,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application.1b62728e.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application.30686662.css">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -55,7 +55,7 @@
       
     
     
-      <script src="../assets/javascripts/modernizr.268332fc.js"></script>
+      <script src="../assets/javascripts/modernizr.74668098.js"></script>
     
     
       
@@ -699,7 +699,7 @@
                 
                 
                 <h1 id="wcmatchfnmatch"><code>wcmatch.fnmatch</code><a class="headerlink" href="#wcmatchfnmatch" title="Permanent link"></a></h1>
-<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">fnmatch</span>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
 </pre></div>
 
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link"></a></h2>
@@ -880,13 +880,13 @@ character <code class="highlight"><span class="sa">r</span><span class="s1">&#39
 
 <p><code>fnmatch</code> takes a file name, a pattern (or list of patterns), and flags.  It will return a boolean indicating whether
 the file name was matched by the pattern(s).</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">fnmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;@(*.txt|*.py)&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">EXTMATCH</span><span class="p">)</span>
 <span class="go">True</span>
 </pre></div>
 
 <p>When applying multiple patterns, a file matches if it matches any of the patterns:</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">fnmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">r</span><span class="s1">&#39;*.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;*.py&#39;</span><span class="p">],</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">EXTMATCH</span><span class="p">)</span>
 <span class="go">True</span>
 </pre></div>
@@ -895,7 +895,7 @@ the file name was matched by the pattern(s).</p>
 will be considered matched if one of the inclusion patterns match <strong>and</strong> none of the exclusion patterns match. If an
 exclusion pattern is given without any inclusion patterns, the pattern will match nothing. Exclusion patterns are meant
 to filter other patterns, not match anything by themselves.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">fnmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.py&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;*|!*.py&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">fnamtch</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">)</span>
 <span class="go">False</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;*|!*.py&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">fnamtch</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">)</span>
@@ -910,7 +910,7 @@ to filter other patterns, not match anything by themselves.</p>
 exclusion patterns to assume all files should be filtered with the exclusion pattern(s) with the
 <a href="#fnmatchnegateall"><code>NEGATEALL</code></a> flag. Essentially, it means if you use a pattern such as <code>!*.md</code>, it will assume two
 pattern were given: <code>*</code> and <code>!*.md</code>.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">fnmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.py&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;!*.py&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">fnamtch</span><span class="o">.</span><span class="n">NEGATEALL</span><span class="p">)</span>
 <span class="go">False</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;!*.py&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">fnamtch</span><span class="o">.</span><span class="n">NEGATEALL</span><span class="p">)</span>
@@ -924,7 +924,7 @@ pattern were given: <code>*</code> and <code>!*.md</code>.</p>
 <p><code>filter</code> takes a list of filenames, a pattern (or list of patterns), and flags. It returns a list of all files that
 matched the pattern(s). The same logic used for <a href="#fnmatchfnmatch"><code>fnmatch</code></a> is used for <code>filter</code>, albeit more efficient
 for processing multiple files.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">fnmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">filter</span><span class="p">([</span><span class="s1">&#39;a.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;b.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;c.py&#39;</span><span class="p">],</span> <span class="sa">r</span><span class="s1">&#39;*.txt&#39;</span><span class="p">)</span>
 <span class="go">[&#39;a.txt&#39;, &#39;b.txt&#39;]</span>
 </pre></div>
@@ -937,7 +937,7 @@ for processing multiple files.</p>
 exclusion patterns. The lists contain the regular expressions used for matching the given patterns. It should be noted
 that a file is considered matched if it matches at least one inclusion pattern and matches <strong>none</strong> of the exclusion
 patterns.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">translate</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">translate</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;*.{a,{b,c}}&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">BRACE</span><span class="p">)</span>
 <span class="go">([&#39;^(?s:(?=.).*?\\.a)$&#39;, &#39;^(?s:(?=.).*?\\.b)$&#39;, &#39;^(?s:(?=.).*?\\.c)$&#39;], [])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;**|!*.{a,{b,c}}&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">BRACE</span> <span class="o">|</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">)</span>
@@ -1005,7 +1005,7 @@ patterns.</p>
 This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It takes
 into account things like sequences (<code>[]</code>) and extended patterns (<code>*(...)</code>) and will not parse <code>|</code> within them.  You can
 escape the delimiters if needed: <code>\|</code>.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">fnmatch</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">fnmatch</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;*.txt|*.py&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">)</span>
 <span class="go">True</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="s1">&#39;test.py&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;*.txt|*.py&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">)</span>
@@ -1087,8 +1087,9 @@ to use case insensitivity.</p>
       <div class="md-footer-copyright">
         
           <div class="md-footer-copyright__highlight">
-            Copyright &copy; 2014 - 2019 <a href="https://github.com/facelessuser">Isaac Muse</a>
-<br><span class="md-footer-custom-text">emoji provided free by <a href="https://github.com/twitter/twemoji">Twemoji</a></span>
+            Copyright &copy; 2014 - 2020 <a href="https://github.com/facelessuser">Isaac Muse</a>
+<br><span class="md-footer-custom-text">emoji provided free by </span>
+<a href="https://github.com/twitter/twemoji">Twemoji</a>
 
           </div>
         
@@ -1112,7 +1113,7 @@ to use case insensitivity.</p>
       
     </div>
     
-      <script src="../assets/javascripts/application.a8b5e56f.js"></script>
+      <script src="../assets/javascripts/application.ac79c3b0.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       

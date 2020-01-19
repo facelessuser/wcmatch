@@ -36,7 +36,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.5.0">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
     
     
       
@@ -44,7 +44,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application.1b62728e.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application.30686662.css">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -55,7 +55,7 @@
       
     
     
-      <script src="../assets/javascripts/modernizr.268332fc.js"></script>
+      <script src="../assets/javascripts/modernizr.74668098.js"></script>
     
     
       
@@ -839,7 +839,7 @@
                 
                 
                 <h1 id="wcmatchglob"><code>wcmatch.glob</code><a class="headerlink" href="#wcmatchglob" title="Permanent link"></a></h1>
-<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 </pre></div>
 
 <h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link"></a></h2>
@@ -968,7 +968,7 @@ system.</p>
 </pre></div>
 
 <p>Wcmatch:</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;docs/.*&#39;</span><span class="p">)</span>
 <span class="go">[&#39;docs/.&#39;, &#39;docs/..&#39;]</span>
 </pre></div>
@@ -1083,19 +1083,19 @@ optional root directory (string or path-like object).</p>
 <p class="admonition-title">Path-like Input Support</p>
 <p>Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.</p>
 </div>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;**/*.md&#39;</span><span class="p">)</span>
 <span class="go">[&#39;docs/src/markdown/_snippets/abbr.md&#39;, &#39;docs/src/markdown/_snippets/links.md&#39;, &#39;docs/src/markdown/_snippets/refs.md&#39;, &#39;docs/src/markdown/changelog.md&#39;, &#39;docs/src/markdown/fnmatch.md&#39;, &#39;docs/src/markdown/glob.md&#39;, &#39;docs/src/markdown/index.md&#39;, &#39;docs/src/markdown/installation.md&#39;, &#39;docs/src/markdown/license.md&#39;, &#39;README.md&#39;]</span>
 </pre></div>
 
 <p>Using a list, we can add exclusion patterns and also exclude directories and/or files:</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">([</span><span class="sa">r</span><span class="s1">&#39;**/*.md&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;!README.md&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;!**/_snippets&#39;</span><span class="p">],</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">NEGATE</span><span class="p">)</span>
 <span class="go">[&#39;docs/src/markdown/changelog.md&#39;, &#39;docs/src/markdown/fnmatch.md&#39;, &#39;docs/src/markdown/glob.md&#39;, &#39;docs/src/markdown/index.md&#39;, &#39;docs/src/markdown/installation.md&#39;, &#39;docs/src/markdown/license.md&#39;]</span>
 </pre></div>
 
 <p>When a glob pattern ends with a slash, it will only return directories:</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;**/&#39;</span><span class="p">)</span>
 <span class="go">[&#39;__pycache__/&#39;, &#39;docs/&#39;, &#39;docs/src/&#39;, &#39;docs/src/markdown/&#39;, &#39;docs/src/markdown/_snippets/&#39;, &#39;docs/theme/&#39;, &#39;requirements/&#39;, &#39;stuff/&#39;, &#39;tests/&#39;, &#39;tests/__pycache__/&#39;, &#39;wcmatch/&#39;, &#39;wcmatch/__pycache__/&#39;]</span>
 </pre></div>
@@ -1109,20 +1109,20 @@ no different than if you ran something like the following in Bash:</p>
 </pre></div>
 
 <p>And we see that Wildcard Match's <code>glob</code> behaves the same:</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">([</span><span class="s1">&#39;*.md&#39;</span><span class="p">,</span> <span class="s1">&#39;README.md&#39;</span><span class="p">])</span>
 <span class="go">[&#39;LICENSE.md&#39;, &#39;README.md&#39;, &#39;README.md&#39;]</span>
 </pre></div>
 
 <p>And if we apply an exclusion pattern, since the patterns share the same context, the exclusion applies to both:</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">([</span><span class="s1">&#39;*.md&#39;</span><span class="p">,</span> <span class="s1">&#39;README.md&#39;</span><span class="p">,</span> <span class="s1">&#39;!README.md&#39;</span><span class="p">],</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">NEGATE</span><span class="p">)</span>
 <span class="go">[&#39;LICENSE.md&#39;]</span>
 </pre></div>
 
 <p>Features like <a href="#globbrace"><code>BRACE</code></a> and <a href="#globsplit"><code>SPLIT</code></a> actually take a single string and breaks them up into
 multiple patterns. These features, when enabled and used, will also exhibit this behavior:</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;{*,README}.md&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">BRACE</span><span class="p">)</span>
 <span class="go">[&#39;LICENSE.md&#39;, &#39;README.md&#39;, &#39;README.md&#39;]</span>
 </pre></div>
@@ -1135,7 +1135,7 @@ multiple patterns. These features, when enabled and used, will also exhibit this
 <p>By default, <code>glob</code> uses the current working directory to evaluate relative patterns. Normally you'd have to use
 <code class="highlight"><span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="s1">&#39;/new/path&#39;</span><span class="p">)</span></code> to evaluate patterns relative to a different path. By setting <code>root_dir</code> parameter you can
 change the root path without using <code>os.chdir</code>.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
 <span class="go">[&#39;appveyor.yml&#39;, &#39;docs&#39;, &#39;LICENSE.md&#39;, &#39;MANIFEST.in&#39;, &#39;mkdocs.yml&#39;, &#39;README.md&#39;, &#39;requirements&#39;, &#39;setup.cfg&#39;, &#39;setup.py&#39;, &#39;tests&#39;, &#39;tox.ini&#39;, &#39;wcmatch&#39;]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">root_dir</span><span class="o">=</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
@@ -1151,7 +1151,7 @@ change the root path without using <code>os.chdir</code>.</p>
 </pre></div>
 
 <p><code>iglob</code> is just like <a href="#globglob"><code>glob</code></a> except it returns an iterator.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">iglob</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;**/*.md&#39;</span><span class="p">))</span>
 <span class="go">[&#39;docs/src/markdown/_snippets/abbr.md&#39;, &#39;docs/src/markdown/_snippets/links.md&#39;, &#39;docs/src/markdown/_snippets/refs.md&#39;, &#39;docs/src/markdown/changelog.md&#39;, &#39;docs/src/markdown/fnmatch.md&#39;, &#39;docs/src/markdown/glob.md&#39;, &#39;docs/src/markdown/index.md&#39;, &#39;docs/src/markdown/installation.md&#39;, &#39;docs/src/markdown/license.md&#39;, &#39;README.md&#39;]</span>
 </pre></div>
@@ -1170,13 +1170,13 @@ directory.  It will return a boolean indicating whether the file path was matche
 <p class="admonition-title">Path-like Input Support</p>
 <p>Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.</p>
 </div>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;some/path/test.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;**/*/@(*.txt|*.py)&#39;</span><span class="p">)</span>
 <span class="go">True</span>
 </pre></div>
 
 <p>When applying multiple patterns, a file path matches if it matches any of the patterns:</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;some/path/test.txt&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">r</span><span class="s1">&#39;**/*/*.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;**/*/*.py&#39;</span><span class="p">])</span>
 <span class="go">True</span>
 </pre></div>
@@ -1185,7 +1185,7 @@ directory.  It will return a boolean indicating whether the file path was matche
 be considered matched if one of the positive patterns match <strong>and</strong> none of the exclusion patterns match. If an
 exclusion pattern is given without any inclusion patterns, the pattern will match nothing. Exclusion patterns are meant
 to filter other patterns, not match anything by themselves.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;some/path/test.py&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;**|!**/*.txt&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">glob</span><span class="o">.</span><span class="n">GLOBSTAR</span> <span class="o">|</span> <span class="n">glob</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">)</span>
 <span class="go">True</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;some/path/test.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;**|!**/*.txt&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">glob</span><span class="o">.</span><span class="n">GLOBSTAR</span> <span class="o">|</span> <span class="n">glob</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">)</span>
@@ -1201,7 +1201,7 @@ exclusion patterns to assume all files should be filtered with the exclusion pat
 <a href="#globnegateall"><code>NEGATEALL</code></a> flag. Essentially, it means if you use a pattern such as <code>!*.md</code>, it means if you use a
 pattern such as <code>!*.md</code>, it will assume two pattern were given: <code>*</code> and <code>!*.md</code> (where <code>**</code> is specifically treated as
 if <a href="#globglobstar"><code>GLOBSTAR</code></a> was enabled).</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;some/path/test.py&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;!**/*.txt&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">glob</span><span class="o">.</span><span class="n">GLOBSTAR</span> <span class="o">|</span> <span class="n">glob</span><span class="o">.</span><span class="n">NEGATEALL</span><span class="p">)</span>
 <span class="go">True</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;some/path/test.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;!**/*.txt&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">glob</span><span class="o">.</span><span class="n">GLOBSTAR</span> <span class="o">|</span> <span class="n">glob</span><span class="o">.</span><span class="n">NEGATEALL</span><span class="p">)</span>
@@ -1214,7 +1214,7 @@ a directory with a pattern such as <code>*/</code>, your path must end with a sl
 directory. It also won't be able to evaluate whether a directory is a symlink or not as it will have no way of checking.
 Here we see that <code>globmatch</code> fails to match the filepath as the pattern is explicitly looking for a directory and our
 filepath does not end with <code>/</code>.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;docs&#39;</span><span class="p">,</span> <span class="s1">&#39;*/&#39;</span><span class="p">)</span>
 <span class="go">False</span>
 </pre></div>
@@ -1225,7 +1225,7 @@ will use that context to determine if the file exists, if it is a directory, doe
 what the pattern is looking vs the current working directory, or if it has symlinks that should not be matched by
 <a href="#globglobstar"><code>GLOBSTAR</code></a>.</p>
 <p>Here we use <a href="#globrealpath"><code>REALPATH</code></a> and can see that <code>globmatch</code> now knows that <code>doc</code> is a directory.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;docs&#39;</span><span class="p">,</span> <span class="s1">&#39;*/&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">REALPATH</span><span class="p">)</span>
 <span class="go">True</span>
 </pre></div>
@@ -1234,7 +1234,7 @@ what the pattern is looking vs the current working directory, or if it has symli
 example fails because the pattern is looking for any folder that is relative to the current path, which <code>/usr</code> is not.
 When we disable <a href="#globrealpath"><code>REALPATH</code></a>, it will match just fine. Both cases can be useful depending on how you plan
 to use <code>globmatch</code>.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;/usr&#39;</span><span class="p">,</span> <span class="s1">&#39;**/&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">G</span> <span class="o">|</span> <span class="n">glob</span><span class="o">.</span><span class="n">REALPATH</span><span class="p">)</span>
 <span class="go">False</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;/usr&#39;</span><span class="p">,</span> <span class="s1">&#39;**/&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">G</span><span class="p">)</span>
@@ -1243,7 +1243,7 @@ to use <code>globmatch</code>.</p>
 
 <p>If you are using <a href="#globrealpath"><code>REALPATH</code></a> and want to evaluate the paths relative to a different directory, you can
 set the <code>root_dir</code> parameter.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;markdown&#39;</span><span class="p">,</span> <span class="s1">&#39;markdown&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">REALPATH</span><span class="p">)</span>
 <span class="go">False</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;markdown&#39;</span><span class="p">,</span> <span class="s1">&#39;markdown&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">REALPATH</span><span class="p">,</span> <span class="n">root_dir</span><span class="o">=</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
@@ -1268,7 +1268,7 @@ used for <code>globfilter</code>, albeit more efficient for processing multiple 
 <p class="admonition-title">Path-like Input Support</p>
 <p>Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.</p>
 </div>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globfilter</span><span class="p">([</span><span class="s1">&#39;some/path/a.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;b.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;another/path/c.py&#39;</span><span class="p">],</span> <span class="sa">r</span><span class="s1">&#39;**/*.txt&#39;</span><span class="p">)</span>
 <span class="go">[&#39;some/path/a.txt&#39;, &#39;b.txt&#39;]</span>
 </pre></div>
@@ -1292,7 +1292,7 @@ be matched by <code>GLOBSTAR</code>. See <a href="#globglobmatch"><code>globmatc
 exclusion patterns. The lists contain the regular expressions used for matching the given patterns. It should be noted
 that a file is considered matched if it matches at least one inclusion pattern and matches <strong>none</strong> of the exclusion
 patterns.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;**/*.{py,txt}&#39;</span><span class="p">)</span>
 <span class="go">([&#39;^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?\\.py[\\/]*?)$&#39;, &#39;^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?\\.txt[\\/]*?)$&#39;], [])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;**|!**/*.{py,txt}&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">NEGATE</span> <span class="o">|</span> <span class="n">glob</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">)</span>
@@ -1311,7 +1311,7 @@ it used to be, but is more efficient.</p>
 <p>This escapes special glob meta characters so they will be treated as literal characters.  It escapes using backslashes.
 It will escape <code>-</code>, <code>!</code>, <code>*</code>, <code>?</code>, <code>(</code>, <code>[</code>, <code>|</code>, <code>^</code>, <code>{</code>, and <code>\</code>. On Windows, it will specifically only escape <code>\</code>
 when not already escaped (<code>\\</code>). <code>/</code> and <code>\\</code> (on Windows) are not escaped as they are path separators.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="s1">&#39;some/path?/**file**</span><span class="si">{}</span><span class="s1">.txt&#39;</span><span class="p">)</span>
 <span class="go">&#39;some/path\\?/\\*\\*file\\*\\*\\{}.txt&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;some/path?/**file**</span><span class="si">{}</span><span class="s1">.txt&#39;</span><span class="p">,</span> <span class="n">glob</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="s1">&#39;some/path?/**file**</span><span class="si">{}</span><span class="s1">.txt&#39;</span><span class="p">))</span>
@@ -1339,7 +1339,7 @@ force Windows style escaping.</p>
 
 <p>This is like <a href="#globescape"><code>escape</code></a> except it will apply raw character string escapes before doing meta character
 escapes.  This is meant for use with the <a href="#globrawchars"><code>RAWCHARS</code></a> flag.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">raw_escape</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;some/path?/\x2a\x2afile\x2a\x2a</span><span class="si">{}</span><span class="s1">.txt&#39;</span><span class="p">)</span>
 <span class="go">&#39;some/path\\?/\\*\\*file\\*\\*\\{}.txt&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;some/path?/**file**</span><span class="si">{}</span><span class="s1">.txt&#39;</span><span class="p">,</span> <span class="n">glob</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;some/path?/\x2a\x2afile\x2a\x2a</span><span class="si">{}</span><span class="s1">.txt&#39;</span><span class="p">),</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">RAWCHARS</span><span class="p">)</span>
@@ -1463,7 +1463,7 @@ patterns.</p>
 This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It takes
 into account things like sequences (<code>[]</code>) and extended patterns (<code>*(...)</code>) and will not parse <code>|</code> within them.  You can
 escape the delimiters if needed: <code>\|</code>.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;*.txt|*.py&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">)</span>
 <span class="go">True</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;test.py&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;*.txt|*.py&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">)</span>
@@ -1479,7 +1479,7 @@ it is important to ensure directory paths have trailing slashes as these functio
 directory otherwise (except when <a href="#globrealpath"><code>REALPATH</code></a> is enabled). If you have <a href="#globrealpath"><code>REALPATH</code></a>
 enabled, ensuring the files have trailing slashes can still save you a call to <code>os.path.isdir</code> as
 <a href="#globrealpath"><code>REALPATH</code></a> resorts to calling it if there is no trailing slash.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">MARK</span><span class="p">)</span>
 <span class="go">[&#39;appveyor.yml&#39;, &#39;base.patch&#39;, &#39;basematch.diff&#39;, &#39;docs/&#39;, &#39;LICENSE.md&#39;, &#39;MANIFEST.in&#39;, &#39;mkdocs.yml&#39;, &#39;README.md&#39;, &#39;requirements/&#39;, &#39;setup.cfg&#39;, &#39;setup.py&#39;, &#39;tests/&#39;, &#39;tools/&#39;, &#39;tox.ini&#39;, &#39;wcmatch/&#39;]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
@@ -1494,7 +1494,7 @@ enabled, ensuring the files have trailing slashes can still save you a call to <
 <p><code>MATCHBASE</code>, when a pattern has no slashes in it, will cause <a href="#globglob"><code>glob</code></a> and <a href="#globiglob"><code>iglob</code></a> to seek for
 any file anywhere in the tree with a matching basename. When enabled for <a href="#globglobfilter"><code>globfilter</code></a> and
 <a href="#globglobmatch"><code>globmatch</code></a>, any path whose basename matches.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*.txt&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">MATCHBASE</span><span class="p">)</span>
 <span class="go">[&#39;docs/src/dictionary/en-custom.txt&#39;, &#39;docs/src/markdown/_snippets/abbr.txt&#39;, &#39;docs/src/markdown/_snippets/links.txt&#39;, &#39;docs/src/markdown/_snippets/posix.txt&#39;, &#39;docs/src/markdown/_snippets/refs.txt&#39;, &#39;requirements/docs.txt&#39;, &#39;requirements/lint.txt&#39;, &#39;requirements/setup.txt&#39;, &#39;requirements/test.txt&#39;, &#39;requirements/tools.txt&#39;]</span>
 </pre></div>
@@ -1505,7 +1505,7 @@ any file anywhere in the tree with a matching basename. When enabled for <a href
 </div>
 <h4 id="globnodir"><code>glob.NODIR, glob.O</code><a class="headerlink" href="#globnodir" title="Permanent link"></a></h4>
 <p><code>NODIR</code> will cause <a href="#globglob"><code>glob</code></a>, <a href="#globiglob"><code>iglob</code></a>, <a href="#globglobmatch"><code>globmatch</code></a>, and <a href="#globglobfilter"><code>globfilter</code></a> to return only matched files.</p>
-<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">NODIR</span><span class="p">)</span>
 <span class="go">[&#39;appveyor.yml&#39;, &#39;LICENSE.md&#39;, &#39;MANIFEST.in&#39;, &#39;mkdocs.yml&#39;, &#39;README.md&#39;, &#39;setup.cfg&#39;, &#39;setup.py&#39;, &#39;spell.log&#39;, &#39;tox.ini&#39;]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
@@ -1594,8 +1594,9 @@ use case insensitivity.</p>
       <div class="md-footer-copyright">
         
           <div class="md-footer-copyright__highlight">
-            Copyright &copy; 2014 - 2019 <a href="https://github.com/facelessuser">Isaac Muse</a>
-<br><span class="md-footer-custom-text">emoji provided free by <a href="https://github.com/twitter/twemoji">Twemoji</a></span>
+            Copyright &copy; 2014 - 2020 <a href="https://github.com/facelessuser">Isaac Muse</a>
+<br><span class="md-footer-custom-text">emoji provided free by </span>
+<a href="https://github.com/twitter/twemoji">Twemoji</a>
 
           </div>
         
@@ -1619,7 +1620,7 @@ use case insensitivity.</p>
       
     </div>
     
-      <script src="../assets/javascripts/application.a8b5e56f.js"></script>
+      <script src="../assets/javascripts/application.ac79c3b0.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       
