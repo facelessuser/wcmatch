@@ -4,7 +4,7 @@ Wild Card Match.
 A custom implementation of `fnmatch`.
 
 Licensed under MIT
-Copyright (c) 2018 - 2019 Isaac Muse <isaacmuse@gmail.com>
+Copyright (c) 2018 - 2020 Isaac Muse <isaacmuse@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -378,20 +378,21 @@ class WcPathSplit(object):
     be consecutive literal file parts or individual glob parts.
     Each part will will contain info regarding whether they are
     a directory pattern or a file pattern and whether the part
-    is "magic": ["pattern", is_magic, is_directory]. Is directory
-    is determined by a trailing OS separator on the part.
+    is "magic", etc.: `["pattern", is_magic, is_globstar, dir_only, is_drive]`.
 
     Example:
-        "**/this/is_literal/*magic?/@(magic|part)"
+        `"**/this/is_literal/*magic?/@(magic|part)"`
 
         Would  become:
 
+        ```
         [
-            ["**", True, True],
-            ["this/is_literal/", False, True],
-            ["*magic?", True, True],
-            ["@(magic|part)", True, True]
+            ["**", True, True, False, False],
+            ["this/is_literal/", False, False, True, False],
+            ["*magic?", True, False, True, False],
+            ["@(magic|part)", True, False, False, False]
         ]
+        ```
 
     """
 

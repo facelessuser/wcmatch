@@ -4,7 +4,7 @@ Wild Card Match.
 A module for performing wild card matches.
 
 Licensed under MIT
-Copyright (c) 2018 - 2019 Isaac Muse <isaacmuse@gmail.com>
+Copyright (c) 2018 - 2020 Isaac Muse <isaacmuse@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
