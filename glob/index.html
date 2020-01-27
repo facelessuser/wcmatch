@@ -981,12 +981,13 @@ system.</p>
 </li>
 </ul>
 <h2 id="posix-character-classes">POSIX Character Classes<a class="headerlink" href="#posix-character-classes" title="Permanent link"></a></h2>
-<p>A number of POSIX style character classes are available in the form <code>[:posix:]</code>. They must be used inside sequences: <code>[[:posix:]]</code>. For byte strings, the <code>C</code> locale is used, and the values will for each character class are found in the table below under <code>ASCII</code>. When used in a Unicode string, Unicode properties will be used.</p>
+<p>A number of POSIX style character classes are available in the form <code>[:alnum:]</code>. They must be used inside sequences:
+<code>[[:digit:]]</code>. For byte strings, the <code>C</code> locale is used, and the values will for each character class are found in the
+table below under ASCII. When used in a Unicode string, Unicode properties will be used.</p>
 <table>
 <thead>
 <tr>
-<th>[:posix:]</th>
-<th>\p{posix}</th>
+<th>Property</th>
 <th>ASCII</th>
 <th>Unicode</th>
 </tr>
@@ -994,84 +995,76 @@ system.</p>
 <tbody>
 <tr>
 <td><code>alnum</code></td>
-<td><code>Alnum</code></td>
 <td><code>[a-zA-Z0-9]</code></td>
 <td><code>[\p{L&amp;}\p{Nd}]</code></td>
 </tr>
 <tr>
 <td><code>alpha</code></td>
-<td><code>Alpha</code></td>
 <td><code>[a-zA-Z]</code></td>
 <td><code>[\p{L&amp;}]</code></td>
 </tr>
 <tr>
 <td><code>ascii</code></td>
-<td><code>ASCII</code></td>
 <td><code>[\x00-\x7F]</code></td>
 <td><code>[\x00-\x7F]</code></td>
 </tr>
 <tr>
 <td><code>blank</code></td>
-<td><code>Blank</code></td>
 <td><code>[ \t]</code></td>
 <td><code>[\p{Zs}\t]</code></td>
 </tr>
 <tr>
 <td><code>cntrl</code></td>
-<td><code>Cntrl</code></td>
 <td><code>[\x00-\x1F\x7F]</code></td>
 <td><code>[\p{Cc}]</code></td>
 </tr>
 <tr>
 <td><code>digit</code></td>
-<td><code>Digit</code></td>
 <td><code>[0-9]</code></td>
 <td><code>[\p{Nd}]</code></td>
 </tr>
 <tr>
 <td><code>graph</code></td>
-<td><code>Graph</code></td>
 <td><code>[\x21-\x7E]</code></td>
 <td><code>[^\p{Z}\p{C}]</code></td>
 </tr>
 <tr>
 <td><code>lower</code></td>
-<td><code>Lower</code></td>
 <td><code>[a-z]</code></td>
 <td><code>[\p{Ll}]</code></td>
 </tr>
 <tr>
 <td><code>print</code></td>
-<td><code>Print</code></td>
 <td><code>[\x20-\x7E]</code></td>
 <td><code>[\P{C}]</code></td>
 </tr>
 <tr>
 <td><code>punct</code></td>
-<td><code>Punct</code></td>
 <td><code>[!\"\#$%&amp;'()*+,\-./:;&lt;=&gt;?@\[\\\]^_`{}~]</code></td>
 <td><code>[\p{P}\p{S}]</code></td>
 </tr>
 <tr>
 <td><code>space</code></td>
-<td><code>Space</code></td>
 <td><code>[ \t\r\n\v\f]</code></td>
 <td><code>[\p{Z}\t\r\n\v\f]</code></td>
 </tr>
 <tr>
 <td><code>upper</code></td>
-<td><code>Upper</code></td>
 <td><code>[A-Z]</code></td>
 <td><code>[\p{Lu}]</code></td>
 </tr>
 <tr>
 <td><code>xdigit</code></td>
-<td><code>XDigit</code></td>
 <td><code>[A-Fa-f0-9]</code></td>
 <td><code>[A-Fa-f0-9]</code></td>
 </tr>
 </tbody>
 </table>
+<div class="admonition tip">
+<p class="admonition-title">Unicode Properties</p>
+<p>If you are confused by the notation depicting Unicode properties (<code>\p{Cc}</code> etc.), please checkout this
+<a href="https://facelessuser.github.io/backrefs/#special-syntax-exceptions">link</a> to get more info.</p>
+</div>
 <h2 id="api">API<a class="headerlink" href="#api" title="Permanent link"></a></h2>
 <h4 id="globglob"><code>glob.glob</code><a class="headerlink" href="#globglob" title="Permanent link"></a></h4>
 <div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">glob</span><span class="p">(</span><span class="n">patterns</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">root_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>

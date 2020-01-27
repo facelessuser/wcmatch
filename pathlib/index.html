@@ -929,6 +929,25 @@ matching:</p>
 <p><a href="#pathglob"><code>glob</code></a> and <a href="#pathrglob"><code>rglob</code></a> do not enable <a href="#pathlibglobstar"><code>GLOBSTAR</code></a> or
   <a href="#pathlibdotglob"><code>DOTGLOB</code></a> by default. These flags must be passed in to take advantage of this functionality.</p>
 </li>
+<li>
+<p>Python's <a href="https://docs.python.org/3/library/pathlib.html"><code>pathlib</code></a>, when using <code>match</code> has logic to ignore <code>.</code> when used as a directory. In our
+  implementation, <code>.</code> explicitly matches a path with <code>.</code> as a directory part. Since <a href="https://docs.python.org/3/library/pathlib.html"><code>pathlib</code></a> normalizes
+  paths by removing <code>.</code> directories, there is really no reason to use them in your patterns. If you expect <code>.</code>, when
+  used as a directory, to be ignored, then this is a difference you should be aware of.</p>
+<p>Our behavior mirrors Bash in that when you glob with <code>.</code> your paths are returned with <code>.</code>. And when you don't, the
+path's are returned without:</p>
+<div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">echo</span> ./wcmatch/*.py
+<span class="go">./wcmatch/__init__.py ./wcmatch/__meta__.py ./wcmatch/_wcparse.py ./wcmatch/fnmatch.py ./wcmatch/glob.py ./wcmatch/pathlib.py ./wcmatch/util.py ./wcmatch/wcmatch.py</span>
+</pre></div>
+
+<div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">echo</span> wcmatch/*.py
+<span class="go">wcmatch/__init__.py wcmatch/__meta__.py wcmatch/_wcparse.py wcmatch/fnmatch.py wcmatch/glob.py wcmatch/pathlib.py wcmatch/util.py wcmatch/wcmatch.py</span>
+</pre></div>
+
+<p><a href="../glob/#globglobmatch"><code>globmatch</code></a>'s goal, which <a href="#purepathmatch"><code>match</code></a> uses, is to match what
+<a href="../glob/#globglob"><code>glob</code></a> globs. So when you use <a href="#purepathmatch"><code>match</code></a> with a <code>.</code>, you are requesting a path
+where <code>.</code> is explicitly used.</p>
+</li>
 </ul>
 <h3 id="similarities">Similarities<a class="headerlink" href="#similarities" title="Permanent link"></a></h3>
 <p>As far as similarities, all non-glob related methods should behave exactly like Python's as our version is derived from
