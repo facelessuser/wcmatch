@@ -38,6 +38,28 @@ matching:
 - [`glob`](#pathglob) and [`rglob`](#pathrglob) do not enable [`GLOBSTAR`](#pathlibglobstar) or
   [`DOTGLOB`](#pathlibdotglob) by default. These flags must be passed in to take advantage of this functionality.
 
+- Python's [`pathlib`][pathlib], when using `match` has logic to ignore `.` when used as a directory. In our
+  implementation, `.` explicitly matches a path with `.` as a directory part. Since [`pathlib`][pathlib] normalizes
+  paths by removing `.` directories, there is really no reason to use them in your patterns. If you expect `.`, when
+  used as a directory, to be ignored, then this is a difference you should be aware of.
+
+    Our behavior mirrors Bash in that when you glob with `.` your paths are returned with `.`. And when you don't, the
+    path's are returned without:
+
+    ```console
+    $ echo ./wcmatch/*.py
+    ./wcmatch/__init__.py ./wcmatch/__meta__.py ./wcmatch/_wcparse.py ./wcmatch/fnmatch.py ./wcmatch/glob.py ./wcmatch/pathlib.py ./wcmatch/util.py ./wcmatch/wcmatch.py
+    ```
+
+    ```console
+    $ echo wcmatch/*.py
+    wcmatch/__init__.py wcmatch/__meta__.py wcmatch/_wcparse.py wcmatch/fnmatch.py wcmatch/glob.py wcmatch/pathlib.py wcmatch/util.py wcmatch/wcmatch.py
+    ```
+
+    [`globmatch`](./glob.md#globglobmatch)'s goal, which [`match`](#purepathmatch) uses, is to match what
+    [`glob`](./glob.md#globglob) globs. So when you use [`match`](#purepathmatch) with a `.`, you are requesting a path
+    where `.` is explicitly used.
+
 ### Similarities
 
 As far as similarities, all non-glob related methods should behave exactly like Python's as our version is derived from
