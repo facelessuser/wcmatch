@@ -374,8 +374,8 @@ class WcPathSplit(object):
     """
     Split glob pattern on "magic" file and directories.
 
-    Glob pattern return a list of pieces. Each piece will either
-    be consecutive literal file parts or individual glob parts.
+    Glob pattern return a list of patterns broken down at the directory
+    boundary. Each piece will either be a literal file part or a magic part.
     Each part will will contain info regarding whether they are
     a directory pattern or a file pattern and whether the part
     is "magic", etc.: `["pattern", is_magic, is_globstar, dir_only, is_drive]`.
@@ -388,7 +388,8 @@ class WcPathSplit(object):
         ```
         [
             ["**", True, True, False, False],
-            ["this/is_literal/", False, False, True, False],
+            ["this", False, False, True, False],
+            ["is_literal", False, False, True, False],
             ["*magic?", True, False, True, False],
             ["@(magic|part)", True, False, False, False]
         ]
