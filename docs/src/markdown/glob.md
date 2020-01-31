@@ -494,7 +494,7 @@ When `MINUSNEGATE` is used with [`NEGATE`](#globnegate), exclusion patterns are 
     `GLOBSTAR` will no longer match or traverse symlink directories. This models the recent behavior in Bash 5.0. To
     crawl symlink directories, the new [`FOLLOW`](#globfollow) flag must be enabled.
 
-#### `glob.FOLLOW, glob.FL` {: #globfollow}
+#### `glob.FOLLOW, glob.L` {: #globfollow}
 
 `FOLLOW` will cause [`GLOBSTAR`](#globglobstar) patterns (`**`) to match and traverse symlink directories.
 
