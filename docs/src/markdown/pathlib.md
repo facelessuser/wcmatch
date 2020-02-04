@@ -359,7 +359,7 @@ When `MINUSNEGATE` is used with [`NEGATE`](#pathlibnegate), exclusion patterns a
 
 `GLOBSTAR` enables the feature where `**` matches zero or more directories.
 
-#### `pathlib.FOLLOW, pathlib.FL` {: #pathlibfollow}
+#### `pathlib.FOLLOW, pathlib.L` {: #pathlibfollow}
 
 `FOLLOW` will cause `GLOBSTAR` patterns (`**`) to match and traverse symlink directories.
 
