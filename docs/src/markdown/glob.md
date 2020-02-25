@@ -18,19 +18,19 @@ what [`glob`](#globglob) globs :slight_smile:.
 Pattern           | Meaning
 ----------------- | -------
 `*`               | Matches everything except slashes.  On Windows it will avoid matching backslashes as well as slashes.
-`**`              | Matches zero or more directories, but will never match the directories `.` and `..`.
+`**`              | Matches zero or more directories, but will never match the directories `.` and `..`. Requires the [`GLOBSTAR`](#globglobstar) flag.
 `?`               | Matches any single character.
 `[seq]`           | Matches any character in seq.
 `[!seq]`          | Matches any character not in seq.
 `[[:alnum:]]`     | POSIX style character classes inside sequences.  The `C` locale is used for byte strings and Unicode properties for Unicode strings. See [POSIX Character Classes](#posix-character-classes) for more info.
 `\`               | Escapes characters. If applied to a meta character, it will be treated as a normal character.
-`!`               | Exclusion pattern (with configuration, can use `-` instead of `!`).
-`?(pattern_list)` | The pattern matches if zero or one occurrences of any of the patterns in the `pattern_list` match the input string.
-`*(pattern_list)` | The pattern matches if zero or more occurrences of any of the patterns in the `pattern_list` match the input string.
-`+(pattern_list)` | The pattern matches if one or more occurrences of any of the patterns in the `pattern_list` match the input string.
-`@(pattern_list)` | The pattern matches if exactly one occurrence of any of the patterns in the `pattern_list` match the input string.
-`!(pattern_list)` | The pattern matches if the input string cannot be matched with any of the patterns in the `pattern_list`.
-`{}`              | Bash style brace expansions.  This is applied to patterns before anything else.
+`!`               | When used at the start of a pattern, the pattern will be an exclusion pattern. Requires the [`NEGATE`](#globnegate) flag. If also using the [`MINUSNEGATE`](#globminusnegate) flag, `-` will be used instead of `!`.
+`?(pattern_list)` | The pattern matches if zero or one occurrences of any of the patterns in the `pattern_list` match the input string. Requires the [`EXTGLOB`](#globextglob) flag.
+`*(pattern_list)` | The pattern matches if zero or more occurrences of any of the patterns in the `pattern_list` match the input string. Requires the [`EXTGLOB`](#globextglob) flag.
+`+(pattern_list)` | The pattern matches if one or more occurrences of any of the patterns in the `pattern_list` match the input string. Requires the [`EXTGLOB`](#globextglob) flag.
+`@(pattern_list)` | The pattern matches if exactly one occurrence of any of the patterns in the `pattern_list` match the input string. Requires the [`EXTGLOB`](#globextglob) flag.
+`!(pattern_list)` | The pattern matches if the input string cannot be matched with any of the patterns in the `pattern_list`. Requires the [`EXTGLOB`](#globextglob) flag.
+`{}`              | Bash style brace expansions.  This is applied to patterns before anything else. Requires the [`BRACE`](#globbrace) flag.
 
 - Slashes are generally treated special in glob related methods. Slashes are not matched in `[]`, `*`, `?`, or extended
   patterns like `*(...)`. Slashes can be matched by `**` if [`GLOBSTAR`](#globglobstar) is set.
