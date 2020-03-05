@@ -44,12 +44,10 @@ jobs:
       if: success()
       uses: codecov/codecov-action@v1
       with:
-        token: ${{ secrets.CODECOV_TOKEN }} #required
         file: ./coverage.xml
-        flags: unittests #optional
-        name: ${{ matrix.tox-env }}  #optional
-        yml: ./codecov.yml #optional
-        fail_ci_if_error: true #optional
+        flags: unittests | ${{ matrix-platform }}
+        name: ${{ matrix-platform }}-${{ matrix.tox-env }}
+        fail_ci_if_error: false
 
   lint:
     strategy:
