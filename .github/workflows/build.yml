@@ -45,6 +45,7 @@ jobs:
       uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }} #required
+        file: ./coverage.xml
         flags: unittests #optional
         name: ${{ matrix.tox-env }}  #optional
         yml: ./codecov.yml #optional
