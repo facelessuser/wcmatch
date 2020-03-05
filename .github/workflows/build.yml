@@ -41,15 +41,14 @@ jobs:
       run: |
         python -m tox
     - name: Upload Results
-      - uses: actions/checkout@master
-      - uses: codecov/codecov-action@v1
-        if: success()
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }} #required
-          flags: unittests #optional
-          name: ${{ matrix.tox-env }}  #optional
-          yml: ./codecov.yml #optional
-          fail_ci_if_error: true #optional
+      if: success()
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }} #required
+        flags: unittests #optional
+        name: ${{ matrix.tox-env }}  #optional
+        yml: ./codecov.yml #optional
+        fail_ci_if_error: true #optional
 
   lint:
     strategy:
