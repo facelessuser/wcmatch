@@ -462,7 +462,7 @@ class WcPathSplit(object):
         self.unix = is_unix_style(flags)
         self.flags = flags
         self.raw_chars = bool(flags & RAWCHARS)
-        self.pattern = util.norm_pattern(pattern, not self.unix, flags & RAWCHARS)
+        self.pattern = util.norm_pattern(pattern, not self.unix, self.raw_chars)
         self.no_abs = bool(flags & _NOABSOLUTE)
         self.globstar = bool(flags & GLOBSTAR)
         self.matchbase = bool(flags & MATCHBASE)
