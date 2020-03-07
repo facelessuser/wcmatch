@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.2.0
+
+- **NEW**: Tilde user expansion support via the new `TILDE` flag.
+
 ## 5.1.0
 
 - **NEW**: Add new parameter to `glob` related functions (except in `pathlib`) called `root_dir` that allows a user to
