@@ -61,12 +61,12 @@ RE_WIN_NO_DIR = (
     re.compile(br'^(?:.*?(?:[\\/]\.{1,2}[\\/]*|[\\/])|\.{1,2}[\\/]*)$')
 )
 RE_TILDE = (
-    re.compile(r'^~(?=/|$)'),
-    re.compile(br'^~(?=/|$)')
+    re.compile(r'^~[^/]*(?=/|$)'),
+    re.compile(br'^~[^/]*(?=/|$)')
 )
 RE_WIN_TILDE = (
-    re.compile(r'^~(?=\\\\|/|$)'),
-    re.compile(br'^~(?=\\\\|/|$)')
+    re.compile(r'^~(?:\\(?![\\/])|[^\\/])*(?=\\\\|/|$)'),
+    re.compile(br'^~(?:\\(?![\\/])|[^\\/])*(?=\\\\|/|$)')
 )
 
 RE_ANCHOR = re.compile(r'^/+')
@@ -579,8 +579,9 @@ class WcPathSplit(object):
         re_tilde = RE_WIN_TILDE[string_type] if self.win_drive_detect else RE_TILDE[string_type]
         m = re_tilde.match(pattern)
         if m:
-            esc = raw_escape if self.raw_chars else escape
-            pattern = pattern.replace(tilde, esc(os.path.expanduser(tilde), self.unix), 1)
+            expanded = os.path.expanduser(m.group(0))
+            if expanded != m.group(0):
+                pattern = escape(expanded, self.unix) + pattern[m.end(0):]
 
         pattern = pattern.decode('latin-1') if self.is_bytes else pattern
 
@@ -1437,8 +1438,9 @@ class WcParse(object):
             re_tilde = RE_WIN_TILDE[string_type] if self.win_drive_detect else RE_TILDE[string_type]
             m = re_tilde.match(p)
             if m:
-                esc = raw_escape if self.raw_chars else escape
-                p = p.replace(tilde, esc(os.path.expanduser(tilde), self.unix), 1)
+                expanded = os.path.expanduser(m.group(0))
+                if expanded != m.group(0):
+                    p = escape(expanded, self.unix) + p[m.end(0):]
 
         p = p.decode('latin-1') if self.is_bytes else p
 
