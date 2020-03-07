@@ -69,6 +69,11 @@ RE_WIN_TILDE = (
     re.compile(br'^~(?:\\(?![\\/])|[^\\/])*(?=\\\\|/|$)')
 )
 
+TILDE_SYM = (
+    '~',
+    b'~'
+)
+
 RE_ANCHOR = re.compile(r'^/+')
 RE_WIN_ANCHOR = re.compile(r'^(?:\\\\|/)+')
 RE_POSIX = re.compile(r':(alnum|alpha|ascii|blank|cntrl|digit|graph|lower|print|punct|space|upper|xdigit):\]')
@@ -268,6 +273,20 @@ def expand_braces(patterns, flags):
     else:
         for p in ([patterns] if isinstance(patterns, (str, bytes)) else patterns):
             yield p
+
+
+def expand_tilde(pattern, is_unix):
+    """Expand tilde."""
+
+    string_type = BYTES if isinstance(pattern, bytes) else UNICODE
+    tilde = TILDE_SYM[string_type]
+    re_tilde = RE_WIN_TILDE[string_type] if not is_unix else RE_TILDE[string_type]
+    m = re_tilde.match(pattern)
+    if m:
+        expanded = os.path.expanduser(m.group(0))
+        if not expanded.startswith(tilde) and os.path.exists(expanded):
+            pattern = escape(expanded, is_unix) + pattern[m.end(0):]
+    return pattern
 
 
 def norm_slash(name, flags):
@@ -577,16 +596,9 @@ class WcPathSplit(object):
         start = -1
 
         pattern = self.pattern
-        string_type = BYTES if self.is_bytes else UNICODE
 
         if self.tilde:
-            tilde = b'~' if self.is_bytes else '~'
-            re_tilde = RE_WIN_TILDE[string_type] if self.win_drive_detect else RE_TILDE[string_type]
-            m = re_tilde.match(pattern)
-            if m:
-                expanded = os.path.expanduser(m.group(0))
-                if not expanded.startswith(tilde):
-                    pattern = escape(expanded, self.unix) + pattern[m.end(0):]
+            pattern = expand_tilde(pattern, self.unix)
 
         pattern = pattern.decode('latin-1') if self.is_bytes else pattern
 
@@ -1438,14 +1450,7 @@ class WcParse(object):
             p = p[1:]
 
         if self.tilde:
-            string_type = BYTES if self.is_bytes else UNICODE
-            tilde = b'~' if self.is_bytes else '~'
-            re_tilde = RE_WIN_TILDE[string_type] if self.win_drive_detect else RE_TILDE[string_type]
-            m = re_tilde.match(p)
-            if m:
-                expanded = os.path.expanduser(m.group(0))
-                if not expanded.startswith(tilde):
-                    p = escape(expanded, self.unix) + p[m.end(0):]
+            p = expand_tilde(p, self.unix)
 
         p = p.decode('latin-1') if self.is_bytes else p
 
