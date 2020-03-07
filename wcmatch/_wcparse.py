@@ -37,12 +37,12 @@ RE_WIN_PATH = (
     re.compile(br'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)', re.I)
 )
 RE_WIN_MAGIC = (
-    re.compile(r'([-!*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))'),
-    re.compile(br'([-!*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
+    re.compile(r'([-!~*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))'),
+    re.compile(br'([-!~*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
 )
 RE_MAGIC = (
-    re.compile(r'([-!*?(\[|^{\\])'),
-    re.compile(br'([-!*?(\[|^{\\])')
+    re.compile(r'([-!~*?(\[|^{\\])'),
+    re.compile(br'([-!~*?(\[|^{\\])')
 )
 RE_WIN_MOUNT = (
     re.compile(r'\\|[a-z]:(?:\\|$)', re.I),
@@ -59,6 +59,14 @@ RE_NO_DIR = (
 RE_WIN_NO_DIR = (
     re.compile(r'^(?:.*?(?:[\\/]\.{1,2}[\\/]*|[\\/])|\.{1,2}[\\/]*)$'),
     re.compile(br'^(?:.*?(?:[\\/]\.{1,2}[\\/]*|[\\/])|\.{1,2}[\\/]*)$')
+)
+RE_TILDE = (
+    re.compile(r'^~(?=/|$)'),
+    re.compile(br'^~(?=/|$)')
+)
+RE_WIN_TILDE = (
+    re.compile(r'^~(?=\\\\|/|$)'),
+    re.compile(br'^~(?=\\\\|/|$)')
 )
 
 RE_ANCHOR = re.compile(r'^/+')
@@ -202,6 +210,36 @@ class WcGlob(namedtuple('WcGlob', ['pattern', 'is_magic', 'is_globstar', 'dir_on
 
 class PathNameException(Exception):
     """Path name exception."""
+
+
+def raw_escape(pattern, unix=None):
+    """Apply raw character transform before applying escape."""
+
+    pattern = util.norm_pattern(pattern, False, True)
+    return escape(pattern, unix)
+
+
+def escape(pattern, unix=None):
+    """Escape."""
+
+    is_bytes = isinstance(pattern, bytes)
+    ptype = BYTES if is_bytes else UNICODE
+    replace = br'\\\1' if is_bytes else r'\\\1'
+    win = ((unix is None and util.platform() == "windows") or unix is False)
+    magic = RE_WIN_MAGIC[ptype] if win else RE_MAGIC[ptype]
+
+    # Handle windows drives special.
+    # Windows drives are handled special internally.
+    # So we shouldn't escape them as we'll just have to
+    # detect and undo it later.
+    drive = b'' if is_bytes else ''
+    if win:
+        m = RE_WIN_PATH[ptype].match(pattern)
+        if m:
+            drive = m.group(0)
+    pattern = pattern[len(drive):]
+
+    return drive + magic.sub(replace, pattern)
 
 
 def is_negative(pattern, flags):
@@ -402,6 +440,7 @@ class WcPathSplit(object):
 
         self.unix = is_unix_style(flags)
         self.flags = flags
+        self.raw_chars = bool(flags & RAWCHARS)
         self.pattern = util.norm_pattern(pattern, not self.unix, flags & RAWCHARS)
         self.no_abs = bool(flags & _NOABSOLUTE)
         self.globstar = bool(flags & GLOBSTAR)
@@ -534,7 +573,16 @@ class WcPathSplit(object):
         parts = []
         start = -1
 
-        pattern = self.pattern.decode('latin-1') if self.is_bytes else self.pattern
+        pattern = self.pattern
+        string_type = BYTES if self.is_bytes else UNICODE
+        tilde = b'~' if self.is_bytes else '~'
+        re_tilde = RE_WIN_TILDE[string_type] if self.win_drive_detect else RE_TILDE[string_type]
+        m = re_tilde.match(pattern)
+        if m:
+            esc = raw_escape if self.raw_chars else escape
+            pattern = pattern.replace(tilde, esc(os.path.expanduser(tilde), self.unix), 1)
+
+        pattern = pattern.decode('latin-1') if self.is_bytes else pattern
 
         i = util.StringIter(pattern)
         iter(i)
@@ -761,6 +809,7 @@ class WcParse(object):
         self.raw_chars = bool(flags & RAWCHARS)
         self.globstar = self.pathname and bool(flags & GLOBSTAR)
         self.realpath = bool(flags & REALPATH) and self.pathname
+        self.tildeexpand = self.realpath
         self.translate = bool(flags & _TRANSLATE)
         self.globstar_capture = self.realpath and not self.translate
         self.dot = bool(flags & DOTMATCH)
@@ -1378,10 +1427,20 @@ class WcParse(object):
 
         p = util.norm_pattern(self.pattern, not self.unix, self.raw_chars)
 
-        p = p.decode('latin-1') if self.is_bytes else p
         if is_negative(p, self.flags):
             self.negative = True
             p = p[1:]
+
+        if self.tildeexpand:
+            string_type = BYTES if self.is_bytes else UNICODE
+            tilde = b'~' if self.is_bytes else '~'
+            re_tilde = RE_WIN_TILDE[string_type] if self.win_drive_detect else RE_TILDE[string_type]
+            m = re_tilde.match(p)
+            if m:
+                esc = raw_escape if self.raw_chars else escape
+                p = p.replace(tilde, esc(os.path.expanduser(tilde), self.unix), 1)
+
+        p = p.decode('latin-1') if self.is_bytes else p
 
         if self.negative:
             self.globstar_capture = False

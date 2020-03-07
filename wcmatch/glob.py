@@ -539,28 +539,10 @@ def globfilter(filenames, patterns, *, flags=0, root_dir=None):
 def raw_escape(pattern, unix=None):
     """Apply raw character transform before applying escape."""
 
-    pattern = util.norm_pattern(pattern, False, True)
-    return escape(pattern, unix)
+    return _wcparse.raw_escape(pattern, unix)
 
 
 def escape(pattern, unix=None):
     """Escape."""
 
-    is_bytes = isinstance(pattern, bytes)
-    ptype = _wcparse.BYTES if is_bytes else _wcparse.UNICODE
-    replace = br'\\\1' if is_bytes else r'\\\1'
-    win = ((unix is None and util.platform() == "windows") or unix is False)
-    magic = _wcparse.RE_WIN_MAGIC[ptype] if win else _wcparse.RE_MAGIC[ptype]
-
-    # Handle windows drives special.
-    # Windows drives are handled special internally.
-    # So we shouldn't escape them as we'll just have to
-    # detect and undo it later.
-    drive = b'' if is_bytes else ''
-    if win:
-        m = _wcparse.RE_WIN_PATH[ptype].match(pattern)
-        if m:
-            drive = m.group(0)
-    pattern = pattern[len(drive):]
-
-    return drive + magic.sub(replace, pattern)
+    return _wcparse.escape(pattern, unix)
