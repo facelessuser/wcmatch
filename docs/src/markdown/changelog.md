@@ -3,6 +3,8 @@
 ## 5.2.0
 
 - **NEW**: Tilde user expansion support via the new `GLOBTILDE` flag.
+- **FIX**: `RAWCHARS` was inconsistently applied at different times depending on what was calling it. It is now applied
+  first followed by `SPLIT`, `BRACES`, and finally `GLOBTILDE`.
 
 ## 5.1.0
 

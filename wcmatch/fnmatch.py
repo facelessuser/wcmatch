@@ -73,7 +73,7 @@ def translate(patterns, *, flags=0):
     """Translate `fnmatch` pattern."""
 
     flags = _flag_transform(flags)
-    return _wcparse.translate(_wcparse.split(patterns, flags), flags)
+    return _wcparse.translate(patterns, flags)
 
 
 def fnmatch(filename, patterns, *, flags=0):
@@ -87,7 +87,7 @@ def fnmatch(filename, patterns, *, flags=0):
     flags = _flag_transform(flags)
     if not _wcparse.is_unix_style(flags):
         filename = _wcparse.norm_slash(filename, flags)
-    return _wcparse.compile(_wcparse.split(patterns, flags), flags).match(filename)
+    return _wcparse.compile(patterns, flags).match(filename)
 
 
 def filter(filenames, patterns, *, flags=0):  # noqa A001
@@ -97,7 +97,7 @@ def filter(filenames, patterns, *, flags=0):  # noqa A001
 
     flags = _flag_transform(flags)
     unix = _wcparse.is_unix_style(flags)
-    obj = _wcparse.compile(_wcparse.split(patterns, flags), flags)
+    obj = _wcparse.compile(patterns, flags)
 
     for filename in filenames:
         if obj.match(_wcparse.norm_slash(filename, flags) if not unix else filename):

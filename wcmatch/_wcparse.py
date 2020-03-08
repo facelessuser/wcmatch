@@ -61,12 +61,12 @@ RE_WIN_NO_DIR = (
     re.compile(br'^(?:.*?(?:[\\/]\.{1,2}[\\/]*|[\\/])|\.{1,2}[\\/]*)$')
 )
 RE_TILDE = (
-    re.compile(r'^~[^/]*(?=/|$)'),
-    re.compile(br'^~[^/]*(?=/|$)')
+    re.compile(r'~[^/]*(?=/|$)'),
+    re.compile(br'~[^/]*(?=/|$)')
 )
 RE_WIN_TILDE = (
-    re.compile(r'^~(?:\\(?![\\/])|[^\\/])*(?=\\\\|/|$)'),
-    re.compile(br'^~(?:\\(?![\\/])|[^\\/])*(?=\\\\|/|$)')
+    re.compile(r'~(?:\\(?![\\/])|[^\\/])*(?=\\\\|/|$)'),
+    re.compile(br'~(?:\\(?![\\/])|[^\\/])*(?=\\\\|/|$)')
 )
 
 TILDE_SYM = (
@@ -131,6 +131,7 @@ FLAG_MASK = (
     FORCEWIN |
     FORCEUNIX |
     GLOBTILDE |
+    SPLIT |
     _TRANSLATE |
     _ANCHOR |
     _RECURSIVEMATCH |
@@ -275,18 +276,30 @@ def expand_braces(patterns, flags):
             yield p
 
 
-def expand_tilde(pattern, is_unix):
+def expand_tilde(pattern, is_unix, is_neg, flags):
     """Expand tilde."""
 
-    string_type = BYTES if isinstance(pattern, bytes) else UNICODE
-    tilde = TILDE_SYM[string_type]
-    re_tilde = RE_WIN_TILDE[string_type] if not is_unix else RE_TILDE[string_type]
-    m = re_tilde.match(pattern)
-    if m:
-        expanded = os.path.expanduser(m.group(0))
-        if not expanded.startswith(tilde) and os.path.exists(expanded):
-            pattern = escape(expanded, is_unix) + pattern[m.end(0):]
+    if flags & GLOBTILDE and flags & REALPATH:
+        string_type = BYTES if isinstance(pattern, bytes) else UNICODE
+        tilde = TILDE_SYM[string_type]
+        re_tilde = RE_WIN_TILDE[string_type] if not is_unix else RE_TILDE[string_type]
+        pos = 1 if is_neg else 0
+        m = re_tilde.match(pattern, pos)
+        if m:
+            expanded = os.path.expanduser(m.group(0))
+            if not expanded.startswith(tilde) and os.path.exists(expanded):
+                pattern = (pattern[0] if is_neg else pattern[0:0]) + escape(expanded, is_unix) + pattern[m.end(0):]
     return pattern
+
+
+def expand_and_normalize(pattern, flags):
+    """Expand and normalize."""
+
+    is_unix = is_unix_style(flags)
+    for splitted in split(pattern, flags):
+        for expanded in expand_braces(util.norm_pattern(splitted, not is_unix, flags & RAWCHARS), flags):
+            expanded = expand_tilde(expanded, is_unix, is_negative(expanded, flags), flags)
+            yield expanded
 
 
 def norm_slash(name, flags):
@@ -364,10 +377,8 @@ def translate(patterns, flags):
     flags = (flags | _TRANSLATE) & FLAG_MASK
 
     for pattern in patterns:
-        for expanded in expand_braces(pattern, flags):
-            (negative if is_negative(expanded, flags) else positive).append(
-                WcParse(expanded, flags).parse()
-            )
+        for expanded in expand_and_normalize(pattern, flags):
+            (negative if is_negative(expanded, flags) else positive).append(WcParse(expanded, flags).parse())
 
     if patterns and negative and not positive:
         if flags & NEGATEALL:
@@ -375,24 +386,20 @@ def translate(patterns, flags):
             positive.append(WcParse(default, flags | (GLOBSTAR if flags & PATHNAME else 0)).parse())
 
     if patterns and flags & NODIR:
-        unix = is_unix_style(flags)
         index = BYTES if isinstance(patterns[0], bytes) else UNICODE
-        exclude = _NO_NIX_DIR[index] if unix else _NO_WIN_DIR[index]
+        exclude = _NO_NIX_DIR[index] if is_unix_style(flags) else _NO_WIN_DIR[index]
         negative.append(exclude)
 
     return positive, negative
 
 
-def split(patterns, flags):
+def split(pattern, flags):
     """Split patterns."""
 
     if flags & SPLIT:
-        splitted = []
-        for pattern in ([patterns] if isinstance(patterns, (str, bytes)) else patterns):
-            splitted.extend(WcSplit(pattern, flags).split())
-        return splitted
+        return WcSplit(pattern, flags).split()
     else:
-        return patterns
+        return [pattern]
 
 
 def compile(patterns, flags):  # noqa A001
@@ -404,7 +411,7 @@ def compile(patterns, flags):  # noqa A001
         patterns = [patterns]
 
     for pattern in patterns:
-        for expanded in expand_braces(pattern, flags):
+        for expanded in expand_and_normalize(pattern, flags):
             (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
 
     if patterns and negative and not positive:
@@ -415,9 +422,8 @@ def compile(patterns, flags):  # noqa A001
             positive.append(_compile(default, flags | (GLOBSTAR if flags & PATHNAME else 0)))
 
     if patterns and flags & NODIR:
-        unix = is_unix_style(flags)
         ptype = BYTES if isinstance(patterns[0], bytes) else UNICODE
-        negative.append(RE_NO_DIR[ptype] if unix else RE_WIN_NO_DIR[ptype])
+        negative.append(RE_NO_DIR[ptype] if is_unix_style(flags) else RE_WIN_NO_DIR[ptype])
 
     return WcRegexp(tuple(positive), tuple(negative), flags & REALPATH, flags & PATHNAME, flags & FOLLOW)
 
@@ -461,8 +467,7 @@ class WcPathSplit(object):
 
         self.unix = is_unix_style(flags)
         self.flags = flags
-        self.raw_chars = bool(flags & RAWCHARS)
-        self.pattern = util.norm_pattern(pattern, not self.unix, self.raw_chars)
+        self.pattern = pattern
         self.no_abs = bool(flags & _NOABSOLUTE)
         self.globstar = bool(flags & GLOBSTAR)
         self.matchbase = bool(flags & MATCHBASE)
@@ -585,7 +590,7 @@ class WcPathSplit(object):
         globstar = value in (b'**', '**') and self.globstar
         magic = self.is_magic(value)
         if magic:
-            value = compile(value, self.flags)
+            value = _compile(value, self.flags)
         l.append(WcGlob(value, magic, globstar, dir_only, False))
 
     def split(self):
@@ -595,12 +600,7 @@ class WcPathSplit(object):
         parts = []
         start = -1
 
-        pattern = self.pattern
-
-        if self.tilde:
-            pattern = expand_tilde(pattern, self.unix)
-
-        pattern = pattern.decode('latin-1') if self.is_bytes else pattern
+        pattern = self.pattern.decode('latin-1') if self.is_bytes else self.pattern
 
         i = util.StringIter(pattern)
         iter(i)
@@ -810,7 +810,7 @@ class WcSplit(object):
             p = pattern[start + 1:]
             parts.append(p.encode('latin-1') if self.is_bytes else p)
 
-        return tuple(parts)
+        return parts
 
 
 class WcParse(object):
@@ -827,7 +827,6 @@ class WcParse(object):
         self.raw_chars = bool(flags & RAWCHARS)
         self.globstar = self.pathname and bool(flags & GLOBSTAR)
         self.realpath = bool(flags & REALPATH) and self.pathname
-        self.tilde = self.realpath and bool(flags & GLOBTILDE)
         self.translate = bool(flags & _TRANSLATE)
         self.globstar_capture = self.realpath and not self.translate
         self.dot = bool(flags & DOTMATCH)
@@ -1443,14 +1442,11 @@ class WcParse(object):
         matchbase = ['']
         self.negative = False
 
-        p = util.norm_pattern(self.pattern, not self.unix, self.raw_chars)
+        p = self.pattern
 
         if is_negative(p, self.flags):
             self.negative = True
             p = p[1:]
-
-        if self.tilde:
-            p = expand_tilde(p, self.unix)
 
         p = p.decode('latin-1') if self.is_bytes else p
 

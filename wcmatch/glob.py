@@ -124,9 +124,11 @@ class Glob(object):
         self.nodir = bool(flags & _wcparse.NODIR)
         if self.nodir:
             flags ^= _wcparse.NODIR
-        self.flags = _flag_transform(flags | _wcparse.REALPATH) ^ _wcparse.REALPATH
+        self.flags = _flag_transform(flags | _wcparse.REALPATH)
+        self.raw_chars = self.flags & RAWCHARS
         self.follow_links = bool(flags & FOLLOW)
         self.dot = bool(flags & DOTMATCH)
+        self.unix = not bool(flags & _wcparse.FORCEWIN)
         self.negate = bool(flags & NEGATE)
         self.globstar = bool(flags & _wcparse.GLOBSTAR)
         self.braces = bool(flags & _wcparse.BRACE)
@@ -134,10 +136,11 @@ class Glob(object):
         self.case_sensitive = _wcparse.get_case(self.flags)
         self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
         self.empty = b'' if self.is_bytes else ''
-        split = _wcparse.split(pattern, flags)
+        # Handle preprocessing
         patterns = []
-        for s in split:
-            patterns.extend(_wcparse.expand_braces(s, flags))
+        for p in pattern:
+            for expanded in _wcparse.expand_and_normalize(p, self.flags):
+                patterns.append(expanded)
         self._parse_patterns(patterns)
         if self.flags & _wcparse.FORCEWIN:
             self.sep = b'\\' if self.is_bytes else '\\'
@@ -155,7 +158,7 @@ class Glob(object):
                 # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
                 # This is faster as compiled patterns usually compare the include patterns first,
                 # and then the exclude, but glob will already know it wants to include the file.
-                self.npatterns.append(re.compile(_wcparse.translate(p, flags=nflags)[1][0]))
+                self.npatterns.append(re.compile(_wcparse.WcParse(p, nflags).parse()))
             else:
                 self.pattern.append(_wcparse.WcPathSplit(p, self.flags).split())
 
@@ -495,7 +498,7 @@ def translate(patterns, *, flags=0):
     """Translate glob pattern."""
 
     flags = _flag_transform(flags)
-    return _wcparse.translate(_wcparse.split(patterns, flags), flags)
+    return _wcparse.translate(patterns, flags)
 
 
 def globmatch(filename, patterns, *, flags=0, root_dir=None):
@@ -514,7 +517,7 @@ def globmatch(filename, patterns, *, flags=0, root_dir=None):
     filename = util.fscodec(filename, is_bytes)
     if not _wcparse.is_unix_style(flags):
         filename = _wcparse.norm_slash(filename, flags)
-    return _wcparse.compile(_wcparse.split(patterns, flags), flags).match(filename, root_dir=root_dir)
+    return _wcparse.compile(patterns, flags).match(filename, root_dir=root_dir)
 
 
 def globfilter(filenames, patterns, *, flags=0, root_dir=None):
@@ -527,7 +530,7 @@ def globfilter(filenames, patterns, *, flags=0, root_dir=None):
     matches = []
     flags = _flag_transform(flags)
     unix = _wcparse.is_unix_style(flags)
-    obj = _wcparse.compile(_wcparse.split(patterns, flags), flags)
+    obj = _wcparse.compile(patterns, flags)
 
     for filename in filenames:
         temp = util.fscodec(filename, is_bytes)
