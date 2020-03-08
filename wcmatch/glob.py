@@ -30,7 +30,7 @@ from . import util
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
-    "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX", "TILDE",
+    "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX", "GLOBTILDE",
     "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T",
     "iglob", "glob", "globmatch", "globfilter", "escape", "raw_escape"
 )
@@ -57,7 +57,7 @@ O = NODIR = _wcparse.NODIR
 A = NEGATEALL = _wcparse.NEGATEALL
 W = FORCEWIN = _wcparse.FORCEWIN
 U = FORCEUNIX = _wcparse.FORCEUNIX
-T = TILDE = _wcparse.TILDE
+T = GLOBTILDE = _wcparse.GLOBTILDE
 
 K = MARK = 0x100000
 
@@ -79,7 +79,7 @@ FLAG_MASK = (
     NEGATEALL |
     FORCEWIN |
     FORCEUNIX |
-    TILDE |
+    GLOBTILDE |
     _wcparse._RECURSIVEMATCH |
     _wcparse._NOABSOLUTE
 )

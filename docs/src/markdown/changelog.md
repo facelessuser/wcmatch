@@ -2,7 +2,7 @@
 
 ## 5.2.0
 
-- **NEW**: Tilde user expansion support via the new `TILDE` flag.
+- **NEW**: Tilde user expansion support via the new `GLOBTILDE` flag.
 
 ## 5.1.0
 

@@ -1188,36 +1188,3 @@ class TestTilde(unittest.TestCase):
         """Test when tilde is disabled."""
 
         self.assertEqual(len(glob.glob('~/*', flags=glob.D)), 0)
-
-    def test_tilde_globmatch(self):
-        """Test tilde in `globmatch` environment."""
-
-        files = os.listdir(os.path.expanduser('~'))
-        gfiles = glob.globfilter(
-            glob.glob('~/*', flags=glob.T | glob.D),
-            '~/*', flags=glob.T | glob.D | glob.P
-        )
-
-        self.assertEqual(len(files), len(gfiles))
-
-    def test_tilde_globmatch_no_realpath(self):
-        """Test tilde in `globmatch` environment but with real path disabled."""
-
-        files = os.listdir(os.path.expanduser('~'))
-        gfiles = glob.globfilter(
-            glob.glob('~/*', flags=glob.T | glob.D),
-            '~/*', flags=glob.T | glob.D
-        )
-
-        self.assertNotEqual(len(files), len(gfiles))
-
-    def test_tilde_globmatch_no_tilde(self):
-        """Test tilde in `globmatch` environment but with tilde disabled."""
-
-        files = os.listdir(os.path.expanduser('~'))
-        gfiles = glob.globfilter(
-            glob.glob('~/*', flags=glob.T | glob.D),
-            '~/*', flags=glob.D | glob.P
-        )
-
-        self.assertNotEqual(len(files), len(gfiles))

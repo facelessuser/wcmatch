@@ -104,7 +104,7 @@ NODIR = 0x4000
 NEGATEALL = 0x8000
 FORCEWIN = 0x10000
 FORCEUNIX = 0x20000
-TILDE = 0x40000
+GLOBTILDE = 0x40000
 
 # Internal flag
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
@@ -130,7 +130,7 @@ FLAG_MASK = (
     NEGATEALL |
     FORCEWIN |
     FORCEUNIX |
-    TILDE |
+    GLOBTILDE |
     _TRANSLATE |
     _ANCHOR |
     _RECURSIVEMATCH |
@@ -466,7 +466,7 @@ class WcPathSplit(object):
         self.no_abs = bool(flags & _NOABSOLUTE)
         self.globstar = bool(flags & GLOBSTAR)
         self.matchbase = bool(flags & MATCHBASE)
-        self.tilde = bool(flags & TILDE)
+        self.tilde = bool(flags & GLOBTILDE)
         self.recursivematch = bool(flags & _RECURSIVEMATCH) and not self.matchbase
         if is_negative(self.pattern, flags):  # pragma: no cover
             # This isn't really used, but we'll keep it around
@@ -827,7 +827,7 @@ class WcParse(object):
         self.raw_chars = bool(flags & RAWCHARS)
         self.globstar = self.pathname and bool(flags & GLOBSTAR)
         self.realpath = bool(flags & REALPATH) and self.pathname
-        self.tilde = self.realpath and bool(flags & TILDE)
+        self.tilde = self.realpath and bool(flags & GLOBTILDE)
         self.translate = bool(flags & _TRANSLATE)
         self.globstar_capture = self.realpath and not self.translate
         self.dot = bool(flags & DOTMATCH)
