@@ -296,10 +296,9 @@ def expand_and_normalize(pattern, flags):
     """Expand and normalize."""
 
     is_unix = is_unix_style(flags)
-    for splitted in split(pattern, flags):
-        for expanded in expand_braces(util.norm_pattern(splitted, not is_unix, flags & RAWCHARS), flags):
-            expanded = expand_tilde(expanded, is_unix, is_negative(expanded, flags), flags)
-            yield expanded
+    for expanded in expand_braces(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), flags):
+        for splitted in split(expanded, flags):
+            yield expand_tilde(splitted, is_unix, is_negative(splitted, flags), flags)
 
 
 def norm_slash(name, flags):
@@ -397,9 +396,9 @@ def split(pattern, flags):
     """Split patterns."""
 
     if flags & SPLIT:
-        return WcSplit(pattern, flags).split()
+        yield from WcSplit(pattern, flags).split()
     else:
-        return [pattern]
+        yield pattern
 
 
 def compile(patterns, flags):  # noqa A001
@@ -774,11 +773,9 @@ class WcSplit(object):
     def split(self):
         """Start parsing the pattern."""
 
-        split_index = []
-        parts = []
-
         pattern = self.pattern.decode('latin-1') if self.is_bytes else self.pattern
 
+        start = -1
         i = util.StringIter(pattern)
         iter(i)
         for c in i:
@@ -786,7 +783,10 @@ class WcSplit(object):
                 continue
 
             if c == '|':
-                split_index.append(i.index - 1)
+                split = i.index - 1
+                p = pattern[start + 1:split]
+                yield p.encode('latin-1') if self.is_bytes else p
+                start = split
             elif c == '\\':
                 index = i.index
                 try:
@@ -800,17 +800,9 @@ class WcSplit(object):
                 except StopIteration:
                     i.rewind(i.index - index)
 
-        start = -1
-        for split in split_index:
-            p = pattern[start + 1:split]
-            parts.append(p.encode('latin-1') if self.is_bytes else p)
-            start = split
-
         if start < len(pattern):
             p = pattern[start + 1:]
-            parts.append(p.encode('latin-1') if self.is_bytes else p)
-
-        return parts
+            yield p.encode('latin-1') if self.is_bytes else p
 
 
 class WcParse(object):

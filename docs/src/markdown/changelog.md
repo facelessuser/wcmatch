@@ -4,7 +4,8 @@
 
 - **NEW**: Tilde user expansion support via the new `GLOBTILDE` flag.
 - **FIX**: `RAWCHARS` was inconsistently applied at different times depending on what was calling it. It is now applied
-  first followed by `SPLIT`, `BRACES`, and finally `GLOBTILDE`.
+  first followed by `BRACE`, `SPLIT`, and finally `GLOBTILDE`.
+- **FIX**: Edge cases related to processing `SPLIT` before `BRACE`. `BRACE` is now processed before `SPLIT`.
 
 ## 5.1.0
 
