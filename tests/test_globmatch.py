@@ -1452,3 +1452,41 @@ class TestGlobmatchSymlink(_TestGlobmatch):
         """Use a pattern that exercises the symlink cache."""
 
         self.assertFalse(glob.globmatch(self.tempdir + '/sym1/a.txt', '**/{*.txt,*.t*}', flags=self.default_flags))
+
+
+@unittest.skipUnless(os.path.expanduser('~') != '~', "Requires expand user functionality")
+class TestTilde(unittest.TestCase):
+    """Test tilde cases."""
+
+    def test_tilde_globmatch(self):
+        """Test tilde in `globmatch` environment."""
+
+        files = os.listdir(os.path.expanduser('~'))
+        gfiles = glob.globfilter(
+            glob.glob('~/*', flags=glob.T | glob.D),
+            '~/*', flags=glob.T | glob.D | glob.P
+        )
+
+        self.assertEqual(len(files), len(gfiles))
+
+    def test_tilde_globmatch_no_realpath(self):
+        """Test tilde in `globmatch` environment but with real path disabled."""
+
+        files = os.listdir(os.path.expanduser('~'))
+        gfiles = glob.globfilter(
+            glob.glob('~/*', flags=glob.T | glob.D),
+            '~/*', flags=glob.T | glob.D
+        )
+
+        self.assertNotEqual(len(files), len(gfiles))
+
+    def test_tilde_globmatch_no_tilde(self):
+        """Test tilde in `globmatch` environment but with tilde disabled."""
+
+        files = os.listdir(os.path.expanduser('~'))
+        gfiles = glob.globfilter(
+            glob.glob('~/*', flags=glob.T | glob.D),
+            '~/*', flags=glob.D | glob.P
+        )
+
+        self.assertNotEqual(len(files), len(gfiles))

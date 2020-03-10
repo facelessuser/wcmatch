@@ -1164,3 +1164,27 @@ class TestGlobPaths(unittest.TestCase):
             sorted(['docs', 'wcmatch', 'readme.md']),
             sorted([each.lower() for each in glob.glob(['BAD', 'docs', 'WCMATCH', 'readme.MD'], flags=glob.I)])
         )
+
+
+@unittest.skipUnless(os.path.expanduser('~') != '~', "Requires expand user functionality")
+class TestTilde(unittest.TestCase):
+    """Test tilde cases."""
+
+    def test_tilde(self):
+        """Test tilde."""
+
+        files = os.listdir(os.path.expanduser('~'))
+        self.assertEqual(len(glob.glob('~/*', flags=glob.T | glob.D)), len(files))
+
+    def test_tilde_user(self):
+        """Test tilde user cases."""
+
+        user = os.path.basename(os.path.expanduser('~'))
+
+        files = os.listdir(os.path.expanduser('~{}'.format(user)))
+        self.assertEqual(len(glob.glob('~{}/*'.format(user), flags=glob.T | glob.D)), len(files))
+
+    def test_tilde_disabled(self):
+        """Test when tilde is disabled."""
+
+        self.assertEqual(len(glob.glob('~/*', flags=glob.D)), 0)

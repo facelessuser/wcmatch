@@ -37,12 +37,12 @@ RE_WIN_PATH = (
     re.compile(br'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)', re.I)
 )
 RE_WIN_MAGIC = (
-    re.compile(r'([-!*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))'),
-    re.compile(br'([-!*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
+    re.compile(r'([-!~*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))'),
+    re.compile(br'([-!~*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
 )
 RE_MAGIC = (
-    re.compile(r'([-!*?(\[|^{\\])'),
-    re.compile(br'([-!*?(\[|^{\\])')
+    re.compile(r'([-!~*?(\[|^{\\])'),
+    re.compile(br'([-!~*?(\[|^{\\])')
 )
 RE_WIN_MOUNT = (
     re.compile(r'\\|[a-z]:(?:\\|$)', re.I),
@@ -59,6 +59,19 @@ RE_NO_DIR = (
 RE_WIN_NO_DIR = (
     re.compile(r'^(?:.*?(?:[\\/]\.{1,2}[\\/]*|[\\/])|\.{1,2}[\\/]*)$'),
     re.compile(br'^(?:.*?(?:[\\/]\.{1,2}[\\/]*|[\\/])|\.{1,2}[\\/]*)$')
+)
+RE_TILDE = (
+    re.compile(r'~[^/]*(?=/|$)'),
+    re.compile(br'~[^/]*(?=/|$)')
+)
+RE_WIN_TILDE = (
+    re.compile(r'~(?:\\(?![\\/])|[^\\/])*(?=\\\\|/|$)'),
+    re.compile(br'~(?:\\(?![\\/])|[^\\/])*(?=\\\\|/|$)')
+)
+
+TILDE_SYM = (
+    '~',
+    b'~'
 )
 
 RE_ANCHOR = re.compile(r'^/+')
@@ -91,6 +104,7 @@ NODIR = 0x4000
 NEGATEALL = 0x8000
 FORCEWIN = 0x10000
 FORCEUNIX = 0x20000
+GLOBTILDE = 0x40000
 
 # Internal flag
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
@@ -116,6 +130,8 @@ FLAG_MASK = (
     NEGATEALL |
     FORCEWIN |
     FORCEUNIX |
+    GLOBTILDE |
+    SPLIT |
     _TRANSLATE |
     _ANCHOR |
     _RECURSIVEMATCH |
@@ -204,6 +220,36 @@ class PathNameException(Exception):
     """Path name exception."""
 
 
+def raw_escape(pattern, unix=None):
+    """Apply raw character transform before applying escape."""
+
+    pattern = util.norm_pattern(pattern, False, True)
+    return escape(pattern, unix)
+
+
+def escape(pattern, unix=None):
+    """Escape."""
+
+    is_bytes = isinstance(pattern, bytes)
+    ptype = BYTES if is_bytes else UNICODE
+    replace = br'\\\1' if is_bytes else r'\\\1'
+    win = ((unix is None and util.platform() == "windows") or unix is False)
+    magic = RE_WIN_MAGIC[ptype] if win else RE_MAGIC[ptype]
+
+    # Handle windows drives special.
+    # Windows drives are handled special internally.
+    # So we shouldn't escape them as we'll just have to
+    # detect and undo it later.
+    drive = b'' if is_bytes else ''
+    if win:
+        m = RE_WIN_PATH[ptype].match(pattern)
+        if m:
+            drive = m.group(0)
+    pattern = pattern[len(drive):]
+
+    return drive + magic.sub(replace, pattern)
+
+
 def is_negative(pattern, flags):
     """Check if negative pattern."""
 
@@ -228,6 +274,32 @@ def expand_braces(patterns, flags):
     else:
         for p in ([patterns] if isinstance(patterns, (str, bytes)) else patterns):
             yield p
+
+
+def expand_tilde(pattern, is_unix, is_neg, flags):
+    """Expand tilde."""
+
+    if flags & GLOBTILDE and flags & REALPATH:
+        string_type = BYTES if isinstance(pattern, bytes) else UNICODE
+        tilde = TILDE_SYM[string_type]
+        re_tilde = RE_WIN_TILDE[string_type] if not is_unix else RE_TILDE[string_type]
+        pos = 1 if is_neg else 0
+        m = re_tilde.match(pattern, pos)
+        if m:
+            expanded = os.path.expanduser(m.group(0))
+            if not expanded.startswith(tilde) and os.path.exists(expanded):
+                pattern = (pattern[0] if is_neg else pattern[0:0]) + escape(expanded, is_unix) + pattern[m.end(0):]
+    return pattern
+
+
+def expand_and_normalize(pattern, flags):
+    """Expand and normalize."""
+
+    is_unix = is_unix_style(flags)
+    for splitted in split(pattern, flags):
+        for expanded in expand_braces(util.norm_pattern(splitted, not is_unix, flags & RAWCHARS), flags):
+            expanded = expand_tilde(expanded, is_unix, is_negative(expanded, flags), flags)
+            yield expanded
 
 
 def norm_slash(name, flags):
@@ -305,10 +377,8 @@ def translate(patterns, flags):
     flags = (flags | _TRANSLATE) & FLAG_MASK
 
     for pattern in patterns:
-        for expanded in expand_braces(pattern, flags):
-            (negative if is_negative(expanded, flags) else positive).append(
-                WcParse(expanded, flags).parse()
-            )
+        for expanded in expand_and_normalize(pattern, flags):
+            (negative if is_negative(expanded, flags) else positive).append(WcParse(expanded, flags).parse())
 
     if patterns and negative and not positive:
         if flags & NEGATEALL:
@@ -316,24 +386,20 @@ def translate(patterns, flags):
             positive.append(WcParse(default, flags | (GLOBSTAR if flags & PATHNAME else 0)).parse())
 
     if patterns and flags & NODIR:
-        unix = is_unix_style(flags)
         index = BYTES if isinstance(patterns[0], bytes) else UNICODE
-        exclude = _NO_NIX_DIR[index] if unix else _NO_WIN_DIR[index]
+        exclude = _NO_NIX_DIR[index] if is_unix_style(flags) else _NO_WIN_DIR[index]
         negative.append(exclude)
 
     return positive, negative
 
 
-def split(patterns, flags):
+def split(pattern, flags):
     """Split patterns."""
 
     if flags & SPLIT:
-        splitted = []
-        for pattern in ([patterns] if isinstance(patterns, (str, bytes)) else patterns):
-            splitted.extend(WcSplit(pattern, flags).split())
-        return splitted
+        return WcSplit(pattern, flags).split()
     else:
-        return patterns
+        return [pattern]
 
 
 def compile(patterns, flags):  # noqa A001
@@ -345,7 +411,7 @@ def compile(patterns, flags):  # noqa A001
         patterns = [patterns]
 
     for pattern in patterns:
-        for expanded in expand_braces(pattern, flags):
+        for expanded in expand_and_normalize(pattern, flags):
             (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
 
     if patterns and negative and not positive:
@@ -356,9 +422,8 @@ def compile(patterns, flags):  # noqa A001
             positive.append(_compile(default, flags | (GLOBSTAR if flags & PATHNAME else 0)))
 
     if patterns and flags & NODIR:
-        unix = is_unix_style(flags)
         ptype = BYTES if isinstance(patterns[0], bytes) else UNICODE
-        negative.append(RE_NO_DIR[ptype] if unix else RE_WIN_NO_DIR[ptype])
+        negative.append(RE_NO_DIR[ptype] if is_unix_style(flags) else RE_WIN_NO_DIR[ptype])
 
     return WcRegexp(tuple(positive), tuple(negative), flags & REALPATH, flags & PATHNAME, flags & FOLLOW)
 
@@ -402,10 +467,11 @@ class WcPathSplit(object):
 
         self.unix = is_unix_style(flags)
         self.flags = flags
-        self.pattern = util.norm_pattern(pattern, not self.unix, flags & RAWCHARS)
+        self.pattern = pattern
         self.no_abs = bool(flags & _NOABSOLUTE)
         self.globstar = bool(flags & GLOBSTAR)
         self.matchbase = bool(flags & MATCHBASE)
+        self.tilde = bool(flags & GLOBTILDE)
         self.recursivematch = bool(flags & _RECURSIVEMATCH) and not self.matchbase
         if is_negative(self.pattern, flags):  # pragma: no cover
             # This isn't really used, but we'll keep it around
@@ -524,7 +590,7 @@ class WcPathSplit(object):
         globstar = value in (b'**', '**') and self.globstar
         magic = self.is_magic(value)
         if magic:
-            value = compile(value, self.flags)
+            value = _compile(value, self.flags)
         l.append(WcGlob(value, magic, globstar, dir_only, False))
 
     def split(self):
@@ -744,7 +810,7 @@ class WcSplit(object):
             p = pattern[start + 1:]
             parts.append(p.encode('latin-1') if self.is_bytes else p)
 
-        return tuple(parts)
+        return parts
 
 
 class WcParse(object):
@@ -1376,12 +1442,13 @@ class WcParse(object):
         matchbase = ['']
         self.negative = False
 
-        p = util.norm_pattern(self.pattern, not self.unix, self.raw_chars)
+        p = self.pattern
 
-        p = p.decode('latin-1') if self.is_bytes else p
         if is_negative(p, self.flags):
             self.negative = True
             p = p[1:]
+
+        p = p.decode('latin-1') if self.is_bytes else p
 
         if self.negative:
             self.globstar_capture = False

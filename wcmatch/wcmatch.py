@@ -103,7 +103,7 @@ class WcMatch(object):
         """Parse flags."""
 
         self.flags = flags & FLAG_MASK
-        self.flags |= _wcparse.NEGATE | _wcparse.DOTMATCH | _wcparse.NEGATEALL
+        self.flags |= _wcparse.NEGATE | _wcparse.DOTMATCH | _wcparse.NEGATEALL | _wcparse.SPLIT
         self.follow_links = bool(self.flags & SYMLINKS)
         self.show_hidden = bool(self.flags & HIDDEN)
         self.recursive = bool(self.flags & RECURSIVE)
@@ -117,16 +117,13 @@ class WcMatch(object):
     def _compile_wildcard(self, pattern, pathname=False):
         """Compile or format the wildcard inclusion/exclusion pattern."""
 
-        patterns = None
         flags = self.flags
         if pathname:
             flags |= _wcparse.PATHNAME | _wcparse._ANCHOR
             if self.matchbase:
                 flags |= _wcparse.MATCHBASE
-        if pattern:
-            patterns = _wcparse.WcSplit(pattern, flags=flags).split()
 
-        return _wcparse.compile(patterns, flags) if patterns else patterns
+        return _wcparse.compile(pattern, flags) if pattern else None
 
     def _compile(self, file_pattern, folder_exclude_pattern):
         """Compile patterns."""

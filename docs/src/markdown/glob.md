@@ -31,6 +31,7 @@ Pattern           | Meaning
 `@(pattern_list)` | The pattern matches if exactly one occurrence of any of the patterns in the `pattern_list` match the input string. Requires the [`EXTGLOB`](#globextglob) flag.
 `!(pattern_list)` | The pattern matches if the input string cannot be matched with any of the patterns in the `pattern_list`. Requires the [`EXTGLOB`](#globextglob) flag.
 `{}`              | Bash style brace expansions.  This is applied to patterns before anything else. Requires the [`BRACE`](#globbrace) flag.
+`~/pattern`       | User path expansion via `~/pattern` or `~user/pattern`. Requires the [`GLOBTILDE`](#globglobtilde) flag.
 
 - Slashes are generally treated special in glob related methods. Slashes are not matched in `[]`, `*`, `?`, or extended
   patterns like `*(...)`. Slashes can be matched by `**` if [`GLOBSTAR`](#globglobstar) is set.
@@ -168,6 +169,17 @@ This also aligns with Bash's behavior:
 ```console
 $ echo {*,README}.md
 LICENSE.md README.md README.md
+```
+
+You can resolve user paths with `~` if the [`GLOBTILDE`](#globglobtilde) flag is enabled. You can also target specific
+users with `~user`.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob('~', flags=glob.GLOBTILDE)
+['/home/facelessuser']
+>>> glob.glob('~root', flags=glob.GLOBTILDE)
+['/root']
 ```
 
 By default, `glob` uses the current working directory to evaluate relative patterns. Normally you'd have to use
@@ -559,6 +571,34 @@ For simple patterns, it may make more sense to use [`EXTGLOB`](#globextglob) whi
 Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually
 parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of
 patterns.
+
+#### `glob.GLOBTILDE, glob.T` {: #globglobtilde}
+
+`GLOBTILDE` allows for user path expansion via `~`. You can get the current user path by using `~` at the start of a path.
+`~` can be used as the entire pattern, or it must be followed by a directory slash: `~/more-pattern`.
+
+To specify a specific user, you can explicitly specify a user name via `~user`. If additional pattern is needed, the
+user name must be followed by a directory slash: `~user/more-pattern`.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob('~', flags=glob.GLOBTILDE)
+['/home/facelessuser']
+>>> glob.glob('~root', flags=glob.GLOBTILDE)
+['/root']
+```
+
+`GLOBTILDE` can also be used in things like [`globfilter`](#globglobfilter) or [`globmatch`](#globglobmatch), but you must
+be using [`REALPATH`](#globrealpath) or the user path will not be expanded.
+
+```pycon3
+from wcmatch import glob
+>>> glob.globmatch('/home/facelessuser/', '~', flags=glob.GLOBTILDE | glob.REALPATH)
+True
+```
+
+!!! new "New 5.2"
+    Tilde expansion with `GLOBTILDE` was added in version 5.2.
 
 #### `glob.SPLIT, glob.S` {: #globsplit}
 
