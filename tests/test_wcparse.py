@@ -37,7 +37,6 @@ class TestWcparse(unittest.TestCase):
 
         results = _wcparse.expand(
             'test@(this{|that,|other})|*.py',
-            False,
             _wcparse.BRACE | _wcparse.SPLIT | _wcparse.EXTMATCH
         )
-        self.assertEqual(sorted(results), sorted(['test@(this|that)', '*.py', 'test@(this|other)', '*.py']))
+        self.assertEqual(sorted(results), sorted(['test@(this|that)', 'test@(this|other)', '*.py', '*.py']))

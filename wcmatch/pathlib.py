@@ -7,8 +7,8 @@ from . import _wcparse
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "NEGATE", "MINUSNEGATE", "BRACE",
-    "REALPATH", "FOLLOW", "MATCHBASE", "NEGATEALL", "NODIR",
-    "C", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A",
+    "REALPATH", "FOLLOW", "MATCHBASE", "NEGATEALL", "NODIR", "NOUNIQUE",
+    "C", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A", "Q",
     "Path", "PurePath", "WindowsPath", "PosixPath", "PurePosixPath", "PureWindowsPath"
 )
 
@@ -27,6 +27,7 @@ S = SPLIT = glob.SPLIT
 X = MATCHBASE = glob.MATCHBASE
 O = NODIR = glob.NODIR
 A = NEGATEALL = glob.NEGATEALL
+Q = NOUNIQUE = glob.NOUNIQUE
 
 FLAG_MASK = (
     CASE |
@@ -44,6 +45,7 @@ FLAG_MASK = (
     MATCHBASE |
     NODIR |
     NEGATEALL |
+    NOUNIQUE |
     _wcparse._RECURSIVEMATCH |
     _wcparse._NOABSOLUTE
 )
@@ -141,11 +143,7 @@ class PurePath(pathlib.PurePath):
 
         """
 
-        return glob.globmatch(
-            self._translate_path(),
-            patterns,
-            flags=self._translate_flags(flags | _wcparse._RECURSIVEMATCH)
-        )
+        return self.globmatch(patterns, flags=flags | _wcparse._RECURSIVEMATCH)
 
     def globmatch(self, patterns, *, flags=0):
         """
@@ -154,6 +152,9 @@ class PurePath(pathlib.PurePath):
         `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
 
         """
+
+        if flags & NOUNIQUE:
+            flags ^= NOUNIQUE
 
         return glob.globmatch(
             self._translate_path(),

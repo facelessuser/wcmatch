@@ -105,6 +105,7 @@ NEGATEALL = 0x8000
 FORCEWIN = 0x10000
 FORCEUNIX = 0x20000
 GLOBTILDE = 0x40000
+NOUNIQUE = 0x80000
 
 # Internal flag
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
@@ -132,6 +133,7 @@ FLAG_MASK = (
     FORCEUNIX |
     GLOBTILDE |
     SPLIT |
+    NOUNIQUE |
     _TRANSLATE |
     _ANCHOR |
     _RECURSIVEMATCH |
@@ -292,19 +294,12 @@ def expand_tilde(pattern, is_unix, is_neg, flags):
     return pattern
 
 
-def expand(pattern, is_unix, flags, dedupe=False):
+def expand(pattern, flags):
     """Expand and normalize."""
-
-    if dedupe:
-        seen = set()
 
     for expanded in expand_braces(pattern, flags):
         for splitted in split(expanded, flags):
-            if dedupe:
-                if splitted in seen:
-                    continue
-                seen.add(splitted)
-            yield expand_tilde(splitted, is_unix, is_negative(splitted, flags), flags)
+            yield expand_tilde(splitted, is_unix_style(flags), is_negative(splitted, flags), flags)
 
 
 def norm_slash(name, flags):
@@ -381,9 +376,13 @@ def translate(patterns, flags):
 
     flags = (flags | _TRANSLATE) & FLAG_MASK
     is_unix = is_unix_style(flags)
+    seen = set()
 
     for pattern in patterns:
-        for expanded in expand(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), is_unix, flags, True):
+        for expanded in expand(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), flags):
+            if expanded in seen:
+                continue
+            seen.add(expanded)
             (negative if is_negative(expanded, flags) else positive).append(WcParse(expanded, flags).parse())
 
     if patterns and negative and not positive:
@@ -417,9 +416,13 @@ def compile(patterns, flags):  # noqa A001
         patterns = [patterns]
 
     is_unix = is_unix_style(flags)
+    seen = set()
 
     for pattern in patterns:
-        for expanded in expand(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), is_unix, flags, True):
+        for expanded in set(expand(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), flags)):
+            if expanded in seen:
+                continue
+            seen.add(expanded)
             (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
 
     if patterns and negative and not positive:

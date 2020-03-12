@@ -151,7 +151,7 @@ And if we apply an exclusion pattern, since the patterns share the same context,
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.glob(['*.md', 'README.md', '!README.md'], flags=glob.NEGATE)
+>>> glob.glob(['*.md', '!README.md'], flags=glob.NEGATE)
 ['LICENSE.md']
 ```
 
@@ -160,7 +160,7 @@ multiple patterns. These features, when enabled and used, will also exhibit this
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.glob('{*,README}.md', flags=glob.BRACE)
+>>> glob.glob('{*,README}.md', flags=glob.BRACE | glob.NOUNIQUE)
 ['LICENSE.md', 'README.md', 'README.md']
 ```
 
@@ -169,6 +169,16 @@ This also aligns with Bash's behavior:
 ```console
 $ echo {*,README}.md
 LICENSE.md README.md README.md
+```
+
+It can be noted that we used the [`NOUNIQUE`](#globnounique) flag in the above example. That is because we filter out
+duplicate results by default. In order to get results without this filtering, you must use [`NOUNIQUE`](#globnounique).
+If we omit the flag, duplicates are removed:
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob('{*,README}.md', flags=glob.BRACE | glob.NOUNIQUE)
+['LICENSE.md', 'README.md']
 ```
 
 You can resolve user paths with `~` if the [`GLOBTILDE`](#globglobtilde) flag is enabled. You can also target specific

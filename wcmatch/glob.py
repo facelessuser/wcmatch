@@ -29,9 +29,9 @@ from . import util
 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
-    "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE",
+    "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE", "NOUNIQUE",
     "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX", "GLOBTILDE",
-    "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T",
+    "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T", "Q",
     "iglob", "glob", "globmatch", "globfilter", "escape", "raw_escape"
 )
 
@@ -58,6 +58,7 @@ A = NEGATEALL = _wcparse.NEGATEALL
 W = FORCEWIN = _wcparse.FORCEWIN
 U = FORCEUNIX = _wcparse.FORCEUNIX
 T = GLOBTILDE = _wcparse.GLOBTILDE
+Q = NOUNIQUE = _wcparse.NOUNIQUE
 
 K = MARK = 0x100000
 
@@ -80,6 +81,7 @@ FLAG_MASK = (
     FORCEWIN |
     FORCEUNIX |
     GLOBTILDE |
+    NOUNIQUE |
     _wcparse._RECURSIVEMATCH |
     _wcparse._NOABSOLUTE
 )
@@ -112,10 +114,12 @@ class Glob(object):
     def __init__(self, pattern, flags=0, root_dir=None):
         """Initialize the directory walker object."""
 
+        self.seen = set()
         self.is_bytes = isinstance(pattern[0], bytes)
         self.current = b'.' if self.is_bytes else '.'
         self.root_dir = util.fscodec(root_dir, self.is_bytes) if root_dir is not None else self.current
         self.mark = bool(flags & MARK)
+        self.nounique = bool(flags & NOUNIQUE)
         if self.mark:
             flags ^= MARK
         self.negateall = bool(flags & NEGATEALL)
@@ -125,14 +129,14 @@ class Glob(object):
         if self.nodir:
             flags ^= _wcparse.NODIR
         self.flags = _flag_transform(flags | _wcparse.REALPATH)
-        self.raw_chars = self.flags & RAWCHARS
-        self.follow_links = bool(flags & FOLLOW)
-        self.dot = bool(flags & DOTMATCH)
-        self.unix = not bool(flags & _wcparse.FORCEWIN)
-        self.negate = bool(flags & NEGATE)
-        self.globstar = bool(flags & _wcparse.GLOBSTAR)
-        self.braces = bool(flags & _wcparse.BRACE)
-        self.matchbase = bool(flags & _wcparse.MATCHBASE)
+        self.raw_chars = bool(self.flags & RAWCHARS)
+        self.follow_links = bool(self.flags & FOLLOW)
+        self.dot = bool(self.flags & DOTMATCH)
+        self.unix = not bool(self.flags & _wcparse.FORCEWIN)
+        self.negate = bool(self.flags & NEGATE)
+        self.globstar = bool(self.flags & _wcparse.GLOBSTAR)
+        self.braces = bool(self.flags & _wcparse.BRACE)
+        self.matchbase = bool(self.flags & _wcparse.MATCHBASE)
         self.case_sensitive = _wcparse.get_case(self.flags)
         self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
         self.empty = b'' if self.is_bytes else ''
@@ -147,7 +151,7 @@ class Glob(object):
 
         for p in patterns:
             p = util.norm_pattern(p, not self.unix, self.raw_chars)
-            for expanded in _wcparse.expand(p, self.unix, self.flags):
+            for expanded in _wcparse.expand(p, self.flags):
                 yield expanded
 
     def _parse_patterns(self, patterns):
@@ -157,16 +161,24 @@ class Glob(object):
         self.npatterns = []
         seen = set()
         nflags = self.flags | _wcparse.REALPATH
+        if nflags & _wcparse.NOUNIQUE:
+            nflags ^= _wcparse.NOUNIQUE
         for p in self._iter_patterns(patterns):
-            if _wcparse.is_negative(p, self.flags):
+
+            # Filter out duplicate patterns. If `NOUNIQUE` is enabled,
+            # we only want to filter on negative patterns as they are
+            # only filters.
+            is_neg = _wcparse.is_negative(p, self.flags)
+            if not self.nounique or is_neg:
                 if p in seen:
                     continue
-                else:
-                    seen.add(p)
+                seen.add(p)
+
+            if is_neg:
                 # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
                 # This is faster as compiled patterns usually compare the include patterns first,
                 # and then the exclude, but glob will already know it wants to include the file.
-                self.npatterns.append(re.compile(_wcparse.WcParse(p, nflags).parse()))
+                self.npatterns.append(_wcparse._compile(p, nflags))
             else:
                 self.pattern.append(_wcparse.WcPathSplit(p, self.flags).split())
 
@@ -431,10 +443,24 @@ class Glob(object):
 
         return results
 
+    def is_unique(self, path):
+        """Test if path is unique."""
+
+        if self.nounique:
+            return True
+
+        unique = False
+        if (path.lower() if self.case_sensitive else path) not in self.seen:
+            self.seen.add(path)
+            unique = True
+        return unique
+
     def format_path(self, path, is_dir, dir_only):
         """Format path."""
 
-        return os.path.join(path, self.empty) if dir_only or (self.mark and is_dir) else path
+        path = os.path.join(path, self.empty) if dir_only or (self.mark and is_dir) else path
+        if self.is_unique(path):
+            yield path
 
     def glob(self):
         """Starts off the glob iterator."""
@@ -473,21 +499,21 @@ class Glob(object):
                                     this = rest.pop(0)
                                     for match, is_dir in self._glob(start, this, rest):
                                         if not self._is_excluded(match, is_dir):
-                                            yield self.format_path(match, is_dir, dir_only)
+                                            yield from self.format_path(match, is_dir, dir_only)
                                 elif not self._is_excluded(start, is_dir):
-                                    yield self.format_path(start, is_dir, dir_only)
+                                    yield from self.format_path(start, is_dir, dir_only)
                     else:
                         # Return the file(s) and finish.
                         for match, is_dir in results:
                             if os.path.lexists(self.prepend_base(match)) and not self._is_excluded(match, is_dir):
-                                yield self.format_path(match, is_dir, dir_only)
+                                yield from self.format_path(match, is_dir, dir_only)
                 else:
                     # Path starts with a magic pattern, let's get globbing
                     rest = pattern[:]
                     this = rest.pop(0)
                     for match, is_dir in self._glob(curdir if not curdir == self.current else self.empty, this, rest):
                         if not self._is_excluded(match, is_dir):
-                            yield self.format_path(match, is_dir, dir_only)
+                            yield from self.format_path(match, is_dir, dir_only)
 
 
 def iglob(patterns, *, flags=0, root_dir=None):
