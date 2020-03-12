@@ -864,13 +864,13 @@ class Testglob(_TestGlob):
         """Negate applied to all files."""
 
         for file in glob.glob('!**/', flags=glob.N | glob.NEGATEALL | glob.G, root_dir=self.tempdir):
-            self.assertFalse(os.path.isdir(file))
+            self.assert_equal(os.path.isdir(file), False)
 
     def test_negateall_bytes(self):
         """Negate applied to all files."""
 
         for file in glob.glob(b'!**/', flags=glob.N | glob.NEGATEALL | glob.G, root_dir=os.fsencode(self.tempdir)):
-            self.assertFalse(os.path.isdir(file))
+            self.assert_equal(os.path.isdir(file), False)
 
 
 class TestGlobMarked(Testglob):
