@@ -292,12 +292,18 @@ def expand_tilde(pattern, is_unix, is_neg, flags):
     return pattern
 
 
-def expand_and_normalize(pattern, flags):
+def expand(pattern, is_unix, flags, dedupe=False):
     """Expand and normalize."""
 
-    is_unix = is_unix_style(flags)
-    for expanded in expand_braces(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), flags):
+    if dedupe:
+        seen = set()
+
+    for expanded in expand_braces(pattern, flags):
         for splitted in split(expanded, flags):
+            if dedupe:
+                if splitted in seen:
+                    continue
+                seen.add(splitted)
             yield expand_tilde(splitted, is_unix, is_negative(splitted, flags), flags)
 
 
@@ -374,9 +380,10 @@ def translate(patterns, flags):
         patterns = [patterns]
 
     flags = (flags | _TRANSLATE) & FLAG_MASK
+    is_unix = is_unix_style(flags)
 
     for pattern in patterns:
-        for expanded in expand_and_normalize(pattern, flags):
+        for expanded in expand(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), is_unix, flags, True):
             (negative if is_negative(expanded, flags) else positive).append(WcParse(expanded, flags).parse())
 
     if patterns and negative and not positive:
@@ -386,7 +393,7 @@ def translate(patterns, flags):
 
     if patterns and flags & NODIR:
         index = BYTES if isinstance(patterns[0], bytes) else UNICODE
-        exclude = _NO_NIX_DIR[index] if is_unix_style(flags) else _NO_WIN_DIR[index]
+        exclude = _NO_NIX_DIR[index] if is_unix else _NO_WIN_DIR[index]
         negative.append(exclude)
 
     return positive, negative
@@ -409,8 +416,10 @@ def compile(patterns, flags):  # noqa A001
     if isinstance(patterns, (str, bytes)):
         patterns = [patterns]
 
+    is_unix = is_unix_style(flags)
+
     for pattern in patterns:
-        for expanded in expand_and_normalize(pattern, flags):
+        for expanded in expand(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), is_unix, flags, True):
             (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
 
     if patterns and negative and not positive:
@@ -422,7 +431,7 @@ def compile(patterns, flags):  # noqa A001
 
     if patterns and flags & NODIR:
         ptype = BYTES if isinstance(patterns[0], bytes) else UNICODE
-        negative.append(RE_NO_DIR[ptype] if is_unix_style(flags) else RE_WIN_NO_DIR[ptype])
+        negative.append(RE_NO_DIR[ptype] if is_unix else RE_WIN_NO_DIR[ptype])
 
     return WcRegexp(tuple(positive), tuple(negative), flags & REALPATH, flags & PATHNAME, flags & FOLLOW)
 

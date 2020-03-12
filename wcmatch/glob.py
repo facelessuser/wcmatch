@@ -136,25 +136,33 @@ class Glob(object):
         self.case_sensitive = _wcparse.get_case(self.flags)
         self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
         self.empty = b'' if self.is_bytes else ''
-        # Handle preprocessing
-        patterns = []
-        for p in pattern:
-            for expanded in _wcparse.expand_and_normalize(p, self.flags):
-                patterns.append(expanded)
-        self._parse_patterns(patterns)
+        self._parse_patterns(pattern)
         if self.flags & _wcparse.FORCEWIN:
             self.sep = b'\\' if self.is_bytes else '\\'
         else:
             self.sep = b'/' if self.is_bytes else '/'
 
-    def _parse_patterns(self, pattern):
+    def _iter_patterns(self, patterns):
+        """Iterate expanded patterns."""
+
+        for p in patterns:
+            p = util.norm_pattern(p, not self.unix, self.raw_chars)
+            for expanded in _wcparse.expand(p, self.unix, self.flags):
+                yield expanded
+
+    def _parse_patterns(self, patterns):
         """Parse patterns."""
 
         self.pattern = []
         self.npatterns = []
+        seen = set()
         nflags = self.flags | _wcparse.REALPATH
-        for p in pattern:
+        for p in self._iter_patterns(patterns):
             if _wcparse.is_negative(p, self.flags):
+                if p in seen:
+                    continue
+                else:
+                    seen.add(p)
                 # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
                 # This is faster as compiled patterns usually compare the include patterns first,
                 # and then the exclude, but glob will already know it wants to include the file.

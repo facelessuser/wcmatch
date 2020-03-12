@@ -326,6 +326,10 @@ handle standard string escapes and Unicode (including `#!py3 r'\N{CHAR NAME}'`).
 `EXTMATCH` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`,
 etc.
 
+!!! tip "EXTMATCH and NEGATE"
+    When using `EXTMATCH`, it is recommended to also use [`MINUSNEGATE`](#wcmatchminusnegate) to avoid conflicts in
+    regards to the `!` meta character which is used for exclusion patterns..
+
 #### `wcmatch.BRACE, wcmatch.B` {: #wcmatchbrace}
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything
@@ -334,9 +338,10 @@ else. When applied, a pattern will be expanded into multiple patterns. Each patt
 For simple patterns, it may make more sense to use [`EXTMATCH`](#wcmatchextmatch) which will only generate a single
 pattern: `@(ab|ac|ad)`.
 
-Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually
-parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of
-patterns.
+!!! warning "Using BRACE Responsibly"
+    Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually
+    parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets
+    of patterns.
 
 #### `wcmatch.MINUSNEGATE, wcmatch.M` {: #wcmatchminusnegate}
 

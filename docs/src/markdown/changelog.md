@@ -6,6 +6,13 @@
 - **FIX**: `RAWCHARS` was inconsistently applied at different times depending on what was calling it. It is now applied
   first followed by `BRACE`, `SPLIT`, and finally `GLOBTILDE`.
 - **FIX**: Edge cases related to processing `SPLIT` before `BRACE`. `BRACE` is now processed before `SPLIT`.
+- **FIX**: Matching functions (`globmatch`, `fnmatch`, `translate`, `filter`, etc.), when expanding patterns using
+  `BRACE` and `SPLIT`, will filter out duplicate patterns to ensure faster matching. File crawling functions such as
+  `glob`, `iglob`, `pathlib`'s `glob` and `rglob` do not filter out duplicates as they are meant to return exactly what
+  the user specifies. It is recommended that users pick one syntax or the other when globbing a file system as using
+  `BRACE` and `SPLIT` syntax together can a lot of duplicate patterns.
+- **FIX**: `WcMatch` class will filter out duplicate patterns when using `SPLIT` and/or `BRACE` to expand patterns as it
+  crawls a file system in one pass and uses file matching functions instead of globbing functions.
 
 ## 5.1.0
 

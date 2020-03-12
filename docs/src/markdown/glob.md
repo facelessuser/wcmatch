@@ -560,6 +560,10 @@ Alternatively `EXTMATCH` will also be accepted for consistency with the other pr
 the same and are provided as a convenience in case the user finds one more intuitive than the other since `EXTGLOB` is
 often the name used in Bash.
 
+!!! tip "EXTMATCH and NEGATE"
+    When using `EXTMATCH` and [`NEGATE`](#globnegate) together, it is recommended to also use
+    [`MINUSNEGATE`](#globminusnegate) to avoid conflicts in regards to the `!` meta character.
+
 #### `glob.BRACE, glob.B` {: #globbrace}
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything
@@ -568,9 +572,16 @@ else. When applied, a pattern will be expanded into multiple patterns. Each patt
 For simple patterns, it may make more sense to use [`EXTGLOB`](#globextglob) which will only generate a single pattern:
 `@(ab|ac|ad)`.
 
-Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually
-parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of
-patterns.
+!!! warning "Using BRACE responsibly"
+    Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually
+    parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets
+    of patterns. Especially with [`glob`](#globglob) and [`iglob`](#globiglob) which will crawl your file system for
+    each pattern.
+
+!!! tip "BRACE vs SPLIT"
+    `BRACE` and [`SPLIT`](#globsplit) both expand patterns into multiple patterns. While using them together will
+    work, it can also cause numerous duplicate patterns. If using either [`glob`](#globglob) or [`iglob`](#globiglob),
+    it is recommended to use one or the other. See [`BRACE vs SPLIT`](#brace-vs-split) for more info.
 
 #### `glob.GLOBTILDE, glob.T` {: #globglobtilde}
 
@@ -614,6 +625,13 @@ True
 >>> glob.globmatch('test.py', r'*.txt|*.py', flags=fnmatch.SPLIT)
 True
 ```
+
+`SPLIT` syntax also pairs really well with [`EXTGLOB`](#globextglob).
+
+!!! tip "BRACE vs SPLIT"
+    [`BRACE`](#globbrace) and `SPLIT` both expand patterns into multiple patterns. While using them together will work,
+    it can also cause numerous duplicate patterns. If using either [`glob`](#globglob) or [`iglob`](#globiglob), it is
+    recommended to use one or the other. See [`BRACE vs SPLIT`](#brace-vs-split) for more info.
 
 #### `glob.MARK, glob.K` {: #globmark}
 
@@ -694,6 +712,64 @@ If `FORCEUNIX` is used along side [`FORCEWIN`](#globforcewin), both will be igno
 
 !!! new "New 4.2"
     `FORCEUNIX` is new in 4.2.0.
+
+
+## BRACE vs SPLIT
+
+When using [`glob`](#globglob), [`iglob`](#globiglob), or even [`pathlib`](./pathlib.md)'s
+[`rglob`](./pathlib.md#pathrglob), it is recommended not to use [`BRACE`](#globbrace) syntax while *also* using
+[`SPLIT`](#globsplit) syntax as it can cause a lot of duplicate patterns that can slow down performance. This is
+particularly problematic with functions that crawl the file system as they will re-crawl the file system for every
+pattern.
+
+For instance, if  [`BRACE`](#globbrace) and [`SPLIT`](#globsplit) were enabled for
+`#!py3 'test@(this{|that,|other})|*.py'`, it would expand to:
+
+```py3
+# Multiple *.py patterns!
+['test@(this|that)', '*.py', 'test@(this|other)', '*.py']
+```
+
+Matching functions such as [`globfilter`](#globglobfilter), [`globmatch`](#globglobmatch), etc. will remove these
+duplicate patterns as they are meant to simply match paths. File crawling functions like [`glob`](#globglob), etc. are
+much like Bash's glob, they give you exactly what you ask for, even if it's the same thing over and over :slight_smile:.
+
+[`BRACE`](#globbrace) is extremely powerful, but can be a bit awkward when specifying multiple long patterns:
+
+```
+{somepath/**/more-path/*.py,some-other-path/**/*.txt}
+```
+
+It can also be easy to create careless patterns that can cause a file system to be inefficiently crawled many times.
+Like this pattern which will generate 300 separate patterns.
+
+```
+**/file-{1..100}.{py,md,txt}
+```
+
+But when used smartly, [`BRACE`](#globbrace) can be quite useful.
+
+On the other hand [`SPLIT`](#globsplit), while less powerful, is less cumbersome with multiple long patterns. You
+simply separate them with `|`:
+
+```
+somepath/**/more-path/*.py|some-other-path/**/*.txt
+```
+
+[`SPLIT`](#globsplit) also pairs nicely with [`EXTGLOB`](#globextglob) with a complementary feel and syntax:
+
+```
+somepath/**/more-path/*.@(py|pyc)|some-other-path/**/*.txt
+```
+
+With that said, [`EXTGLOB`](#globextglob) also works with [`BRACE`](#globbrace):
+
+```
+{somepath/**/more-path/*.@(py|pyc),some-other-path/**/*.txt}
+```
+
+Having both enabled isn't a problem, but you would want to be mindful when you are constructing patterns to choose one
+over the other.
 
 --8<--
 refs.txt

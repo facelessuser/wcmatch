@@ -194,6 +194,10 @@ other character. Dots will not be matched in `[]`, `*`, or `?`.
 `EXTMATCH` enables extended pattern matching. This includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`,
 etc. See the [syntax overview](#syntax) for more information.
 
+!!! tip "EXTMATCH and NEGATE"
+    When using `EXTMATCH` and [`NEGATE`](#fnmatchnegate) together, it is recommended to also use
+    [`MINUSNEGATE`](#fnmatchminusnegate) to avoid conflicts in regards to the `!` meta character.
+
 #### `fnmatch.BRACE, fnmatch.B` {: #fnmatchbrace}
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything
@@ -202,9 +206,10 @@ else. When applied, a pattern will be expanded into multiple patterns. Each patt
 For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch) which will only generate a single
 pattern: `@(ab|ac|ad)`.
 
-Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually
-parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of
-patterns.
+!!! warning "Using BRACE responsibly"
+    Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually
+    parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets
+    of patterns.
 
 #### `fnmatch.SPLIT, fnmatch.S` {: #fnmatchsplit}
 
@@ -220,6 +225,8 @@ True
 >>> fnmatch.fnmatch('test.py', r'*.txt|*.py', flags=fnmatch.SPLIT)
 True
 ```
+
+`SPLIT` syntax also pairs really well with [`EXTGLOB`](#fnmatchextmatch).
 
 #### `fnmatch.FORCEWIN, fnmatch.W` {: #fnmatchforcewin}
 

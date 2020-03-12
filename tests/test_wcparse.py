@@ -31,3 +31,13 @@ class TestWcparse(unittest.TestCase):
         w6 = copy.copy(w1)
         self.assertTrue(w1 == w6)
         self.assertTrue(w6 in {w1})
+
+    def test_preprocessor_sequence(self):
+        """Test the integrity of the order of preprocessors."""
+
+        results = _wcparse.expand(
+            'test@(this{|that,|other})|*.py',
+            False,
+            _wcparse.BRACE | _wcparse.SPLIT | _wcparse.EXTMATCH
+        )
+        self.assertEqual(sorted(results), sorted(['test@(this|that)', '*.py', 'test@(this|other)', '*.py']))

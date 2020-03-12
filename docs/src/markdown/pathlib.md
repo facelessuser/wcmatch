@@ -404,6 +404,10 @@ Alternatively `EXTMATCH` will also be accepted for consistency with the other pr
 the same and are provided as a convenience in case the user finds one more intuitive than the other since `EXTGLOB` is
 often the name used in Bash.
 
+!!! tip "EXTMATCH and NEGATE"
+    When using `EXTMATCH` and [`NEGATE`](#pathlibnegate) together, it is recommended to also use
+    [`MINUSNEGATE`](#pathlibminusnegate) to avoid conflicts in regards to the `!` meta character.
+
 #### `pathlib.BRACE, pathlib.B` {: #pathlibbrace}
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything
@@ -412,9 +416,17 @@ else. When applied, a pattern will be expanded into multiple patterns. Each patt
 For simple patterns, it may make more sense to use [`EXTGLOB`](#pathlibextglob) which will only generate a single
 pattern: `@(ab|ac|ad)`.
 
-Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually
-parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of
-patterns.
+!!! warning "Using BRACE responsibly"
+    Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually
+    parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets
+    of patterns. Especially with [`glob`](#pathglob) and [`rglob`](#pathrglob) which will crawl your file system for
+    each pattern.
+
+!!! tip "BRACE vs SPLIT"
+    `BRACE` and [`SPLIT`](#pathlibsplit) both expand patterns into multiple patterns. While using them together will
+    work, it can also cause numerous duplicate patterns. If using either [`glob`](#pathglob) or
+    [`rglob`](#pathrglob), it is recommended to use one or the other. See [`BRACE vs SPLIT`](./glob.md#brace-vs-split)
+    for more info.
 
 #### `pathlib.SPLIT, pathlib.S` {: #pathlibsplit}
 
@@ -428,6 +440,13 @@ escape the delimiters if needed: `\|`.
 >>> list(pathlib.Path('.').glob('README.md|LICENSE.md', flags=pathlib.SPLIT))
 [WindowsPath('README.md'), WindowsPath('LICENSE.md')]
 ```
+
+`SPLIT` syntax also pairs really well with [`EXTGLOB`](#pathlibextglob).
+
+!!! tip "BRACE vs SPLIT"
+    [`BRACE`](#pathlibbrace) and `SPLIT` both expand patterns into multiple patterns. While using them together will
+    work, it can also cause numerous duplicate patterns. If using either [`glob`](#pathglob) or [`rglob`](#pathrglob),
+    it is recommended to use one or the other. See [`BRACE vs SPLIT`](./glob.md#brace-vs-split) for more info.
 
 #### `pathlib.MATCHBASE, pathlib.X` {: #pathlibmatchbase}
 
