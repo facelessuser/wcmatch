@@ -110,7 +110,7 @@ def _flag_transform(flags):
 class Glob(object):
     """Glob patterns."""
 
-    def __init__(self, pattern, flags=0, root_dir=None):
+    def __init__(self, pattern, flags=0, root_dir=None, pattern_limit=_wcparse.PATTERN_LIMIT):
         """Initialize the directory walker object."""
 
         self.seen = set()
@@ -139,6 +139,7 @@ class Glob(object):
         self.case_sensitive = _wcparse.get_case(self.flags)
         self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
         self.empty = b'' if self.is_bytes else ''
+        self.pattern_limit = pattern_limit
         self._parse_patterns(pattern)
         if self.flags & _wcparse.FORCEWIN:
             self.sep = b'\\' if self.is_bytes else '\\'
@@ -148,10 +149,16 @@ class Glob(object):
     def _iter_patterns(self, patterns):
         """Iterate expanded patterns."""
 
+        count = 1
         for p in patterns:
+            if 0 <= self.pattern_limit < count:
+                raise _wcparse.PatternLimitException(
+                    "Pattern limit exceeded the limit of {:d}".format(self.pattern_limit)
+                )
             p = util.norm_pattern(p, not self.unix, self.raw_chars)
             for expanded in _wcparse.expand(p, self.flags):
                 yield expanded
+                count += 1
 
     def _parse_patterns(self, patterns):
         """Parse patterns."""
@@ -508,26 +515,26 @@ class Glob(object):
                             yield from self.format_path(match, is_dir, dir_only)
 
 
-def iglob(patterns, *, flags=0, root_dir=None):
+def iglob(patterns, *, flags=0, root_dir=None, pattern_limit=_wcparse.PATTERN_LIMIT):
     """Glob."""
 
-    yield from Glob(util.to_tuple(patterns), flags, root_dir).glob()
+    yield from Glob(util.to_tuple(patterns), flags, root_dir, pattern_limit).glob()
 
 
-def glob(patterns, *, flags=0, root_dir=None):
+def glob(patterns, *, flags=0, root_dir=None, pattern_limit=_wcparse.PATTERN_LIMIT):
     """Glob."""
 
-    return list(iglob(util.to_tuple(patterns), flags=flags, root_dir=root_dir))
+    return list(iglob(patterns, flags=flags, root_dir=root_dir, pattern_limit=pattern_limit))
 
 
-def translate(patterns, *, flags=0):
+def translate(patterns, *, flags=0, pattern_limit=_wcparse.PATTERN_LIMIT):
     """Translate glob pattern."""
 
     flags = _flag_transform(flags)
-    return _wcparse.translate(patterns, flags)
+    return _wcparse.translate(patterns, flags, pattern_limit)
 
 
-def globmatch(filename, patterns, *, flags=0, root_dir=None):
+def globmatch(filename, patterns, *, flags=0, root_dir=None, pattern_limit=_wcparse.PATTERN_LIMIT):
     """
     Check if filename matches pattern.
 
@@ -543,10 +550,10 @@ def globmatch(filename, patterns, *, flags=0, root_dir=None):
     filename = util.fscodec(filename, is_bytes)
     if not _wcparse.is_unix_style(flags):
         filename = _wcparse.norm_slash(filename, flags)
-    return _wcparse.compile(patterns, flags).match(filename, root_dir=root_dir)
+    return _wcparse.compile(patterns, flags, pattern_limit).match(filename, root_dir=root_dir)
 
 
-def globfilter(filenames, patterns, *, flags=0, root_dir=None):
+def globfilter(filenames, patterns, *, flags=0, root_dir=None, pattern_limit=_wcparse.PATTERN_LIMIT):
     """Filter names using pattern."""
 
     is_bytes = isinstance(patterns[0], bytes) if not isinstance(patterns, (bytes, str)) else isinstance(patterns, bytes)
@@ -556,7 +563,7 @@ def globfilter(filenames, patterns, *, flags=0, root_dir=None):
     matches = []
     flags = _flag_transform(flags)
     unix = _wcparse.is_unix_style(flags)
-    obj = _wcparse.compile(patterns, flags)
+    obj = _wcparse.compile(patterns, flags, pattern_limit)
 
     for filename in filenames:
         temp = util.fscodec(filename, is_bytes)

@@ -67,7 +67,7 @@ class Path(pathlib.Path):
         self._init()
         return self
 
-    def glob(self, patterns, *, flags=0):
+    def glob(self, patterns, *, flags=0, pattern_limit=_wcparse.PATTERN_LIMIT):
         """
         Search the file system.
 
@@ -77,10 +77,10 @@ class Path(pathlib.Path):
 
         if self.is_dir():
             flags = self._translate_flags(flags | _wcparse._NOABSOLUTE)
-            for filename in glob.iglob(patterns, flags=flags, root_dir=str(self)):
+            for filename in glob.iglob(patterns, flags=flags, root_dir=str(self), pattern_limit=pattern_limit):
                 yield self.joinpath(filename)
 
-    def rglob(self, patterns, *, flags=0):
+    def rglob(self, patterns, *, flags=0, pattern_limit=_wcparse.PATTERN_LIMIT):
         """
         Recursive glob.
 
@@ -91,7 +91,7 @@ class Path(pathlib.Path):
 
         """
 
-        yield from self.glob(patterns, flags=flags | _wcparse._RECURSIVEMATCH)
+        yield from self.glob(patterns, flags=flags | _wcparse._RECURSIVEMATCH, pattern_limit=pattern_limit)
 
 
 class PurePath(pathlib.PurePath):
@@ -132,7 +132,7 @@ class PurePath(pathlib.PurePath):
 
         return name + sep
 
-    def match(self, patterns, *, flags=0):
+    def match(self, patterns, *, flags=0, pattern_limit=_wcparse.PATTERN_LIMIT):
         """
         Match patterns using `globmatch`, but also using the same recursive logic that the default `pathlib` uses.
 
@@ -143,9 +143,9 @@ class PurePath(pathlib.PurePath):
 
         """
 
-        return self.globmatch(patterns, flags=flags | _wcparse._RECURSIVEMATCH)
+        return self.globmatch(patterns, flags=flags | _wcparse._RECURSIVEMATCH, pattern_limit=pattern_limit)
 
-    def globmatch(self, patterns, *, flags=0):
+    def globmatch(self, patterns, *, flags=0, pattern_limit=_wcparse.PATTERN_LIMIT):
         """
         Match patterns using `globmatch`, but without the recursive logic that the default `pathlib` uses.
 
@@ -159,7 +159,8 @@ class PurePath(pathlib.PurePath):
         return glob.globmatch(
             self._translate_path(),
             patterns,
-            flags=self._translate_flags(flags)
+            flags=self._translate_flags(flags),
+            pattern_limit=pattern_limit
         )
 
 

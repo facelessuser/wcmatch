@@ -32,6 +32,8 @@ from backrefs import uniprops
 UNICODE = 0
 BYTES = 1
 
+PATTERN_LIMIT = 1000
+
 RE_WIN_PATH = (
     re.compile(r'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)', re.I),
     re.compile(br'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)', re.I)
@@ -222,6 +224,10 @@ class PathNameException(Exception):
     """Path name exception."""
 
 
+class PatternLimitException(Exception):
+    """Pattern limit exception."""
+
+
 def raw_escape(pattern, unix=None):
     """Apply raw character transform before applying escape."""
 
@@ -366,7 +372,7 @@ def is_unix_style(flags):
     )
 
 
-def translate(patterns, flags):
+def translate(patterns, flags, pattern_limit=PATTERN_LIMIT):
     """Translate patterns."""
 
     positive = []
@@ -377,13 +383,18 @@ def translate(patterns, flags):
     flags = (flags | _TRANSLATE) & FLAG_MASK
     is_unix = is_unix_style(flags)
     seen = set()
+    count = 1
 
     for pattern in patterns:
         for expanded in expand(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), flags):
+            if 0 <= pattern_limit < count:
+                raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(pattern_limit))
             if expanded in seen:
+                count += 1
                 continue
             seen.add(expanded)
             (negative if is_negative(expanded, flags) else positive).append(WcParse(expanded, flags).parse())
+            count += 1
 
     if patterns and negative and not positive:
         if flags & NEGATEALL:
@@ -407,7 +418,7 @@ def split(pattern, flags):
         yield pattern
 
 
-def compile(patterns, flags):  # noqa A001
+def compile(patterns, flags, pattern_limit=PATTERN_LIMIT):  # noqa A001
     """Compile patterns."""
 
     positive = []
@@ -417,13 +428,18 @@ def compile(patterns, flags):  # noqa A001
 
     is_unix = is_unix_style(flags)
     seen = set()
+    count = 1
 
     for pattern in patterns:
         for expanded in set(expand(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), flags)):
+            if 0 <= pattern_limit < count:
+                raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(pattern_limit))
             if expanded in seen:
+                count += 1
                 continue
             seen.add(expanded)
             (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
+            count += 1
 
     if patterns and negative and not positive:
         if flags & NEGATEALL:
