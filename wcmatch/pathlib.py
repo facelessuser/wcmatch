@@ -153,9 +153,6 @@ class PurePath(pathlib.PurePath):
 
         """
 
-        if flags & NOUNIQUE:
-            flags ^= NOUNIQUE
-
         return glob.globmatch(
             self._translate_path(),
             patterns,

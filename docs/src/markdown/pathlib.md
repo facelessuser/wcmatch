@@ -461,6 +461,31 @@ related to pairing it with `SPLIT`.
 [WindowsPath('README.md'), WindowsPath('LICENSE.md')]
 ```
 
+### `pathlib.NOUNIQUE, pathlib.Q` {: #pathlibnounique}
+
+`NOUNIQUE` is used to disable Wildcard Match's unique results return. This mimics Bash's output behavior if that is
+desired.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob('{*,README}.md', flags=glob.BRACE | glob.NOUNIQUE)
+['LICENSE.md', 'README.md', 'README.md']
+>>> glob.glob('{*,README}.md', flags=glob.BRACE )
+['LICENSE.md', 'README.md']
+```
+
+By default, only unique paths are returned in [`glob`](#pathglob) and [`rglob`](#pathrglob). Normally this is what a
+programmer would want from such a library, so input patterns are reduced to unique patterns[^1] to reduce excessive
+matching with redundant patterns and excessive crawls through the file system. Also, as two different patterns that have
+been fed into [`glob`](#pathglob) may match the same file, the results are also filtered as to not return duplicates.
+
+`NOUNIQUE` disables all of the aforementioned "unique" optimizations, but only for [`glob`](#globglob) and
+[`rglob`](#pathrglob). Functions like [`globmatch`](#purepathglobmatch) and [`match`](#purepathmatch) would get no
+benefit from disabling "unique" optimizations, they would only run slower, so `NOUNIQUE` will be ignored.
+
+!!! new "New in 6.0"
+    "Unique" optimizations were added in 6.0, along with `NOUNIQUE`.
+
 #### `pathlib.MATCHBASE, pathlib.X` {: #pathlibmatchbase}
 
 `MATCHBASE`, when a pattern has no slashes in it, will cause all glob related functions to seek for any file anywhere in

@@ -139,11 +139,20 @@ $ echo *.md README.md
 LICENSE.md README.md README.md
 ```
 
-And we see that Wildcard Match's `glob` behaves the same:
+And we see that Wildcard Match's `glob` behaves the same, only it only returns unique results.
 
 ```pycon3
 >>> from wcmatch import glob
 >>> glob.glob(['*.md', 'README.md'])
+['LICENSE.md', 'README.md']
+```
+
+If we wanted to completely match Bash's results, we would turn off unique results with the [`NOUNIQUE`](#globnounique)
+flag.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob(['*.md', 'README.md'], flags=glob.NOUNIQUE)
 ['LICENSE.md', 'README.md', 'README.md']
 ```
 
@@ -151,7 +160,7 @@ And if we apply an exclusion pattern, since the patterns share the same context,
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.glob(['*.md', '!README.md'], flags=glob.NEGATE)
+>>> glob.glob(['*.md', '!README.md'], flags=glob.NEGATE | glob.NOUNIQUE)
 ['LICENSE.md']
 ```
 
@@ -169,16 +178,6 @@ This also aligns with Bash's behavior:
 ```console
 $ echo {*,README}.md
 LICENSE.md README.md README.md
-```
-
-It can be noted that we used the [`NOUNIQUE`](#globnounique) flag in the above example. That is because we filter out
-duplicate results by default. In order to get results without this filtering, you must use [`NOUNIQUE`](#globnounique).
-If we omit the flag, duplicates are removed:
-
-```pycon3
->>> from wcmatch import glob
->>> glob.glob('{*,README}.md', flags=glob.BRACE | glob.NOUNIQUE)
-['LICENSE.md', 'README.md']
 ```
 
 You can resolve user paths with `~` if the [`GLOBTILDE`](#globglobtilde) flag is enabled. You can also target specific
@@ -628,6 +627,31 @@ True
 >>> glob.globmatch('test.py', r'*.txt|*.py', flags=fnmatch.SPLIT)
 True
 ```
+
+### `glob.NOUNIQUE, glob.Q` {: #globnounique}
+
+`NOUNIQUE` is used to disable Wildcard Match's unique results return. This mimics Bash's output behavior if that is
+desired.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob('{*,README}.md', flags=glob.BRACE | glob.NOUNIQUE)
+['LICENSE.md', 'README.md', 'README.md']
+>>> glob.glob('{*,README}.md', flags=glob.BRACE )
+['LICENSE.md', 'README.md']
+```
+
+By default, only unique paths are returned in [`glob`](#globglob) and [`iglob`](#globiglob). Normally this is what a
+programmer would want from such a library, so input patterns are reduced to unique patterns[^1] to reduce excessive
+matching with redundant patterns and excessive crawls through the file system. Also, as two different patterns that have
+been fed into [`glob`](#globglob) may match the same file, the results are also filtered as to not return duplicates.
+
+`NOUNIQUE` disables all of the aforementioned "unique" optimizations, but only for [`glob`](#globglob) and
+[`iglob`](#globiglob). Functions like [`globmatch`](#globglobmatch) andn [`globfilter`](#globglobfilter) would get no
+benefit from disabling "unique" optimizations, they would only run slower, so `NOUNIQUE` will be ignored.
+
+!!! new "New in 6.0"
+    "Unique" optimizations were added in 6.0, along with `NOUNIQUE`.
 
 #### `glob.GLOBTILDE, glob.T` {: #globglobtilde}
 
