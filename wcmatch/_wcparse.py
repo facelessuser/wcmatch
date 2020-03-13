@@ -602,7 +602,10 @@ class WcPathSplit(object):
         magic = self.is_magic(value)
         if magic:
             value = _compile(value, self.flags)
-        l.append(WcGlob(value, magic, globstar, dir_only, False))
+        if globstar and l and l[-1].is_globstar:
+            l[-1] = WcGlob(value, magic, globstar, dir_only, False)
+        else:
+            l.append(WcGlob(value, magic, globstar, dir_only, False))
 
     def split(self):
         """Start parsing the pattern."""

@@ -359,20 +359,13 @@ class Glob(object):
         if is_magic and is_globstar:
             # Glob star directory `**`.
 
-            # Throw away multiple consecutive `globstars`
-            # and acquire the pattern after the `globstars` if available.
+            # Acquire the pattern after the `globstars` if available.
+            # If not, mark that the `globstar` is the end.
             this = rest.pop(0) if rest else None
             globstar_end = this is None
-            while this and not globstar_end:
-                if this:
-                    dir_only = this.dir_only
-                    target = this.pattern
-                if this and this.is_globstar:
-                    this = rest.pop(0) if rest else None
-                    if this is None:
-                        globstar_end = True
-                else:
-                    break
+            if this:
+                dir_only = this.dir_only
+                target = this.pattern
 
             if globstar_end:
                 target = None
