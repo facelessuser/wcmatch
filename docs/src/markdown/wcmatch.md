@@ -334,14 +334,32 @@ etc.
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything
 else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
+Redundant, identical patterns are discarded[^1] by default.
 
 For simple patterns, it may make more sense to use [`EXTMATCH`](#wcmatchextmatch) which will only generate a single
-pattern: `@(ab|ac|ad)`.
+pattern which will perform much better: `@(ab|ac|ad)`.
 
-!!! warning "Using BRACE Responsibly"
-    Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually
-    parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets
-    of patterns.
+!!! warning "Massive Expansion Risk"
+    1. It is important to note that each pattern is matched separately, so patterns such as `{1..100}` would generate
+    **one hundred** patterns. Since [`WcMatch`](#wcmatchwcmatch_1) class is able to crawl the file system one pass
+    accounting for all the patterns, the performance isn't as bad as it may be with [`glob`](./glob.md), but it can
+    still impact performance as each file must get compared against many patterns until one is matched. Sometimes
+    patterns like this are needed, so construct patterns thoughtfully and carefully.
+
+    2. Splitting patterns with `|` is built into [`WcMatch`](#wcmatchwcmatch_1). `BRACE` and and splitting with `|` both
+    expand patterns into multiple patterns. Using these two syntaxes simultaneously can exponential increase in
+    duplicate patterns:
+
+        ```pycon3
+        >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
+        ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
+        ```
+
+        This effect is reduced as redundant, identical patterns are optimized away[^1]. But it is useful to know if
+    trying to construct efficient patterns.
+
+[^1]: Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
+`[[:alnum:]]` =/= `[[:ALNUM:]]`.
 
 #### `wcmatch.MINUSNEGATE, wcmatch.M` {: #wcmatchminusnegate}
 

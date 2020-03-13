@@ -65,6 +65,7 @@ subdirectories
 sublicense
 symlink
 symlinks
+syntaxes
 tuple
 un
 unclosed

@@ -413,40 +413,53 @@ often the name used in Bash.
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything
 else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
-For simple patterns, it may make more sense to use [`EXTGLOB`](#pathlibextglob) which will only generate a single
-pattern: `@(ab|ac|ad)`.
+Redundant, identical patterns are discarded[^1] by default, and `glob` and `iglob` will limit the returned values to
+unique results. If you need [`glob`](#pathglob) or [`iglob`](#pathrglob) to behave more like Bash and return all
+results, you can set [`NOUNIQUE`](#pathlibnounique). [`NOUNIQUE`](#pathlibnounique) has no effect on matching functions
+such as [`globmatch`](#purepathglobmatch).
 
-!!! warning "Using BRACE responsibly"
-    Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually
-    parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets
-    of patterns. Especially with [`glob`](#pathglob) and [`rglob`](#pathrglob) which will crawl your file system for
-    each pattern.
+For simple patterns, it may make more sense to use [`EXTGLOB`](#pathlibextglob) which will only generate a single pattern
+which will perform much better: `@(ab|ac|ad)`.
 
-!!! tip "BRACE vs SPLIT"
-    `BRACE` and [`SPLIT`](#pathlibsplit) both expand patterns into multiple patterns. While using them together will
-    work, it can also cause numerous duplicate patterns. If using either [`glob`](#pathglob) or
-    [`rglob`](#pathrglob), it is recommended to use one or the other. See [`BRACE vs SPLIT`](./glob.md#brace-vs-split)
-    for more info.
+!!! warning "Massive Expansion Risk"
+    1. It is important to note that each pattern is crawled separately, so patterns such as `{1..100}` would generate
+    **one hundred** patterns. In a match function ([`globmatch`](#purepathglobmatch)), that would cause a hundred
+    compares, and in a file crawling function ([`glob`](#pathglob)), it would cause the file system to be crawled one
+    hundred times. Sometimes patterns like this are needed, so construct patterns thoughtfully and carefully.
+
+    2. `BRACE` and [`SPLIT`](#pathlibsplit) both expand patterns into multiple patterns. Using these two syntaxes
+    simultaneously can exponential increase in duplicate patterns:
+
+        ```pycon3
+        >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
+        ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
+        ```
+
+        This effect is reduced as redundant, identical patterns are optimized away[^1], but when using crawling
+    functions ([`glob`](#pathglob)) *and* [`NOUNIQUE`](#pathlibnounique) of that optimization is removed, and all of
+    those patterns will be crawled. For this reason, especially when using functions like [`glob`](#pathglob), it is
+    recommended to use one syntax or the other.
+
+[^1]: Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
+`[[:alnum:]]` =/= `[[:ALNUM:]]`.
 
 #### `pathlib.SPLIT, pathlib.S` {: #pathlibsplit}
 
 `SPLIT` is used to take a string of multiple patterns that are delimited by `|` and split them into separate patterns.
-This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It takes
-into account things like sequences (`[]`) and extended patterns (`*(...)`) and will not parse `|` within them.  You can
-escape the delimiters if needed: `\|`.
+This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It pairs
+really well with [`EXTGLOB`](#pathlibextglob) and takes into account sequences (`[]`) and extended patterns (`*(...)`) and
+will not parse `|` within them.  You can also escape the delimiters if needed: `\|`.
+
+While `SPLIT` is not as powerful as [`BRACE`](#pathlibbrace), it's syntax is very easy to use, and when paired with
+[`EXTGLOB`](#pathlibextglob), it feels natural and comes a bit closer. It also much harder to create massive expansions
+of patterns with it, except when paired *with* [`BRACE`](#pathlibbrace). See [`BRACE`](#pathlibbrace) and it's warnings
+related to pairing it with `SPLIT`.
 
 ```pycon3
 >>> from wcmatch import pathlib
 >>> list(pathlib.Path('.').glob('README.md|LICENSE.md', flags=pathlib.SPLIT))
 [WindowsPath('README.md'), WindowsPath('LICENSE.md')]
 ```
-
-`SPLIT` syntax also pairs really well with [`EXTGLOB`](#pathlibextglob).
-
-!!! tip "BRACE vs SPLIT"
-    [`BRACE`](#pathlibbrace) and `SPLIT` both expand patterns into multiple patterns. While using them together will
-    work, it can also cause numerous duplicate patterns. If using either [`glob`](#pathglob) or [`rglob`](#pathrglob),
-    it is recommended to use one or the other. See [`BRACE vs SPLIT`](./glob.md#brace-vs-split) for more info.
 
 #### `pathlib.MATCHBASE, pathlib.X` {: #pathlibmatchbase}
 

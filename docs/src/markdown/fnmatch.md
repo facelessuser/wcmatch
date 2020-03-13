@@ -202,21 +202,40 @@ etc. See the [syntax overview](#syntax) for more information.
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything
 else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
+Redundant, identical patterns are discarded[^1] by default.
 
 For simple patterns, it may make more sense to use [`EXTMATCH`](#fnmatchextmatch) which will only generate a single
-pattern: `@(ab|ac|ad)`.
+pattern which will perform much better: `@(ab|ac|ad)`.
 
-!!! warning "Using BRACE responsibly"
-    Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually
-    parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets
-    of patterns.
+!!! warning "Massive Expansion Risk"
+    1. It is important to note that each pattern is matched separately, so patterns such as `{1..100}` would generate
+    **one hundred** patterns. Sometimes patterns like this are needed, so construct patterns thoughtfully and carefully.
+
+    2. `BRACE` and [`SPLIT`](#fnmatchsplit) both expand patterns into multiple patterns. Using these two syntaxes
+    simultaneously can exponential increase in duplicate patterns:
+
+        ```pycon3
+        >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
+        ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
+        ```
+
+        This effect is reduced as redundant, identical patterns are optimized away[^1]. But it is useful to know if
+    trying to construct efficient patterns.
+
+[^1]: Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
+`[[:alnum:]]` =/= `[[:ALNUM:]]`.
 
 #### `fnmatch.SPLIT, fnmatch.S` {: #fnmatchsplit}
 
 `SPLIT` is used to take a string of multiple patterns that are delimited by `|` and split them into separate patterns.
-This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It takes
-into account things like sequences (`[]`) and extended patterns (`*(...)`) and will not parse `|` within them.  You can
-escape the delimiters if needed: `\|`.
+This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It pairs
+really well with [`EXTGLOB`](#fnmatchextmatch) and takes into account sequences (`[]`) and extended patterns (`*(...)`)
+and will not parse `|` within them.  You can also escape the delimiters if needed: `\|`.
+
+While `SPLIT` is not as powerful as [`BRACE`](#fnmatchbrace), it's syntax is very easy to use, and when paired with
+[`EXTMATCH`](#fnmatchextmatch), it feels natural and comes a bit closer. It also much harder to create massive
+expansions of patterns with it, except when paired *with* [`BRACE`](#fnmatchbrace). See [`BRACE`](#fnmatchbrace) and
+it's warnings related to pairing it with `SPLIT`.
 
 ```pycon3
 >>> from wcmatch import fnmatch
@@ -225,8 +244,6 @@ True
 >>> fnmatch.fnmatch('test.py', r'*.txt|*.py', flags=fnmatch.SPLIT)
 True
 ```
-
-`SPLIT` syntax also pairs really well with [`EXTGLOB`](#fnmatchextmatch).
 
 #### `fnmatch.FORCEWIN, fnmatch.W` {: #fnmatchforcewin}
 
