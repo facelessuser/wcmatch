@@ -647,7 +647,7 @@ matching with redundant patterns and excessive crawls through the file system. A
 been fed into [`glob`](#globglob) may match the same file, the results are also filtered as to not return duplicates.
 
 `NOUNIQUE` disables all of the aforementioned "unique" optimizations, but only for [`glob`](#globglob) and
-[`iglob`](#globiglob). Functions like [`globmatch`](#globglobmatch) andn [`globfilter`](#globglobfilter) would get no
+[`iglob`](#globiglob). Functions like [`globmatch`](#globglobmatch) and [`globfilter`](#globglobfilter) would get no
 benefit from disabling "unique" optimizations, they would only run slower, so `NOUNIQUE` will be ignored.
 
 !!! new "New in 6.0"
