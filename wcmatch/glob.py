@@ -23,7 +23,6 @@ IN THE SOFTWARE.
 import os
 import sys
 import functools
-import re
 from . import _wcparse
 from . import util
 
