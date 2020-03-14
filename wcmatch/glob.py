@@ -151,12 +151,12 @@ class Glob(object):
 
         count = 1
         for p in patterns:
-            if 0 <= self.pattern_limit < count:
-                raise _wcparse.PatternLimitException(
-                    "Pattern limit exceeded the limit of {:d}".format(self.pattern_limit)
-                )
             p = util.norm_pattern(p, not self.unix, self.raw_chars)
             for expanded in _wcparse.expand(p, self.flags):
+                if 0 <= self.pattern_limit < count:
+                    raise _wcparse.PatternLimitException(
+                        "Pattern limit exceeded the limit of {:d}".format(self.pattern_limit)
+                    )
                 yield expanded
                 count += 1
 

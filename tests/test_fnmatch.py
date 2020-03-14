@@ -504,3 +504,25 @@ class TestFnMatchTranslate(unittest.TestCase):
 
         self.assertTrue(len(fnmatch.translate('!test', flags=fnmatch.N | fnmatch.A)[0]) == 1)
         self.assertTrue(len(fnmatch.translate(b'!test', flags=fnmatch.N | fnmatch.A)[0]) == 1)
+
+
+class TestExpansionLimit(unittest.TestCase):
+    """Test expansion limits."""
+
+    def test_limit_fnmatch(self):
+        """Test expansion limit of `fnmatch`."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            fnmatch.fnmatch('name', '{1..11}', flags=fnmatch.BRACE, pattern_limit=10)
+
+    def test_limit_filter(self):
+        """Test expansion limit of `filter`."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            fnmatch.filter(['name'], '{1..11}', flags=fnmatch.BRACE, pattern_limit=10)
+
+    def test_limit_translate(self):
+        """Test expansion limit of `translate`."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            fnmatch.translate('{1..11}', flags=fnmatch.BRACE, pattern_limit=10)

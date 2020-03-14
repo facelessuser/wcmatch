@@ -431,7 +431,7 @@ def compile(patterns, flags, pattern_limit=PATTERN_LIMIT):  # noqa A001
     count = 1
 
     for pattern in patterns:
-        for expanded in set(expand(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), flags)):
+        for expanded in expand(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), flags):
             if 0 <= pattern_limit < count:
                 raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(pattern_limit))
             if expanded in seen:
@@ -1664,6 +1664,11 @@ class WcRegexp(util.Immutable):
         """Hash."""
 
         return self._hash
+
+    def __len__(self):
+        """Length."""
+
+        return len(self._include) + len(self._exclude)
 
     def __eq__(self, other):
         """Equal."""

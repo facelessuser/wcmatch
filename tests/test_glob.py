@@ -12,6 +12,7 @@ made difference in implementation.
 import contextlib
 from wcmatch import glob
 from wcmatch import pathlib
+from wcmatch import _wcparse
 from wcmatch import util
 import re
 import types
@@ -1188,3 +1189,19 @@ class TestTilde(unittest.TestCase):
         """Test when tilde is disabled."""
 
         self.assertEqual(len(glob.glob('~/*', flags=glob.D)), 0)
+
+
+class TestExpansionLimit(unittest.TestCase):
+    """Test expansion limits."""
+
+    def test_limit_glob(self):
+        """Test expansion limit of `glob`."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            glob.glob('{1..11}', flags=glob.BRACE, pattern_limit=10)
+
+    def test_limit_iglob(self):
+        """Test expansion limit of `iglob`."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            list(glob.iglob('{1..11}', flags=glob.BRACE, pattern_limit=10))

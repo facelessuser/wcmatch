@@ -40,3 +40,41 @@ class TestWcparse(unittest.TestCase):
             _wcparse.BRACE | _wcparse.SPLIT | _wcparse.EXTMATCH
         )
         self.assertEqual(sorted(results), sorted(['test@(this|that)', 'test@(this|other)', '*.py', '*.py']))
+
+    def test_compile_expansion_okay(self):
+        """Test expansion is okay."""
+
+        self.assertEqual(len(_wcparse.compile('{1..10}', _wcparse.BRACE)), 10)
+
+    def test_compile_unique_optimization_okay(self):
+        """Test that redundant patterns are reduced in compile."""
+
+        self.assertEqual(len(_wcparse.compile('|'.join(['a'] * 10), _wcparse.SPLIT, 10)), 1)
+
+    def test_translate_expansion_okay(self):
+        """Test expansion is okay."""
+
+        p1, p2 = _wcparse.translate('{1..10}', _wcparse.BRACE, 10)
+        count = len(p1) + len(p2)
+        self.assertEqual(count, 10)
+
+    def test_translate_unique_optimization_okay(self):
+        """Test that redundant patterns are reduced in translate."""
+        p1, p2 = _wcparse.translate('|'.join(['a'] * 10), _wcparse.SPLIT, 10)
+        count = len(p1) + len(p2)
+        self.assertEqual(count, 1)
+
+    def test_expansion_limt(self):
+        """Test expansion limit."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            _wcparse.compile('{1..11}', _wcparse.BRACE, 10)
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            _wcparse.compile('|'.join(['a'] * 11), _wcparse.SPLIT, 10)
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            _wcparse.compile(
+                '{{{},{}}}'.format('|'.join(['a'] * 6), '|'.join(['a'] * 5)),
+                _wcparse.SPLIT | _wcparse.BRACE, 10
+            )

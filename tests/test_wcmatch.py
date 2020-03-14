@@ -4,6 +4,7 @@ import unittest
 import os
 import wcmatch.wcmatch as wcmatch
 import shutil
+from wcmatch import _wcparse
 
 
 # Below is general helper stuff that Python uses in `unittests`.  As these
@@ -566,3 +567,13 @@ class TestWcmatchSymlink(_TestWcmatch):
                 ['a.txt', '.hidden/a.txt']
             )
         )
+
+
+class TestExpansionLimit(unittest.TestCase):
+    """Test expansion limits."""
+
+    def test_limit_wcmatch(self):
+        """Test expansion limit of `globmatch`."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            wcmatch.WcMatch('.', '{1..11}', flags=wcmatch.BRACE, pattern_limit=10)
