@@ -350,19 +350,19 @@ class TestFnMatchTranslate(unittest.TestCase):
 
         p1, p2 = self.split_translate('|test|', flags)
         if util.PY36:
-            self.assertEqual(p1, [r'^(?s:)$', r'^(?s:test)$', r'^(?s:)$'])
+            self.assertEqual(p1, [r'^(?s:)$', r'^(?s:test)$'])
             self.assertEqual(p2, [])
         else:
-            self.assertEqual(p1, [r'(?s)^(?:)$', r'(?s)^(?:test)$', r'(?s)^(?:)$'])
+            self.assertEqual(p1, [r'(?s)^(?:)$', r'(?s)^(?:test)$'])
             self.assertEqual(p2, [])
 
         p1, p2 = self.split_translate('-|-test|-', flags=flags | fnmatch.N | fnmatch.M)
         if util.PY36:
             self.assertEqual(p1, [])
-            self.assertEqual(p2, [r'^(?s:)$', r'^(?s:test)$', r'^(?s:)$'])
+            self.assertEqual(p2, [r'^(?s:)$', r'^(?s:test)$'])
         else:
             self.assertEqual(p1, [])
-            self.assertEqual(p2, [r'(?s)^(?:)$', r'(?s)^(?:test)$', r'(?s)^(?:)$'])
+            self.assertEqual(p2, [r'(?s)^(?:)$', r'(?s)^(?:test)$'])
 
         p1, p2 = self.split_translate('test[^chars]', flags)
         if util.PY36:
@@ -504,3 +504,25 @@ class TestFnMatchTranslate(unittest.TestCase):
 
         self.assertTrue(len(fnmatch.translate('!test', flags=fnmatch.N | fnmatch.A)[0]) == 1)
         self.assertTrue(len(fnmatch.translate(b'!test', flags=fnmatch.N | fnmatch.A)[0]) == 1)
+
+
+class TestExpansionLimit(unittest.TestCase):
+    """Test expansion limits."""
+
+    def test_limit_fnmatch(self):
+        """Test expansion limit of `fnmatch`."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            fnmatch.fnmatch('name', '{1..11}', flags=fnmatch.BRACE, limit=10)
+
+    def test_limit_filter(self):
+        """Test expansion limit of `filter`."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            fnmatch.filter(['name'], '{1..11}', flags=fnmatch.BRACE, limit=10)
+
+    def test_limit_translate(self):
+        """Test expansion limit of `translate`."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            fnmatch.translate('{1..11}', flags=fnmatch.BRACE, limit=10)

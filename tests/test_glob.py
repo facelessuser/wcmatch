@@ -12,6 +12,7 @@ made difference in implementation.
 import contextlib
 from wcmatch import glob
 from wcmatch import pathlib
+from wcmatch import _wcparse
 from wcmatch import util
 import re
 import types
@@ -393,6 +394,12 @@ class Testglob(_TestGlob):
         [('?',), [('a',)]],
         [('[.a]',), [('a',)]],
         [('*.',), []],
+
+        # Glob with braces
+        [('{a*,a*}',), [('a',), ('aab',), ('aaa',)]],
+
+        # Glob with braces and "unique" turned off
+        [('{a*,a*}',), [('a',), ('aab',), ('aaa',), ('a',), ('aab',), ('aaa',)], glob.Q],
 
         Options(default_negate='**'),
         # Glob inverse
@@ -864,13 +871,13 @@ class Testglob(_TestGlob):
         """Negate applied to all files."""
 
         for file in glob.glob('!**/', flags=glob.N | glob.NEGATEALL | glob.G, root_dir=self.tempdir):
-            self.assertFalse(os.path.isdir(file))
+            self.assert_equal(os.path.isdir(file), False)
 
     def test_negateall_bytes(self):
         """Negate applied to all files."""
 
         for file in glob.glob(b'!**/', flags=glob.N | glob.NEGATEALL | glob.G, root_dir=os.fsencode(self.tempdir)):
-            self.assertFalse(os.path.isdir(file))
+            self.assert_equal(os.path.isdir(file), False)
 
 
 class TestGlobMarked(Testglob):
@@ -1188,3 +1195,19 @@ class TestTilde(unittest.TestCase):
         """Test when tilde is disabled."""
 
         self.assertEqual(len(glob.glob('~/*', flags=glob.D)), 0)
+
+
+class TestExpansionLimit(unittest.TestCase):
+    """Test expansion limits."""
+
+    def test_limit_glob(self):
+        """Test expansion limit of `glob`."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            glob.glob('{1..11}', flags=glob.BRACE, limit=10)
+
+    def test_limit_iglob(self):
+        """Test expansion limit of `iglob`."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            list(glob.iglob('{1..11}', flags=glob.BRACE, limit=10))

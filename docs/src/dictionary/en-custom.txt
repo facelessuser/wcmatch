@@ -2,6 +2,7 @@ API
 Accessors
 Backport
 Changelog
+EXTMATCH
 EmojiOne
 Fnmatch
 GitHub
@@ -36,6 +37,7 @@ filename
 filenames
 filepath
 filesystem
+glob
 globbing
 initializer
 lookahead
@@ -50,6 +52,7 @@ posix
 pre
 prepend
 preprocessing
+preprocessors
 prerelease
 prereleases
 recursing
@@ -62,6 +65,7 @@ subdirectories
 sublicense
 symlink
 symlinks
+syntaxes
 tuple
 un
 unclosed

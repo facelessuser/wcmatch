@@ -32,6 +32,8 @@ from backrefs import uniprops
 UNICODE = 0
 BYTES = 1
 
+PATTERN_LIMIT = 1000
+
 RE_WIN_PATH = (
     re.compile(r'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)', re.I),
     re.compile(br'((?:\\\\|/){2}[^\\/]+(?:\\\\|/){1}[^\\/]+|[a-z]:)((?:\\\\|/){1}|$)', re.I)
@@ -105,6 +107,7 @@ NEGATEALL = 0x8000
 FORCEWIN = 0x10000
 FORCEUNIX = 0x20000
 GLOBTILDE = 0x40000
+NOUNIQUE = 0x80000
 
 # Internal flag
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
@@ -132,6 +135,7 @@ FLAG_MASK = (
     FORCEUNIX |
     GLOBTILDE |
     SPLIT |
+    NOUNIQUE |
     _TRANSLATE |
     _ANCHOR |
     _RECURSIVEMATCH |
@@ -220,6 +224,10 @@ class PathNameException(Exception):
     """Path name exception."""
 
 
+class PatternLimitException(Exception):
+    """Pattern limit exception."""
+
+
 def raw_escape(pattern, unix=None):
     """Apply raw character transform before applying escape."""
 
@@ -292,14 +300,12 @@ def expand_tilde(pattern, is_unix, is_neg, flags):
     return pattern
 
 
-def expand_and_normalize(pattern, flags):
+def expand(pattern, flags):
     """Expand and normalize."""
 
-    is_unix = is_unix_style(flags)
-    for splitted in split(pattern, flags):
-        for expanded in expand_braces(util.norm_pattern(splitted, not is_unix, flags & RAWCHARS), flags):
-            expanded = expand_tilde(expanded, is_unix, is_negative(expanded, flags), flags)
-            yield expanded
+    for expanded in expand_braces(pattern, flags):
+        for splitted in split(expanded, flags):
+            yield expand_tilde(splitted, is_unix_style(flags), is_negative(splitted, flags), flags)
 
 
 def norm_slash(name, flags):
@@ -366,7 +372,7 @@ def is_unix_style(flags):
     )
 
 
-def translate(patterns, flags):
+def translate(patterns, flags, limit=PATTERN_LIMIT):
     """Translate patterns."""
 
     positive = []
@@ -375,10 +381,20 @@ def translate(patterns, flags):
         patterns = [patterns]
 
     flags = (flags | _TRANSLATE) & FLAG_MASK
+    is_unix = is_unix_style(flags)
+    seen = set()
+    count = 1
 
     for pattern in patterns:
-        for expanded in expand_and_normalize(pattern, flags):
+        for expanded in expand(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), flags):
+            if 0 < limit < count:
+                raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
+            if expanded in seen:
+                count += 1
+                continue
+            seen.add(expanded)
             (negative if is_negative(expanded, flags) else positive).append(WcParse(expanded, flags).parse())
+            count += 1
 
     if patterns and negative and not positive:
         if flags & NEGATEALL:
@@ -387,7 +403,7 @@ def translate(patterns, flags):
 
     if patterns and flags & NODIR:
         index = BYTES if isinstance(patterns[0], bytes) else UNICODE
-        exclude = _NO_NIX_DIR[index] if is_unix_style(flags) else _NO_WIN_DIR[index]
+        exclude = _NO_NIX_DIR[index] if is_unix else _NO_WIN_DIR[index]
         negative.append(exclude)
 
     return positive, negative
@@ -397,12 +413,12 @@ def split(pattern, flags):
     """Split patterns."""
 
     if flags & SPLIT:
-        return WcSplit(pattern, flags).split()
+        yield from WcSplit(pattern, flags).split()
     else:
-        return [pattern]
+        yield pattern
 
 
-def compile(patterns, flags):  # noqa A001
+def compile(patterns, flags, limit=PATTERN_LIMIT):  # noqa A001
     """Compile patterns."""
 
     positive = []
@@ -410,9 +426,20 @@ def compile(patterns, flags):  # noqa A001
     if isinstance(patterns, (str, bytes)):
         patterns = [patterns]
 
+    is_unix = is_unix_style(flags)
+    seen = set()
+    count = 1
+
     for pattern in patterns:
-        for expanded in expand_and_normalize(pattern, flags):
+        for expanded in expand(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), flags):
+            if 0 < limit < count:
+                raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
+            if expanded in seen:
+                count += 1
+                continue
+            seen.add(expanded)
             (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
+            count += 1
 
     if patterns and negative and not positive:
         if flags & NEGATEALL:
@@ -423,7 +450,7 @@ def compile(patterns, flags):  # noqa A001
 
     if patterns and flags & NODIR:
         ptype = BYTES if isinstance(patterns[0], bytes) else UNICODE
-        negative.append(RE_NO_DIR[ptype] if is_unix_style(flags) else RE_WIN_NO_DIR[ptype])
+        negative.append(RE_NO_DIR[ptype] if is_unix else RE_WIN_NO_DIR[ptype])
 
     return WcRegexp(tuple(positive), tuple(negative), flags & REALPATH, flags & PATHNAME, flags & FOLLOW)
 
@@ -591,7 +618,10 @@ class WcPathSplit(object):
         magic = self.is_magic(value)
         if magic:
             value = _compile(value, self.flags)
-        l.append(WcGlob(value, magic, globstar, dir_only, False))
+        if globstar and l and l[-1].is_globstar:
+            l[-1] = WcGlob(value, magic, globstar, dir_only, False)
+        else:
+            l.append(WcGlob(value, magic, globstar, dir_only, False))
 
     def split(self):
         """Start parsing the pattern."""
@@ -774,11 +804,9 @@ class WcSplit(object):
     def split(self):
         """Start parsing the pattern."""
 
-        split_index = []
-        parts = []
-
         pattern = self.pattern.decode('latin-1') if self.is_bytes else self.pattern
 
+        start = -1
         i = util.StringIter(pattern)
         iter(i)
         for c in i:
@@ -786,7 +814,10 @@ class WcSplit(object):
                 continue
 
             if c == '|':
-                split_index.append(i.index - 1)
+                split = i.index - 1
+                p = pattern[start + 1:split]
+                yield p.encode('latin-1') if self.is_bytes else p
+                start = split
             elif c == '\\':
                 index = i.index
                 try:
@@ -800,17 +831,9 @@ class WcSplit(object):
                 except StopIteration:
                     i.rewind(i.index - index)
 
-        start = -1
-        for split in split_index:
-            p = pattern[start + 1:split]
-            parts.append(p.encode('latin-1') if self.is_bytes else p)
-            start = split
-
         if start < len(pattern):
             p = pattern[start + 1:]
-            parts.append(p.encode('latin-1') if self.is_bytes else p)
-
-        return parts
+            yield p.encode('latin-1') if self.is_bytes else p
 
 
 class WcParse(object):
@@ -1641,6 +1664,11 @@ class WcRegexp(util.Immutable):
         """Hash."""
 
         return self._hash
+
+    def __len__(self):
+        """Length."""
+
+        return len(self._include) + len(self._exclude)
 
     def __eq__(self, other):
         """Equal."""

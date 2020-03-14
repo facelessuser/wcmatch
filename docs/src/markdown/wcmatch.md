@@ -27,6 +27,7 @@ Parameter         | Default       | Description
 `file_pattern`    | `#!py3 ''`    | One or more patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#wcmatchminusnegate) is set). The default is an empty string, but if an empty string is used, all files will be matched.
 `exclude_pattern` | `#!py3 ''`    | Zero or more folder exclude patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#wcmatchminusnegate) is set).
 `flags`           | `#!py3 0`     | Flags to alter behavior of folder and file matching. See [Flags](#flags) for more info.
+`limit`   | `#!py3 1000`  | Allows configuring the [max pattern limit](#multi-pattern-limits).
 
 !!! note
     Dots are not treated special in `wcmatch`. When the `HIDDEN` flag is not included, all hidden files (system and dot
@@ -36,6 +37,18 @@ Parameter         | Default       | Description
 !!! danger "Removed in 3.0"
     `show_hidden` and `recursive` were removed to provide a more consistent interface. Hidden files and recursion can be
     enabled via the [`HIDDEN`](#wcmatchhidden) and [`RECURSIVE`](#wcmatchrecursive) flag respectively.
+
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
+### Multi-Pattern Limits
+
+The `WcMatch` class allow expanding a pattern into multiple patterns by using `|` and by using [`BRACE`](#wcmatchbrace).
+The number of allowed patterns is limited `1000`, but you can raise or lower this limit via the keyword option
+`limit`. If you set `limit` to `0`, there will be no limit.
+
+!!! new "New 6.0"
+    The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
 
 ### Examples
 
@@ -163,7 +176,7 @@ Resets the abort state after running `kill`.
 
 Checks if an abort has been issued.
 
-```
+```pycon3
 >>> from wcmatch import wcmatch
 >>> wcm = wcmatch.WcMatch('.', '*.md|*.txt')
 >>> for f in wcm.imatch():
@@ -326,17 +339,40 @@ handle standard string escapes and Unicode (including `#!py3 r'\N{CHAR NAME}'`).
 `EXTMATCH` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`,
 etc.
 
+!!! tip "EXTMATCH and NEGATE"
+    When using `EXTMATCH`, it is recommended to also use [`MINUSNEGATE`](#wcmatchminusnegate) to avoid conflicts in
+    regards to the `!` meta character which is used for exclusion patterns..
+
 #### `wcmatch.BRACE, wcmatch.B` {: #wcmatchbrace}
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything
 else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
+Redundant, identical patterns are discarded[^1] by default.
 
 For simple patterns, it may make more sense to use [`EXTMATCH`](#wcmatchextmatch) which will only generate a single
-pattern: `@(ab|ac|ad)`.
+pattern which will perform much better: `@(ab|ac|ad)`.
 
-Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually
-parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of
-patterns.
+!!! warning "Massive Expansion Risk"
+    1. It is important to note that each pattern is matched separately, so patterns such as `{1..100}` would generate
+    **one hundred** patterns. Since [`WcMatch`](#wcmatchwcmatch_1) class is able to crawl the file system one pass
+    accounting for all the patterns, the performance isn't as bad as it may be with [`glob`](./glob.md), but it can
+    still impact performance as each file must get compared against many patterns until one is matched. Sometimes
+    patterns like this are needed, so construct patterns thoughtfully and carefully.
+
+    2. Splitting patterns with `|` is built into [`WcMatch`](#wcmatchwcmatch_1). `BRACE` and and splitting with `|` both
+    expand patterns into multiple patterns. Using these two syntaxes simultaneously can exponential increase in
+    duplicate patterns:
+
+        ```pycon3
+        >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
+        ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
+        ```
+
+        This effect is reduced as redundant, identical patterns are optimized away[^1]. But it is useful to know if
+    trying to construct efficient patterns.
+
+[^1]: Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
+`[[:alnum:]]` =/= `[[:ALNUM:]]`.
 
 #### `wcmatch.MINUSNEGATE, wcmatch.M` {: #wcmatchminusnegate}
 

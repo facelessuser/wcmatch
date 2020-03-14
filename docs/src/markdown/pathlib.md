@@ -19,6 +19,16 @@ introduced by Wildcard Match's implementation. Please check out Python's [`pathl
 more about [`pathlib`][pathlib] in general. Also, to learn more about the underlying glob library being used, check out
 the documentation for Wildcard Match's [`glob`](./glob.md).
 
+## Multi-Pattern Limits
+
+Many of the API functions allow passing in multiple patterns or using either [`BRACE`](#pathlibbrace) or
+[`SPLIT`](#pathlibsplit) to expand a pattern in to more patterns. The number of allowed patterns is limited `1000`, but
+you can raise or lower this limit via the keyword option `limit`. If you set `limit` to `0`, there will
+be no limit.
+
+!!! new "New 6.0"
+    The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
+
 ### Differences
 
 The API is the same as Python's default [`pathlib`][pathlib] except for the few differences related to file globbing and
@@ -203,11 +213,12 @@ PosixPath('/usr/local/bin')
 #### `PurePath.match`
 
 ```py3
-def match(self, patterns, *, flags=0):
+def match(self, patterns, *, flags=0, limit=1000):
 ```
 
-`match` takes a pattern (or list of patterns), and flags.  It will return a boolean indicating whether the objects
-file path was matched by the pattern(s).
+`match` takes a pattern (or list of patterns), and flags.  It also allows configuring the [max pattern
+limit](#multi-pattern-limits). It will return a boolean indicating whether the objects file path was matched by the
+pattern(s).
 
 `match` mimics Python's `pathlib` version of `match` in that it uses a recursive logic. What this means is when you are
 matching a path in the form `some/path/name`, the patterns `name`, `path/name` and `some/path/name` will all match.
@@ -229,14 +240,18 @@ Since [`Path`](#pathlibpath) is derived from [`PurePath`](#pathlibpurepath), thi
 True
 ```
 
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
 #### `PurePath.globmatch`
 
 ```py3
-def globmatch(self, patterns, *, flags=0):
+def globmatch(self, patterns, *, flags=0, limit=1000):
 ```
 
-`globmatch` takes a pattern (or list of patterns), and flags.  It will return a boolean indicating whether the objects
-file path was matched by the pattern(s).
+`globmatch` takes a pattern (or list of patterns), and flags.  It also allows configuring the [max pattern
+limit](#multi-pattern-limits).It will return a boolean indicating whether the objects file path was matched by the
+pattern(s).
 
 `globmatch` is similar to [`match`](#purepathmatch) except it does not use the same recursive logic that
 [`match`](#purepathmatch) does. In all other respects, it behaves the same.
@@ -256,16 +271,20 @@ Since [`Path`](#pathlibpath) is derived from  [`PurePath`](#pathlibpurepath), th
 True
 ```
 
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
 #### `Path.glob`
 
 ```py3
-def glob(self, patterns, *, flags=0):
+def glob(self, patterns, *, flags=0, limit=1000):
 ```
 
-`glob` takes a pattern (or list of patterns) and will crawl the file system, relative to the current
-[`Path`](#pathlibpath) object, returning a generator of [`Path`](#pathlibpath) objects. If a file/folder matches any
-regular, inclusion pattern, it is considered a match.  If a file matches *any* exclusion pattern (when enabling the
-[`NEGATE`](#pathlibnegate) flag), then it will not be returned.
+`glob` takes a pattern (or list of patterns) and flags. It also allows configuring the [max pattern
+limit](#multi-pattern-limits). It will crawl the file system, relative to the current [`Path`](#pathlibpath) object,
+returning a generator of [`Path`](#pathlibpath) objects. If a file/folder matches any regular, inclusion pattern, it is
+considered a match.  If a file matches *any* exclusion pattern (when enabling the [`NEGATE`](#pathlibnegate) flag), then
+it will not be returned.
 
 This method calls our own [`iglob`](./glob.md#globiglob) implementation, and as such, should behave in the same manner
 in respect to features, the one exception being that instead of returning path strings in the generator, it will return
@@ -282,16 +301,20 @@ working directory.
 [PosixPath('docs/src/dictionary/en-custom.txt'), PosixPath('docs/src/markdown/_snippets/links.txt'), PosixPath('docs/src/markdown/_snippets/refs.txt'), PosixPath('docs/src/markdown/_snippets/abbr.txt'), PosixPath('docs/src/markdown/_snippets/posix.txt')]
 ```
 
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
 #### `Path.rglob`
 
 ```py3
-def rglob(self, patterns, *, flags=0):
+def rglob(self, patterns, *, flags=0, path_limit=1000):
 ```
 
-`rglob` takes a pattern (or list of patterns) and will crawl the file system, relative to the current
-[`Path`](#pathlibpath) object, returning a generator of [`Path`](#pathlibpath) objects. If a file/folder matches any
-regular patterns, it is considered a match.  If a file matches *any* exclusion pattern (when enabling the
-[`NEGATE`](#pathlibnegate) flag), then it will be not be returned.
+`rglob` takes a pattern (or list of patterns) and flags. It also allows configuring the [max pattern
+limit](#multi-pattern-limits). It will crawl the file system, relative to the current [`Path`](#pathlibpath) object,
+returning a generator of [`Path`](#pathlibpath) objects. If a file/folder matches any regular patterns, it is considered
+a match.  If a file matches *any* exclusion pattern (when enabling the [`NEGATE`](#pathlibnegate) flag), then it will be
+not be returned.
 
 `rglob` mimics Python's [`pathlib`][pathlib] version of `rglob` in that it uses a recursive logic. What this means is
 that when you are matching a path in the form `some/path/name`, the patterns `name`, `path/name` and `some/path/name`
@@ -307,6 +330,9 @@ the same.
 >>> list(p.rglob('*.txt'))
 [PosixPath('docs/src/dictionary/en-custom.txt'), PosixPath('docs/src/markdown/_snippets/links.txt'), PosixPath('docs/src/markdown/_snippets/refs.txt'), PosixPath('docs/src/markdown/_snippets/abbr.txt'), PosixPath('docs/src/markdown/_snippets/posix.txt')]
 ```
+
+!!! new "New 6.0"
+    `limit` was added in 6.0.
 
 ## Flags
 
@@ -404,30 +430,87 @@ Alternatively `EXTMATCH` will also be accepted for consistency with the other pr
 the same and are provided as a convenience in case the user finds one more intuitive than the other since `EXTGLOB` is
 often the name used in Bash.
 
+!!! tip "EXTMATCH and NEGATE"
+    When using `EXTMATCH` and [`NEGATE`](#pathlibnegate) together, it is recommended to also use
+    [`MINUSNEGATE`](#pathlibminusnegate) to avoid conflicts in regards to the `!` meta character.
+
 #### `pathlib.BRACE, pathlib.B` {: #pathlibbrace}
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything
 else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
-For simple patterns, it may make more sense to use [`EXTGLOB`](#pathlibextglob) which will only generate a single
-pattern: `@(ab|ac|ad)`.
+Redundant, identical patterns are discarded[^1] by default, and `glob` and `iglob` will limit the returned values to
+unique results. If you need [`glob`](#pathglob) or [`iglob`](#pathrglob) to behave more like Bash and return all
+results, you can set [`NOUNIQUE`](#pathlibnounique). [`NOUNIQUE`](#pathlibnounique) has no effect on matching functions
+such as [`globmatch`](#purepathglobmatch).
 
-Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually
-parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of
-patterns.
+For simple patterns, it may make more sense to use [`EXTGLOB`](#pathlibextglob) which will only generate a single pattern
+which will perform much better: `@(ab|ac|ad)`.
+
+!!! warning "Massive Expansion Risk"
+    1. It is important to note that each pattern is crawled separately, so patterns such as `{1..100}` would generate
+    **one hundred** patterns. In a match function ([`globmatch`](#purepathglobmatch)), that would cause a hundred
+    compares, and in a file crawling function ([`glob`](#pathglob)), it would cause the file system to be crawled one
+    hundred times. Sometimes patterns like this are needed, so construct patterns thoughtfully and carefully.
+
+    2. `BRACE` and [`SPLIT`](#pathlibsplit) both expand patterns into multiple patterns. Using these two syntaxes
+    simultaneously can exponential increase in duplicate patterns:
+
+        ```pycon3
+        >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
+        ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
+        ```
+
+        This effect is reduced as redundant, identical patterns are optimized away[^1], but when using crawling
+    functions ([`glob`](#pathglob)) *and* [`NOUNIQUE`](#pathlibnounique) of that optimization is removed, and all of
+    those patterns will be crawled. For this reason, especially when using functions like [`glob`](#pathglob), it is
+    recommended to use one syntax or the other.
+
+[^1]: Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
+`[[:alnum:]]` =/= `[[:ALNUM:]]`.
 
 #### `pathlib.SPLIT, pathlib.S` {: #pathlibsplit}
 
 `SPLIT` is used to take a string of multiple patterns that are delimited by `|` and split them into separate patterns.
-This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It takes
-into account things like sequences (`[]`) and extended patterns (`*(...)`) and will not parse `|` within them.  You can
-escape the delimiters if needed: `\|`.
+This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It pairs
+really well with [`EXTGLOB`](#pathlibextglob) and takes into account sequences (`[]`) and extended patterns (`*(...)`) and
+will not parse `|` within them.  You can also escape the delimiters if needed: `\|`.
+
+While `SPLIT` is not as powerful as [`BRACE`](#pathlibbrace), it's syntax is very easy to use, and when paired with
+[`EXTGLOB`](#pathlibextglob), it feels natural and comes a bit closer. It also much harder to create massive expansions
+of patterns with it, except when paired *with* [`BRACE`](#pathlibbrace). See [`BRACE`](#pathlibbrace) and it's warnings
+related to pairing it with `SPLIT`.
 
 ```pycon3
 >>> from wcmatch import pathlib
 >>> list(pathlib.Path('.').glob('README.md|LICENSE.md', flags=pathlib.SPLIT))
 [WindowsPath('README.md'), WindowsPath('LICENSE.md')]
 ```
+
+### `pathlib.NOUNIQUE, pathlib.Q` {: #pathlibnounique}
+
+`NOUNIQUE` is used to disable Wildcard Match's unique results return. This mimics Bash's output behavior if that is
+desired.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob('{*,README}.md', flags=glob.BRACE | glob.NOUNIQUE)
+['LICENSE.md', 'README.md', 'README.md']
+>>> glob.glob('{*,README}.md', flags=glob.BRACE )
+['LICENSE.md', 'README.md']
+```
+
+By default, only unique paths are returned in [`glob`](#pathglob) and [`rglob`](#pathrglob). Normally this is what a
+programmer would want from such a library, so input patterns are reduced to unique patterns[^1] to reduce excessive
+matching with redundant patterns and excessive crawls through the file system. Also, as two different patterns that have
+been fed into [`glob`](#pathglob) may match the same file, the results are also filtered as to not return duplicates.
+
+`NOUNIQUE` disables all of the aforementioned "unique" optimizations, but only for [`glob`](#globglob) and
+[`rglob`](#pathrglob). Functions like [`globmatch`](#purepathglobmatch) and [`match`](#purepathmatch) would get no
+benefit from disabling "unique" optimizations, they would only run slower, so `NOUNIQUE` will be ignored.
+
+!!! new "New in 6.0"
+    "Unique" optimizations were added in 6.0, along with `NOUNIQUE`.
 
 #### `pathlib.MATCHBASE, pathlib.X` {: #pathlibmatchbase}
 

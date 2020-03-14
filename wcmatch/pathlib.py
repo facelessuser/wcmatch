@@ -7,8 +7,8 @@ from . import _wcparse
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "NEGATE", "MINUSNEGATE", "BRACE",
-    "REALPATH", "FOLLOW", "MATCHBASE", "NEGATEALL", "NODIR",
-    "C", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A",
+    "REALPATH", "FOLLOW", "MATCHBASE", "NEGATEALL", "NODIR", "NOUNIQUE",
+    "C", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A", "Q",
     "Path", "PurePath", "WindowsPath", "PosixPath", "PurePosixPath", "PureWindowsPath"
 )
 
@@ -27,6 +27,7 @@ S = SPLIT = glob.SPLIT
 X = MATCHBASE = glob.MATCHBASE
 O = NODIR = glob.NODIR
 A = NEGATEALL = glob.NEGATEALL
+Q = NOUNIQUE = glob.NOUNIQUE
 
 FLAG_MASK = (
     CASE |
@@ -44,6 +45,7 @@ FLAG_MASK = (
     MATCHBASE |
     NODIR |
     NEGATEALL |
+    NOUNIQUE |
     _wcparse._RECURSIVEMATCH |
     _wcparse._NOABSOLUTE
 )
@@ -65,7 +67,7 @@ class Path(pathlib.Path):
         self._init()
         return self
 
-    def glob(self, patterns, *, flags=0):
+    def glob(self, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
         """
         Search the file system.
 
@@ -75,10 +77,10 @@ class Path(pathlib.Path):
 
         if self.is_dir():
             flags = self._translate_flags(flags | _wcparse._NOABSOLUTE)
-            for filename in glob.iglob(patterns, flags=flags, root_dir=str(self)):
+            for filename in glob.iglob(patterns, flags=flags, root_dir=str(self), limit=limit):
                 yield self.joinpath(filename)
 
-    def rglob(self, patterns, *, flags=0):
+    def rglob(self, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
         """
         Recursive glob.
 
@@ -89,7 +91,7 @@ class Path(pathlib.Path):
 
         """
 
-        yield from self.glob(patterns, flags=flags | _wcparse._RECURSIVEMATCH)
+        yield from self.glob(patterns, flags=flags | _wcparse._RECURSIVEMATCH, limit=limit)
 
 
 class PurePath(pathlib.PurePath):
@@ -130,7 +132,7 @@ class PurePath(pathlib.PurePath):
 
         return name + sep
 
-    def match(self, patterns, *, flags=0):
+    def match(self, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
         """
         Match patterns using `globmatch`, but also using the same recursive logic that the default `pathlib` uses.
 
@@ -141,13 +143,9 @@ class PurePath(pathlib.PurePath):
 
         """
 
-        return glob.globmatch(
-            self._translate_path(),
-            patterns,
-            flags=self._translate_flags(flags | _wcparse._RECURSIVEMATCH)
-        )
+        return self.globmatch(patterns, flags=flags | _wcparse._RECURSIVEMATCH, limit=limit)
 
-    def globmatch(self, patterns, *, flags=0):
+    def globmatch(self, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
         """
         Match patterns using `globmatch`, but without the recursive logic that the default `pathlib` uses.
 
@@ -158,7 +156,8 @@ class PurePath(pathlib.PurePath):
         return glob.globmatch(
             self._translate_path(),
             patterns,
-            flags=self._translate_flags(flags)
+            flags=self._translate_flags(flags),
+            limit=limit
         )
 
 

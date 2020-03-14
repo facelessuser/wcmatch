@@ -3,7 +3,7 @@ import contextlib
 import pytest
 import unittest
 import os
-from wcmatch import pathlib, glob
+from wcmatch import pathlib, glob, _wcparse
 import pathlib as pypathlib
 import pickle
 import warnings
@@ -343,3 +343,31 @@ class TestComparisons(unittest.TestCase):
         self.assertTrue(type(p2) == type(p4))
         self.assertTrue(type(p1) != type(p2))
         self.assertTrue(type(p3) != type(p4))
+
+
+class TestExpansionLimit(unittest.TestCase):
+    """Test expansion limits."""
+
+    def test_limit_globmatch(self):
+        """Test expansion limit of `globmatch`."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            pathlib.PurePath('name').globmatch('{1..11}', flags=pathlib.BRACE, limit=10)
+
+    def test_limit_match(self):
+        """Test expansion limit of `match`."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            pathlib.PurePath('name').match('{1..11}', flags=pathlib.BRACE, limit=10)
+
+    def test_limit_glob(self):
+        """Test expansion limit of `glob`."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            list(pathlib.Path('.').glob('{1..11}', flags=pathlib.BRACE, limit=10))
+
+    def test_limit_rglob(self):
+        """Test expansion limit of `rglob`."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            list(pathlib.Path('.').rglob('{1..11}', flags=pathlib.BRACE, limit=10))

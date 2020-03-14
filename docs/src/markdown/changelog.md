@@ -1,10 +1,23 @@
 # Changelog
 
-## 5.2.0
+## 6.0.0
 
 - **NEW**: Tilde user expansion support via the new `GLOBTILDE` flag.
+- **NEW**: `glob` by default now returns only unique results, regardless of whether multiple patterns that match the
+  same file were provided, or even when `BRACE` or `SPLIT` expansion produces new patterns that match the same file.
+- **NEW**: A new flag called `NOUNIQUE` has been added that makes `glob` act like Bash, which will return the same file
+  multiple times if multiple patterns match it, whether provided directly or due to the result of `BRACE` or `SPLIT`
+  expansion.
+- **NEW**: Limit number of patterns that can be processed (expanded and otherwise) to 1000. Allow user to change this
+  value via `limit` option in API functions.
+- **FIX**: Matching functions that receive multiple patterns, or that receive a single pattern that expands to multiple,
+  will filter out duplicate patterns in order avoid redundant matching. While the `WcMatch` class crawls the file
+  system, it utilizes the aforementioned matching functions in it's operation, and indirectly takes advantage of this.
+  `glob` (and related functions: `rglob`, `iglob`, etc.) will also filter redundant patterns except when `NOUNIQUE` is
+  enabled.
 - **FIX**: `RAWCHARS` was inconsistently applied at different times depending on what was calling it. It is now applied
-  first followed by `SPLIT`, `BRACES`, and finally `GLOBTILDE`.
+  first followed by `BRACE`, `SPLIT`, and finally `GLOBTILDE`.
+- **FIX**: `BRACE` is now processed before `SPLIT` in order to fix a number of edge cases.
 
 ## 5.1.0
 

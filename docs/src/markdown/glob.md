@@ -93,16 +93,27 @@ Pattern           | Meaning
 
 --8<-- "posix.txt"
 
+## Multi-Pattern Limits
+
+Many of the API functions allow passing in multiple patterns or using either [`BRACE`](#globbrace) or
+[`SPLIT`](#globsplit) to expand a pattern in to more patterns. The number of allowed patterns is limited `1000`, but you
+can raise or lower this limit via the keyword option `limit`. If you set `limit` to `0`, there will be
+no limit.
+
+!!! new "New 6.0"
+    The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
+
 ## API
 
 #### `glob.glob`
 
 ```py3
-def glob(patterns, *, flags=0, root_dir=None):
+def glob(patterns, *, flags=0, root_dir=None, limit=1000):
 ```
 
-`glob` takes a pattern (or list of patterns) and will crawl the file system returning matching files, flags, and an
-optional root directory (string or path-like object).
+`glob` takes a pattern (or list of patterns), flags, and an option root directory (string or path-like object). It also
+allows configuring the [max pattern limit](#multi-pattern-limits). When executed it will crawl the file system returning
+matching files.
 
 !!! warning "Path-like Input Support"
     Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
@@ -131,19 +142,28 @@ When a glob pattern ends with a slash, it will only return directories:
 
 When providing a list, all patterns are run in the same context, but will not be run in the same pass. Each pattern is
 run in a separate pass, except for exclusion patterns (see the [`NEGATE`](#globnegate) flag) which are applied as
-filters to the inclusion patterns. Since each pattern is run in its own pass, it is possible to get duplicates. It is
-no different than if you ran something like the following in Bash:
+filters to the inclusion patterns. Since each pattern is run in its own pass, it is possible for many directories to be
+researched multiple times. In Bash, duplicate files can be returned:
 
 ```console
 $ echo *.md README.md
 LICENSE.md README.md README.md
 ```
 
-And we see that Wildcard Match's `glob` behaves the same:
+And we see that Wildcard Match's `glob` behaves the same, except it only returns unique results.
 
 ```pycon3
 >>> from wcmatch import glob
 >>> glob.glob(['*.md', 'README.md'])
+['LICENSE.md', 'README.md']
+```
+
+If we wanted to completely match Bash's results, we would turn off unique results with the [`NOUNIQUE`](#globnounique)
+flag.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob(['*.md', 'README.md'], flags=glob.NOUNIQUE)
 ['LICENSE.md', 'README.md', 'README.md']
 ```
 
@@ -151,7 +171,7 @@ And if we apply an exclusion pattern, since the patterns share the same context,
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.glob(['*.md', 'README.md', '!README.md'], flags=glob.NEGATE)
+>>> glob.glob(['*.md', , 'README.md', '!README.md'], flags=glob.NEGATE | glob.NOUNIQUE)
 ['LICENSE.md']
 ```
 
@@ -160,7 +180,7 @@ multiple patterns. These features, when enabled and used, will also exhibit this
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.glob('{*,README}.md', flags=glob.BRACE)
+>>> glob.glob('{*,README}.md', flags=glob.BRACE | glob.NOUNIQUE)
 ['LICENSE.md', 'README.md', 'README.md']
 ```
 
@@ -197,10 +217,13 @@ change the root path without using `os.chdir`.
 !!! new "New 5.1"
     `root_dir` was added in 5.1.0.
 
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
 #### `glob.iglob`
 
 ```py3
-def iglob(patterns, *, flags=0, root_dir=None):
+def iglob(patterns, *, flags=0, root_dir=None, limit=1000):
 ```
 
 `iglob` is just like [`glob`](#globglob) except it returns an iterator.
@@ -214,14 +237,18 @@ def iglob(patterns, *, flags=0, root_dir=None):
 !!! new "New 5.1"
     `root_dir` was added in 5.1.0.
 
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
 #### `glob.globmatch`
 
 ```py3
-def globmatch(filename, patterns, *, flags=0, root_dir=None):
+def globmatch(filename, patterns, *, flags=0, root_dir=None, limit=1000):
 ```
 
 `globmatch` takes a file name (string or path-like object), a pattern (or list of patterns), flags, and an optional root
-directory.  It will return a boolean indicating whether the file path was matched by the pattern(s).
+directory.  It also allows configuring the [max pattern limit](#multi-pattern-limits). It will return a boolean
+indicating whether the file path was matched by the pattern(s).
 
 !!! warning "Path-like Input Support"
     Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
@@ -326,15 +353,19 @@ True
     - `root_dir` was added in 5.1.0.
     - path-like object support for file path inputs was added in 5.1.0
 
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
 #### `glob.globfilter`
 
 ```py3
-def globfilter(filenames, patterns, *, flags=0, root_dir=None):
+def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=1000):
 ```
 
 `globfilter` takes a list of file paths (strings or path-like objects), a pattern (or list of patterns), and flags. It
-returns a list of all files paths that matched the pattern(s). The same logic used for [`globmatch`](#globglobmatch) is
-used for `globfilter`, albeit more efficient for processing multiple files.
+also allows configuring the [max pattern limit](#multi-pattern-limits). It returns a list of all files paths that
+matched the pattern(s). The same logic used for [`globmatch`](#globglobmatch) is used for `globfilter`, albeit more
+efficient for processing multiple files.
 
 !!! warning "Path-like Input Support"
     Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
@@ -354,16 +385,19 @@ be matched by `GLOBSTAR`. See [`globmatch`](#globglobmatch) for examples.
     - `root_dir` was added in 5.1.0.
     - path-like object support for file path inputs was added in 5.1.0
 
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
 #### `glob.translate`
 
 ```py3
-def translate(patterns, *, flags=0):
+def translate(patterns, *, flags=0, limit=1000):
 ```
 
-`translate` takes a file pattern (or list of patterns) and returns two lists: one for inclusion patterns and one for
-exclusion patterns. The lists contain the regular expressions used for matching the given patterns. It should be noted
-that a file is considered matched if it matches at least one inclusion pattern and matches **none** of the exclusion
-patterns.
+`translate` takes a file pattern (or list of patterns) and flags. It also allows configuring the [max pattern
+limit](#multi-pattern-limits). It returns two lists: one for inclusion patterns and one for exclusion patterns. The
+lists contain the regular expressions used for matching the given patterns. It should be noted that a file is considered
+matched if it matches at least one inclusion pattern and matches **none** of the exclusion patterns.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -376,6 +410,9 @@ patterns.
 !!! warning "Changed 4.0"
     Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic to how
     it used to be, but is more efficient.
+
+!!! new "New 6.0"
+    `limit` was added in 6.0.
 
 #### `glob.escape`
 
@@ -560,17 +597,89 @@ Alternatively `EXTMATCH` will also be accepted for consistency with the other pr
 the same and are provided as a convenience in case the user finds one more intuitive than the other since `EXTGLOB` is
 often the name used in Bash.
 
+!!! tip "EXTMATCH and NEGATE"
+    When using `EXTMATCH` and [`NEGATE`](#globnegate) together, it is recommended to also use
+    [`MINUSNEGATE`](#globminusnegate) to avoid conflicts in regards to the `!` meta character.
+
 #### `glob.BRACE, glob.B` {: #globbrace}
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything
 else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
-For simple patterns, it may make more sense to use [`EXTGLOB`](#globextglob) which will only generate a single pattern:
-`@(ab|ac|ad)`.
+Redundant, identical patterns are discarded[^1] by default, and `glob` and `iglob` will limit the returned values to
+unique results. If you need [`glob`](#globglob) or [`iglob`](#globiglob) to behave more like Bash and return all
+results, you can set [`NOUNIQUE`](#globnounique). [`NOUNIQUE`](#globnounique) has no effect on matching functions such
+as [`globmatch`](#globglobmatch).
 
-Be careful with patterns such as `{1..100}` which would generate one hundred patterns that will all get individually
-parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of
-patterns.
+For simple patterns, it may make more sense to use [`EXTGLOB`](#globextglob) which will only generate a single pattern
+which will perform much better: `@(ab|ac|ad)`.
+
+!!! warning "Massive Expansion Risk"
+    1. It is important to note that each pattern is crawled separately, so patterns such as `{1..100}` would generate
+    **one hundred** patterns. In a match function ([`globmatch`](#globglobmatch)), that would cause a hundred compares,
+    and in a file crawling function ([`glob`](#globglob)), it would cause the file system to be crawled one hundred
+    times. Sometimes patterns like this are needed, so construct patterns thoughtfully and carefully.
+
+    2. `BRACE` and [`SPLIT`](#globsplit) both expand patterns into multiple patterns. Using these two syntaxes
+    simultaneously can exponential increase in duplicate patterns:
+
+        ```pycon3
+        >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
+        ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
+        ```
+
+        This effect is reduced as redundant, identical patterns are optimized away[^1], but when using crawling
+    functions ([`glob`](#globglob)) *and* [`NOUNIQUE`](#globnounique) of that optimization is removed, and all of those
+    patterns will be crawled. For this reason, especially when using functions like [`glob`](#globglob), it is
+    recommended to use one syntax or the other.
+
+[^1]: Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
+`[[:alnum:]]` =/= `[[:ALNUM:]]`.
+
+#### `glob.SPLIT, glob.S` {: #globsplit}
+
+`SPLIT` is used to take a string of multiple patterns that are delimited by `|` and split them into separate patterns.
+This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It pairs
+really well with [`EXTGLOB`](#globextglob) and takes into account sequences (`[]`) and extended patterns (`*(...)`) and
+will not parse `|` within them.  You can also escape the delimiters if needed: `\|`.
+
+While `SPLIT` is not as powerful as [`BRACE`](#globbrace), it's syntax is very easy to use, and when paired with
+[`EXTGLOB`](#globextglob), it feels natural and comes a bit closer. It also much harder to create massive expansions
+of patterns with it, except when paired *with* [`BRACE`](#globbrace). See [`BRACE`](#globbrace) and it's warnings
+related to pairing it with `SPLIT`.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.globmatch('test.txt', r'*.txt|*.py', flags=fnmatch.SPLIT)
+True
+>>> glob.globmatch('test.py', r'*.txt|*.py', flags=fnmatch.SPLIT)
+True
+```
+
+### `glob.NOUNIQUE, glob.Q` {: #globnounique}
+
+`NOUNIQUE` is used to disable Wildcard Match's unique results return. This mimics Bash's output behavior if that is
+desired.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob('{*,README}.md', flags=glob.BRACE | glob.NOUNIQUE)
+['LICENSE.md', 'README.md', 'README.md']
+>>> glob.glob('{*,README}.md', flags=glob.BRACE )
+['LICENSE.md', 'README.md']
+```
+
+By default, only unique paths are returned in [`glob`](#globglob) and [`iglob`](#globiglob). Normally this is what a
+programmer would want from such a library, so input patterns are reduced to unique patterns[^1] to reduce excessive
+matching with redundant patterns and excessive crawls through the file system. Also, as two different patterns that have
+been fed into [`glob`](#globglob) may match the same file, the results are also filtered as to not return duplicates.
+
+`NOUNIQUE` disables all of the aforementioned "unique" optimizations, but only for [`glob`](#globglob) and
+[`iglob`](#globiglob). Functions like [`globmatch`](#globglobmatch) and [`globfilter`](#globglobfilter) would get no
+benefit from disabling "unique" optimizations, they would only run slower, so `NOUNIQUE` will be ignored.
+
+!!! new "New in 6.0"
+    "Unique" optimizations were added in 6.0, along with `NOUNIQUE`.
 
 #### `glob.GLOBTILDE, glob.T` {: #globglobtilde}
 
@@ -597,23 +706,8 @@ from wcmatch import glob
 True
 ```
 
-!!! new "New 5.2"
-    Tilde expansion with `GLOBTILDE` was added in version 5.2.
-
-#### `glob.SPLIT, glob.S` {: #globsplit}
-
-`SPLIT` is used to take a string of multiple patterns that are delimited by `|` and split them into separate patterns.
-This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It takes
-into account things like sequences (`[]`) and extended patterns (`*(...)`) and will not parse `|` within them.  You can
-escape the delimiters if needed: `\|`.
-
-```pycon3
->>> from wcmatch import glob
->>> glob.globmatch('test.txt', r'*.txt|*.py', flags=fnmatch.SPLIT)
-True
->>> glob.globmatch('test.py', r'*.txt|*.py', flags=fnmatch.SPLIT)
-True
-```
+!!! new "New 6.0"
+    Tilde expansion with `GLOBTILDE` was added in version 6.0.
 
 #### `glob.MARK, glob.K` {: #globmark}
 

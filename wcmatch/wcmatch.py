@@ -96,6 +96,7 @@ class WcMatch(object):
             )
         self.exclude_pattern = args.pop(0) if args else kwargs.pop('exclude_pattern', b'' if self.is_bytes else '')
         self._parse_flags(args.pop(0) if args else kwargs.pop('flags', 0))
+        self.limit = kwargs.pop('limit', _wcparse.PATTERN_LIMIT)
         self.on_init(*args, **kwargs)
         self.file_check, self.folder_exclude_check = self._compile(self.file_pattern, self.exclude_pattern)
 
@@ -123,7 +124,7 @@ class WcMatch(object):
             if self.matchbase:
                 flags |= _wcparse.MATCHBASE
 
-        return _wcparse.compile(pattern, flags) if pattern else None
+        return _wcparse.compile(pattern, flags, self.limit) if pattern else None
 
     def _compile(self, file_pattern, folder_exclude_pattern):
         """Compile patterns."""
