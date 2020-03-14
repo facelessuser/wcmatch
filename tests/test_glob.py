@@ -395,6 +395,12 @@ class Testglob(_TestGlob):
         [('[.a]',), [('a',)]],
         [('*.',), []],
 
+        # Glob with braces
+        [('{a*,a*}',), [('a',), ('aab',), ('aaa',)]],
+
+        # Glob with braces and "unique" turned off
+        [('{a*,a*}',), [('a',), ('aab',), ('aaa',), ('a',), ('aab',), ('aaa',)], glob.Q],
+
         Options(default_negate='**'),
         # Glob inverse
         [

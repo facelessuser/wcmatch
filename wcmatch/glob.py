@@ -165,7 +165,7 @@ class Glob(object):
                 if not self.nounique or is_neg:
                     if expanded in seen:
                         continue
-                    seen.add(p)
+                    seen.add(expanded)
 
                 yield is_neg, expanded
                 count += 1
@@ -176,8 +176,6 @@ class Glob(object):
         self.pattern = []
         self.npatterns = []
         nflags = self.flags | _wcparse.REALPATH
-        if nflags & _wcparse.NOUNIQUE:
-            nflags ^= _wcparse.NOUNIQUE
         for is_neg, p in self._iter_patterns(patterns):
             if is_neg:
                 # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
