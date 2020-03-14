@@ -352,22 +352,22 @@ class TestExpansionLimit(unittest.TestCase):
         """Test expansion limit of `globmatch`."""
 
         with self.assertRaises(_wcparse.PatternLimitException):
-            pathlib.PurePath('name').globmatch('{1..11}', flags=pathlib.BRACE, pattern_limit=10)
+            pathlib.PurePath('name').globmatch('{1..11}', flags=pathlib.BRACE, limit=10)
 
     def test_limit_match(self):
         """Test expansion limit of `match`."""
 
         with self.assertRaises(_wcparse.PatternLimitException):
-            pathlib.PurePath('name').match('{1..11}', flags=pathlib.BRACE, pattern_limit=10)
+            pathlib.PurePath('name').match('{1..11}', flags=pathlib.BRACE, limit=10)
 
     def test_limit_glob(self):
         """Test expansion limit of `glob`."""
 
         with self.assertRaises(_wcparse.PatternLimitException):
-            list(pathlib.Path('.').glob('{1..11}', flags=pathlib.BRACE, pattern_limit=10))
+            list(pathlib.Path('.').glob('{1..11}', flags=pathlib.BRACE, limit=10))
 
     def test_limit_rglob(self):
         """Test expansion limit of `rglob`."""
 
         with self.assertRaises(_wcparse.PatternLimitException):
-            list(pathlib.Path('.').rglob('{1..11}', flags=pathlib.BRACE, pattern_limit=10))
+            list(pathlib.Path('.').rglob('{1..11}', flags=pathlib.BRACE, limit=10))

@@ -11,7 +11,7 @@ It is mainly used for matching filenames with glob patterns. For path names, Wil
 [`globmatch`](./glob.md#globglobmatch) is a more appropriate choice. Not all of the features listed below are enabled by
 default. See [flags](#flags) for more information.
 
-!!! tip
+!!! tip "Backslashes"
     When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a
     character `#!py3 r'\?'`.  If you want to represent a literal backslash, you must use two: `#!py3 r'some\\path'`.
 
@@ -39,16 +39,26 @@ Pattern           | Meaning
 
 --8<-- "posix.txt"
 
+## Multi-Pattern Limits
+
+Many of the API functions allow passing in multiple patterns or using either [`BRACE`](#fnmatchbrace) or
+[`SPLIT`](#fnmatchsplit) to expand a pattern in to more patterns. The number of allowed patterns is limited `1000`, but
+you can raise or lower this limit via the keyword option `limit`. If you set `limit` to `0`, there will
+be no limit.
+
+!!! new "New 6.0"
+    The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
+
 ## API
 
 #### `fnmatch.fnmatch`
 
 ```py3
-def fnmatch(filename, patterns, *, flags=0)
+def fnmatch(filename, patterns, *, flags=0, limit=1000)
 ```
 
-`fnmatch` takes a file name, a pattern (or list of patterns), and flags.  It will return a boolean indicating whether
-the file name was matched by the pattern(s).
+`fnmatch` takes a file name, a pattern (or list of patterns), and flags.  It also allows configuring the [max pattern
+limit](#multi-pattern-limits). It will return a boolean indicating whether the file name was matched by the pattern(s).
 
 ```pycon3
 >>> from wcmatch import fnmatch
@@ -94,15 +104,18 @@ False
 True
 ```
 
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
 #### `fnmatch.filter`
 
 ```py3
-def filter(filenames, patterns, *, flags=0):
+def filter(filenames, patterns, *, flags=0, limit=1000):
 ```
 
-`filter` takes a list of filenames, a pattern (or list of patterns), and flags. It returns a list of all files that
-matched the pattern(s). The same logic used for [`fnmatch`](#fnmatchfnmatch) is used for `filter`, albeit more efficient
-for processing multiple files.
+`filter` takes a list of filenames, a pattern (or list of patterns), and flags. It also allows configuring the [max 
+pattern limit](#multi-pattern-limits). It returns a list of all files that matched the pattern(s). The same logic used for
+[`fnmatch`](#fnmatchfnmatch) is used for `filter`, albeit more efficient for processing multiple files.
 
 ```pycon3
 >>> from wcmatch import fnmatch
@@ -110,16 +123,19 @@ for processing multiple files.
 ['a.txt', 'b.txt']
 ```
 
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
 #### `fnmatch.translate`
 
 ```py3
-def translate(patterns, *, flags=0):
+def translate(patterns, *, flags=0, limit=1000):
 ```
 
-`translate` takes a file pattern (or list of patterns) and returns two lists: one for inclusion patterns and one for
-exclusion patterns. The lists contain the regular expressions used for matching the given patterns. It should be noted
-that a file is considered matched if it matches at least one inclusion pattern and matches **none** of the exclusion
-patterns.
+`translate` takes a file pattern (or list of patterns) and flags. It also allows configuring the [max pattern
+limit](#multi-pattern-limits). It returns two lists: one for inclusion patterns and one for exclusion patterns. The
+lists contain the regular expressions used for matching the given patterns. It should be noted that a file is considered
+matched if it matches at least one inclusion pattern and matches **none** of the exclusion patterns.
 
 ```pycon3
 >>> from wcmatch import translate
@@ -132,6 +148,9 @@ patterns.
 !!! warning "Changed 4.0"
     Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic to how
     it used to be, but is more efficient.
+
+!!! new "New 6.0"
+    `limit` was added in 6.0.
 
 ## Flags
 

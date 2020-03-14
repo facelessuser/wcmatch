@@ -1198,10 +1198,10 @@ class TestExpansionLimit(unittest.TestCase):
         """Test expansion limit of `glob`."""
 
         with self.assertRaises(_wcparse.PatternLimitException):
-            glob.glob('{1..11}', flags=glob.BRACE, pattern_limit=10)
+            glob.glob('{1..11}', flags=glob.BRACE, limit=10)
 
     def test_limit_iglob(self):
         """Test expansion limit of `iglob`."""
 
         with self.assertRaises(_wcparse.PatternLimitException):
-            list(glob.iglob('{1..11}', flags=glob.BRACE, pattern_limit=10))
+            list(glob.iglob('{1..11}', flags=glob.BRACE, limit=10))

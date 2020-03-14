@@ -576,4 +576,4 @@ class TestExpansionLimit(unittest.TestCase):
         """Test expansion limit of `globmatch`."""
 
         with self.assertRaises(_wcparse.PatternLimitException):
-            wcmatch.WcMatch('.', '{1..11}', flags=wcmatch.BRACE, pattern_limit=10)
+            wcmatch.WcMatch('.', '{1..11}', flags=wcmatch.BRACE, limit=10)

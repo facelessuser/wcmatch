@@ -9,7 +9,7 @@
   multiple times if multiple patterns match it, whether provided directly or due to the result of `BRACE` or `SPLIT`
   expansion.
 - **NEW**: Limit number of patterns that can be processed (expanded and otherwise) to 1000. Allow user to change this
-  value via `pattern_limit` option in API functions.
+  value via `limit` option in API functions.
 - **FIX**: Matching functions that receive multiple patterns, or that receive a single pattern that expands to multiple,
   will filter out duplicate patterns in order avoid redundant matching. While the `WcMatch` class crawls the file
   system, it utilizes the aforementioned matching functions in it's operation, and indirectly takes advantage of this.

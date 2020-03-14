@@ -513,16 +513,16 @@ class TestExpansionLimit(unittest.TestCase):
         """Test expansion limit of `fnmatch`."""
 
         with self.assertRaises(_wcparse.PatternLimitException):
-            fnmatch.fnmatch('name', '{1..11}', flags=fnmatch.BRACE, pattern_limit=10)
+            fnmatch.fnmatch('name', '{1..11}', flags=fnmatch.BRACE, limit=10)
 
     def test_limit_filter(self):
         """Test expansion limit of `filter`."""
 
         with self.assertRaises(_wcparse.PatternLimitException):
-            fnmatch.filter(['name'], '{1..11}', flags=fnmatch.BRACE, pattern_limit=10)
+            fnmatch.filter(['name'], '{1..11}', flags=fnmatch.BRACE, limit=10)
 
     def test_limit_translate(self):
         """Test expansion limit of `translate`."""
 
         with self.assertRaises(_wcparse.PatternLimitException):
-            fnmatch.translate('{1..11}', flags=fnmatch.BRACE, pattern_limit=10)
+            fnmatch.translate('{1..11}', flags=fnmatch.BRACE, limit=10)

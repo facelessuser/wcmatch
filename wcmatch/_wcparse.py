@@ -372,7 +372,7 @@ def is_unix_style(flags):
     )
 
 
-def translate(patterns, flags, pattern_limit=PATTERN_LIMIT):
+def translate(patterns, flags, limit=PATTERN_LIMIT):
     """Translate patterns."""
 
     positive = []
@@ -387,8 +387,8 @@ def translate(patterns, flags, pattern_limit=PATTERN_LIMIT):
 
     for pattern in patterns:
         for expanded in expand(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), flags):
-            if 0 <= pattern_limit < count:
-                raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(pattern_limit))
+            if 0 < limit < count:
+                raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
             if expanded in seen:
                 count += 1
                 continue
@@ -418,7 +418,7 @@ def split(pattern, flags):
         yield pattern
 
 
-def compile(patterns, flags, pattern_limit=PATTERN_LIMIT):  # noqa A001
+def compile(patterns, flags, limit=PATTERN_LIMIT):  # noqa A001
     """Compile patterns."""
 
     positive = []
@@ -432,8 +432,8 @@ def compile(patterns, flags, pattern_limit=PATTERN_LIMIT):  # noqa A001
 
     for pattern in patterns:
         for expanded in expand(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), flags):
-            if 0 <= pattern_limit < count:
-                raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(pattern_limit))
+            if 0 < limit < count:
+                raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
             if expanded in seen:
                 count += 1
                 continue

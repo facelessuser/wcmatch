@@ -27,6 +27,7 @@ Parameter         | Default       | Description
 `file_pattern`    | `#!py3 ''`    | One or more patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#wcmatchminusnegate) is set). The default is an empty string, but if an empty string is used, all files will be matched.
 `exclude_pattern` | `#!py3 ''`    | Zero or more folder exclude patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#wcmatchminusnegate) is set).
 `flags`           | `#!py3 0`     | Flags to alter behavior of folder and file matching. See [Flags](#flags) for more info.
+`limit`   | `#!py3 1000`  | Allows configuring the [max pattern limit](#multi-pattern-limits).
 
 !!! note
     Dots are not treated special in `wcmatch`. When the `HIDDEN` flag is not included, all hidden files (system and dot
@@ -36,6 +37,18 @@ Parameter         | Default       | Description
 !!! danger "Removed in 3.0"
     `show_hidden` and `recursive` were removed to provide a more consistent interface. Hidden files and recursion can be
     enabled via the [`HIDDEN`](#wcmatchhidden) and [`RECURSIVE`](#wcmatchrecursive) flag respectively.
+
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
+### Multi-Pattern Limits
+
+The `WcMatch` class allow expanding a pattern into multiple patterns by using `|` and by using [`BRACE`](#wcmatchbrace).
+The number of allowed patterns is limited `1000`, but you can raise or lower this limit via the keyword option
+`limit`. If you set `limit` to `0`, there will be no limit.
+
+!!! new "New 6.0"
+    The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
 
 ### Examples
 
@@ -163,7 +176,7 @@ Resets the abort state after running `kill`.
 
 Checks if an abort has been issued.
 
-```
+```pycon3
 >>> from wcmatch import wcmatch
 >>> wcm = wcmatch.WcMatch('.', '*.md|*.txt')
 >>> for f in wcm.imatch():

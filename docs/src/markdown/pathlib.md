@@ -19,6 +19,16 @@ introduced by Wildcard Match's implementation. Please check out Python's [`pathl
 more about [`pathlib`][pathlib] in general. Also, to learn more about the underlying glob library being used, check out
 the documentation for Wildcard Match's [`glob`](./glob.md).
 
+## Multi-Pattern Limits
+
+Many of the API functions allow passing in multiple patterns or using either [`BRACE`](#pathlibbrace) or
+[`SPLIT`](#pathlibsplit) to expand a pattern in to more patterns. The number of allowed patterns is limited `1000`, but
+you can raise or lower this limit via the keyword option `limit`. If you set `limit` to `0`, there will
+be no limit.
+
+!!! new "New 6.0"
+    The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
+
 ### Differences
 
 The API is the same as Python's default [`pathlib`][pathlib] except for the few differences related to file globbing and
@@ -203,11 +213,12 @@ PosixPath('/usr/local/bin')
 #### `PurePath.match`
 
 ```py3
-def match(self, patterns, *, flags=0):
+def match(self, patterns, *, flags=0, limit=1000):
 ```
 
-`match` takes a pattern (or list of patterns), and flags.  It will return a boolean indicating whether the objects
-file path was matched by the pattern(s).
+`match` takes a pattern (or list of patterns), and flags.  It also allows configuring the [max pattern
+limit](#multi-pattern-limits). It will return a boolean indicating whether the objects file path was matched by the
+pattern(s).
 
 `match` mimics Python's `pathlib` version of `match` in that it uses a recursive logic. What this means is when you are
 matching a path in the form `some/path/name`, the patterns `name`, `path/name` and `some/path/name` will all match.
@@ -229,14 +240,18 @@ Since [`Path`](#pathlibpath) is derived from [`PurePath`](#pathlibpurepath), thi
 True
 ```
 
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
 #### `PurePath.globmatch`
 
 ```py3
-def globmatch(self, patterns, *, flags=0):
+def globmatch(self, patterns, *, flags=0, limit=1000):
 ```
 
-`globmatch` takes a pattern (or list of patterns), and flags.  It will return a boolean indicating whether the objects
-file path was matched by the pattern(s).
+`globmatch` takes a pattern (or list of patterns), and flags.  It also allows configuring the [max pattern
+limit](#multi-pattern-limits).It will return a boolean indicating whether the objects file path was matched by the
+pattern(s).
 
 `globmatch` is similar to [`match`](#purepathmatch) except it does not use the same recursive logic that
 [`match`](#purepathmatch) does. In all other respects, it behaves the same.
@@ -256,16 +271,20 @@ Since [`Path`](#pathlibpath) is derived from  [`PurePath`](#pathlibpurepath), th
 True
 ```
 
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
 #### `Path.glob`
 
 ```py3
-def glob(self, patterns, *, flags=0):
+def glob(self, patterns, *, flags=0, limit=1000):
 ```
 
-`glob` takes a pattern (or list of patterns) and will crawl the file system, relative to the current
-[`Path`](#pathlibpath) object, returning a generator of [`Path`](#pathlibpath) objects. If a file/folder matches any
-regular, inclusion pattern, it is considered a match.  If a file matches *any* exclusion pattern (when enabling the
-[`NEGATE`](#pathlibnegate) flag), then it will not be returned.
+`glob` takes a pattern (or list of patterns) and flags. It also allows configuring the [max pattern
+limit](#multi-pattern-limits). It will crawl the file system, relative to the current [`Path`](#pathlibpath) object,
+returning a generator of [`Path`](#pathlibpath) objects. If a file/folder matches any regular, inclusion pattern, it is
+considered a match.  If a file matches *any* exclusion pattern (when enabling the [`NEGATE`](#pathlibnegate) flag), then
+it will not be returned.
 
 This method calls our own [`iglob`](./glob.md#globiglob) implementation, and as such, should behave in the same manner
 in respect to features, the one exception being that instead of returning path strings in the generator, it will return
@@ -282,16 +301,20 @@ working directory.
 [PosixPath('docs/src/dictionary/en-custom.txt'), PosixPath('docs/src/markdown/_snippets/links.txt'), PosixPath('docs/src/markdown/_snippets/refs.txt'), PosixPath('docs/src/markdown/_snippets/abbr.txt'), PosixPath('docs/src/markdown/_snippets/posix.txt')]
 ```
 
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
 #### `Path.rglob`
 
 ```py3
-def rglob(self, patterns, *, flags=0):
+def rglob(self, patterns, *, flags=0, path_limit=1000):
 ```
 
-`rglob` takes a pattern (or list of patterns) and will crawl the file system, relative to the current
-[`Path`](#pathlibpath) object, returning a generator of [`Path`](#pathlibpath) objects. If a file/folder matches any
-regular patterns, it is considered a match.  If a file matches *any* exclusion pattern (when enabling the
-[`NEGATE`](#pathlibnegate) flag), then it will be not be returned.
+`rglob` takes a pattern (or list of patterns) and flags. It also allows configuring the [max pattern
+limit](#multi-pattern-limits). It will crawl the file system, relative to the current [`Path`](#pathlibpath) object,
+returning a generator of [`Path`](#pathlibpath) objects. If a file/folder matches any regular patterns, it is considered
+a match.  If a file matches *any* exclusion pattern (when enabling the [`NEGATE`](#pathlibnegate) flag), then it will be
+not be returned.
 
 `rglob` mimics Python's [`pathlib`][pathlib] version of `rglob` in that it uses a recursive logic. What this means is
 that when you are matching a path in the form `some/path/name`, the patterns `name`, `path/name` and `some/path/name`
@@ -307,6 +330,9 @@ the same.
 >>> list(p.rglob('*.txt'))
 [PosixPath('docs/src/dictionary/en-custom.txt'), PosixPath('docs/src/markdown/_snippets/links.txt'), PosixPath('docs/src/markdown/_snippets/refs.txt'), PosixPath('docs/src/markdown/_snippets/abbr.txt'), PosixPath('docs/src/markdown/_snippets/posix.txt')]
 ```
+
+!!! new "New 6.0"
+    `limit` was added in 6.0.
 
 ## Flags
 

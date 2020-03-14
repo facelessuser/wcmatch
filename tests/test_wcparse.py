@@ -78,3 +78,15 @@ class TestWcparse(unittest.TestCase):
                 '{{{},{}}}'.format('|'.join(['a'] * 6), '|'.join(['a'] * 5)),
                 _wcparse.SPLIT | _wcparse.BRACE, 10
             )
+
+    def test_expansion_no_limit_compile(self):
+        """Test no expansion limit compile."""
+
+        self.assertEqual(len(_wcparse.compile('{1..11}', _wcparse.BRACE, -1)), 11)
+
+    def test_expansion_no_limit_translate(self):
+        """Test no expansion limit translate."""
+
+        p1, p2 = _wcparse.translate('{1..11}', _wcparse.BRACE, 0)
+        count = len(p1) + len(p2)
+        self.assertEqual(count, 11)

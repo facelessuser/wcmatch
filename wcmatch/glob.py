@@ -110,7 +110,7 @@ def _flag_transform(flags):
 class Glob(object):
     """Glob patterns."""
 
-    def __init__(self, pattern, flags=0, root_dir=None, pattern_limit=_wcparse.PATTERN_LIMIT):
+    def __init__(self, pattern, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
         """Initialize the directory walker object."""
 
         self.seen = set()
@@ -139,7 +139,7 @@ class Glob(object):
         self.case_sensitive = _wcparse.get_case(self.flags)
         self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
         self.empty = b'' if self.is_bytes else ''
-        self.pattern_limit = pattern_limit
+        self.limit = limit
         self._parse_patterns(pattern)
         if self.flags & _wcparse.FORCEWIN:
             self.sep = b'\\' if self.is_bytes else '\\'
@@ -150,14 +150,24 @@ class Glob(object):
         """Iterate expanded patterns."""
 
         count = 1
+        seen = set()
         for p in patterns:
             p = util.norm_pattern(p, not self.unix, self.raw_chars)
             for expanded in _wcparse.expand(p, self.flags):
-                if 0 <= self.pattern_limit < count:
+                if 0 < self.limit < count:
                     raise _wcparse.PatternLimitException(
-                        "Pattern limit exceeded the limit of {:d}".format(self.pattern_limit)
+                        "Pattern limit exceeded the limit of {:d}".format(self.limit)
                     )
-                yield expanded
+                # Filter out duplicate patterns. If `NOUNIQUE` is enabled,
+                # we only want to filter on negative patterns as they are
+                # only filters.
+                is_neg = _wcparse.is_negative(expanded, self.flags)
+                if not self.nounique or is_neg:
+                    if expanded in seen:
+                        continue
+                    seen.add(p)
+
+                yield is_neg, expanded
                 count += 1
 
     def _parse_patterns(self, patterns):
@@ -165,21 +175,10 @@ class Glob(object):
 
         self.pattern = []
         self.npatterns = []
-        seen = set()
         nflags = self.flags | _wcparse.REALPATH
         if nflags & _wcparse.NOUNIQUE:
             nflags ^= _wcparse.NOUNIQUE
-        for p in self._iter_patterns(patterns):
-
-            # Filter out duplicate patterns. If `NOUNIQUE` is enabled,
-            # we only want to filter on negative patterns as they are
-            # only filters.
-            is_neg = _wcparse.is_negative(p, self.flags)
-            if not self.nounique or is_neg:
-                if p in seen:
-                    continue
-                seen.add(p)
-
+        for is_neg, p in self._iter_patterns(patterns):
             if is_neg:
                 # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
                 # This is faster as compiled patterns usually compare the include patterns first,
@@ -515,26 +514,26 @@ class Glob(object):
                             yield from self.format_path(match, is_dir, dir_only)
 
 
-def iglob(patterns, *, flags=0, root_dir=None, pattern_limit=_wcparse.PATTERN_LIMIT):
+def iglob(patterns, *, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
     """Glob."""
 
-    yield from Glob(util.to_tuple(patterns), flags, root_dir, pattern_limit).glob()
+    yield from Glob(util.to_tuple(patterns), flags, root_dir, limit).glob()
 
 
-def glob(patterns, *, flags=0, root_dir=None, pattern_limit=_wcparse.PATTERN_LIMIT):
+def glob(patterns, *, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
     """Glob."""
 
-    return list(iglob(patterns, flags=flags, root_dir=root_dir, pattern_limit=pattern_limit))
+    return list(iglob(patterns, flags=flags, root_dir=root_dir, limit=limit))
 
 
-def translate(patterns, *, flags=0, pattern_limit=_wcparse.PATTERN_LIMIT):
+def translate(patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
     """Translate glob pattern."""
 
     flags = _flag_transform(flags)
-    return _wcparse.translate(patterns, flags, pattern_limit)
+    return _wcparse.translate(patterns, flags, limit)
 
 
-def globmatch(filename, patterns, *, flags=0, root_dir=None, pattern_limit=_wcparse.PATTERN_LIMIT):
+def globmatch(filename, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
     """
     Check if filename matches pattern.
 
@@ -550,10 +549,10 @@ def globmatch(filename, patterns, *, flags=0, root_dir=None, pattern_limit=_wcpa
     filename = util.fscodec(filename, is_bytes)
     if not _wcparse.is_unix_style(flags):
         filename = _wcparse.norm_slash(filename, flags)
-    return _wcparse.compile(patterns, flags, pattern_limit).match(filename, root_dir=root_dir)
+    return _wcparse.compile(patterns, flags, limit).match(filename, root_dir=root_dir)
 
 
-def globfilter(filenames, patterns, *, flags=0, root_dir=None, pattern_limit=_wcparse.PATTERN_LIMIT):
+def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
     """Filter names using pattern."""
 
     is_bytes = isinstance(patterns[0], bytes) if not isinstance(patterns, (bytes, str)) else isinstance(patterns, bytes)
@@ -563,7 +562,7 @@ def globfilter(filenames, patterns, *, flags=0, root_dir=None, pattern_limit=_wc
     matches = []
     flags = _flag_transform(flags)
     unix = _wcparse.is_unix_style(flags)
-    obj = _wcparse.compile(patterns, flags, pattern_limit)
+    obj = _wcparse.compile(patterns, flags, limit)
 
     for filename in filenames:
         temp = util.fscodec(filename, is_bytes)

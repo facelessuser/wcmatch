@@ -93,16 +93,27 @@ Pattern           | Meaning
 
 --8<-- "posix.txt"
 
+## Multi-Pattern Limits
+
+Many of the API functions allow passing in multiple patterns or using either [`BRACE`](#globbrace) or
+[`SPLIT`](#globsplit) to expand a pattern in to more patterns. The number of allowed patterns is limited `1000`, but you
+can raise or lower this limit via the keyword option `limit`. If you set `limit` to `0`, there will be
+no limit.
+
+!!! new "New 6.0"
+    The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
+
 ## API
 
 #### `glob.glob`
 
 ```py3
-def glob(patterns, *, flags=0, root_dir=None):
+def glob(patterns, *, flags=0, root_dir=None, limit=1000):
 ```
 
-`glob` takes a pattern (or list of patterns) and will crawl the file system returning matching files, flags, and an
-optional root directory (string or path-like object).
+`glob` takes a pattern (or list of patterns), flags, and an option root directory (string or path-like object). It also
+allows configuring the [max pattern limit](#multi-pattern-limits). When executed it will crawl the file system returning
+matching files.
 
 !!! warning "Path-like Input Support"
     Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
@@ -131,15 +142,15 @@ When a glob pattern ends with a slash, it will only return directories:
 
 When providing a list, all patterns are run in the same context, but will not be run in the same pass. Each pattern is
 run in a separate pass, except for exclusion patterns (see the [`NEGATE`](#globnegate) flag) which are applied as
-filters to the inclusion patterns. Since each pattern is run in its own pass, it is possible to get duplicates. It is
-no different than if you ran something like the following in Bash:
+filters to the inclusion patterns. Since each pattern is run in its own pass, it is possible for many directories to be
+researched multiple times. In Bash, duplicate files can be returned:
 
 ```console
 $ echo *.md README.md
 LICENSE.md README.md README.md
 ```
 
-And we see that Wildcard Match's `glob` behaves the same, only it only returns unique results.
+And we see that Wildcard Match's `glob` behaves the same, except it only returns unique results.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -160,7 +171,7 @@ And if we apply an exclusion pattern, since the patterns share the same context,
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.glob(['*.md', '!README.md'], flags=glob.NEGATE | glob.NOUNIQUE)
+>>> glob.glob(['*.md', , 'README.md', '!README.md'], flags=glob.NEGATE | glob.NOUNIQUE)
 ['LICENSE.md']
 ```
 
@@ -206,10 +217,13 @@ change the root path without using `os.chdir`.
 !!! new "New 5.1"
     `root_dir` was added in 5.1.0.
 
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
 #### `glob.iglob`
 
 ```py3
-def iglob(patterns, *, flags=0, root_dir=None):
+def iglob(patterns, *, flags=0, root_dir=None, limit=1000):
 ```
 
 `iglob` is just like [`glob`](#globglob) except it returns an iterator.
@@ -223,14 +237,18 @@ def iglob(patterns, *, flags=0, root_dir=None):
 !!! new "New 5.1"
     `root_dir` was added in 5.1.0.
 
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
 #### `glob.globmatch`
 
 ```py3
-def globmatch(filename, patterns, *, flags=0, root_dir=None):
+def globmatch(filename, patterns, *, flags=0, root_dir=None, limit=1000):
 ```
 
 `globmatch` takes a file name (string or path-like object), a pattern (or list of patterns), flags, and an optional root
-directory.  It will return a boolean indicating whether the file path was matched by the pattern(s).
+directory.  It also allows configuring the [max pattern limit](#multi-pattern-limits). It will return a boolean
+indicating whether the file path was matched by the pattern(s).
 
 !!! warning "Path-like Input Support"
     Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
@@ -335,15 +353,19 @@ True
     - `root_dir` was added in 5.1.0.
     - path-like object support for file path inputs was added in 5.1.0
 
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
 #### `glob.globfilter`
 
 ```py3
-def globfilter(filenames, patterns, *, flags=0, root_dir=None):
+def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=1000):
 ```
 
 `globfilter` takes a list of file paths (strings or path-like objects), a pattern (or list of patterns), and flags. It
-returns a list of all files paths that matched the pattern(s). The same logic used for [`globmatch`](#globglobmatch) is
-used for `globfilter`, albeit more efficient for processing multiple files.
+also allows configuring the [max pattern limit](#multi-pattern-limits). It returns a list of all files paths that
+matched the pattern(s). The same logic used for [`globmatch`](#globglobmatch) is used for `globfilter`, albeit more
+efficient for processing multiple files.
 
 !!! warning "Path-like Input Support"
     Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
@@ -363,16 +385,19 @@ be matched by `GLOBSTAR`. See [`globmatch`](#globglobmatch) for examples.
     - `root_dir` was added in 5.1.0.
     - path-like object support for file path inputs was added in 5.1.0
 
+!!! new "New 6.0"
+    `limit` was added in 6.0.
+
 #### `glob.translate`
 
 ```py3
-def translate(patterns, *, flags=0):
+def translate(patterns, *, flags=0, limit=1000):
 ```
 
-`translate` takes a file pattern (or list of patterns) and returns two lists: one for inclusion patterns and one for
-exclusion patterns. The lists contain the regular expressions used for matching the given patterns. It should be noted
-that a file is considered matched if it matches at least one inclusion pattern and matches **none** of the exclusion
-patterns.
+`translate` takes a file pattern (or list of patterns) and flags. It also allows configuring the [max pattern
+limit](#multi-pattern-limits). It returns two lists: one for inclusion patterns and one for exclusion patterns. The
+lists contain the regular expressions used for matching the given patterns. It should be noted that a file is considered
+matched if it matches at least one inclusion pattern and matches **none** of the exclusion patterns.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -385,6 +410,9 @@ patterns.
 !!! warning "Changed 4.0"
     Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic to how
     it used to be, but is more efficient.
+
+!!! new "New 6.0"
+    `limit` was added in 6.0.
 
 #### `glob.escape`
 

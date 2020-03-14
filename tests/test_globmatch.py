@@ -1499,16 +1499,16 @@ class TestExpansionLimit(unittest.TestCase):
         """Test expansion limit of `globmatch`."""
 
         with self.assertRaises(_wcparse.PatternLimitException):
-            glob.globmatch('name', '{1..11}', flags=glob.BRACE, pattern_limit=10)
+            glob.globmatch('name', '{1..11}', flags=glob.BRACE, limit=10)
 
     def test_limit_filter(self):
         """Test expansion limit of `globfilter`."""
 
         with self.assertRaises(_wcparse.PatternLimitException):
-            glob.globfilter(['name'], '{1..11}', flags=glob.BRACE, pattern_limit=10)
+            glob.globfilter(['name'], '{1..11}', flags=glob.BRACE, limit=10)
 
     def test_limit_translate(self):
         """Test expansion limit of `translate`."""
 
         with self.assertRaises(_wcparse.PatternLimitException):
-            glob.translate('{1..11}', flags=glob.BRACE, pattern_limit=10)
+            glob.translate('{1..11}', flags=glob.BRACE, limit=10)
