@@ -14,13 +14,11 @@ theme:
   palette:
     primary: blue
     accent: blue
-  logo:
-    icon: description
   font:
     text: Roboto
     code: Roboto Mono
-  feature:
-    tabs: true
+  features:
+    - tabs
 
 nav:
   - Wildcard Match: index.md
@@ -34,7 +32,7 @@ nav:
 markdown_extensions:
   - markdown.extensions.toc:
       slugify: !!python/name:pymdownx.slugs.uslugify
-      permalink: "\ue157"
+      permalink: ""
   - markdown.extensions.admonition:
   - markdown.extensions.smarty:
       smart_quotes: false
@@ -85,8 +83,10 @@ markdown_extensions:
 
 extra:
   social:
-    - icon: brands/github
+    - icon: fontawesome/brands/github
       link: https://github.com/facelessuser
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/GSk2fcX
 
 plugins:
   - search
