@@ -1,14 +1,12 @@
 
 
 
-
 <!doctype html>
 <html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
-      <meta http-equiv="x-ua-compatible" content="ie=edge">
       
         <meta name="description" content="A wildcard file name matching library">
       
@@ -17,7 +15,7 @@
       
       
       <link rel="shortcut icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-5.0.0b2-1">
+      <meta name="generator" content="mkdocs-1.1, mkdocs-material-5.0.0rc2">
     
     
       
@@ -25,9 +23,9 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/app.0f079138.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.97c3fac0.min.css">
       
-        <link rel="stylesheet" href="../assets/stylesheets/app-palette.3f90c815.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.31180ff2.min.css">
       
       
         
@@ -45,13 +43,14 @@
     
     
     
-      <link rel="stylesheet" href="../assets/pymdownx-extras/extra-c43896e083.css">
+      <link rel="stylesheet" href="../assets/pymdownx-extras/extra-f1fb910a62.css">
     
     
       
     
     
   </head>
+  
   
     
     
@@ -61,7 +60,8 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" for="__drawer"></label>
     
-      <a href="#wcmatchpathlib" class="md-skip">
+      
+      <a href="#wcmatchpathlib" class="md-skip" data-md-component="skip">
         Skip to content
       </a>
     
@@ -69,43 +69,45 @@
     
       <header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid">
-    <div class="md-flex">
-      <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="https://facelessuser.github.io/wcmatch" title="Wildcard Match Documentation" aria-label="Wildcard Match Documentation" class="md-header-nav__button md-logo">
-          
-            <i class="md-icon">description</i>
-          
-        </a>
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
-      </div>
-      <div class="md-flex__cell md-flex__cell--stretch">
-        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="header-title">
-          
-            <span class="md-header-nav__topic">
-              Wildcard Match Documentation
-            </span>
-            <span class="md-header-nav__topic">
-              
-                Pathlib
-              
-            </span>
-          
-        </div>
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
+    <a href="https://facelessuser.github.io/wcmatch" title="Wildcard Match Documentation" aria-label="Wildcard Match Documentation" class="md-header-nav__button md-logo">
+      
         
-          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
-          
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,8A3,3 0 0,0 15,5A3,3 0 0,0 12,2A3,3 0 0,0 9,5A3,3 0 0,0 12,8M12,11.54C9.64,9.35 6.5,8 3,8V19C6.5,19 9.64,20.35 12,22.54C14.36,20.35 17.5,19 21,19V8C17.5,8 14.36,9.35 12,11.54Z" /></svg>
+      
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" /></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      <div class="md-header-nav__ellipsis md-ellipsis">
+        
+          <span class="md-header-nav__topic">
+            Wildcard Match Documentation
+          </span>
+          <span class="md-header-nav__topic">
+            
+              Pathlib
+            
+          </span>
+        
+      </div>
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" /></svg>
+      </label>
+      
 <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
       <input type="text" class="md-search__input" name="query" aria-label="search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active" required>
-      <label class="md-icon md-search__icon" for="__search"></label>
-      <button type="reset" class="md-icon md-search__icon" data-md-component="search-reset" tabindex="-1">
-        &#xE5CD;
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" /></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="reset" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
       </button>
     </form>
     <div class="md-search__output">
@@ -120,14 +122,12 @@
     </div>
   </div>
 </div>
+    
+    
+      <div class="md-header-nav__source">
         
-      </div>
-      
-        <div class="md-flex__cell md-flex__cell--shrink">
-          <div class="md-header-nav__source">
-            
 <a href="https://github.com/facelessuser/wcmatch/" title="Go to repository" class="md-source">
-  <div class="md-source__icon">
+  <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
@@ -135,10 +135,8 @@
     GitHub
   </div>
 </a>
-          </div>
-        </div>
-      
-    </div>
+      </div>
+    
   </nav>
 </header>
     
@@ -189,10 +187,11 @@
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
-  <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="https://facelessuser.github.io/wcmatch" title="Wildcard Match Documentation" class="md-nav__button md-logo">
+  <label class="md-nav__title" for="__drawer">
+    <a href="https://facelessuser.github.io/wcmatch" title="Wildcard Match Documentation" aria-label="Wildcard Match Documentation" class="md-nav__button md-logo">
       
-        <i class="md-icon">description</i>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,8A3,3 0 0,0 15,5A3,3 0 0,0 12,2A3,3 0 0,0 9,5A3,3 0 0,0 12,8M12,11.54C9.64,9.35 6.5,8 3,8V19C6.5,19 9.64,20.35 12,22.54C14.36,20.35 17.5,19 21,19V8C17.5,8 14.36,9.35 12,11.54Z" /></svg>
       
     </a>
     Wildcard Match Documentation
@@ -201,7 +200,7 @@
     <div class="md-nav__source">
       
 <a href="https://github.com/facelessuser/wcmatch/" title="Go to repository" class="md-source">
-  <div class="md-source__icon">
+  <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
@@ -258,13 +257,16 @@
 
   <li class="md-nav__item md-nav__item--active">
     
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
     
       
     
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
         Pathlib
+        <span class="md-nav__icon md-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3,9H17V7H3V9M3,13H17V11H3V13M3,17H17V15H3V17M19,17H21V15H19V17M19,7V9H21V7H19M19,13H21V11H19V13Z" /></svg>
+        </span>
       </label>
     
     <a href="./" title="Pathlib" class="md-nav__link md-nav__link--active">
@@ -278,12 +280,24 @@
     
   
   
-    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+      </span>
+      Table of contents
+    </label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
   <a href="#overview" class="md-nav__link">
     Overview
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multi-pattern-limits" class="md-nav__link">
+    Multi-Pattern Limits
   </a>
   
     <nav class="md-nav">
@@ -504,6 +518,14 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pathlibnounique" class="md-nav__link">
+    pathlib.NOUNIQUE, pathlib.Q
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#pathlibmatchbase" class="md-nav__link">
     pathlib.MATCHBASE, pathlib.X
   </a>
@@ -521,10 +543,11 @@
     </nav>
   
 </li>
-      
-      
-      
-      
+        
+      </ul>
+    </nav>
+  
+</li>
       
     </ul>
   
@@ -586,12 +609,24 @@
     
   
   
-    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+      </span>
+      Table of contents
+    </label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
   <a href="#overview" class="md-nav__link">
     Overview
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multi-pattern-limits" class="md-nav__link">
+    Multi-Pattern Limits
   </a>
   
     <nav class="md-nav">
@@ -812,6 +847,14 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pathlibnounique" class="md-nav__link">
+    pathlib.NOUNIQUE, pathlib.Q
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#pathlibmatchbase" class="md-nav__link">
     pathlib.MATCHBASE, pathlib.X
   </a>
@@ -829,10 +872,11 @@
     </nav>
   
 </li>
-      
-      
-      
-      
+        
+      </ul>
+    </nav>
+  
+</li>
       
     </ul>
   
@@ -846,18 +890,23 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/facelessuser/wcmatch/tree/master/docs/src/markdown/pathlib.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/facelessuser/wcmatch/tree/master/docs/src/markdown/pathlib.md" title="Edit this page" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" /></svg>
+                  </a>
                 
                 
-                <h1 id="wcmatchpathlib"><code>wcmatch.pathlib</code><a class="headerlink" href="#wcmatchpathlib" title="Permanent link"></a></h1>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
+                  
+                
+                
+                <h1 id="wcmatchpathlib"><code>wcmatch.pathlib</code><a class="headerlink" href="#wcmatchpathlib" title="Permanent link"></a></h1>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
 </code></pre></div>
 
 <div class="admonition new">
 <p class="admonition-title">New 5.0</p>
 <p><code>wcmatch.pathlib</code> was added in <code>wcmatch</code> 5.0.</p>
 </div>
-<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link"></a></h2>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link"></a></h2>
 <p><code>pathlib</code> is a library that contains subclasses of Python's <a href="https://docs.python.org/3/library/pathlib.html"><code>pathlib</code></a> <code>Path</code> and <code>PurePath</code> classes, and
 their Posix and Windows subclasses, with the purpose of overriding the default <code>glob</code> behavior with Wildcard Match's
 very own <a href="../glob/"><code>glob</code></a>. This allows a user of <code>pathlib</code> to use all of the glob enhancements that Wildcard Match
@@ -866,7 +915,16 @@ provides. This includes features such as extended glob patterns, brace expansion
 introduced by Wildcard Match's implementation. Please check out Python's <a href="https://docs.python.org/3/library/pathlib.html"><code>pathlib</code></a> documentation to learn
 more about <a href="https://docs.python.org/3/library/pathlib.html"><code>pathlib</code></a> in general. Also, to learn more about the underlying glob library being used, check out
 the documentation for Wildcard Match's <a href="../glob/"><code>glob</code></a>.</p>
-<h3 id="differences">Differences<a class="headerlink" href="#differences" title="Permanent link"></a></h3>
+<h2 id="multi-pattern-limits">Multi-Pattern Limits<a class="headerlink" href="#multi-pattern-limits" title="Permanent link"></a></h2>
+<p>Many of the API functions allow passing in multiple patterns or using either <a href="#pathlibbrace"><code>BRACE</code></a> or
+<a href="#pathlibsplit"><code>SPLIT</code></a> to expand a pattern in to more patterns. The number of allowed patterns is limited <code>1000</code>, but
+you can raise or lower this limit via the keyword option <code>limit</code>. If you set <code>limit</code> to <code>0</code>, there will
+be no limit.</p>
+<div class="admonition new">
+<p class="admonition-title">New 6.0</p>
+<p>The imposed pattern limit and corresponding <code>limit</code> option was introduced in 6.0.</p>
+</div>
+<h3 id="differences">Differences<a class="headerlink" href="#differences" title="Permanent link"></a></h3>
 <p>The API is the same as Python's default <a href="https://docs.python.org/3/library/pathlib.html"><code>pathlib</code></a> except for the few differences related to file globbing and
 matching:</p>
 <ul>
@@ -908,7 +966,7 @@ path's are returned without:</p>
 where <code>.</code> is explicitly used.</p>
 </li>
 </ul>
-<h3 id="similarities">Similarities<a class="headerlink" href="#similarities" title="Permanent link"></a></h3>
+<h3 id="similarities">Similarities<a class="headerlink" href="#similarities" title="Permanent link"></a></h3>
 <p>As far as similarities, all non-glob related methods should behave exactly like Python's as our version is derived from
 theirs. <a href="#pathglob"><code>glob</code></a>, <a href="#pathrglob"><code>rglob</code></a>, and <a href="#purepathmatch"><code>match</code></a> should mimic the basic behavior of
 Python's original <a href="https://docs.python.org/3/library/pathlib.html"><code>pathlib</code></a> library as well, just with the enhancements and configurability that Wildcard
@@ -922,8 +980,8 @@ Match's <a href="../glob/"><code>glob</code></a> provides:</p>
   implementation.</p>
 </li>
 </ul>
-<h2 id="classes">Classes<a class="headerlink" href="#classes" title="Permanent link"></a></h2>
-<h4 id="pathlibpurepath"><code>pathlib.PurePath</code><a class="headerlink" href="#pathlibpurepath" title="Permanent link"></a></h4>
+<h2 id="classes">Classes<a class="headerlink" href="#classes" title="Permanent link"></a></h2>
+<h4 id="pathlibpurepath"><code>pathlib.PurePath</code><a class="headerlink" href="#pathlibpurepath" title="Permanent link"></a></h4>
 <p><code>PurePath</code> is Wildcard Match's version of Python's <code>PurePath</code> class. Depending on the system, it will create either a
 <a href="#pathlibpurewindowspath"><code>PureWindowsPath</code></a> or a <a href="#pathlibpureposixpath"><code>PurePosixPath</code></a> object. Both objects will
 utilize <a href="../glob/"><code>wcmatch.glob</code></a> for all glob related actions.</p>
@@ -932,13 +990,13 @@ utilize <a href="../glob/"><code>wcmatch.glob</code></a> for all glob related ac
 function the <a href="#pathlibrealpath"><code>REALPATH</code></a> flag. We do not restrict this, but we do not enable it by default.
 <a href="#pathlibrealpath"><code>REALPATH</code></a> simply forces the match to check the filesystem to see if the file exists and is a
 directory or not.</p>
-<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pathlib</span><span class="o">.</span><span class="n">PurePath</span><span class="p">(</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
 <span class="go">PurePosixPath(&#39;docs/src&#39;)</span>
 </code></pre></div>
 
 <p><code>PurePath</code> classes implement the <a href="#purepathmatch"><code>match</code></a> and <a href="#purepathglobmatch"><code>globmatch</code></a> methods:</p>
-<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">PurePath</span><span class="p">(</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;src&#39;</span><span class="p">)</span>
 <span class="go">True</span>
@@ -946,31 +1004,31 @@ directory or not.</p>
 <span class="go">True</span>
 </code></pre></div>
 
-<h4 id="pathlibpurewindowspath"><code>pathlib.PureWindowsPath</code><a class="headerlink" href="#pathlibpurewindowspath" title="Permanent link"></a></h4>
+<h4 id="pathlibpurewindowspath"><code>pathlib.PureWindowsPath</code><a class="headerlink" href="#pathlibpurewindowspath" title="Permanent link"></a></h4>
 <p><code>PureWindowsPath</code> is Wildcard Match's version of Python's <code>PureWindowsPath</code>. The <code>PureWindowsPath</code> class is useful if
 you'd like to have the ease that <code>pathlib</code> offers when working with a path, but don't want it to access the filesystem.
 This is also useful if you'd like to manipulate Windows path strings on a Posix system. This class will utilize Wildcard
 Match's <a href="../glob/"><code>glob</code></a> for all glob related actions. The class is subclassed from <a href="#pathlibpurepath"><code>PurePath</code></a>.</p>
-<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">name</span>
 <span class="go">&#39;posix&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pathlib</span><span class="o">.</span><span class="n">PureWindowsPath</span><span class="p">(</span><span class="s1">&#39;c:/some/path&#39;</span><span class="p">)</span>
 <span class="go">PureWindowsPath(&#39;c:/some/path&#39;)</span>
 </code></pre></div>
 
-<h4 id="pathlibpureposixpath"><code>pathlib.PurePosixPath</code><a class="headerlink" href="#pathlibpureposixpath" title="Permanent link"></a></h4>
+<h4 id="pathlibpureposixpath"><code>pathlib.PurePosixPath</code><a class="headerlink" href="#pathlibpureposixpath" title="Permanent link"></a></h4>
 <p><code>PurePosixPath</code> is Wildcard Match's version of Python's <code>PurePosixPath</code>. The <code>PurePosixPath</code> class is useful if
 you'd like to have the ease that <code>pathlib</code> offers when working with a path, but don't want it to access the filesystem.
 This is also useful if you'd like to manipulate Posix path strings on a Windows system. This class will utilize Wildcard
 Match's <a href="../glob/"><code>glob</code></a> for all glob related actions. The class is subclassed from <a href="#pathlibpurepath"><code>PurePath</code></a>.</p>
-<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">name</span>
 <span class="go">&#39;nt&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pathlib</span><span class="o">.</span><span class="n">PureWindowsPath</span><span class="p">(</span><span class="s1">&#39;/usr/local/bin&#39;</span><span class="p">)</span>
 <span class="go">PurePosixPath(&#39;/usr/local/bin&#39;)</span>
 </code></pre></div>
 
-<h4 id="pathlibpath"><code>pathlib.Path</code><a class="headerlink" href="#pathlibpath" title="Permanent link"></a></h4>
+<h4 id="pathlibpath"><code>pathlib.Path</code><a class="headerlink" href="#pathlibpath" title="Permanent link"></a></h4>
 <p><code>Path</code> is Wildcard Match's version of Python's <code>Path</code> class. Depending on the system, it will create either a
 <a href="#pathlibwindowspath"><code>WindowsPath</code></a> or a <a href="#pathlibposixpath"><code>PosixPath</code></a> object. Both objects will
 utilize <a href="../glob/"><code>wcmatch.glob</code></a> for all glob related actions.</p>
@@ -981,13 +1039,13 @@ They include the <a href="#pathlibpurepath"><code>PurePath</code></a> methods <a
 you can force them to access the filesystem if you give either function the <a href="#pathlibrealpath"><code>REALPATH</code></a> flag. We do
 not restrict this, but we do not enable it by default. <a href="#pathlibrealpath"><code>REALPATH</code></a> simply forces the match to check
 the filesystem to see if the file exists and is a directory or not.</p>
-<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pathlib</span><span class="o">.</span><span class="n">PurePath</span><span class="p">(</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
 <span class="go">PosixPath(&#39;docs/src&#39;)</span>
 </code></pre></div>
 
 <p><code>Path</code> classes implement the <a href="#pathglob"><code>glob</code></a> and <a href="#pathrglob"><code>globmatch</code></a> methods:</p>
-<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;src&#39;</span><span class="p">)</span>
 <span class="go">True</span>
@@ -999,37 +1057,38 @@ the filesystem to see if the file exists and is a directory or not.</p>
 <span class="go">[PosixPath(&#39;docs/src/dictionary/en-custom.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/links.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/refs.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/abbr.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/posix.txt&#39;)]</span>
 </code></pre></div>
 
-<h4 id="pathlibwindowspath"><code>pathlib.WindowsPath</code><a class="headerlink" href="#pathlibwindowspath" title="Permanent link"></a></h4>
+<h4 id="pathlibwindowspath"><code>pathlib.WindowsPath</code><a class="headerlink" href="#pathlibwindowspath" title="Permanent link"></a></h4>
 <p><code>WindowsPath</code> is Wildcard Match's version of Python's <code>WindowsPath</code>. The <code>WindowsPath</code> class is useful if you'd like to
 have the ease that <code>pathlib</code> offers when working with a path and be able to manipulate or gain access to to information
 about that file. You cannot instantiate this class on a Posix system. This class will utilize Wildcard Match's
 <a href="../glob/"><code>glob</code></a> for all glob related actions. The class is subclassed from <a href="#pathlibpath"><code>Path</code></a>.</p>
-<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">name</span>
 <span class="go">&#39;posix&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;c:/some/path&#39;</span><span class="p">)</span>
 <span class="go">WindowsPath(&#39;c:/some/path&#39;)</span>
 </code></pre></div>
 
-<h4 id="pathlibposixpath"><code>pathlib.PosixPath</code><a class="headerlink" href="#pathlibposixpath" title="Permanent link"></a></h4>
+<h4 id="pathlibposixpath"><code>pathlib.PosixPath</code><a class="headerlink" href="#pathlibposixpath" title="Permanent link"></a></h4>
 <p><code>PosixPath</code> is Wildcard Match's version of Python's <code>PosixPath</code>. The <code>PosixPath</code> class is useful if you'd like to
 have the ease that <code>pathlib</code> offers when working with a path and be able to manipulate or gain access to to information
 about that file. You cannot instantiate this class on a Windows system. This class will utilize Wildcard Match's
 <a href="../glob/"><code>glob</code></a> for all glob related actions. The class is subclassed from <a href="#pathlibpath"><code>Path</code></a>.</p>
-<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">name</span>
 <span class="go">&#39;posix&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;/usr/local/bin&#39;</span><span class="p">)</span>
 <span class="go">PosixPath(&#39;/usr/local/bin&#39;)</span>
 </code></pre></div>
 
-<h2 id="methods">Methods<a class="headerlink" href="#methods" title="Permanent link"></a></h2>
-<h4 id="purepathmatch"><code>PurePath.match</code><a class="headerlink" href="#purepathmatch" title="Permanent link"></a></h4>
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<h2 id="methods">Methods<a class="headerlink" href="#methods" title="Permanent link"></a></h2>
+<h4 id="purepathmatch"><code>PurePath.match</code><a class="headerlink" href="#purepathmatch" title="Permanent link"></a></h4>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
 </code></pre></div>
 
-<p><code>match</code> takes a pattern (or list of patterns), and flags.  It will return a boolean indicating whether the objects
-file path was matched by the pattern(s).</p>
+<p><code>match</code> takes a pattern (or list of patterns), and flags.  It also allows configuring the <a href="#multi-pattern-limits">max pattern
+limit</a>. It will return a boolean indicating whether the objects file path was matched by the
+pattern(s).</p>
 <p><code>match</code> mimics Python's <code>pathlib</code> version of <code>match</code> in that it uses a recursive logic. What this means is when you are
 matching a path in the form <code>some/path/name</code>, the patterns <code>name</code>, <code>path/name</code> and <code>some/path/name</code> will all match.
 Essentially, the pattern, if not an absolute pattern, behaves as if a <a href="#pathlibglobstar"><code>GLOBSTAR</code></a> pattern of <code>**/</code>
@@ -1040,18 +1099,23 @@ was added at the beginning of the pattern.</p>
 directory or not.</p>
 <p>Since <a href="#pathlibpath"><code>Path</code></a> is derived from <a href="#pathlibpurepath"><code>PurePath</code></a>, this method is also available in
 <a href="#pathlibpath"><code>Path</code></a> objects.</p>
-<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">PurePath</span><span class="p">(</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;src&#39;</span><span class="p">)</span>
 <span class="go">True</span>
 </code></pre></div>
 
-<h4 id="purepathglobmatch"><code>PurePath.globmatch</code><a class="headerlink" href="#purepathglobmatch" title="Permanent link"></a></h4>
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">globmatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<div class="admonition new">
+<p class="admonition-title">New 6.0</p>
+<p><code>limit</code> was added in 6.0.</p>
+</div>
+<h4 id="purepathglobmatch"><code>PurePath.globmatch</code><a class="headerlink" href="#purepathglobmatch" title="Permanent link"></a></h4>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">globmatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
 </code></pre></div>
 
-<p><code>globmatch</code> takes a pattern (or list of patterns), and flags.  It will return a boolean indicating whether the objects
-file path was matched by the pattern(s).</p>
+<p><code>globmatch</code> takes a pattern (or list of patterns), and flags.  It also allows configuring the <a href="#multi-pattern-limits">max pattern
+limit</a>.It will return a boolean indicating whether the objects file path was matched by the
+pattern(s).</p>
 <p><code>globmatch</code> is similar to <a href="#purepathmatch"><code>match</code></a> except it does not use the same recursive logic that
 <a href="#purepathmatch"><code>match</code></a> does. In all other respects, it behaves the same.</p>
 <p><code>globmatch</code> does not access the filesystem, but you can force the path to access the filesystem if you give it the
@@ -1060,63 +1124,77 @@ file path was matched by the pattern(s).</p>
 directory or not.</p>
 <p>Since <a href="#pathlibpath"><code>Path</code></a> is derived from  <a href="#pathlibpurepath"><code>PurePath</code></a>, this method is also available in
 <a href="#pathlibpath"><code>Path</code></a> objects.</p>
-<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">PurePath</span><span class="p">(</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">globmatch</span><span class="p">(</span><span class="s1">&#39;**/src&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">pathlib</span><span class="o">.</span><span class="n">GLOBSTAR</span><span class="p">)</span>
 <span class="go">True</span>
 </code></pre></div>
 
-<h4 id="pathglob"><code>Path.glob</code><a class="headerlink" href="#pathglob" title="Permanent link"></a></h4>
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">glob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<div class="admonition new">
+<p class="admonition-title">New 6.0</p>
+<p><code>limit</code> was added in 6.0.</p>
+</div>
+<h4 id="pathglob"><code>Path.glob</code><a class="headerlink" href="#pathglob" title="Permanent link"></a></h4>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">glob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
 </code></pre></div>
 
-<p><code>glob</code> takes a pattern (or list of patterns) and will crawl the file system, relative to the current
-<a href="#pathlibpath"><code>Path</code></a> object, returning a generator of <a href="#pathlibpath"><code>Path</code></a> objects. If a file/folder matches any
-regular, inclusion pattern, it is considered a match.  If a file matches <em>any</em> exclusion pattern (when enabling the
-<a href="#pathlibnegate"><code>NEGATE</code></a> flag), then it will not be returned.</p>
+<p><code>glob</code> takes a pattern (or list of patterns) and flags. It also allows configuring the <a href="#multi-pattern-limits">max pattern
+limit</a>. It will crawl the file system, relative to the current <a href="#pathlibpath"><code>Path</code></a> object,
+returning a generator of <a href="#pathlibpath"><code>Path</code></a> objects. If a file/folder matches any regular, inclusion pattern, it is
+considered a match.  If a file matches <em>any</em> exclusion pattern (when enabling the <a href="#pathlibnegate"><code>NEGATE</code></a> flag), then
+it will not be returned.</p>
 <p>This method calls our own <a href="../glob/#globiglob"><code>iglob</code></a> implementation, and as such, should behave in the same manner
 in respect to features, the one exception being that instead of returning path strings in the generator, it will return
 <a href="#pathlibpath"><code>Path</code></a> objects.</p>
 <p>The one difference between this <code>glob</code> and the <a href="../glob/#globiglob"><code>iglob</code></a> API is that this function does not accept
 the <code>root_dir</code> parameter. All searches are relative to the object's path, which is evaluated relative to the current
 working directory.</p>
-<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;**/*.txt&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">pathlib</span><span class="o">.</span><span class="n">GLOBSTAR</span><span class="p">))</span>
 <span class="go">[PosixPath(&#39;docs/src/dictionary/en-custom.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/links.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/refs.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/abbr.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/posix.txt&#39;)]</span>
 </code></pre></div>
 
-<h4 id="pathrglob"><code>Path.rglob</code><a class="headerlink" href="#pathrglob" title="Permanent link"></a></h4>
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">rglob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<div class="admonition new">
+<p class="admonition-title">New 6.0</p>
+<p><code>limit</code> was added in 6.0.</p>
+</div>
+<h4 id="pathrglob"><code>Path.rglob</code><a class="headerlink" href="#pathrglob" title="Permanent link"></a></h4>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">rglob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">path_limit</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
 </code></pre></div>
 
-<p><code>rglob</code> takes a pattern (or list of patterns) and will crawl the file system, relative to the current
-<a href="#pathlibpath"><code>Path</code></a> object, returning a generator of <a href="#pathlibpath"><code>Path</code></a> objects. If a file/folder matches any
-regular patterns, it is considered a match.  If a file matches <em>any</em> exclusion pattern (when enabling the
-<a href="#pathlibnegate"><code>NEGATE</code></a> flag), then it will be not be returned.</p>
+<p><code>rglob</code> takes a pattern (or list of patterns) and flags. It also allows configuring the <a href="#multi-pattern-limits">max pattern
+limit</a>. It will crawl the file system, relative to the current <a href="#pathlibpath"><code>Path</code></a> object,
+returning a generator of <a href="#pathlibpath"><code>Path</code></a> objects. If a file/folder matches any regular patterns, it is considered
+a match.  If a file matches <em>any</em> exclusion pattern (when enabling the <a href="#pathlibnegate"><code>NEGATE</code></a> flag), then it will be
+not be returned.</p>
 <p><code>rglob</code> mimics Python's <a href="https://docs.python.org/3/library/pathlib.html"><code>pathlib</code></a> version of <code>rglob</code> in that it uses a recursive logic. What this means is
 that when you are matching a path in the form <code>some/path/name</code>, the patterns <code>name</code>, <code>path/name</code> and <code>some/path/name</code>
 will all match. Essentially, the pattern behaves as if a <a href="#pathlibglobstar"><code>GLOBSTAR</code></a> pattern of <code>**/</code> was added at
 the beginning of the pattern.</p>
 <p><code>rglob</code> is similar to <a href="#pathlibglob"><code>glob</code></a> except for the use of recursive logic. In all other respects, it behaves
 the same.</p>
-<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;docs/src&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s1">&#39;*.txt&#39;</span><span class="p">))</span>
 <span class="go">[PosixPath(&#39;docs/src/dictionary/en-custom.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/links.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/refs.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/abbr.txt&#39;), PosixPath(&#39;docs/src/markdown/_snippets/posix.txt&#39;)]</span>
 </code></pre></div>
 
-<h2 id="flags">Flags<a class="headerlink" href="#flags" title="Permanent link"></a></h2>
-<h4 id="pathlibcase"><code>pathlib.CASE, pathlib.C</code><a class="headerlink" href="#pathlibcase" title="Permanent link"></a></h4>
+<div class="admonition new">
+<p class="admonition-title">New 6.0</p>
+<p><code>limit</code> was added in 6.0.</p>
+</div>
+<h2 id="flags">Flags<a class="headerlink" href="#flags" title="Permanent link"></a></h2>
+<h4 id="pathlibcase"><code>pathlib.CASE, pathlib.C</code><a class="headerlink" href="#pathlibcase" title="Permanent link"></a></h4>
 <p><code>CASE</code> forces case sensitivity. <code>CASE</code> has higher priority than <a href="#pathlibignorecase"><code>IGNORECASE</code></a>.</p>
 <p>On Windows, drive letters (<code>C:</code>) and UNC host/share (<code>//host/share</code>) portions of a path will still be treated case
 insensitively, but the rest of the path will have case sensitive logic applied.</p>
-<h4 id="pathlibignorecase"><code>pathlib.IGNORECASE, pathlib.I</code><a class="headerlink" href="#pathlibignorecase" title="Permanent link"></a></h4>
+<h4 id="pathlibignorecase"><code>pathlib.IGNORECASE, pathlib.I</code><a class="headerlink" href="#pathlibignorecase" title="Permanent link"></a></h4>
 <p><code>IGNORECASE</code> forces case insensitivity. <a href="#pathlibcase"><code>CASE</code></a> has higher priority than <code>IGNORECASE</code>.</p>
-<h4 id="pathlibrawchars"><code>glob.RAWCHARS, glob.R</code><a class="headerlink" href="#pathlibrawchars" title="Permanent link"></a></h4>
+<h4 id="pathlibrawchars"><code>glob.RAWCHARS, glob.R</code><a class="headerlink" href="#pathlibrawchars" title="Permanent link"></a></h4>
 <p><code>RAWCHARS</code> causes string character syntax to be parsed in raw strings: <code class="highlight"><span class="sa">r</span><span class="s1">&#39;\u0040&#39;</span></code> &rarr; <code class="highlight"><span class="sa">r</span><span class="s1">&#39;@&#39;</span></code>. This will
 handle standard string escapes and Unicode including <code class="highlight"><span class="sa">r</span><span class="s1">&#39;\N{CHAR NAME}&#39;</span></code>.</p>
-<h4 id="pathlibnegate"><code>pathlib.NEGATE, pathlib.N</code><a class="headerlink" href="#pathlibnegate" title="Permanent link"></a></h4>
+<h4 id="pathlibnegate"><code>pathlib.NEGATE, pathlib.N</code><a class="headerlink" href="#pathlibnegate" title="Permanent link"></a></h4>
 <p><code>NEGATE</code> causes patterns that start with <code>!</code> to be treated as exclusion patterns. A pattern of <code>!*.py</code> would match any
 file but Python files. Exclusion patterns cannot be used by themselves though, and must be paired with a normal,
 inclusion pattern, either by utilizing the <a href="#pathlibsplit"><code>SPLIT</code></a> flag, or providing multiple patterns in a list.
@@ -1126,21 +1204,21 @@ unless the file matches the excluded pattern. This is done with the <a href="#pa
 <p>If used with the extended glob feature, patterns like <code>!(inverse|pattern)</code> will be mistakenly parsed as an exclusion
 pattern instead of as an inverse extended glob group.  See <a href="#pathlibminusnegate"><code>MINUSNEGATE</code></a> for an alternative
 syntax that plays nice with extended glob.</p>
-<h4 id="pathlibnegateall"><code>pathlib.NEGATEALL, pathlib.A</code><a class="headerlink" href="#pathlibnegateall" title="Permanent link"></a></h4>
+<h4 id="pathlibnegateall"><code>pathlib.NEGATEALL, pathlib.A</code><a class="headerlink" href="#pathlibnegateall" title="Permanent link"></a></h4>
 <p><code>NEGATEALL</code> can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the
 file matches the excluded pattern. Essentially, it means if you use a pattern such as <code>!*.md</code>, it will assume two
 patterns were given: <code>**</code> and <code>!*.md</code>, where <code>!*.md</code> is applied to the results of <code>**</code>, and <code>**</code> is specifically treated
 as if <a href="#pathlibglobstar"><code>GLOBSTAR</code></a> was enabled.</p>
 <p>Dot files will not be returned unless <a href="#pathlibdotglob"><code>DOTGLOB</code></a> is enabled. Symlinks will also be ignored in the
 return unless <a href="#pathlibfollow"><code>FOLLOW</code></a> is enabled.</p>
-<h4 id="pathlibminusnegate"><code>pathlib.MINUSNEGATE, pathlib.M</code><a class="headerlink" href="#pathlibminusnegate" title="Permanent link"></a></h4>
+<h4 id="pathlibminusnegate"><code>pathlib.MINUSNEGATE, pathlib.M</code><a class="headerlink" href="#pathlibminusnegate" title="Permanent link"></a></h4>
 <p>When <code>MINUSNEGATE</code> is used with <a href="#pathlibnegate"><code>NEGATE</code></a>, exclusion patterns are recognized by a pattern starting with
 <code>-</code> instead of <code>!</code>. This plays nice with the extended glob feature which already uses <code>!</code> in patterns such as <code>!(...)</code>.</p>
-<h4 id="pathlibglobstar"><code>pathlib.GLOBSTAR, pathlib.G</code><a class="headerlink" href="#pathlibglobstar" title="Permanent link"></a></h4>
+<h4 id="pathlibglobstar"><code>pathlib.GLOBSTAR, pathlib.G</code><a class="headerlink" href="#pathlibglobstar" title="Permanent link"></a></h4>
 <p><code>GLOBSTAR</code> enables the feature where <code>**</code> matches zero or more directories.</p>
-<h4 id="pathlibfollow"><code>pathlib.FOLLOW, pathlib.L</code><a class="headerlink" href="#pathlibfollow" title="Permanent link"></a></h4>
+<h4 id="pathlibfollow"><code>pathlib.FOLLOW, pathlib.L</code><a class="headerlink" href="#pathlibfollow" title="Permanent link"></a></h4>
 <p><code>FOLLOW</code> will cause <code>GLOBSTAR</code> patterns (<code>**</code>) to match and traverse symlink directories.</p>
-<h4 id="pathlibrealpath"><code>pathlib.REALPATH, pathlib.P</code><a class="headerlink" href="#pathlibrealpath" title="Permanent link"></a></h4>
+<h4 id="pathlibrealpath"><code>pathlib.REALPATH, pathlib.P</code><a class="headerlink" href="#pathlibrealpath" title="Permanent link"></a></h4>
 <p>In the past, only <code>glob</code> and <code>iglob</code> operated on the filesystem, but with <code>REALPATH</code>, other functions will now operate
 on the filesystem as well: <a href="#purepathglobmatch"><code>globmatch</code></a> and <a href="#purepathmatch"><code>match</code></a>.</p>
 <p>Normally, functions such as <a href="#purepathglobmatch"><code>globmatch</code></a> would simply match a path with regular expression and
@@ -1159,69 +1237,133 @@ that the path must meet the following in order to match:</p>
 <li>Paths must match in relation to the current working directory unless the pattern is constructed in a way to indicates
   an absolute path.</li>
 </ul>
-<h4 id="pathlibdotglob"><code>pathlib.DOTGLOB, pathlib.D</code><a class="headerlink" href="#pathlibdotglob" title="Permanent link"></a></h4>
+<h4 id="pathlibdotglob"><code>pathlib.DOTGLOB, pathlib.D</code><a class="headerlink" href="#pathlibdotglob" title="Permanent link"></a></h4>
 <p>By default, globbing and matching functions will not match file or directory names that start with dot <code>.</code> unless
 matched with a literal dot. <code>DOTGLOB</code> allows the meta characters (such as <code>*</code>) to glob dots like any other character.
 Dots will not be matched in <code>[]</code>, <code>*</code>, or <code>?</code>.</p>
 <p>Alternatively <code>DOTMATCH</code> will also be accepted for consistency with the other provided libraries. Both flags are exactly
 the same and are provided as a convenience in case the user finds one more intuitive than the other since <code>DOTGLOB</code> is
 often the name used in Bash.</p>
-<h4 id="pathlibextglob"><code>pathlib.EXTGLOB, pathlib.E</code><a class="headerlink" href="#pathlibextglob" title="Permanent link"></a></h4>
+<h4 id="pathlibextglob"><code>pathlib.EXTGLOB, pathlib.E</code><a class="headerlink" href="#pathlibextglob" title="Permanent link"></a></h4>
 <p><code>EXTGLOB</code> enables extended pattern matching which includes special pattern lists such as <code>+(...)</code>, <code>*(...)</code>, <code>?(...)</code>,
 etc. See the <a href="#syntax">syntax overview</a> for more information.</p>
 <p>Alternatively <code>EXTMATCH</code> will also be accepted for consistency with the other provided libraries. Both flags are exactly
 the same and are provided as a convenience in case the user finds one more intuitive than the other since <code>EXTGLOB</code> is
 often the name used in Bash.</p>
-<h4 id="pathlibbrace"><code>pathlib.BRACE, pathlib.B</code><a class="headerlink" href="#pathlibbrace" title="Permanent link"></a></h4>
+<div class="admonition tip">
+<p class="admonition-title">EXTMATCH and NEGATE</p>
+<p>When using <code>EXTMATCH</code> and <a href="#pathlibnegate"><code>NEGATE</code></a> together, it is recommended to also use
+<a href="#pathlibminusnegate"><code>MINUSNEGATE</code></a> to avoid conflicts in regards to the <code>!</code> meta character.</p>
+</div>
+<h4 id="pathlibbrace"><code>pathlib.BRACE, pathlib.B</code><a class="headerlink" href="#pathlibbrace" title="Permanent link"></a></h4>
 <p><code>BRACE</code> enables Bash style brace expansion: <code>a{b,{c,d}}</code> &rarr; <code>ab ac ad</code>. Brace expansion is applied before anything
 else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.</p>
-<p>For simple patterns, it may make more sense to use <a href="#pathlibextglob"><code>EXTGLOB</code></a> which will only generate a single
-pattern: <code>@(ab|ac|ad)</code>.</p>
-<p>Be careful with patterns such as <code>{1..100}</code> which would generate one hundred patterns that will all get individually
-parsed. Sometimes you really need such a pattern, but be mindful that it will be slower as you generate larger sets of
-patterns.</p>
-<h4 id="pathlibsplit"><code>pathlib.SPLIT, pathlib.S</code><a class="headerlink" href="#pathlibsplit" title="Permanent link"></a></h4>
+<p>Redundant, identical patterns are discarded<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> by default, and <code>glob</code> and <code>iglob</code> will limit the returned values to
+unique results. If you need <a href="#pathglob"><code>glob</code></a> or <a href="#pathrglob"><code>iglob</code></a> to behave more like Bash and return all
+results, you can set <a href="#pathlibnounique"><code>NOUNIQUE</code></a>. <a href="#pathlibnounique"><code>NOUNIQUE</code></a> has no effect on matching functions
+such as <a href="#purepathglobmatch"><code>globmatch</code></a>.</p>
+<p>For simple patterns, it may make more sense to use <a href="#pathlibextglob"><code>EXTGLOB</code></a> which will only generate a single pattern
+which will perform much better: <code>@(ab|ac|ad)</code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Massive Expansion Risk</p>
+<ol>
+<li>
+<p>It is important to note that each pattern is crawled separately, so patterns such as <code>{1..100}</code> would generate
+<strong>one hundred</strong> patterns. In a match function (<a href="#purepathglobmatch"><code>globmatch</code></a>), that would cause a hundred
+compares, and in a file crawling function (<a href="#pathglob"><code>glob</code></a>), it would cause the file system to be crawled one
+hundred times. Sometimes patterns like this are needed, so construct patterns thoughtfully and carefully.</p>
+</li>
+<li>
+<p><code>BRACE</code> and <a href="#pathlibsplit"><code>SPLIT</code></a> both expand patterns into multiple patterns. Using these two syntaxes
+simultaneously can exponential increase in duplicate patterns:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">expand</span><span class="p">(</span><span class="s1">&#39;test@(this{|that,|other})|*.py&#39;</span><span class="p">,</span> <span class="n">BRACE</span> <span class="o">|</span> <span class="n">SPLIT</span> <span class="o">|</span> <span class="n">EXTMATCH</span><span class="p">)</span>
+<span class="go">[&#39;test@(this|that)&#39;, &#39;test@(this|other)&#39;, &#39;*.py&#39;, &#39;*.py&#39;]</span>
+</code></pre></div>
+
+<p>This effect is reduced as redundant, identical patterns are optimized away<sup id="fnref3:1"><a class="footnote-ref" href="#fn:1">1</a></sup>, but when using crawling
+functions (<a href="#pathglob"><code>glob</code></a>) <em>and</em> <a href="#pathlibnounique"><code>NOUNIQUE</code></a> of that optimization is removed, and all of
+those patterns will be crawled. For this reason, especially when using functions like <a href="#pathglob"><code>glob</code></a>, it is
+recommended to use one syntax or the other.</p>
+</li>
+</ol>
+</div>
+<h4 id="pathlibsplit"><code>pathlib.SPLIT, pathlib.S</code><a class="headerlink" href="#pathlibsplit" title="Permanent link"></a></h4>
 <p><code>SPLIT</code> is used to take a string of multiple patterns that are delimited by <code>|</code> and split them into separate patterns.
-This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It takes
-into account things like sequences (<code>[]</code>) and extended patterns (<code>*(...)</code>) and will not parse <code>|</code> within them.  You can
-escape the delimiters if needed: <code>\|</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
+This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It pairs
+really well with <a href="#pathlibextglob"><code>EXTGLOB</code></a> and takes into account sequences (<code>[]</code>) and extended patterns (<code>*(...)</code>) and
+will not parse <code>|</code> within them.  You can also escape the delimiters if needed: <code>\|</code>.</p>
+<p>While <code>SPLIT</code> is not as powerful as <a href="#pathlibbrace"><code>BRACE</code></a>, it's syntax is very easy to use, and when paired with
+<a href="#pathlibextglob"><code>EXTGLOB</code></a>, it feels natural and comes a bit closer. It also much harder to create massive expansions
+of patterns with it, except when paired <em>with</em> <a href="#pathlibbrace"><code>BRACE</code></a>. See <a href="#pathlibbrace"><code>BRACE</code></a> and it's warnings
+related to pairing it with <code>SPLIT</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;README.md|LICENSE.md&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">pathlib</span><span class="o">.</span><span class="n">SPLIT</span><span class="p">))</span>
 <span class="go">[WindowsPath(&#39;README.md&#39;), WindowsPath(&#39;LICENSE.md&#39;)]</span>
 </code></pre></div>
 
-<h4 id="pathlibmatchbase"><code>pathlib.MATCHBASE, pathlib.X</code><a class="headerlink" href="#pathlibmatchbase" title="Permanent link"></a></h4>
+<h3 id="pathlibnounique"><code>pathlib.NOUNIQUE, pathlib.Q</code><a class="headerlink" href="#pathlibnounique" title="Permanent link"></a></h3>
+<p><code>NOUNIQUE</code> is used to disable Wildcard Match's unique results return. This mimics Bash's output behavior if that is
+desired.</p>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">glob</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;{*,README}.md&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">BRACE</span> <span class="o">|</span> <span class="n">glob</span><span class="o">.</span><span class="n">NOUNIQUE</span><span class="p">)</span>
+<span class="go">[&#39;LICENSE.md&#39;, &#39;README.md&#39;, &#39;README.md&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;{*,README}.md&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">BRACE</span> <span class="p">)</span>
+<span class="go">[&#39;LICENSE.md&#39;, &#39;README.md&#39;]</span>
+</code></pre></div>
+
+<p>By default, only unique paths are returned in <a href="#pathglob"><code>glob</code></a> and <a href="#pathrglob"><code>rglob</code></a>. Normally this is what a
+programmer would want from such a library, so input patterns are reduced to unique patterns<sup id="fnref2:1"><a class="footnote-ref" href="#fn:1">1</a></sup> to reduce excessive
+matching with redundant patterns and excessive crawls through the file system. Also, as two different patterns that have
+been fed into <a href="#pathglob"><code>glob</code></a> may match the same file, the results are also filtered as to not return duplicates.</p>
+<p><code>NOUNIQUE</code> disables all of the aforementioned "unique" optimizations, but only for <a href="#globglob"><code>glob</code></a> and
+<a href="#pathrglob"><code>rglob</code></a>. Functions like <a href="#purepathglobmatch"><code>globmatch</code></a> and <a href="#purepathmatch"><code>match</code></a> would get no
+benefit from disabling "unique" optimizations, they would only run slower, so <code>NOUNIQUE</code> will be ignored.</p>
+<div class="admonition new">
+<p class="admonition-title">New in 6.0</p>
+<p>"Unique" optimizations were added in 6.0, along with <code>NOUNIQUE</code>.</p>
+</div>
+<h4 id="pathlibmatchbase"><code>pathlib.MATCHBASE, pathlib.X</code><a class="headerlink" href="#pathlibmatchbase" title="Permanent link"></a></h4>
 <p><code>MATCHBASE</code>, when a pattern has no slashes in it, will cause all glob related functions to seek for any file anywhere in
 the tree with a matching basename, or in the case of <a href="#purepathmatch"><code>match</code></a> and <a href="#purepathglobmatch"><code>globmatch</code></a>,
 path whose basename matches.</p>
-<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*.txt&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">pathlib</span><span class="o">.</span><span class="n">MATCHBASE</span><span class="p">))</span>
 <span class="go">[WindowsPath(&#39;docs/src/dictionary/en-custom.txt&#39;), WindowsPath(&#39;docs/src/markdown/_snippets/abbr.txt&#39;), WindowsPath(&#39;docs/src/markdown/_snippets/links.txt&#39;), WindowsPath(&#39;docs/src/markdown/_snippets/posix.txt&#39;), WindowsPath(&#39;docs/src/markdown/_snippets/refs.txt&#39;), WindowsPath(&#39;requirements/docs.txt&#39;), WindowsPath(&#39;requirements/lint.txt&#39;), WindowsPath(&#39;requirements/setup.txt&#39;), WindowsPath(&#39;requirements/test.txt&#39;), WindowsPath(&#39;requirements/tools.txt&#39;), WindowsPath(&#39;site/_snippets/abbr.txt&#39;), WindowsPath(&#39;site/_snippets/links.txt&#39;), WindowsPath(&#39;site/_snippets/posix.txt&#39;), WindowsPath(&#39;site/_snippets/refs.txt&#39;)]  </span>
 </code></pre></div>
 
-<h4 id="pathlibnodir"><code>pathlib.NODIR, pathlib.O</code><a class="headerlink" href="#pathlibnodir" title="Permanent link"></a></h4>
+<h4 id="pathlibnodir"><code>pathlib.NODIR, pathlib.O</code><a class="headerlink" href="#pathlibnodir" title="Permanent link"></a></h4>
 <p><code>NODIR</code> will cause all glob related functions to return only matched files. In the case of
 <a href="#pathlibpurepath"><code>PurePath</code></a> classes, this may not be possible as those classes do not access the file system, nor
 will they retain trailing slashes.</p>
-<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="k">import</span> <span class="n">pathlib</span>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wcmatch</span> <span class="kn">import</span> <span class="n">pathlib</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">pathlib</span><span class="o">.</span><span class="n">NODIR</span><span class="p">))</span>
 <span class="go">[WindowsPath(&#39;appveyor.yml&#39;), WindowsPath(&#39;LICENSE.md&#39;), WindowsPath(&#39;MANIFEST.in&#39;), WindowsPath(&#39;mkdocs.yml&#39;), WindowsPath(&#39;README.md&#39;), WindowsPath(&#39;setup.cfg&#39;), WindowsPath(&#39;setup.py&#39;), WindowsPath(&#39;tox.ini&#39;)] </span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">))</span>
 <span class="go">[WindowsPath(&#39;appveyor.yml&#39;), WindowsPath(&#39;docs&#39;), WindowsPath(&#39;LICENSE.md&#39;), WindowsPath(&#39;MANIFEST.in&#39;), WindowsPath(&#39;mkdocs.yml&#39;), WindowsPath(&#39;README.md&#39;), WindowsPath(&#39;requirements&#39;), WindowsPath(&#39;setup.cfg&#39;), WindowsPath(&#39;setup.py&#39;), WindowsPath(&#39;site&#39;), WindowsPath(&#39;tests&#39;), WindowsPath(&#39;tox.ini&#39;), WindowsPath(&#39;wcmatch&#39;)]</span>
 </code></pre></div>
+
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
+<code>[[:alnum:]]</code> &ne; <code>[[:ALNUM:]]</code>.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:1" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
                 
                   
-                
-                
+                    
+
+<hr>
+<div class="md-source-date">
+  <small>
+    
+      Last update: March 15, 2020
+    
+  </small>
+</div>
                   
-                  <hr>
-                  <div class="md-source-date">
-                    <small>
-                      
-                        Last update: February 4, 2020
-                      
-                    </small>
-                  </div>
                 
               
               
@@ -1240,32 +1382,32 @@ will they retain trailing slashes.</p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../glob/" title="Glob" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+          <a href="../glob/" title="Glob" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
             </div>
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
                 Glob
-              </span>
+              </div>
             </div>
           </a>
         
         
-          <a href="../wcmatch/" title="Wcmatch" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
+          <a href="../wcmatch/" title="Wcmatch" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
                 Wcmatch
-              </span>
+              </div>
             </div>
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z" /></svg>
             </div>
           </a>
         
@@ -1295,8 +1437,16 @@ will they retain trailing slashes.</p>
       
   <div class="md-footer-social">
     
-      <a href="https://github.com/facelessuser" target="_blank" rel="noopener" class="md-footer-social__link">
+      
+      
+      <a href="https://github.com/facelessuser" target="_blank" rel="noopener" title="github.com" class="md-footer-social__link">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+      </a>
+    
+      
+      
+      <a href="https://discord.gg/GSk2fcX" target="_blank" rel="noopener" title="discord.gg" class="md-footer-social__link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M297.216 243.2c0 15.616-11.52 28.416-26.112 28.416-14.336 0-26.112-12.8-26.112-28.416s11.52-28.416 26.112-28.416c14.592 0 26.112 12.8 26.112 28.416zm-119.552-28.416c-14.592 0-26.112 12.8-26.112 28.416s11.776 28.416 26.112 28.416c14.592 0 26.112-12.8 26.112-28.416.256-15.616-11.52-28.416-26.112-28.416zM448 52.736V512c-64.494-56.994-43.868-38.128-118.784-107.776l13.568 47.36H52.48C23.552 451.584 0 428.032 0 398.848V52.736C0 23.552 23.552 0 52.48 0h343.04C424.448 0 448 23.552 448 52.736zm-72.96 242.688c0-82.432-36.864-149.248-36.864-149.248-36.864-27.648-71.936-26.88-71.936-26.88l-3.584 4.096c43.52 13.312 63.744 32.512 63.744 32.512-60.811-33.329-132.244-33.335-191.232-7.424-9.472 4.352-15.104 7.424-15.104 7.424s21.248-20.224 67.328-33.536l-2.56-3.072s-35.072-.768-71.936 26.88c0 0-36.864 66.816-36.864 149.248 0 0 21.504 37.12 78.08 38.912 0 0 9.472-11.52 17.152-21.248-32.512-9.728-44.8-30.208-44.8-30.208 3.766 2.636 9.976 6.053 10.496 6.4 43.21 24.198 104.588 32.126 159.744 8.96 8.96-3.328 18.944-8.192 29.44-15.104 0 0-12.8 20.992-46.336 30.464 7.68 9.728 16.896 20.736 16.896 20.736 56.576-1.792 78.336-38.912 78.336-38.912z"/></svg>
       </a>
     
   </div>
@@ -1307,22 +1457,26 @@ will they retain trailing slashes.</p>
       
     </div>
     
-      <script src="../assets/javascripts/bundle.bd6ef04a.min.js"></script><script id="__lang" type="application/json">
-        {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.language": "en", "search.pipeline.stopwords": "True", "search.pipeline.trimmer": "True", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.tokenizer": "[\\s\\-]+"}
+      <script>var __config={}</script>
+    
+    
+      <script src="../assets/javascripts/vendor.b0b43276.min.js"></script>
+      <script src="../assets/javascripts/bundle.65293e7c.min.js"></script><script id="__lang" type="application/json">
+        {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}
       </script>
       <script>
-        app = initialize({
-          base: "..",
-          worker: {
-            search: "../assets/javascripts/worker/search.926ffd9e.min.js"
+        __material = initialize(Object.assign({
+          url: {
+            base: "..",
+            worker: {
+              search: "../assets/javascripts/worker/search.784c5235.min.js"
+            }
           },
-          feature: {
-            instant: false
-          }
-        });
+          features: ["tabs"]
+        }, typeof __config !== "undefined" ? __config : {}))
       </script>
       
-        <script src="../assets/pymdownx-extras/extra-0d9305e748.js"></script>
+        <script src="../assets/pymdownx-extras/extra-52d8c68747.js"></script>
       
     
   </body>
