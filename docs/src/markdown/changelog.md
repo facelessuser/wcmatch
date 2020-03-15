@@ -9,15 +9,15 @@
   multiple times if multiple patterns match it, whether provided directly or due to the result of `BRACE` or `SPLIT`
   expansion.
 - **NEW**: Limit number of patterns that can be processed (expanded and otherwise) to 1000. Allow user to change this
-  value via `limit` option in API functions.
+  value via an optional `limit` parameter in related API functions.
 - **FIX**: Matching functions that receive multiple patterns, or that receive a single pattern that expands to multiple,
   will filter out duplicate patterns in order avoid redundant matching. While the `WcMatch` class crawls the file
   system, it utilizes the aforementioned matching functions in it's operation, and indirectly takes advantage of this.
   `glob` (and related functions: `rglob`, `iglob`, etc.) will also filter redundant patterns except when `NOUNIQUE` is
-  enabled.
+  enabled, this is so they can better act like Bash when `NOUNIQUE` is enabled.
+- **FIX**: `BRACE` is now processed before `SPLIT` in order to fix a number of edge cases.
 - **FIX**: `RAWCHARS` was inconsistently applied at different times depending on what was calling it. It is now applied
   first followed by `BRACE`, `SPLIT`, and finally `GLOBTILDE`.
-- **FIX**: `BRACE` is now processed before `SPLIT` in order to fix a number of edge cases.
 
 ## 5.1.0
 
