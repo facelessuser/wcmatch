@@ -273,7 +273,8 @@ def expand_braces(patterns, flags):
     if flags & BRACE:
         for p in ([patterns] if isinstance(patterns, (str, bytes)) else patterns):
             try:
-                yield from bracex.iexpand(p, keep_escapes=True)
+                # Turn off limit as we are handling it ourselves.
+                yield from bracex.iexpand(p, keep_escapes=True, limit=0)
             except Exception:  # pragma: no cover
                 # We will probably never hit this as `bracex`
                 # doesn't throw any specific exceptions and
@@ -383,18 +384,15 @@ def translate(patterns, flags, limit=PATTERN_LIMIT):
     flags = (flags | _TRANSLATE) & FLAG_MASK
     is_unix = is_unix_style(flags)
     seen = set()
-    count = 1
 
     for pattern in patterns:
-        for expanded in expand(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), flags):
+        pattern = util.norm_pattern(pattern, not is_unix, flags & RAWCHARS)
+        for count, expanded in enumerate(expand(pattern, flags), 1):
             if 0 < limit < count:
                 raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
-            if expanded in seen:
-                count += 1
-                continue
-            seen.add(expanded)
-            (negative if is_negative(expanded, flags) else positive).append(WcParse(expanded, flags).parse())
-            count += 1
+            if expanded not in seen:
+                seen.add(expanded)
+                (negative if is_negative(expanded, flags) else positive).append(WcParse(expanded, flags).parse())
 
     if patterns and negative and not positive:
         if flags & NEGATEALL:
@@ -428,18 +426,15 @@ def compile(patterns, flags, limit=PATTERN_LIMIT):  # noqa A001
 
     is_unix = is_unix_style(flags)
     seen = set()
-    count = 1
 
     for pattern in patterns:
-        for expanded in expand(util.norm_pattern(pattern, not is_unix, flags & RAWCHARS), flags):
+        pattern = util.norm_pattern(pattern, not is_unix, flags & RAWCHARS)
+        for count, expanded in enumerate(expand(pattern, flags), 1):
             if 0 < limit < count:
                 raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
-            if expanded in seen:
-                count += 1
-                continue
-            seen.add(expanded)
-            (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
-            count += 1
+            if expanded not in seen:
+                seen.add(expanded)
+                (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
 
     if patterns and negative and not positive:
         if flags & NEGATEALL:
