@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.0.1
+
+- **FIX**: If we only have one pattern (exclusion patterns not included) we can disable unique path filtering on returns
+  as you cannot have a duplicate path with only one inclusion pattern.
+
 ## 6.0.0
 
 - **NEW**: Tilde user expansion support via the new `GLOBTILDE` flag.
