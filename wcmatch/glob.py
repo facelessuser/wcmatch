@@ -197,6 +197,11 @@ class Glob(object):
             nodir = _wcparse.RE_WIN_NO_DIR[ptype] if self.flags & _wcparse.FORCEWIN else _wcparse.RE_NO_DIR[ptype]
             self.npatterns.append(nodir)
 
+        # A single positive pattern will not find multiples of the same file
+        # disable unique mode so that we won't waste time or memory computing unique returns.
+        if len(self.pattern) <= 1 and not self.nounique:
+            self.nounique = True
+
     def _is_hidden(self, name):
         """Check if is file hidden."""
 
