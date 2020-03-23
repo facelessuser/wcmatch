@@ -5,7 +5,7 @@
 - **FIX**: If we only have one pattern (exclusion patterns not included) we can disable unique path filtering on returns
   as you cannot have a duplicate path with only one inclusion pattern.
 
-## 6.0.0
+## 6.0
 
 - **NEW**: Tilde user expansion support via the new `GLOBTILDE` flag.
 - **NEW**: `glob` by default now returns only unique results, regardless of whether multiple patterns that match the
@@ -50,7 +50,7 @@
 - **FIX**: In `glob`, avoid using up too many file descriptors by acquiring all file/folder names under a directory in
   one batch before recursing into other folders.
 
-## 5.0.0
+## 5.0
 
 - **NEW**: Add `wcmatch.pathlib` which contains `pathlib` variants that uses `wcmatch.glob` instead of the default
   Python glob.
@@ -96,7 +96,7 @@
 - **FIX**: Fix regression with exclusion patterns that use braces in `glob`.
 - **FIX**: Translate functions should have `NODIR` patterns exclude if matched not exclude if not matched.
 
-## 4.0.0
+## 4.0
 
 - **NEW**: Deprecated `WcMatch` class methods `kill` and `reset`. `WcMatch` should be broken with a simple `break`
   statement instead.
@@ -127,7 +127,7 @@
   patterns to potentially avoid calling hidden if the pattern doesn't match. The reduced `lstat` calls improve
   performance.
 
-## 3.0.0
+## 3.0
 
 - **NEW**: `globsplit` and `fnsplit` have been deprecated. Users are encouraged to use the new `SPLIT` flag to allow
   functions to use multiple wildcard paths delimited by `|`.
@@ -181,10 +181,10 @@
 
 - **FIX**: Can't install due to requirements being assigned to setup opposed to install.
 
-## 2.0.0
+## 2.0
 
 !!! danger "Breaking Changes"
-    Version 2.0.0 introduces breaking changes in regards to flags.  This is meant to bring about consistency amongst the
+    Version 2.0 introduces breaking changes in regards to flags.  This is meant to bring about consistency amongst the
     provided libraries. Flag names have been changed in some cases, and logic has been inverted in some cases.
 
 - **NEW**: Glob's `NOBRACE`, `NOGLOBSTAR`, and `NOEXTGLOB` flags are now `BRACE`, `GLOBSTAR`, and `EXTGLOB` and now
@@ -214,7 +214,7 @@
   `''`, and if `''` is used, all files will be matched. This works better for when full path is enabled as you get the
   same file matching logic.
 
-## 1.0.0
+## 1.0
 
 - Initial release
 
