@@ -1,5 +1,255 @@
 # Changelog
 
+```diff
+@@ -2,7 +2,6 @@
+   This file was automatically generated - do not edit
+ -#}
+ {% import "partials/language.html" as lang with context %}
+-{% set feature = config.theme.feature %}
+ {% set palette = config.theme.palette %}
+ {% set font = config.theme.font %}
+ <!doctype html>
+@@ -30,19 +29,6 @@
+       {% elif config.site_author %}
+         <meta name="author" content="{{ config.site_author }}">
+       {% endif %}
+-      {% for key in [
+-        "clipboard.copy",
+-        "clipboard.copied",
+-        "search.language",
+-        "search.pipeline.stopwords",
+-        "search.pipeline.trimmer",
+-        "search.result.none",
+-        "search.result.one",
+-        "search.result.other",
+-        "search.tokenizer"
+-      ] %}
+-        <meta name="lang:{{ key }}" content="{{ lang.t(key) }}">
+-      {% endfor %}
+       <link rel="shortcut icon" href="{{ config.theme.favicon | url }}">
+       <meta name="generator" content="mkdocs-{{ mkdocs_version }}, mkdocs-material-5.0.0b2-1">
+     {% endblock %}
+@@ -56,9 +42,9 @@
+       {% endif %}
+     {% endblock %}
+     {% block styles %}
+-      <link rel="stylesheet" href="{{ 'assets/stylesheets/application.********.css' | url }}">
++      <link rel="stylesheet" href="{{ 'assets/stylesheets/main.********.min.css' | url }}">
+       {% if palette.primary or palette.accent %}
+-        <link rel="stylesheet" href="{{ 'assets/stylesheets/application-palette.********.css' | url }}">
++        <link rel="stylesheet" href="{{ 'assets/stylesheets/palette.********.min.css' | url }}">
+       {% endif %}
+       {% if palette.primary %}
+         {% import "partials/palette.html" as map %}
+@@ -69,20 +55,17 @@
+       {% endif %}
+     {% endblock %}
+     {% block libs %}
+-      <script src="{{ 'assets/javascripts/modernizr.********.js' | url }}"></script>
+     {% endblock %}
+     {% block fonts %}
+       {% if font != false %}
+         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family={{
+             font.text | replace(' ', '+') + ':300,400,400i,700%7C' +
+             font.code | replace(' ', '+')
+           }}&display=fallback">
+         <style>body,input{font-family:"{{ font.text }}","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"{{ font.code }}","Courier New",Courier,monospace}</style>
+       {% endif %}
+     {% endblock %}
+-    <link rel="stylesheet" href="{{ 'assets/fonts/material-icons.css' | url }}">
+     {% if config.extra.manifest %}
+       <link rel="manifest" href="{{ config.extra.manifest | url }}" crossorigin="use-credentials">
+     {% endif %}
+@@ -95,47 +78,46 @@
+     {% endblock %}
+     {% block extrahead %}{% endblock %}
+   </head>
++  {% set direction = config.theme.direction | default(lang.t('direction')) %}
+   {% if palette.primary or palette.accent %}
+     {% set primary = palette.primary | replace(" ", "-") | lower %}
+     {% set accent  = palette.accent  | replace(" ", "-") | lower %}
+-    <body dir="{{ lang.t('direction') }}" data-md-color-primary="{{ primary }}" data-md-color-accent="{{ accent }}">
++    <body dir="{{ direction }}" data-md-color-primary="{{ primary }}" data-md-color-accent="{{ accent }}">
+   {% else %}
+-    <body dir="{{ lang.t('direction') }}">
++    <body dir="{{ direction }}">
+   {% endif %}
+-    <svg class="md-svg">
+-      <defs>
+-        {% set platform = config.extra.repo_icon or config.repo_url %}
+-        {% if "github" in platform %}
+-          {% include "assets/images/icons/github.f0b8504a.svg" %}
+-        {% elif "gitlab" in platform %}
+-          {% include "assets/images/icons/gitlab.6dd19c00.svg" %}
+-        {% elif "bitbucket" in platform %}
+-          {% include "assets/images/icons/bitbucket.1b09e088.svg" %}
+-        {% endif %}
+-      </defs>
+-    </svg>
+     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+-    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
++    <label class="md-overlay" for="__drawer"></label>
+     {% if page.toc | first is defined %}
+-      <a href="{{ (page.toc | first).url }}" tabindex="0" class="md-skip">
++      {% set skip = page.toc | first %}
++      <a href="{{ skip.url | url }}" class="md-skip" data-md-component="skip">
+         {{ lang.t('skip.link.title') }}
+       </a>
+     {% endif %}
++    {% if self.announce() %}
++      <aside class="md-announce" data-md-component="announce">
++        <div class="md-announce__inner md-grid md-typeset">
++          {% block announce %}{% endblock %}
++        </div>
++      </aside>
++    {% endif %}
+     {% block header %}
+       {% include "partials/header.html" %}
+     {% endblock %}
+-    <div class="md-container">
++    <div class="md-container" data-md-component="container">
+       {% block hero %}
+         {% if page and page.meta and page.meta.hero %}
+           {% include "partials/hero.html" with context %}
+         {% endif %}
+       {% endblock %}
+-      {% if feature.tabs %}
+-        {% include "partials/tabs.html" %}
+-      {% endif %}
++      {% block tabs %}
++        {% if "tabs" in config.theme.features %}
++          {% include "partials/tabs.html" %}
++        {% endif %}
++      {% endblock %}
+-      <main class="md-main" role="main">
+-        <div class="md-main__inner md-grid" data-md-component="container">
++      <main class="md-main" data-md-component="main">
++        <div class="md-main__inner md-grid">
+           {% block site_nav %}
+             {% if nav %}
+               <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+@@ -160,41 +142,25 @@
+             <article class="md-content__inner md-typeset">
+               {% block content %}
+                 {% if page.edit_url %}
+-                  <a href="{{ page.edit_url }}" title="{{ lang.t('edit.link.title') }}" class="md-icon md-content__icon">&#xE3C9;</a>
++                  <a href="{{ page.edit_url }}" title="{{ lang.t('edit.link.title') }}" class="md-content__button md-icon">
++                    {% include ".icons/material/pencil.svg" %}
++                  </a>
+                 {% endif %}
++                {% block source %}
++                  {% if page and page.meta and page.meta.source %}
++                    {% include "partials/source-link.html" %}
++                  {% endif %}
++                {% endblock %}
+                 {% if not "\x3ch1" in page.content %}
+                   <h1>{{ page.title | default(config.site_name, true)}}</h1>
+                 {% endif %}
+                 {{ page.content }}
+-                {% block source %}
+-                  {% if page and page.meta and page.meta.source %}
+-                    <h2 id="__source">{{ lang.t("meta.source") }}</h2>
+-                    {% set repo = config.repo_url %}
+-                    {% if repo | last == "/" %}
+-                      {% set repo = repo[:-1] %}
+-                    {% endif %}
+-                    {% set path = page.meta.path | default([""]) %}
+-                    {% set file = page.meta.source %}
+-                    <a href="{{ [repo, path, file] | join('/') }}" title="{{ file }}" class="md-source-file">
+-                      {{ file }}
+-                    </a>
+-                  {% endif %}
+-                {% endblock %}
++                {% if page and page.meta %}
++                  {% if page.meta.git_revision_date_localized or
++                        page.meta.revision_date
++                  %}
++                    {% include "partials/source-date.html" %}
+-                {% if page and page.meta and (
+-                      page.meta.git_revision_date_localized or
+-                      page.meta.revision_date
+-                ) %}
+-                  {% set label = lang.t("source.revision.date") %}
+-                  <hr>
+-                  <div class="md-source-date">
+-                    <small>
+-                      {% if page.meta.git_revision_date_localized %}
+-                        {{ label }}: {{ page.meta.git_revision_date_localized }}
+-                      {% elif page.meta.revision_date %}
+-                        {{ label }}: {{ page.meta.revision_date }}
+-                      {% endif %}
+-                    </small>
+-                  </div>
+                 {% endif %}
+               {% endblock %}
+               {% block disqus %}
+@@ -208,29 +174,40 @@
+         {% include "partials/footer.html" %}
+       {% endblock %}
+     </div>
++    {% block config %}
++      <script>var __config={}</script>
++    {% endblock %}
+     {% block scripts %}
+-      <script src="{{ 'assets/javascripts/application.df00da5d.js' | url }}"></script>
+-      {% if lang.t("search.language") != "en" %}
+-        {% set languages = lang.t("search.language").split(",") %}
+-        {% if languages | length and languages[0] != "" %}
+-          {% set path = "assets/javascripts/lunr/" %}
+-          <script src="{{ (path ~ 'lunr.stemmer.support.js') | url }}"></script>
+-          {% for language in languages | map("trim") %}
+-            {% if language != "en" %}
+-              {% if language == "ja" %}
+-                <script src="{{ (path ~ 'tinyseg.js') | url }}"></script>
+-              {% endif %}
+-              {% if language in ("ar", "da", "de", "es", "fi", "fr", "hu", "it", "ja", "nl", "no", "pt", "ro", "ru", "sv", "th", "tr", "vi") %}
+-                <script src="{{ (path ~ 'lunr.' ~ language ~ '.js') | url }}"></script>
+-              {% endif %}
+-            {% endif %}
+-          {% endfor %}
+-          {% if languages | length > 1 %}
+-            <script src="{{ (path ~ 'lunr.multi.js') | url }}"></script>
+-          {% endif %}
+-        {% endif %}
+-      {% endif %}
+-      <script>app.initialize({version:"{{ mkdocs_version }}",url:{base:"{{ base_url }}"}})</script>
++      <script src="{{ 'assets/javascripts/vendor.31a2e7b9.min.js' | url }}"></script>
++      <script src="{{ 'assets/javascripts/bundle.5b33ad8d.min.js' | url }}"></script>
++      {%- set translations = {} -%}
++      {%- for key in [
++        "clipboard.copy",
++        "clipboard.copied",
++        "search.config.lang",
++        "search.config.pipeline",
++        "search.config.separator",
++        "search.result.placeholder",
++        "search.result.none",
++        "search.result.one",
++        "search.result.other"
++      ] -%}
++        {%- set _ = translations.update({ key: lang.t(key) }) -%}
++      {%- endfor -%}
++      <script id="__lang" type="application/json">
++        {{ translations | tojson }}
++      </script>
++      <script>
++        __material = initialize(Object.assign({
++          url: {
++            base: "{{ base_url }}",
++            worker: {
++              search: "{{ 'assets/javascripts/worker/search.edc88caf.min.js' | url }}"
++            }
++          },
++          features: {{ config.theme.features | tojson }}
++        }, __config))
++      </script>
+       {% for path in config["extra_javascript"] %}
+         <script src="{{ path | url }}"></script>
+       {% endfor %}
+```
+
 ## 6.0.1
 
 - **FIX**: If we only have one pattern (exclusion patterns not included) we can disable unique path filtering on returns

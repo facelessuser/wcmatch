@@ -1,8 +1,6 @@
 [![Donate via PayPal][donate-image]][donate-link]
 [![Discord][discord-image]][discord-link]
 [![Build][github-ci-image]][github-ci-link]
-[![Unix Build Status][travis-image]][travis-link]
-[![Windows Build Status][appveyor-image]][appveyor-link]
 [![Coverage Status][codecov-image]][codecov-link]
 [![PyPI Version][pypi-image]][pypi-link]
 [![PyPI - Python Version][python-image]][pypi-link]
@@ -88,10 +86,6 @@ SOFTWARE.
 [discord-link]:https://discord.gg/GSk2fcX
 [codecov-image]: https://img.shields.io/codecov/c/github/facelessuser/wcmatch/master.svg?logo=codecov&logoColor=aaaaaa&labelColor=333333
 [codecov-link]: https://codecov.io/github/facelessuser/wcmatch
-[appveyor-image]: https://img.shields.io/appveyor/ci/facelessuser/wcmatch/master.svg?label=appveyor&logo=appveyor&logoColor=aaaaaa&labelColor=333333
-[appveyor-link]: https://ci.appveyor.com/project/facelessuser/wcmatch
-[travis-image]: https://img.shields.io/travis/facelessuser/wcmatch/master.svg?label=travis&logo=travis%20ci&logoColor=aaaaaa&labelColor=333333
-[travis-link]: https://travis-ci.org/facelessuser/wcmatch
 [pypi-image]: https://img.shields.io/pypi/v/wcmatch.svg?logo=pypi&logoColor=aaaaaa&labelColor=333333
 [pypi-link]: https://pypi.python.org/pypi/wcmatch
 [python-image]: https://img.shields.io/pypi/pyversions/wcmatch?logo=python&logoColor=aaaaaa&labelColor=333333
