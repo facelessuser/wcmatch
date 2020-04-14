@@ -27,7 +27,7 @@ Parameter         | Default       | Description
 `file_pattern`    | `#!py3 ''`    | One or more patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#wcmatchminusnegate) is set). The default is an empty string, but if an empty string is used, all files will be matched.
 `exclude_pattern` | `#!py3 ''`    | Zero or more folder exclude patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#wcmatchminusnegate) is set).
 `flags`           | `#!py3 0`     | Flags to alter behavior of folder and file matching. See [Flags](#flags) for more info.
-`limit`   | `#!py3 1000`  | Allows configuring the [max pattern limit](#multi-pattern-limits).
+`limit`           | `#!py3 1000`  | Allows configuring the [max pattern limit](#multi-pattern-limits).
 
 !!! note
     Dots are not treated special in `wcmatch`. When the `HIDDEN` flag is not included, all hidden files (system and dot

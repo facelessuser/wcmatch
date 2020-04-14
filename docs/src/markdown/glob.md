@@ -21,7 +21,7 @@ Pattern           | Meaning
 `**`              | Matches zero or more directories, but will never match the directories `.` and `..`. Requires the [`GLOBSTAR`](#globglobstar) flag.
 `?`               | Matches any single character.
 `[seq]`           | Matches any character in seq.
-`[!seq]`          | Matches any character not in seq.
+`[!seq]`          | Matches any character not in seq. Will also accept character exclusions in the form of `[^seq]`.
 `[[:alnum:]]`     | POSIX style character classes inside sequences.  The `C` locale is used for byte strings and Unicode properties for Unicode strings. See [POSIX Character Classes](#posix-character-classes) for more info.
 `\`               | Escapes characters. If applied to a meta character, it will be treated as a normal character.
 `!`               | When used at the start of a pattern, the pattern will be an exclusion pattern. Requires the [`NEGATE`](#globnegate) flag. If also using the [`MINUSNEGATE`](#globminusnegate) flag, `-` will be used instead of `!`.

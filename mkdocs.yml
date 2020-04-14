@@ -4,9 +4,7 @@ repo_url: https://github.com/facelessuser/wcmatch
 edit_uri: tree/master/docs/src/markdown
 site_description: A wildcard file name matching library
 copyright: |
-  Copyright &copy; 2014 - 2020 <a href="https://github.com/facelessuser">Isaac Muse</a>
-  <br><span class="md-footer-custom-text">emoji provided free by </span>
-  <a href="https://github.com/twitter/twemoji">Twemoji</a>
+  Copyright &copy; 2014 - 2020 <a href="https://github.com/facelessuser" target="_blank" rel="noopener">Isaac Muse</a>
 
 docs_dir: docs/src/markdown
 theme:
@@ -26,8 +24,9 @@ nav:
   - Glob: glob.md
   - Pathlib: pathlib.md
   - Wcmatch: wcmatch.md
-  - Changelog: changelog.md
-  - License: license.md
+  - About:
+      - Changelog: about/changelog.md
+      - License: about/license.md
 
 markdown_extensions:
   - markdown.extensions.toc:
@@ -92,3 +91,5 @@ plugins:
   - search
   - git-revision-date-localized
   - mkdocs_pymdownx_material_extras
+  - minify:
+      minify_html: true
