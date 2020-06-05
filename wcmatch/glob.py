@@ -430,18 +430,15 @@ class Glob(object):
         the actual casing and then compare.
         """
 
-        results = [(curdir, True)]
-
-        if not self._is_parent(curdir) and not self._is_this(curdir):
-            fullpath = os.path.abspath(self.prepend_base(curdir))
-            basename = os.path.basename(fullpath)
-            dirname = os.path.dirname(fullpath)
-            if basename:
-                matcher = self._get_matcher(basename)
-                results = [
-                    (os.path.basename(name), is_dir) for name, is_dir in self._glob_dir(dirname, matcher, dir_only)
-                ]
-
+        if not self.is_abs_pattern and not self._is_parent(curdir) and not self._is_this(curdir):
+            results = []
+            matcher = self._get_matcher(curdir)
+            files = list(self._iter(None, dir_only, False))
+            for file, is_dir in files:
+                if file not in self.specials and (matcher is None or matcher(file)):
+                    results.append((file, is_dir))
+        else:
+            results = [(curdir, True)]
         return results
 
     def is_unique(self, path):
@@ -487,7 +484,7 @@ class Glob(object):
                     # Make sure case matches, but running case insensitive
                     # on a case sensitive file system may return more than
                     # one starting location.
-                    results = [(curdir, True)] if self.is_abs_pattern else self._get_starting_paths(curdir, dir_only)
+                    results = self._get_starting_paths(curdir, dir_only)
                     if not results:
                         continue
 
