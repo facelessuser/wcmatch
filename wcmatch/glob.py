@@ -491,15 +491,14 @@ class Glob(object):
                     if this.dir_only:
                         # Glob these directories if they exists
                         for start, is_dir in results:
-                            if is_dir:
-                                rest = pattern[1:]
-                                if rest:
-                                    this = rest.pop(0)
-                                    for match, is_dir in self._glob(start, this, rest):
-                                        if not self._is_excluded(match, is_dir):
-                                            yield from self.format_path(match, is_dir, dir_only)
-                                elif not self._is_excluded(start, is_dir):
-                                    yield from self.format_path(start, is_dir, dir_only)
+                            rest = pattern[1:]
+                            if rest:
+                                this = rest.pop(0)
+                                for match, is_dir in self._glob(start, this, rest):
+                                    if not self._is_excluded(match, is_dir):
+                                        yield from self.format_path(match, is_dir, dir_only)
+                            elif not self._is_excluded(start, is_dir):
+                                yield from self.format_path(start, is_dir, dir_only)
                     else:
                         # Return the file(s) and finish.
                         for match, is_dir in results:
