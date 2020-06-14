@@ -540,7 +540,12 @@ def globmatch(filename, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATT
     but if `case_sensitive` is set, respect that instead.
     """
 
-    is_bytes = isinstance(patterns[0], bytes) if not isinstance(patterns, (bytes, str)) else isinstance(patterns, bytes)
+    if isinstance(patterns, (bytes, str)):
+        is_bytes = isinstance(patterns, bytes)
+    else:
+        if len(patterns) == 0:
+            return False
+        is_bytes = isinstance(patterns[0], bytes)
     if root_dir is not None:
         root_dir = util.fscodec(root_dir, is_bytes)
 
