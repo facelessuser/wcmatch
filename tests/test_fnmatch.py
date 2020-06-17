@@ -2,8 +2,8 @@
 """Tests for `fnmatch`."""
 import unittest
 import pytest
-import mock
 import wcmatch.fnmatch as fnmatch
+from unittest import mock
 from wcmatch import util
 import wcmatch._wcparse as _wcparse
 
