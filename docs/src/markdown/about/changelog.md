@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.0.2
+
+- **FIX**: Fix login related to dot files and `GLOBSTAR`. Recursive directory search should return all dot files, which
+  should then be filtered by the patterns. They should not be excluded before being filtered by the pattern.
+
 ## 6.0.1
 
 - **FIX**: If we only have one pattern (exclusion patterns not included) we can disable unique path filtering on returns

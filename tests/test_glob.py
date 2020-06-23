@@ -886,6 +886,31 @@ class TestGlobMarked(Testglob):
     DEFAULT_FLAGS = glob.BRACE | glob.EXTGLOB | glob.GLOBSTAR | glob.FOLLOW | glob.MARK
 
 
+class TestHidden(_TestGlob):
+    """Test hidden specific cases."""
+
+    cases = [
+        [('**', '.*'), [('a', '.'), ('a', '..'), ('.aa',), ('.bb',), ('.',), ('..',)]],
+        [('*', '.*'), [('a', '.'), ('a', '..')]],
+        [('.*',), [('.aa',), ('.bb',), ('.',), ('..',)]]
+    ]
+
+    @classmethod
+    def setup_fs(cls):
+        """Setup file system."""
+
+        cls.mktemp('a', 'D')
+        cls.mktemp('a', 'a')
+        cls.mktemp('.aa', 'G')
+        cls.mktemp('.bb', 'H')
+
+    @pytest.mark.parametrize("case", cases)
+    def test_glob_cases(self, case):
+        """Test glob cases."""
+
+        self.eval_glob_cases(case)
+
+
 class TestCWD(_TestGlob):
     """Test files in the current working directory."""
 
@@ -907,6 +932,12 @@ class TestCWD(_TestGlob):
             os.symlink(cls.norm('broken'), cls.norm('sym1'))
             os.symlink('broken', cls.norm('sym2'))
             os.symlink(os.path.join('a', 'bcd'), cls.norm('sym3'))
+
+    def test_dots_cwd(self):
+        """Test capture of dot files with recursive glob."""
+
+        with change_cwd(self.tempdir):
+            self.assert_equal(sorted(glob.glob(['**/.*', '!**/.', '!**/..'], flags=glob.G | glob.N)), ['.aa', '.bb'])
 
     def test_cwd(self):
         """Test root level glob on current working directory."""
