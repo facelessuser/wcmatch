@@ -76,7 +76,7 @@ class Path(pathlib.Path):
         """
 
         if self.is_dir():
-            flags = self._translate_flags(flags | _wcparse._NOABSOLUTE)
+            flags = self._translate_flags(flags | _wcparse._NOABSOLUTE) | glob._NOSPECIAL
             for filename in glob.iglob(patterns, flags=flags, root_dir=str(self), limit=limit):
                 yield self.joinpath(filename)
 

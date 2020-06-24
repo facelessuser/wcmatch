@@ -59,7 +59,10 @@ U = FORCEUNIX = _wcparse.FORCEUNIX
 T = GLOBTILDE = _wcparse.GLOBTILDE
 Q = NOUNIQUE = _wcparse.NOUNIQUE
 
+# Force `glob` to mark directories with a trailing slash
 K = MARK = 0x100000
+# Special mode that causs glob to only search . and .. with literal (non-magic) patterns (used for `pathlib`)
+_NOSPECIAL = 0x200000
 
 FLAG_MASK = (
     CASE |
@@ -81,6 +84,7 @@ FLAG_MASK = (
     FORCEUNIX |
     GLOBTILDE |
     NOUNIQUE |
+    _NOSPECIAL |
     _wcparse._RECURSIVEMATCH |
     _wcparse._NOABSOLUTE
 )
@@ -88,6 +92,11 @@ FLAG_MASK = (
 
 def _flag_transform(flags):
     """Transform flags to glob defaults."""
+
+    if flags & _NOSPECIAL:
+        flags ^= _NOSPECIAL
+    if flags & MARK:
+        flags ^= MARK
 
     # Enabling both cancels out
     if flags & _wcparse.FORCEUNIX and flags & _wcparse.FORCEWIN:
@@ -119,8 +128,7 @@ class Glob(object):
         self.root_dir = util.fscodec(root_dir, self.is_bytes) if root_dir is not None else self.current
         self.mark = bool(flags & MARK)
         self.nounique = bool(flags & NOUNIQUE)
-        if self.mark:
-            flags ^= MARK
+        self.nospecial = bool(flags & _NOSPECIAL)
         self.negateall = bool(flags & NEGATEALL)
         if self.negateall:
             flags ^= NEGATEALL
@@ -328,9 +336,13 @@ class Glob(object):
         """Recursive directory glob."""
 
         files = list(self._iter(curdir, dir_only, deep))
+
+        # Only match . and .. when an explicit, literal pattern is used.
+        # Partial is used only on literals, so we can use the type to identify literals
+        process_special = matcher and (not self.nospecial or isinstance(matcher, functools.partial))
         for file, is_dir, hidden in files:
             if file in self.specials:
-                if matcher is not None and matcher(file):
+                if process_special and matcher(file):
                     yield os.path.join(curdir, file), True
                 continue
 
