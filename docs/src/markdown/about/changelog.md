@@ -1,5 +1,9 @@
 # Changelog
 
+## 6.0.3
+
+- **FIX**: Fix fix issue with `FOLLOW` and `GLOBSTAR`.
+
 ## 6.0.2
 
 - **FIX**: Fix logic related to dot files and `GLOBSTAR`. Recursive directory search should return all dot files, which

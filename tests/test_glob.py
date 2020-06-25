@@ -401,6 +401,33 @@ class Testglob(_TestGlob):
         # Glob with braces and "unique" turned off
         [('{a*,a*}',), [('a',), ('aab',), ('aaa',), ('a',), ('aab',), ('aaa',)], glob.Q],
 
+        # Test recursive glob logic with no symlink following.
+        [
+            ('**', '*'),
+            [
+                ('aab',), ('aab', 'F'), ('a',), ('a', 'bcd'), ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg'),
+                ('a', 'bcd', 'efg', 'ha'), ('a', 'D'), ('aaa',), ('aaa', 'zzzF'), ('EF',), ('ZZZ',)
+            ] if not can_symlink() else [
+                ('aab',), ('aab', 'F'), ('a',), ('a', 'bcd'), ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg'),
+                ('a', 'bcd', 'efg', 'ha'), ('a', 'D'), ('aaa',), ('aaa', 'zzzF'), ('EF',), ('ZZZ',),
+                ('sym1',), ('sym2',), ('sym3',)
+            ],
+            glob.L
+        ],
+
+        [
+            ('**',),
+            [
+                ('',), ('aab',), ('aab', 'F'), ('a',), ('a', 'bcd'), ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg'),
+                ('a', 'bcd', 'efg', 'ha'), ('a', 'D'), ('aaa',), ('aaa', 'zzzF'), ('EF',), ('ZZZ',)
+            ] if not can_symlink() else [
+                ('',), ('aab',), ('aab', 'F'), ('a',), ('a', 'bcd'), ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg'),
+                ('a', 'bcd', 'efg', 'ha'), ('a', 'D'), ('aaa',), ('aaa', 'zzzF'), ('EF',), ('ZZZ',),
+                ('sym1',), ('sym2',)
+            ],
+            glob.L
+        ],
+
         Options(default_negate='**'),
         # Glob inverse
         [
@@ -455,7 +482,7 @@ class Testglob(_TestGlob):
             ] if not can_symlink() else [
                 ('EF',), ('ZZZ',), ('a',), ('a', 'D'), ('a', 'bcd'), ('a', 'bcd', 'EF'),
                 ('a', 'bcd', 'efg'), ('a', 'bcd', 'efg', 'ha'), ('aaa',), ('aaa', 'zzzF'), ('aab',),
-                ('aab', 'F'), ('sym1',), ('sym2',)
+                ('aab', 'F'), ('sym1',), ('sym2',), ('sym3',)
             ],
             glob.L | glob.X
         ],
