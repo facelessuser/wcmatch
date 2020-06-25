@@ -46,7 +46,8 @@ FLAG_MASK = (
     NODIR |
     NEGATEALL |
     NOUNIQUE |
-    _wcparse._RECURSIVEMATCH |
+    _wcparse._EXTMATCHBASE |
+    _wcparse._RTL |
     _wcparse._NOABSOLUTE
 )
 
@@ -91,7 +92,7 @@ class Path(pathlib.Path):
 
         """
 
-        yield from self.glob(patterns, flags=flags | _wcparse._RECURSIVEMATCH, limit=limit)
+        yield from self.glob(patterns, flags=flags | _wcparse._EXTMATCHBASE, limit=limit)
 
 
 class PurePath(pathlib.PurePath):
@@ -134,20 +135,20 @@ class PurePath(pathlib.PurePath):
 
     def match(self, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
         """
-        Match patterns using `globmatch`, but also using the same recursive logic that the default `pathlib` uses.
+        Match patterns using `globmatch`, but also using the same right to left logic that the default `pathlib` uses.
 
-        This uses the same recursive logic that the default `pathlib` object uses.
+        This uses the same right to left logic that the default `pathlib` object uses.
         Folders and files are essentially matched from right to left.
 
         `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
 
         """
 
-        return self.globmatch(patterns, flags=flags | _wcparse._RECURSIVEMATCH, limit=limit)
+        return self.globmatch(patterns, flags=flags | _wcparse._RTL, limit=limit)
 
     def globmatch(self, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
         """
-        Match patterns using `globmatch`, but without the recursive logic that the default `pathlib` uses.
+        Match patterns using `globmatch`, but without the right to left logic that the default `pathlib` uses.
 
         `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
 

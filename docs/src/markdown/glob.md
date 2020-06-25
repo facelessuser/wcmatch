@@ -736,7 +736,9 @@ enabled, ensuring the files have trailing slashes can still save you a call to `
 
 `MATCHBASE`, when a pattern has no slashes in it, will cause [`glob`](#globglob) and [`iglob`](#globiglob) to seek for
 any file anywhere in the tree with a matching basename. When enabled for [`globfilter`](#globglobfilter) and
-[`globmatch`](#globglobmatch), any path whose basename matches.
+[`globmatch`](#globglobmatch), any path whose basename matches. `MATCHBASE` is sensitive to files and directories that
+start with `.` and will not match such files and directories if [`DOTGLOB`](#globdotglob) is not enabled.
+
 
 ```pycon3
 >>> from wcmatch import glob

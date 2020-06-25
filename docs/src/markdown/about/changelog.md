@@ -3,6 +3,11 @@
 ## 6.0.3
 
 - **FIX**: Fix fix issue with `FOLLOW` and `GLOBSTAR`.
+- **FIX**: When using `wcmatch.pathlib` we were not fully emulating Python's `match` behavior. Python's version
+  evaluates the path from right to left, so dot files on the left will not prevent a match if the pattern does not force
+  them to be evaluated. We now properly emulate this behavior and should properly match right most file names regardless
+  of dot files on the left (as required by the given pattern). This means `.hidden/file` path should be matched by the
+  pattern `file` even if `DOTGLOB` is not enabled.
 
 ## 6.0.2
 

@@ -112,8 +112,9 @@ NOUNIQUE = 0x80000
 # Internal flag
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
 _ANCHOR = 0x200000000  # The pattern, if it starts with a slash, is anchored to the working directory; strip the slash.
-_RECURSIVEMATCH = 0x400000000  # Internal flag that allows for something similar to `MATCHBASE`, but for relative paths.
+_EXTMATCHBASE = 0x400000000  # Like `MATCHBASE`, but works for multiple directory levels.
 _NOABSOLUTE = 0x800000000  # Do not allow absolute patterns
+_RTL = 0x1000000000  # Match from right to left
 
 FLAG_MASK = (
     CASE |
@@ -138,7 +139,8 @@ FLAG_MASK = (
     NOUNIQUE |
     _TRANSLATE |
     _ANCHOR |
-    _RECURSIVEMATCH |
+    _EXTMATCHBASE |
+    _RTL |
     _NOABSOLUTE
 )
 CASE_FLAGS = IGNORECASE | CASE
@@ -165,6 +167,8 @@ _PATH_STAR_NO_DOTMATCH = _NO_DIR + (r'(?:(?!\.)%s)?' % _PATH_STAR)
 _PATH_GSTAR_DOTMATCH = r'(?:(?!(?:%(sep)s|^)(?:\.{1,2})($|%(sep)s)).)*?'
 # `GLOBSTAR` with `DOTMATCH` disabled. Don't allow a dot to follow /
 _PATH_GSTAR_NO_DOTMATCH = r'(?:(?!(?:%(sep)s|^)\.).)*?'
+# Special right to left matching
+_PATH_GSTAR_RTL_MATCH = r'.*?'
 # Next char cannot be a dot
 _NO_DOT = r'(?![.])'
 # Following char from sequence cannot be a separator or a dot
@@ -493,8 +497,8 @@ class WcPathSplit(object):
         self.no_abs = bool(flags & _NOABSOLUTE)
         self.globstar = bool(flags & GLOBSTAR)
         self.matchbase = bool(flags & MATCHBASE)
+        self.extmatchbase = bool(flags & _EXTMATCHBASE)
         self.tilde = bool(flags & GLOBTILDE)
-        self.recursivematch = bool(flags & _RECURSIVEMATCH) and not self.matchbase
         if is_negative(self.pattern, flags):  # pragma: no cover
             # This isn't really used, but we'll keep it around
             # in case we find a reason to directly send inverse patterns
@@ -688,14 +692,14 @@ class WcPathSplit(object):
                 value = pattern[start + 1:]
             if value:
                 self.store(value, parts, False)
+
         if len(pattern) == 0:
             parts.append(WcGlob(pattern.encode('latin-1') if self.is_bytes else pattern, False, False, False, False))
 
-        if self.matchbase and len(parts) == 1 and not parts[0].dir_only:
-            self.globstar = True
-            parts.insert(0, WcGlob(b'**' if self.is_bytes else '**', True, True, True, False))
-
-        if self.recursivematch and not parts[0].is_drive:
+        if (
+            (self.extmatchbase and not parts[0].is_drive) or
+            (self.matchbase and len(parts) == 1 and not parts[0].dir_only)
+        ):
             self.globstar = True
             parts.insert(0, WcGlob(b'**' if self.is_bytes else '**', True, True, True, False))
 
@@ -850,7 +854,8 @@ class WcParse(object):
         self.dot = bool(flags & DOTMATCH)
         self.extend = bool(flags & EXTMATCH)
         self.matchbase = bool(flags & MATCHBASE)
-        self.recursivematch = bool(flags & _RECURSIVEMATCH) and not self.matchbase
+        self.extmatchbase = bool(flags & _EXTMATCHBASE)
+        self.rtl = bool(flags & _RTL)
         self.anchor = bool(flags & _ANCHOR)
         self.case_sensitive = get_case(flags)
         self.in_list = False
@@ -1399,7 +1404,8 @@ class WcParse(object):
 
         if root_specified:
             self.matchbase = False
-            self.recursivematch = False
+            self.extmatchbase = False
+            self.rtl = False
 
         if not root_specified and self.realpath:
             current.append(_NO_WIN_ROOT if self.win_drive_detect else _NO_ROOT)
@@ -1457,7 +1463,7 @@ class WcParse(object):
         """Parse pattern list."""
 
         result = ['']
-        matchbase = ['']
+        prepend = ['']
         self.negative = False
 
         p = self.pattern
@@ -1476,19 +1482,32 @@ class WcParse(object):
             p, number = (RE_ANCHOR if not self.win_drive_detect else RE_WIN_ANCHOR).subn('', p)
             if number:
                 self.matchbase = False
-                self.recursivematch = False
+                self.extmatchbase = False
+                self.rtl = False
 
-        if self.matchbase or self.recursivematch:
+        if self.matchbase or self.extmatchbase:
             globstar = self.globstar
             self.globstar = True
-            self.root('**', matchbase)
+            self.root('**', prepend)
             self.globstar = globstar
+
+        elif self.rtl:
+            globstar = self.globstar
+            dot = self.dot
+            gstar = self.path_gstar_dot1
+            self.path_gstar_dot1 = _PATH_GSTAR_RTL_MATCH
+            self.dot = True
+            self.globstar = True
+            self.root('**', prepend)
+            self.globstar = globstar
+            self.dot = dot
+            self.path_gstar_dot1 = gstar
 
         if p:
             self.root(p, result)
 
-        if p and (self.matchbase or self.recursivematch):
-            result = matchbase + result
+        if p and (self.matchbase or self.extmatchbase or self.rtl):
+            result = prepend + result
 
         case_flag = 'i' if not self.case_sensitive else ''
         if util.PY36:

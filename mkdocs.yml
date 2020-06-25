@@ -41,7 +41,7 @@ markdown_extensions:
   - markdown.extensions.tables:
   - markdown.extensions.abbr:
   - markdown.extensions.footnotes:
-  - pymdownx.extrarawhtml:
+  - markdown.extensions.md_in_html:
   - pymdownx.superfences:
       preserve_tabs: true
   - pymdownx.highlight:

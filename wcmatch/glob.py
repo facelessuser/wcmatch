@@ -81,7 +81,8 @@ FLAG_MASK = (
     FORCEUNIX |
     GLOBTILDE |
     NOUNIQUE |
-    _wcparse._RECURSIVEMATCH |
+    _wcparse._EXTMATCHBASE |
+    _wcparse._RTL |
     _wcparse._NOABSOLUTE
 )
 
@@ -117,8 +118,8 @@ class Glob(object):
         self.is_bytes = isinstance(pattern[0], bytes)
         self.current = b'.' if self.is_bytes else '.'
         self.root_dir = util.fscodec(root_dir, self.is_bytes) if root_dir is not None else self.current
-        self.mark = bool(flags & MARK)
         self.nounique = bool(flags & NOUNIQUE)
+        self.mark = bool(flags & MARK)
         if self.mark:
             flags ^= MARK
         self.negateall = bool(flags & NEGATEALL)
@@ -127,6 +128,9 @@ class Glob(object):
         self.nodir = bool(flags & _wcparse.NODIR)
         if self.nodir:
             flags ^= _wcparse.NODIR
+        # Right to left searching is only for matching
+        if flags & _wcparse._RTL:  # pragma: no cover
+            flags ^= _wcparse._RTL
         self.flags = _flag_transform(flags | _wcparse.REALPATH)
         self.raw_chars = bool(self.flags & RAWCHARS)
         self.follow_links = bool(self.flags & FOLLOW)

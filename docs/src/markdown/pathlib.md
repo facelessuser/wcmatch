@@ -217,13 +217,22 @@ def match(self, patterns, *, flags=0, limit=1000):
 ```
 
 `match` takes a pattern (or list of patterns), and flags.  It also allows configuring the [max pattern
-limit](#multi-pattern-limits). It will return a boolean indicating whether the objects file path was matched by the
+limit](#multi-pattern-limits). It will return a boolean indicating whether the object's file path was matched by the
 pattern(s).
 
-`match` mimics Python's `pathlib` version of `match` in that it uses a recursive logic. What this means is when you are
-matching a path in the form `some/path/name`, the patterns `name`, `path/name` and `some/path/name` will all match.
-Essentially, the pattern, if not an absolute pattern, behaves as if a [`GLOBSTAR`](#pathlibglobstar) pattern of `**/`
-was added at the beginning of the pattern.
+`match` mimics Python's `pathlib` version of `match`. Python's `match` uses a right to left evaluation. Wildcard Match
+emulates this behavior as well. What this means is that when provided with a path `some/path/name`, the patterns `name`,
+`path/name` and `some/path/name` will all match.
+
+Because the path is evaluated right to left, dot files may not prevent matches when `DOTGLOB` is disabled.
+
+```pycon3
+>>> from wcmatch import pathlib
+>>> pathlib.PurePath('.dotfile/file').match('file')
+True
+>>> pathlib.PurePath('../.dotfile/file').match('file')
+True
+```
 
 `match` does not access the filesystem, but you can force the path to access the filesystem if you give it the
 [`REALPATH`](#pathlibrealpath) flag. We do not restrict this, but we do not enable it by default.
@@ -516,7 +525,8 @@ benefit from disabling "unique" optimizations, they would only run slower, so `N
 
 `MATCHBASE`, when a pattern has no slashes in it, will cause all glob related functions to seek for any file anywhere in
 the tree with a matching basename, or in the case of [`match`](#purepathmatch) and [`globmatch`](#purepathglobmatch),
-path whose basename matches.
+path whose basename matches. `MATCHBASE` is sensitive to files and directories that start with `.` and will not match
+such files and directories if [`DOTGLOB`](#pathlibdotglob) is not enabled.
 
 ```pycon3
 >>> from wcmatch import pathlib
