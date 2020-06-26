@@ -2,12 +2,14 @@
 
 ## 6.0.3
 
-- **FIX**: Fix fix issue with `FOLLOW` and `GLOBSTAR`.
-- **FIX**: When using `wcmatch.pathlib` we were not fully emulating Python's `match` behavior. Python's version
-  evaluates the path from right to left, so dot files on the left will not prevent a match if the pattern does not force
-  them to be evaluated. We now properly emulate this behavior and should properly match right most file names regardless
-  of dot files on the left (as required by the given pattern). This means `.hidden/file` path should be matched by the
-  pattern `file` even if `DOTGLOB` is not enabled.
+- **FIX**: Fix fix issue where when `FOLLOW` and `GLOBSTAR` was used, a pattern like `**/*` would not properly match
+  a directory which was a symlink. While Bash does not return a symlinked folder with `**`, `*` (and other patterns),
+  should properly find the symlinked directory.
+- **FIX**: `pathlib` clearly states that the `match` method, if the pattern is relative, matches from the right.
+  Wildcard Match used the same implementation that `rglob` used, which prepends `**/` to a relative pattern. This is
+  essentially like `MATCHBASE`, but allows for multiple directory levels. This means that dot files (and special folders
+  such as `.` and `..`) on the left side could prevent the path from matching depending on flags that were set. `match`
+  will now be evaluated in such a way as to give the same right to left matching feel that Python's `pathlib` uses.
 
 ## 6.0.2
 
