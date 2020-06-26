@@ -278,7 +278,7 @@ class Glob(object):
 
         # Python will never return . or .., so fake it.
         for special in self.specials:
-            yield special, True, True
+            yield special, True, True, False
 
         try:
             if NO_SCANDIR_WORKAROUND:
@@ -298,10 +298,8 @@ class Glob(object):
                             else:
                                 # We don't care if a file is a link
                                 is_link = False
-                            if deep and not self.follow_links and is_link:
-                                continue
                             if (not dir_only or is_dir):
-                                yield f.name, is_dir, hidden
+                                yield f.name, is_dir, hidden, is_link
                         except OSError:  # pragma: no cover
                             pass
             else:
@@ -316,10 +314,8 @@ class Glob(object):
                         is_link = os.path.islink(path)
                     else:
                         is_link = False
-                    if deep and not self.follow_links and is_link:
-                        continue
                     if (not dir_only or is_dir):
-                        yield f, is_dir, hidden
+                        yield f, is_dir, hidden, is_link
 
         except OSError:  # pragma: no cover
             pass
@@ -328,17 +324,18 @@ class Glob(object):
         """Recursive directory glob."""
 
         files = list(self._iter(curdir, dir_only, deep))
-        for file, is_dir, hidden in files:
+        for file, is_dir, hidden, is_link in files:
             if file in self.specials:
                 if matcher is not None and matcher(file):
                     yield os.path.join(curdir, file), True
                 continue
 
             path = os.path.join(curdir, file)
-            if (matcher is None and not hidden) or (matcher and matcher(file)):
+            follow = not is_link or self.follow_links
+            if (matcher is None and not hidden and (follow or not deep)) or (matcher and matcher(file)):
                 yield path, is_dir
 
-            if deep and not hidden and is_dir:
+            if deep and not hidden and is_dir and follow:
                 yield from self._glob_dir(path, matcher, dir_only, deep)
 
     def _glob(self, curdir, this, rest):
@@ -430,7 +427,7 @@ class Glob(object):
             results = []
             matcher = self._get_matcher(curdir)
             files = list(self._iter(None, dir_only, False))
-            for file, is_dir, hidden in files:
+            for file, is_dir, hidden, is_link in files:
                 if file not in self.specials and (matcher is None or matcher(file)):
                     results.append((file, is_dir))
         else:
