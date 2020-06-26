@@ -29,6 +29,14 @@ O = NODIR = glob.NODIR
 A = NEGATEALL = glob.NEGATEALL
 Q = NOUNIQUE = glob.NOUNIQUE
 
+# Internal flags
+_EXTMATCHBASE = _wcparse._EXTMATCHBASE
+_RTL = _wcparse._RTL
+_NOABSOLUTE = _wcparse._NOABSOLUTE
+_PATHNAME = _wcparse.PATHNAME
+_FORCEWIN = _wcparse.FORCEWIN
+_FORCEUNIX = _wcparse.FORCEUNIX
+
 FLAG_MASK = (
     CASE |
     IGNORECASE |
@@ -46,9 +54,9 @@ FLAG_MASK = (
     NODIR |
     NEGATEALL |
     NOUNIQUE |
-    _wcparse._EXTMATCHBASE |
-    _wcparse._RTL |
-    _wcparse._NOABSOLUTE
+    _EXTMATCHBASE |
+    _RTL |
+    _NOABSOLUTE
 )
 
 
@@ -77,7 +85,7 @@ class Path(pathlib.Path):
         """
 
         if self.is_dir():
-            flags = self._translate_flags(flags | _wcparse._NOABSOLUTE)
+            flags = self._translate_flags(flags | _NOABSOLUTE)
             for filename in glob.iglob(patterns, flags=flags, root_dir=str(self), limit=limit):
                 yield self.joinpath(filename)
 
@@ -92,7 +100,7 @@ class Path(pathlib.Path):
 
         """
 
-        yield from self.glob(patterns, flags=flags | _wcparse._EXTMATCHBASE, limit=limit)
+        yield from self.glob(patterns, flags=flags | _EXTMATCHBASE, limit=limit)
 
 
 class PurePath(pathlib.PurePath):
@@ -110,17 +118,17 @@ class PurePath(pathlib.PurePath):
     def _translate_flags(self, flags):
         """Translate flags for the current `pathlib` object."""
 
-        flags = (flags & FLAG_MASK) | _wcparse.PATHNAME
+        flags = (flags & FLAG_MASK) | _PATHNAME
         if flags & REALPATH:
-            flags |= _wcparse.FORCEWIN if os.name == 'nt' else _wcparse.FORCEUNIX
+            flags |= _FORCEWIN if os.name == 'nt' else _FORCEUNIX
         if isinstance(self, PureWindowsPath):
-            if flags & _wcparse.FORCEUNIX:
+            if flags & _FORCEUNIX:
                 raise ValueError("Windows pathlike objects cannot be forced to behave like a Posix path")
-            flags |= _wcparse.FORCEWIN
+            flags |= _FORCEWIN
         elif isinstance(self, PurePosixPath):
-            if flags & _wcparse.FORCEWIN:
+            if flags & _FORCEWIN:
                 raise ValueError("Posix pathlike objects cannot be forced to behave like a Windows path")
-            flags |= _wcparse.FORCEUNIX
+            flags |= _FORCEUNIX
         return flags
 
     def _translate_path(self):
@@ -144,7 +152,7 @@ class PurePath(pathlib.PurePath):
 
         """
 
-        return self.globmatch(patterns, flags=flags | _wcparse._RTL, limit=limit)
+        return self.globmatch(patterns, flags=flags | _RTL, limit=limit)
 
     def globmatch(self, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
         """

@@ -63,8 +63,8 @@ def _flag_transform(flags):
     """Transform flags to glob defaults."""
 
     # Enabling both cancels out
-    if flags & _wcparse.FORCEUNIX and flags & _wcparse.FORCEWIN:
-        flags ^= _wcparse.FORCEWIN | _wcparse.FORCEUNIX
+    if flags & FORCEUNIX and flags & FORCEWIN:
+        flags ^= FORCEWIN | FORCEUNIX
 
     return (flags & FLAG_MASK)
 

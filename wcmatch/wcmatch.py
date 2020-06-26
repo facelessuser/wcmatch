@@ -26,7 +26,7 @@ from . import _wcparse
 from . import util
 
 __all__ = (
-    "CASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME",
+    "CASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME", "PATHNAME",
     "EXTMATCH", "GLOBSTAR", "BRACE", "MINUSNEGATE", "SYMLINKS", "HIDDEN", "RECURSIVE",
     "MATCHBASE",
     "C", "I", "R", "P", "E", "G", "M", "DP", "FP", "SL", "HD", "RV", "X", "B",
@@ -48,6 +48,15 @@ FP = FILEPATHNAME = 0x200000
 SL = SYMLINKS = 0x400000
 HD = HIDDEN = 0x800000
 RV = RECURSIVE = 0x1000000
+
+# Internal flags
+_ANCHOR = _wcparse._ANCHOR
+_NEGATE = _wcparse.NEGATE
+_DOTMATCH = _wcparse.DOTMATCH
+_NEGATEALL = _wcparse.NEGATEALL
+_SPLIT = _wcparse.SPLIT
+_FORCEWIN = _wcparse.FORCEWIN
+_PATHNAME = _wcparse.PATHNAME
 
 # Control `PATHNAME` for file and folder
 P = PATHNAME = DIRPATHNAME | FILEPATHNAME
@@ -104,7 +113,7 @@ class WcMatch(object):
         """Parse flags."""
 
         self.flags = flags & FLAG_MASK
-        self.flags |= _wcparse.NEGATE | _wcparse.DOTMATCH | _wcparse.NEGATEALL | _wcparse.SPLIT
+        self.flags |= _NEGATE | _DOTMATCH | _NEGATEALL | _SPLIT
         self.follow_links = bool(self.flags & SYMLINKS)
         self.show_hidden = bool(self.flags & HIDDEN)
         self.recursive = bool(self.flags & RECURSIVE)
@@ -112,7 +121,7 @@ class WcMatch(object):
         self.file_pathname = bool(self.flags & FILEPATHNAME)
         self.matchbase = bool(self.flags & MATCHBASE)
         if util.platform() == "windows":
-            self.flags |= _wcparse.FORCEWIN
+            self.flags |= _FORCEWIN
         self.flags = self.flags & (_wcparse.FLAG_MASK ^ MATCHBASE)
 
     def _compile_wildcard(self, pattern, pathname=False):
@@ -120,9 +129,9 @@ class WcMatch(object):
 
         flags = self.flags
         if pathname:
-            flags |= _wcparse.PATHNAME | _wcparse._ANCHOR
+            flags |= _PATHNAME | _ANCHOR
             if self.matchbase:
-                flags |= _wcparse.MATCHBASE
+                flags |= MATCHBASE
 
         return _wcparse.compile(pattern, flags, self.limit) if pattern else None
 
