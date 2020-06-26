@@ -61,6 +61,12 @@ Q = NOUNIQUE = _wcparse.NOUNIQUE
 
 K = MARK = 0x100000
 
+# Internal flags
+_EXTMATCHBASE = _wcparse._EXTMATCHBASE
+_RTL = _wcparse._RTL
+_NOABSOLUTE = _wcparse._NOABSOLUTE
+_PATHNAME = _wcparse.PATHNAME
+
 FLAG_MASK = (
     CASE |
     IGNORECASE |
@@ -81,8 +87,9 @@ FLAG_MASK = (
     FORCEUNIX |
     GLOBTILDE |
     NOUNIQUE |
-    _wcparse._RECURSIVEMATCH |
-    _wcparse._NOABSOLUTE
+    _EXTMATCHBASE |
+    _RTL |
+    _NOABSOLUTE
 )
 
 
@@ -90,19 +97,19 @@ def _flag_transform(flags):
     """Transform flags to glob defaults."""
 
     # Enabling both cancels out
-    if flags & _wcparse.FORCEUNIX and flags & _wcparse.FORCEWIN:
-        flags ^= _wcparse.FORCEWIN | _wcparse.FORCEUNIX
+    if flags & FORCEUNIX and flags & FORCEWIN:
+        flags ^= FORCEWIN | FORCEUNIX
 
     # Here we force `PATHNAME`.
-    flags = (flags & FLAG_MASK) | _wcparse.PATHNAME
-    if flags & _wcparse.REALPATH:
+    flags = (flags & FLAG_MASK) | _PATHNAME
+    if flags & REALPATH:
         if util.platform() == "windows":
-            if flags & _wcparse.FORCEUNIX:
-                flags ^= _wcparse.FORCEUNIX
-            flags |= _wcparse.FORCEWIN
+            if flags & FORCEUNIX:
+                flags ^= FORCEUNIX
+            flags |= FORCEWIN
         else:
-            if flags & _wcparse.FORCEWIN:
-                flags ^= _wcparse.FORCEWIN
+            if flags & FORCEWIN:
+                flags ^= FORCEWIN
 
     return flags
 
@@ -117,31 +124,34 @@ class Glob(object):
         self.is_bytes = isinstance(pattern[0], bytes)
         self.current = b'.' if self.is_bytes else '.'
         self.root_dir = util.fscodec(root_dir, self.is_bytes) if root_dir is not None else self.current
-        self.mark = bool(flags & MARK)
         self.nounique = bool(flags & NOUNIQUE)
+        self.mark = bool(flags & MARK)
         if self.mark:
             flags ^= MARK
         self.negateall = bool(flags & NEGATEALL)
         if self.negateall:
             flags ^= NEGATEALL
-        self.nodir = bool(flags & _wcparse.NODIR)
+        self.nodir = bool(flags & NODIR)
         if self.nodir:
-            flags ^= _wcparse.NODIR
-        self.flags = _flag_transform(flags | _wcparse.REALPATH)
+            flags ^= NODIR
+        # Right to left searching is only for matching
+        if flags & _RTL:  # pragma: no cover
+            flags ^= _RTL
+        self.flags = _flag_transform(flags | REALPATH)
         self.raw_chars = bool(self.flags & RAWCHARS)
         self.follow_links = bool(self.flags & FOLLOW)
         self.dot = bool(self.flags & DOTMATCH)
-        self.unix = not bool(self.flags & _wcparse.FORCEWIN)
+        self.unix = not bool(self.flags & FORCEWIN)
         self.negate = bool(self.flags & NEGATE)
-        self.globstar = bool(self.flags & _wcparse.GLOBSTAR)
-        self.braces = bool(self.flags & _wcparse.BRACE)
-        self.matchbase = bool(self.flags & _wcparse.MATCHBASE)
+        self.globstar = bool(self.flags & GLOBSTAR)
+        self.braces = bool(self.flags & BRACE)
+        self.matchbase = bool(self.flags & MATCHBASE)
         self.case_sensitive = _wcparse.get_case(self.flags)
         self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
         self.empty = b'' if self.is_bytes else ''
         self.limit = limit
         self._parse_patterns(pattern)
-        if self.flags & _wcparse.FORCEWIN:
+        if self.flags & FORCEWIN:
             self.sep = b'\\' if self.is_bytes else '\\'
         else:
             self.sep = b'/' if self.is_bytes else '/'
@@ -175,7 +185,7 @@ class Glob(object):
 
         self.pattern = []
         self.npatterns = []
-        nflags = self.flags | _wcparse.REALPATH
+        nflags = self.flags | REALPATH
         for is_neg, p in self._iter_patterns(patterns):
             if is_neg:
                 # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
@@ -194,7 +204,7 @@ class Glob(object):
 
         if self.nodir:
             ptype = _wcparse.BYTES if self.is_bytes else _wcparse.UNICODE
-            nodir = _wcparse.RE_WIN_NO_DIR[ptype] if self.flags & _wcparse.FORCEWIN else _wcparse.RE_NO_DIR[ptype]
+            nodir = _wcparse.RE_WIN_NO_DIR[ptype] if self.flags & FORCEWIN else _wcparse.RE_NO_DIR[ptype]
             self.npatterns.append(nodir)
 
         # A single positive pattern will not find multiples of the same file

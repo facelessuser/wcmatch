@@ -387,7 +387,7 @@ folder was `.`, and the folder under evaluation is `./some/folder`, `some/folder
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '*.md|*.txt', 'docs/src/markdown', recursive=True, flags=wcmatch.DIRPATHNAME).match()
+>>> wcmatch.WcMatch('.', '*.md|*.txt', 'docs/src/markdown', flags=wcmatch.DIRPATHNAME | wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
@@ -399,7 +399,7 @@ patterns. The path name compared will be the entire path relative to the base pa
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '**/*.md|!**/_snippets/*', recursive=True, flags=wcmatch.FILEPATHNAME | wcmatch.GLOBSTAR).match()
+>>> wcmatch.WcMatch('.', '**/*.md|!**/_snippets/*', flags=wcmatch.FILEPATHNAME | wcmatch.GLOBSTAR | wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './docs/src/markdown/changelog.md', './docs/src/markdown/fnmatch.md', './docs/src/markdown/glob.md', './docs/src/markdown/index.md', './docs/src/markdown/license.md', './docs/src/markdown/wcmatch.md']
 ```
 
@@ -445,7 +445,7 @@ directory pattern matches with `**`.
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '*.md|*.txt', '**/markdown', recursive=True, flags=wcmatch.DIRPATHNAME | wcmatch.GLOBSTAR).match()
+>>> wcmatch.WcMatch('.', '*.md|*.txt', '**/markdown', flags=wcmatch.DIRPATHNAME | wcmatch.GLOBSTAR | wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 

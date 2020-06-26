@@ -51,6 +51,7 @@ pathlike
 posix
 pre
 prepend
+prepends
 preprocessing
 preprocessors
 prerelease
@@ -64,6 +65,7 @@ subclasses
 subdirectories
 sublicense
 symlink
+symlinked
 symlinks
 syntaxes
 tuple
