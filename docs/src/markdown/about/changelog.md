@@ -2,7 +2,7 @@
 
 ## 6.0.3
 
-- **FIX**: Fix fix issue where when `FOLLOW` and `GLOBSTAR` was used, a pattern like `**/*` would not properly match
+- **FIX**: Fix issue where when `FOLLOW` and `GLOBSTAR` were used, a pattern like `**/*` would not properly match
   a directory which was a symlink. While Bash does not return a symlinked folder with `**`, `*` (and other patterns),
   should properly find the symlinked directory.
 - **FIX**: `pathlib` clearly states that the `match` method, if the pattern is relative, matches from the right.
