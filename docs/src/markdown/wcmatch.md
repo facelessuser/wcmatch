@@ -340,8 +340,10 @@ handle standard string escapes and Unicode (including `#!py3 r'\N{CHAR NAME}'`).
 etc.
 
 !!! tip "EXTMATCH and NEGATE"
-    When using `EXTMATCH`, it is recommended to also use [`MINUSNEGATE`](#wcmatchminusnegate) to avoid conflicts in
-    regards to the `!` meta character which is used for exclusion patterns..
+
+    When using `EXTMATCH` and [`NEGATE`](#wcmatchnegate) together, if a pattern starts with `!(`, the pattern will not
+    be treated as a [`NEGATE`](#wcmatchnegate) pattern (even if `!(` doesn't yield a valid `EXTMATCH` pattern). To
+    negate a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
 
 #### `wcmatch.BRACE, wcmatch.B` {: #wcmatchbrace}
 

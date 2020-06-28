@@ -90,3 +90,23 @@ class TestWcparse(unittest.TestCase):
         p1, p2 = _wcparse.translate('{1..11}', _wcparse.BRACE, 0)
         count = len(p1) + len(p2)
         self.assertEqual(count, 11)
+
+    def test_tilde_pos_none(self):
+        """Test that tilde position gives -1 when no tilde found."""
+
+        self.assertEqual(_wcparse.tilde_pos('pattern', _wcparse.GLOBTILDE | _wcparse.REALPATH), -1)
+
+    def test_tilde_pos_normal(self):
+        """Test that tilde position gives 0 when tilde found."""
+
+        self.assertEqual(_wcparse.tilde_pos('~pattern', _wcparse.GLOBTILDE | _wcparse.REALPATH), 0)
+
+    def test_tilde_pos_negative_normal(self):
+        """Test that tilde position gives 0 when tilde is found and `NEGATE` is enabled."""
+
+        self.assertEqual(_wcparse.tilde_pos('~pattern', _wcparse.GLOBTILDE | _wcparse.REALPATH | _wcparse.NEGATE), 0)
+
+    def test_tilde_pos_negative_negate(self):
+        """Test that tilde position gives 1 when tilde is found and `NEGATE` is enabled."""
+
+        self.assertEqual(_wcparse.tilde_pos('!~pattern', _wcparse.GLOBTILDE | _wcparse.REALPATH | _wcparse.NEGATE), 1)

@@ -511,10 +511,6 @@ Assuming the [`SPLIT`](#globsplit) flag, this means using it in a pattern such a
 If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match
 unless the file matches the excluded pattern. This is done with the [`NEGATEALL`](#globnegateall) flag.
 
-If used with the extended glob feature, patterns like `!(inverse|pattern)` will be mistakenly parsed as an exclusion
-pattern instead of as an inverse extended glob group.  See [`MINUSNEGATE`](#globminusgate) for an alternative syntax
-that plays nice with extended glob.
-
 !!! warning "Changes 4.0"
     In 4.0, `NEGATE` now requires a non-exclusion pattern to be paired with it or it will match nothing. If you really
     need something similar to the old behavior, that would assume a default inclusion pattern, you can use the
@@ -597,9 +593,11 @@ Alternatively `EXTMATCH` will also be accepted for consistency with the other pr
 the same and are provided as a convenience in case the user finds one more intuitive than the other since `EXTGLOB` is
 often the name used in Bash.
 
-!!! tip "EXTMATCH and NEGATE"
-    When using `EXTMATCH` and [`NEGATE`](#globnegate) together, it is recommended to also use
-    [`MINUSNEGATE`](#globminusnegate) to avoid conflicts in regards to the `!` meta character.
+!!! tip "EXTGLOB and NEGATE"
+
+    When using `EXTGLOB` and [`NEGATE`](#globnegate) together, if a pattern starts with `!(`, the pattern will not
+    be treated as a [`NEGATE`](#globnegate) pattern (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate
+    a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
 
 #### `glob.BRACE, glob.B` {: #globbrace}
 

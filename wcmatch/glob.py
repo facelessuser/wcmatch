@@ -185,13 +185,12 @@ class Glob(object):
 
         self.pattern = []
         self.npatterns = []
-        nflags = self.flags | REALPATH
         for is_neg, p in self._iter_patterns(patterns):
             if is_neg:
                 # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
                 # This is faster as compiled patterns usually compare the include patterns first,
                 # and then the exclude, but glob will already know it wants to include the file.
-                self.npatterns.append(_wcparse._compile(p, nflags))
+                self.npatterns.append(_wcparse._compile(p, self.flags))
             else:
                 self.pattern.append(_wcparse.WcPathSplit(p, self.flags).split())
 
