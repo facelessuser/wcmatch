@@ -415,7 +415,14 @@ class TestGlobFilter:
             glob.A
         ],
         ['!!(a|c)', ['a', 'c'], glob.A],
-        ['!(a|c*', [], glob.A],
+        [
+            '!(a|c*',
+            [
+                '(a|b|c)', '(b|c', '*(b|c', 'a', 'ab', 'ac', 'ad', 'b', 'bc', 'bc,d', 'b|c', 'b|cc',
+                'c', 'c,d', 'c,db', 'cb', 'cb|c', 'd', 'd)', 'x(a|b|c)', 'x(a|c)'
+            ],
+            glob.A
+        ],
         Options(skip_split=False),
 
         # Test `MATCHBASE`.

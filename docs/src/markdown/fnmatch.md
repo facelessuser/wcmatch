@@ -211,9 +211,8 @@ etc. See the [syntax overview](#syntax) for more information.
 
 !!! tip "EXTMATCH and NEGATE"
 
-    When using `EXTMATCH` and [`NEGATE`](#fnmatchnegate) together, if a pattern starts with `!(`, the pattern will not
-    be treated as a [`NEGATE`](#fnmatchnegate) pattern (even if `!(` doesn't yield a valid `EXTMATCH` pattern). To
-    negate a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
+    When using `EXTMATCH` and [`NEGATE`](#fnmatchnegate) together, remember to escape `\(` to help distinguish between.
+    `!` and `!(...)`.
 
 #### `fnmatch.BRACE, fnmatch.B` {: #fnmatchbrace}
 

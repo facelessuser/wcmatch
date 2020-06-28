@@ -595,9 +595,8 @@ often the name used in Bash.
 
 !!! tip "EXTGLOB and NEGATE"
 
-    When using `EXTGLOB` and [`NEGATE`](#globnegate) together, if a pattern starts with `!(`, the pattern will not
-    be treated as a [`NEGATE`](#globnegate) pattern (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate
-    a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
+    When using `EXTGLOB` and [`NEGATE`](#globnegate) together, remember to escape `\(` to help distinguish between.
+    `!` and `!(...)`.
 
 #### `glob.BRACE, glob.B` {: #globbrace}
 

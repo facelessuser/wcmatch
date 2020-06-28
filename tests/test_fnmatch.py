@@ -170,6 +170,7 @@ class TestFnMatch:
         [r'!\(test)', 'test', True, fnmatch.N | fnmatch.E | fnmatch.A],
         [r'!(test)', 'test', False, fnmatch.N | fnmatch.E | fnmatch.A],
         [r'!!(test)', 'test', True, fnmatch.N | fnmatch.E | fnmatch.A],
+        [r'!(test', '(test', False, fnmatch.N | fnmatch.E | fnmatch.A],
         [r'!(test', '!(test', True, fnmatch.N | fnmatch.E | fnmatch.A],
 
         # Backwards ranges

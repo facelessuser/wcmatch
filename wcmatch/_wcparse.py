@@ -233,6 +233,10 @@ class PatternLimitException(Exception):
     """Pattern limit exception."""
 
 
+class NegativeGlobException(Exception):
+    """Negative Glob exception."""
+
+
 def raw_escape(pattern, unix=None):
     """Apply raw character transform before applying escape."""
 
@@ -415,12 +419,13 @@ def translate(patterns, flags, limit=PATTERN_LIMIT):
                 raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
             if expanded not in seen:
                 seen.add(expanded)
-                (negative if is_negative(expanded, flags) else positive).append(WcParse(expanded, flags).parse())
+                p, neg = WcParse(expanded, flags).parse()
+                (negative if neg else positive).append(p)
 
     if patterns and negative and not positive:
         if flags & NEGATEALL:
             default = b'**' if isinstance(patterns[0], bytes) else '**'
-            positive.append(WcParse(default, flags | (GLOBSTAR if flags & PATHNAME else 0)).parse())
+            positive.append(WcParse(default, flags | (GLOBSTAR if flags & PATHNAME else 0)).parse()[0])
 
     if patterns and flags & NODIR:
         index = BYTES if isinstance(patterns[0], bytes) else UNICODE
@@ -457,14 +462,15 @@ def compile(patterns, flags, limit=PATTERN_LIMIT):  # noqa A001
                 raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
             if expanded not in seen:
                 seen.add(expanded)
-                (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
+                p, neg = _compile(expanded, flags)
+                (negative if neg else positive).append(p)
 
     if patterns and negative and not positive:
         if flags & NEGATEALL:
             default = '**'
             if isinstance(patterns[0], bytes):
                 default = os.fsencode(default)
-            positive.append(_compile(default, flags | (GLOBSTAR if flags & PATHNAME else 0)))
+            positive.append(_compile(default, flags | (GLOBSTAR if flags & PATHNAME else 0))[0])
 
     if patterns and flags & NODIR:
         ptype = BYTES if isinstance(patterns[0], bytes) else UNICODE
@@ -477,7 +483,8 @@ def compile(patterns, flags, limit=PATTERN_LIMIT):  # noqa A001
 def _compile(pattern, flags):
     """Compile the pattern to regex."""
 
-    return re.compile(WcParse(pattern, flags & FLAG_MASK).parse())
+    p, neg = WcParse(pattern, flags & FLAG_MASK).parse()
+    return re.compile(p), neg
 
 
 class WcPathSplit(object):
@@ -518,12 +525,8 @@ class WcPathSplit(object):
         self.matchbase = bool(flags & MATCHBASE)
         self.extmatchbase = bool(flags & _EXTMATCHBASE)
         self.tilde = bool(flags & GLOBTILDE)
-        if is_negative(self.pattern, flags):  # pragma: no cover
-            # This isn't really used, but we'll keep it around
-            # in case we find a reason to directly send inverse patterns
-            # Through here.
-            self.pattern = self.pattern[0:1]
-        if flags & NEGATE:
+        self.negate = bool(flags & NEGATE)
+        if self.negate:
             flags ^= NEGATE
         self.flags = flags
         self.is_bytes = isinstance(pattern, bytes)
@@ -635,16 +638,28 @@ class WcPathSplit(object):
         globstar = value in (b'**', '**') and self.globstar
         magic = self.is_magic(value)
         if magic:
-            value = _compile(value, self.flags)
+            value, neg = _compile(value, self.flags | NEGATE if not l and self.negate else self.flags)
+            if not l and neg:
+                raise NegativeGlobException("Negative glob pattern found in positive pattern")
         if globstar and l and l[-1].is_globstar:
             l[-1] = WcGlob(value, magic, globstar, dir_only, False)
         else:
             l.append(WcGlob(value, magic, globstar, dir_only, False))
 
+    def store_at_pos(self, pattern, start, split, offset, l, dir_only):
+        """Store at position."""
+
+        if self.is_bytes:
+            value = pattern[start + 1:split].encode('latin-1')
+        else:
+            value = pattern[start + 1:split]
+
+        self.store(value, l, dir_only)
+        return split + offset
+
     def split(self):
         """Start parsing the pattern."""
 
-        split_index = []
         parts = []
         start = -1
 
@@ -682,27 +697,19 @@ class WcPathSplit(object):
                 try:
                     value = self._references(i)
                     if self.bslash_abort and value == '\\':
-                        split_index.append((i.index - 2, 1))
+                        start = self.store_at_pos(pattern, start, i.index - 2, 1, parts, True)
                 except StopIteration:
                     i.rewind(i.index - index)
                     if self.bslash_abort:
-                        split_index.append((i.index - 1, 0))
+                        start = self.store_at_pos(pattern, start, i.index - 1, 0, parts, True)
             elif c == '/':
-                split_index.append((i.index - 1, 0))
+                start = self.store_at_pos(pattern, start, i.index - 1, 0, parts, True)
             elif c == '[':
                 index = i.index
                 try:
                     self._sequence(i)
                 except StopIteration:
                     i.rewind(i.index - index)
-
-        for split, offset in split_index:
-            if self.is_bytes:
-                value = pattern[start + 1:split].encode('latin-1')
-            else:
-                value = pattern[start + 1:split]
-            self.store(value, parts, True)
-            start = split + offset
 
         if start < len(pattern):
             if self.is_bytes:
@@ -1437,6 +1444,10 @@ class WcParse(object):
             if self.extend and c in EXT_TYPES and self.parse_extend(c, i, current, True):
                 # Nothing to do
                 pass
+            elif self.extend and c == '!' and index == 1 and self.negate and not self.negative:
+                self.negative = True
+                self.globstar_capture = False
+                self.dot = True
             elif c == '*':
                 self._handle_star(i, current)
             elif c == '?':
@@ -1538,7 +1549,7 @@ class WcParse(object):
         if self.is_bytes:
             pattern = pattern.encode('latin-1')
 
-        return pattern
+        return pattern, self.negative
 
 
 def _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root):

@@ -2,9 +2,8 @@
 
 ## 6.1.0
 
-- **NEW**: `EXTMATCH`/`EXTGLOB` can now be used with `NEGATE` without needing `MINUSNEGATE`. If a pattern starts with
-  `!(`, the pattern will not be treated as a `NEGATE` pattern (even if `!(` doesn't yield a valid `EXTGLOB` pattern).
-  To negate a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
+- **NEW**: `EXTMATCH`/`EXTGLOB` can now be used with `NEGATE` without needing `MINUSNEGATE`. Logic is now present to
+  distinguish between `!` and a valid `!(...)`.
 
 ## 6.0.3
 

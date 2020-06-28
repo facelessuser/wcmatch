@@ -156,11 +156,10 @@ class Glob(object):
         else:
             self.sep = b'/' if self.is_bytes else '/'
 
-    def _iter_patterns(self, patterns):
+    def _iter_patterns(self, patterns, seen):
         """Iterate expanded patterns."""
 
         count = 1
-        seen = set()
         for p in patterns:
             p = util.norm_pattern(p, not self.unix, self.raw_chars)
             for expanded in _wcparse.expand(p, self.flags):
@@ -174,6 +173,7 @@ class Glob(object):
                 is_neg = _wcparse.is_negative(expanded, self.flags)
                 if not self.nounique or is_neg:
                     if expanded in seen:
+                        count += 1
                         continue
                     seen.add(expanded)
 
@@ -185,14 +185,23 @@ class Glob(object):
 
         self.pattern = []
         self.npatterns = []
-        for is_neg, p in self._iter_patterns(patterns):
+        seen = set()
+        for is_neg, p in self._iter_patterns(patterns, seen):
             if is_neg:
                 # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
                 # This is faster as compiled patterns usually compare the include patterns first,
                 # and then the exclude, but glob will already know it wants to include the file.
-                self.npatterns.append(_wcparse._compile(p, self.flags))
+                self.npatterns.append(_wcparse._compile(p, self.flags)[0])
             else:
-                self.pattern.append(_wcparse.WcPathSplit(p, self.flags).split())
+                try:
+                    self.pattern.append(_wcparse.WcPathSplit(p, self.flags).split())
+                except _wcparse.NegativeGlobException:
+                    if self.nounique:
+                        if p in seen:
+                            continue
+                        else:
+                            seen.add(p)
+                        self.npatterns.append(_wcparse._compile(p, self.flags)[0])
 
         if not self.pattern and self.npatterns:
             if self.negateall:
