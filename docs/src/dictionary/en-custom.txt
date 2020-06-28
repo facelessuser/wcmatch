@@ -2,6 +2,7 @@ API
 Accessors
 Backport
 Changelog
+EXTGLOB
 EXTMATCH
 EmojiOne
 Fnmatch
