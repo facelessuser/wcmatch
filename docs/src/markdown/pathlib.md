@@ -371,10 +371,6 @@ Assuming the [`SPLIT`](#pathlibsplit) flag, this means using it in a pattern suc
 If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match
 unless the file matches the excluded pattern. This is done with the [`NEGATEALL`](#pathlibnegateall) flag.
 
-If used with the extended glob feature, patterns like `!(inverse|pattern)` will be mistakenly parsed as an exclusion
-pattern instead of as an inverse extended glob group.  See [`MINUSNEGATE`](#pathlibminusnegate) for an alternative
-syntax that plays nice with extended glob.
-
 #### `pathlib.NEGATEALL, pathlib.A` {: #pathlibnegateall}
 
 `NEGATEALL` can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the
@@ -439,9 +435,11 @@ Alternatively `EXTMATCH` will also be accepted for consistency with the other pr
 the same and are provided as a convenience in case the user finds one more intuitive than the other since `EXTGLOB` is
 often the name used in Bash.
 
-!!! tip "EXTMATCH and NEGATE"
-    When using `EXTMATCH` and [`NEGATE`](#pathlibnegate) together, it is recommended to also use
-    [`MINUSNEGATE`](#pathlibminusnegate) to avoid conflicts in regards to the `!` meta character.
+!!! tip "EXTGLOB and NEGATE"
+
+    When using `EXTGLOB` and [`NEGATE`](#pathlibnegate) together, if a pattern starts with `!(`, the pattern will not
+    be treated as a [`NEGATE`](#pathlibnegate) pattern (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate
+    a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
 
 #### `pathlib.BRACE, pathlib.B` {: #pathlibbrace}
 

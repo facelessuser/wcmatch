@@ -392,6 +392,32 @@ class TestGlobFilter:
             ['ac', 'ad', 'cb', 'c,d']
         ],
 
+        # Negation and extended glob together
+        # `!` will be treated as an exclude pattern if it isn't followed by `(`.
+        # `(` must be escaped to exclude a name that starts with `(`.
+        # If `!(` doesn't start a valid extended glob pattern,
+        # it will be treated as a literal, not an exclude pattern.
+        Options(skip_split=True),
+        [
+            r'!\(a|c)',
+            [
+                '(a|b|c)', '(b|c', '*(b|c', 'a', 'ab', 'ac', 'ad', 'b', 'bc', 'bc,d', 'b|c', 'b|cc',
+                'c', 'c,d', 'c,db', 'cb', 'cb|c', 'd', 'd)', 'x(a|b|c)', 'x(a|c)'
+            ],
+            glob.A
+        ],
+        [
+            '!(a|c)',
+            [
+                '(a|b|c)', '(a|c)', '(b|c', '*(b|c', 'ab', 'ac', 'ad', 'b', 'bc', 'bc,d', 'b|c', 'b|cc',
+                'c,d', 'c,db', 'cb', 'cb|c', 'd', 'd)', 'x(a|b|c)', 'x(a|c)'
+            ],
+            glob.A
+        ],
+        ['!!(a|c)', ['a', 'c'], glob.A],
+        ['!(a|c*', [], glob.A],
+        Options(skip_split=False),
+
         # Test `MATCHBASE`.
         [
             'a?b',

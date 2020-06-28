@@ -83,6 +83,7 @@ RE_POSIX = re.compile(r':(alnum|alpha|ascii|blank|cntrl|digit|graph|lower|print|
 SET_OPERATORS = frozenset(('&', '~', '|'))
 NEGATIVE_SYM = frozenset((b'!', '!'))
 MINUS_NEGATIVE_SYM = frozenset((b'-', '-'))
+ROUND_BRACKET = frozenset((b'(', '('))
 EXT_TYPES = frozenset(('*', '?', '+', '@', '!'))
 
 # Common flags are found between `0x0001 - 0xffff`
@@ -267,8 +268,25 @@ def is_negative(pattern, flags):
 
     if flags & MINUSNEGATE:
         return flags & NEGATE and pattern[0:1] in MINUS_NEGATIVE_SYM
+    elif flags & EXTMATCH:
+        return flags & NEGATE and pattern[0:1] in NEGATIVE_SYM and pattern[1:2] not in ROUND_BRACKET
     else:
         return flags & NEGATE and pattern[0:1] in NEGATIVE_SYM
+
+
+def tilde_pos(pattern, flags):
+    """Is user folder."""
+
+    pos = -1
+    if flags & GLOBTILDE and flags & REALPATH:
+        if flags & NEGATE:
+            if pattern[0:1] in TILDE_SYM:
+                pos = 0
+            elif pattern[0:1] in NEGATIVE_SYM and pattern[1:2] in TILDE_SYM:
+                pos = 1
+        elif pattern[0:1] in TILDE_SYM:
+            pos = 0
+    return pos
 
 
 def expand_braces(patterns, flags):
@@ -289,19 +307,20 @@ def expand_braces(patterns, flags):
             yield p
 
 
-def expand_tilde(pattern, is_unix, is_neg, flags):
+def expand_tilde(pattern, is_unix, flags):
     """Expand tilde."""
 
-    if flags & GLOBTILDE and flags & REALPATH:
+    pos = tilde_pos(pattern, flags)
+
+    if pos > -1:
         string_type = BYTES if isinstance(pattern, bytes) else UNICODE
         tilde = TILDE_SYM[string_type]
         re_tilde = RE_WIN_TILDE[string_type] if not is_unix else RE_TILDE[string_type]
-        pos = 1 if is_neg else 0
         m = re_tilde.match(pattern, pos)
         if m:
             expanded = os.path.expanduser(m.group(0))
             if not expanded.startswith(tilde) and os.path.exists(expanded):
-                pattern = (pattern[0] if is_neg else pattern[0:0]) + escape(expanded, is_unix) + pattern[m.end(0):]
+                pattern = (pattern[0] if pos else pattern[0:0]) + escape(expanded, is_unix) + pattern[m.end(0):]
     return pattern
 
 
@@ -310,7 +329,7 @@ def expand(pattern, flags):
 
     for expanded in expand_braces(pattern, flags):
         for splitted in split(expanded, flags):
-            yield expand_tilde(splitted, is_unix_style(flags), is_negative(splitted, flags), flags)
+            yield expand_tilde(splitted, is_unix_style(flags), flags)
 
 
 def norm_slash(name, flags):
@@ -850,6 +869,7 @@ class WcParse(object):
         self.globstar = self.pathname and bool(flags & GLOBSTAR)
         self.realpath = bool(flags & REALPATH) and self.pathname
         self.translate = bool(flags & _TRANSLATE)
+        self.negate = bool(flags & NEGATE)
         self.globstar_capture = self.realpath and not self.translate
         self.dot = bool(flags & DOTMATCH)
         self.extend = bool(flags & EXTMATCH)

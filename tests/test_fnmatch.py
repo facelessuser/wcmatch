@@ -162,6 +162,16 @@ class TestFnMatch:
         ['[![:alnum:]]bc', '!bc', True, 0],
         ['[^[:alnum:]]bc', '!bc', True, 0],
 
+        # Negation and extended glob together
+        # `!` will be treated as an exclude pattern if it isn't followed by `(`.
+        # `(` must be escaped to exclude a name that starts with `(`.
+        # If `!(` doesn't start a valid extended glob pattern,
+        # it will be treated as a literal, not an exclude pattern.
+        [r'!\(test)', 'test', True, fnmatch.N | fnmatch.E | fnmatch.A],
+        [r'!(test)', 'test', False, fnmatch.N | fnmatch.E | fnmatch.A],
+        [r'!!(test)', 'test', True, fnmatch.N | fnmatch.E | fnmatch.A],
+        [r'!(test', '!(test', True, fnmatch.N | fnmatch.E | fnmatch.A],
+
         # Backwards ranges
         ['[a-z]', 'a', True, 0],
         ['[z-a]', 'a', False, 0],

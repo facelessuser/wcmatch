@@ -180,10 +180,6 @@ Assuming the `SPLIT` flag, this means using it in a pattern such as `inclusion|!
 If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match
 unless the file matches the excluded pattern. This is done with the [`NEGATEALL`](#fnmatchnegateall) flag.
 
-If used with the extended match feature, patterns like `!(inverse|pattern)` will be mistakenly parsed as an exclusion
-pattern instead of as an inverse extended glob group.  See [`MINUSNEGATE`](#fnmatchminusgate) for an alternative syntax
-that plays nice with extended glob.
-
 !!! warning "Changes 4.0"
     In 4.0, `NEGATE` now requires a non-exclusion pattern to be paired with it or it will match nothing. If you really
     need something similar to the old behavior, that would assume a default inclusion pattern, you can use the
@@ -214,8 +210,10 @@ other character. Dots will not be matched in `[]`, `*`, or `?`.
 etc. See the [syntax overview](#syntax) for more information.
 
 !!! tip "EXTMATCH and NEGATE"
-    When using `EXTMATCH` and [`NEGATE`](#fnmatchnegate) together, it is recommended to also use
-    [`MINUSNEGATE`](#fnmatchminusnegate) to avoid conflicts in regards to the `!` meta character.
+
+    When using `EXTMATCH` and [`NEGATE`](#fnmatchnegate) together, if a pattern starts with `!(`, the pattern will not
+    be treated as a [`NEGATE`](#fnmatchnegate) pattern (even if `!(` doesn't yield a valid `EXTMATCH` pattern). To
+    negate a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
 
 #### `fnmatch.BRACE, fnmatch.B` {: #fnmatchbrace}
 
