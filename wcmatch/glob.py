@@ -159,11 +159,10 @@ class Glob(object):
     def _iter_patterns(self, patterns):
         """Iterate expanded patterns."""
 
-        count = 1
         seen = set()
         for p in patterns:
             p = util.norm_pattern(p, not self.unix, self.raw_chars)
-            for expanded in _wcparse.expand(p, self.flags):
+            for count, expanded in enumerate(_wcparse.expand(p, self.flags), 1):
                 if 0 < self.limit < count:
                     raise _wcparse.PatternLimitException(
                         "Pattern limit exceeded the limit of {:d}".format(self.limit)
@@ -178,7 +177,6 @@ class Glob(object):
                     seen.add(expanded)
 
                 yield is_neg, expanded
-                count += 1
 
     def _parse_patterns(self, patterns):
         """Parse patterns."""
