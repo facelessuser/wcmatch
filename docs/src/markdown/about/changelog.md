@@ -1,6 +1,6 @@
 # Changelog
 
-## 6.1.0
+## 6.1
 
 - **NEW**: `EXTMATCH`/`EXTGLOB` can now be used with `NEGATE` without needing `MINUSNEGATE`. If a pattern starts with
   `!(`, and `NEGATE` and `EXTMATCH`/`EXTGLOB` are both enabled, the pattern will not be treated as a `NEGATE` pattern
