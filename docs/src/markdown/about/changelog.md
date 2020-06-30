@@ -6,6 +6,7 @@
   `!(`, and `NEGATE` and `EXTMATCH`/`EXTGLOB` are both enabled, the pattern will not be treated as a `NEGATE` pattern
   (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate a pattern that starts with a literal `(`, you must
   escape the bracket: `!\(`.
+- **FIX**: Support Python 3.9.
 - **FIX**: Adjust pattern limit logic of `glob` to be consistent with other functions.
 
 ## 6.0.3
