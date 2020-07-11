@@ -24,9 +24,15 @@ import re
 import functools
 import bracex
 import os
+import stat
 from . import util
 from . import posix
 from . _wcmatch import WcRegexp
+
+# `O_DIRECTORY` may not always be defined
+DIR_FLAGS = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
+# Right half can return an empty set if not supported
+SUPPORT_DIR_FD = {os.open, os.stat} <= os.supports_dir_fd and os.scandir in os.supports_fd
 
 UNICODE_RANGE = '\u0000-\U0010ffff'
 ASCII_RANGE = '\x00-\xff'
@@ -1563,3 +1569,260 @@ class WcParse(object):
             pattern = pattern.encode('latin-1')
 
         return pattern
+
+
+def _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root, is_fd):
+    """
+    Match path against the pattern.
+
+    Since `globstar` doesn't match symlinks (unless `FOLLOW` is enabled), we must look for symlinks.
+    If we identify a symlink in a `globstar` match, we know this result should not actually match.
+
+    We only check for the symlink if we know we are looking at a directory.
+    And we only call `lstat` if we can't find it in the cache.
+
+    We know it's a directory if:
+
+    1. If the base is a directory, all parts are directories.
+    2. If we are not the last part of the `globstar`, the part is a directory.
+    3. If the base is a file, but the part is not at the end, it is a directory.
+
+    """
+
+    matched = False
+
+    end = len(filename)
+    base = None
+    m = pattern.fullmatch(filename)
+    if m:
+        matched = True
+        # Lets look at the captured `globstar` groups and see if that part of the path
+        # contains symlinks.
+        if not follow:
+            last = len(m.groups())
+            try:
+                for i, star in enumerate(m.groups(), 1):
+                    if star:
+                        at_end = m.end(i) == end
+                        parts = star.strip(sep).split(sep)
+                        if base is None:
+                            if not is_fd:
+                                base = os.path.join(root, filename[:m.start(i)])
+                            else:
+                                base = filename[:m.start(i)]
+                        for part in parts:
+                            base = os.path.join(base, part)
+                            if is_dir or i != last or not at_end:
+                                is_link = symlinks.get(base, None)
+                                if is_link is not None:
+                                    matched = not is_link
+                                else:
+                                    if not is_fd:
+                                        is_link = os.path.islink(base)
+                                    else:
+                                        try:
+                                            st = os.lstat(base, dir_fd=root)
+                                        except (OSError, ValueError, AttributeError):
+                                            is_link = False
+                                        else:
+                                            is_link = stat.S_ISLNK(st.st_mode)
+                                    symlinks[base] = is_link
+                                    matched = not is_link
+                                if not matched:
+                                    break
+                    if not matched:
+                        break
+            except OSError:
+                matched = False
+    return matched
+
+
+def _match_real(filename, include, exclude, follow, symlinks, root, is_fd):
+    """Match real filename includes and excludes."""
+
+    sep = '\\' if util.platform() == "windows" else '/'
+    if isinstance(filename, bytes):
+        sep = os.fsencode(sep)
+
+    is_dir = filename.endswith(sep)
+    try:
+        if not is_fd:
+            is_file_dir = os.path.isdir(os.path.join(root, filename))
+        else:
+            try:
+                st = os.stat(filename, dir_fd=root)
+            except (OSError, ValueError):
+                is_file_dir = False
+            else:
+                is_file_dir = stat.S_ISDIR(st.st_mode)
+    except OSError:  # pragma: no cover
+        return False
+
+    if not is_dir and is_file_dir:
+        is_dir = True
+        filename += sep
+
+    matched = False
+    for pattern in include:
+        if _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root, is_fd):
+            matched = True
+            break
+
+    if matched:
+        if exclude:
+            for pattern in exclude:
+                if _fs_match(pattern, filename, is_dir, sep, True, symlinks, root, is_fd):
+                    matched = False
+                    break
+
+    return matched
+
+
+def _match_pattern(filename, include, exclude, real, path, follow, root_dir=None):
+    """Match includes and excludes."""
+
+    if real:
+        if isinstance(filename, bytes):
+            cwd = b'.'
+            ptype = BYTES
+        else:
+            cwd = '.'
+            ptype = UNICODE
+
+        is_fd = False
+        if isinstance(root_dir, int):
+            if SUPPORT_DIR_FD:
+                root = root_dir
+                is_fd = True
+            else:
+                root_dir = None
+        if not is_fd:
+            root = root_dir if root_dir else cwd
+
+        if not is_fd and type(filename) != type(root):
+            raise TypeError(
+                "The filename and root directory should be of the same type, not {} and {}".format(
+                    type(filename), type(root_dir)
+                )
+            )
+
+        if include and type(include[0].pattern) != type(filename):
+            raise TypeError(
+                "The filename and pattern should be of the same type, not {} and {}".format(
+                    type(filename), type(include[0].pattern)
+                )
+            )
+
+        is_abs = (RE_WIN_MOUNT[ptype] if util.platform() == "windows" else RE_MOUNT[ptype]).match(filename) is not None
+        if is_abs:
+            exists = os.path.lexists(filename)
+        elif not is_fd:
+            exists = os.path.lexists(os.path.join(root, filename))
+        else:
+            try:
+                os.lstat(filename, dir_fd=root)
+            except (OSError, ValueError):
+                exists = False
+            else:
+                exists = True
+
+        if not exists:
+            return False
+        if path:
+            return _match_real(filename, include, exclude, follow, symlinks, root, is_fd)
+
+    matched = False
+    for pattern in include:
+        if pattern.fullmatch(filename):
+            matched = True
+            break
+
+    if matched:
+        matched = True
+        if exclude:
+            for pattern in exclude:
+                if pattern.fullmatch(filename):
+                    matched = False
+                    break
+    return matched
+
+
+class WcRegexp(util.Immutable):
+    """File name match object."""
+
+    __slots__ = ("_include", "_exclude", "_real", "_path", "_follow", "_hash")
+
+    def __init__(self, include, exclude=None, real=False, path=False, follow=False):
+        """Initialization."""
+
+        super(WcRegexp, self).__init__(
+            _include=include,
+            _exclude=exclude,
+            _real=real,
+            _path=path,
+            _follow=follow,
+            _hash=hash(
+                (
+                    type(self),
+                    type(include), include,
+                    type(exclude), exclude,
+                    type(real), real,
+                    type(path), path,
+                    type(follow), follow
+                )
+            )
+        )
+
+    def __hash__(self):
+        """Hash."""
+
+        return self._hash
+
+    def __len__(self):
+        """Length."""
+
+        return len(self._include) + (len(self._exclude) if self._exclude is not None else 0)
+
+    def __eq__(self, other):
+        """Equal."""
+
+        return (
+            isinstance(other, WcRegexp) and
+            self._include == other._include and
+            self._exclude == other._exclude and
+            self._real == other._real and
+            self._path == other._path and
+            self._follow == other._follow
+        )
+
+    def __ne__(self, other):
+        """Equal."""
+
+        return (
+            not isinstance(other, WcRegexp) or
+            self._include != other._include or
+            self._exclude != other._exclude or
+            self._real != other._real or
+            self._path != other._path or
+            self._follow != other._follow
+        )
+
+    def match(self, filename, root_dir=None):
+        """Match filename."""
+
+        return _match_pattern(
+            filename,
+            self._include,
+            self._exclude,
+            self._real,
+            self._path,
+            self._follow,
+            root_dir=root_dir
+        )
+
+
+def _pickle(p):
+    return WcRegexp, (p._include, p._exclude, p._real, p._path, p._follow)
+
+
+copyreg.pickle(WcRegexp, _pickle)

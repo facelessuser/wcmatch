@@ -40,10 +40,8 @@ __all__ = (
 # We don't use `util.platform` only because we mock it in tests,
 # and `scandir` will not work with bytes on the wrong system.
 WIN = sys.platform.startswith('win')
-# `O_DIRECTORY` may not always be defined
-DIR_FLAGS = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
 # Right half can return an empty set if not supported
-SUPPORT_DIR_FD = {os.open, os.stat} <= os.supports_dir_fd and os.scandir in os.supports_fd
+SUPPORT_DIR_FD = _wcparse.SUPPORT_DIR_FD
 
 C = CASE = _wcparse.CASE
 I = IGNORECASE = _wcparse.IGNORECASE
@@ -394,12 +392,15 @@ class Glob(object):
         self.seen = set()
         self.is_bytes = isinstance(pattern[0], bytes)
         self.current = b'.' if self.is_bytes else '.'
+        self.is_fd = False
         if isinstance(root_dir, int):
-            self.root_dir = root_dir
-            self.is_fd = True
-        else:
+            if SUPPORT_DIR_FD:
+                self.root_dir = root_dir
+                self.is_fd = True
+            else:
+                root_dir = None
+        if not self.is_fd:
             self.root_dir = os.fspath(root_dir) if root_dir is not None else self.current
-            self.is_fd = False
         self.nounique = bool(flags & NOUNIQUE)
         self.mark = bool(flags & MARK)
         # Only scan for `.` and `..` if it is specifically requested.
@@ -611,7 +612,7 @@ class Glob(object):
                 elif self.is_abs_pattern:
                     scandir = curdir
                 else:
-                    fd = scandir = os.open(curdir, DIR_FLAGS, dir_fd=self.root_dir)
+                    fd = scandir = os.open(curdir, _wcparse.DIR_FLAGS, dir_fd=self.root_dir)
             else:
                 if not curdir:
                     scandir = self.root_dir
@@ -866,7 +867,11 @@ def globmatch(filename, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATT
     """
 
     if root_dir is not None:
-        root_dir = os.fspath(root_dir)
+        if isinstance(root_dir, int):
+            if not _wcparse.SUPPORT_DIR_FD or not flags & REALPATH:
+                root_dir = None
+        else:
+            root_dir = os.fspath(root_dir)
 
     flags = _flag_transform(flags)
     filename = os.fspath(filename)
@@ -877,7 +882,11 @@ def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=_wcparse.PA
     """Filter names using pattern."""
 
     if root_dir is not None:
-        root_dir = os.fspath(root_dir)
+        if isinstance(root_dir, int):
+            if not _wcparse.SUPPORT_DIR_FD or not flags & REALPATH:
+                root_dir = None
+        else:
+            root_dir = os.fspath(root_dir)
 
     matches = []
     flags = _flag_transform(flags)
