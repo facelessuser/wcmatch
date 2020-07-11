@@ -386,21 +386,14 @@ class _GlobSplit(object):
 class Glob(object):
     """Glob patterns."""
 
-    def __init__(self, pattern, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
+    def __init__(self, pattern, flags=0, root_dir=None, dir_fd=None, limit=_wcparse.PATTERN_LIMIT):
         """Initialize the directory walker object."""
 
         self.seen = set()
         self.is_bytes = isinstance(pattern[0], bytes)
         self.current = b'.' if self.is_bytes else '.'
-        self.is_fd = False
-        if isinstance(root_dir, int):
-            if SUPPORT_DIR_FD:
-                self.root_dir = root_dir
-                self.is_fd = True
-            else:
-                root_dir = None
-        if not self.is_fd:
-            self.root_dir = os.fspath(root_dir) if root_dir is not None else self.current
+        self.dir_fd = dir_fd if SUPPORT_DIR_FD else None
+        self.root_dir = os.fspath(root_dir) if root_dir is not None else self.current
         self.nounique = bool(flags & NOUNIQUE)
         self.mark = bool(flags & MARK)
         # Only scan for `.` and `..` if it is specifically requested.
@@ -584,10 +577,10 @@ class Glob(object):
     def _lexists(self, path):
         """Check if file exists."""
 
-        if not self.is_fd:
+        if not self.dir_fd:
             return os.path.lexists(self.prepend_base(path))
         try:
-            os.lstat(path, dir_fd=self.root_dir)
+            os.lstat(self.prepend_base(path), dir_fd=self.root_dir)
         except (OSError, ValueError):
             return False
         else:
@@ -606,20 +599,16 @@ class Glob(object):
 
         try:
             fd = None
-            if self.is_fd:
-                if not curdir:
-                    scandir = self.root_dir
-                elif self.is_abs_pattern:
-                    scandir = curdir
-                else:
-                    fd = scandir = os.open(curdir, _wcparse.DIR_FLAGS, dir_fd=self.root_dir)
+            if self.is_abs_pattern and curdir:
+                scandir = curdir
+            elif self.dir_fd is not None:
+                fd = scandir = os.open(
+                    os.path.join(self.root_dir, curdir) if curdir else self.root_dir,
+                    _wcparse.DIR_FLAGS,
+                    dir_fd=self.dir_fd
+                )
             else:
-                if not curdir:
-                    scandir = self.root_dir
-                elif self.is_abs_pattern:
-                    scandir = curdir
-                else:
-                    scandir = os.path.join(self.root_dir, curdir)
+                scandir = os.path.join(self.root_dir, curdir) if curdir else self.root_dir
 
             # Python will never return . or .., so fake it.
             for special in self.specials:
@@ -839,16 +828,16 @@ class Glob(object):
                             yield from self.format_path(match, is_dir, dir_only)
 
 
-def iglob(patterns, *, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
+def iglob(patterns, *, flags=0, root_dir=None, dir_fd=None, limit=_wcparse.PATTERN_LIMIT):
     """Glob."""
 
-    yield from Glob(util.to_tuple(patterns), flags, root_dir, limit).glob()
+    yield from Glob(util.to_tuple(patterns), flags, root_dir, dir_fd, limit).glob()
 
 
-def glob(patterns, *, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
+def glob(patterns, *, flags=0, root_dir=None, dir_fd=None, limit=_wcparse.PATTERN_LIMIT):
     """Glob."""
 
-    return list(iglob(patterns, flags=flags, root_dir=root_dir, limit=limit))
+    return list(iglob(patterns, flags=flags, root_dir=root_dir, dir_fd=dir_fd, limit=limit))
 
 
 def translate(patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
@@ -858,7 +847,7 @@ def translate(patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
     return _wcparse.translate(patterns, flags, limit)
 
 
-def globmatch(filename, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
+def globmatch(filename, patterns, *, flags=0, root_dir=None, dir_fd=None, limit=_wcparse.PATTERN_LIMIT):
     """
     Check if filename matches pattern.
 
@@ -867,26 +856,18 @@ def globmatch(filename, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATT
     """
 
     if root_dir is not None:
-        if isinstance(root_dir, int):
-            if not _wcparse.SUPPORT_DIR_FD or not flags & REALPATH:
-                root_dir = None
-        else:
-            root_dir = os.fspath(root_dir)
+        root_dir = os.fspath(root_dir)
 
     flags = _flag_transform(flags)
     filename = os.fspath(filename)
-    return _wcparse.compile(patterns, flags, limit).match(filename, root_dir=root_dir)
+    return _wcparse.compile(patterns, flags, limit).match(filename, root_dir, dir_fd)
 
 
-def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
+def globfilter(filenames, patterns, *, flags=0, root_dir=None, dir_fd=None, limit=_wcparse.PATTERN_LIMIT):
     """Filter names using pattern."""
 
     if root_dir is not None:
-        if isinstance(root_dir, int):
-            if not _wcparse.SUPPORT_DIR_FD or not flags & REALPATH:
-                root_dir = None
-        else:
-            root_dir = os.fspath(root_dir)
+        root_dir = os.fspath(root_dir)
 
     matches = []
     flags = _flag_transform(flags)
@@ -894,7 +875,7 @@ def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=_wcparse.PA
 
     for filename in filenames:
         temp = os.fspath(filename)
-        if obj.match(temp, root_dir):
+        if obj.match(temp, root_dir, dir_fd):
             matches.append(filename)
     return matches
 
