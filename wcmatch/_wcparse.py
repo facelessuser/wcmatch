@@ -1571,7 +1571,7 @@ class WcParse(object):
         return pattern
 
 
-def _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root, is_fd):
+def _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root, dir_fd):
     """
     Match path against the pattern.
 
@@ -1606,10 +1606,7 @@ def _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root, is_fd):
                         at_end = m.end(i) == end
                         parts = star.strip(sep).split(sep)
                         if base is None:
-                            if not is_fd:
-                                base = os.path.join(root, filename[:m.start(i)])
-                            else:
-                                base = filename[:m.start(i)]
+                            base = os.path.join(root, filename[:m.start(i)])
                         for part in parts:
                             base = os.path.join(base, part)
                             if is_dir or i != last or not at_end:
@@ -1617,11 +1614,11 @@ def _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root, is_fd):
                                 if is_link is not None:
                                     matched = not is_link
                                 else:
-                                    if not is_fd:
+                                    if dir_fd is ConnectionError:
                                         is_link = os.path.islink(base)
                                     else:
                                         try:
-                                            st = os.lstat(base, dir_fd=root)
+                                            st = os.lstat(base, dir_fd=dir_fd)
                                         except (OSError, ValueError, AttributeError):
                                             is_link = False
                                         else:
@@ -1637,7 +1634,7 @@ def _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root, is_fd):
     return matched
 
 
-def _match_real(filename, include, exclude, follow, symlinks, root, is_fd):
+def _match_real(filename, include, exclude, follow, symlinks, root, dir_fd):
     """Match real filename includes and excludes."""
 
     sep = '\\' if util.platform() == "windows" else '/'
@@ -1646,11 +1643,11 @@ def _match_real(filename, include, exclude, follow, symlinks, root, is_fd):
 
     is_dir = filename.endswith(sep)
     try:
-        if not is_fd:
+        if dir_fd is None:
             is_file_dir = os.path.isdir(os.path.join(root, filename))
         else:
             try:
-                st = os.stat(filename, dir_fd=root)
+                st = os.stat(os.path.join(root, filename), dir_fd=dir_fd)
             except (OSError, ValueError):
                 is_file_dir = False
             else:
@@ -1664,21 +1661,21 @@ def _match_real(filename, include, exclude, follow, symlinks, root, is_fd):
 
     matched = False
     for pattern in include:
-        if _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root, is_fd):
+        if _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root, dir_fd):
             matched = True
             break
 
     if matched:
         if exclude:
             for pattern in exclude:
-                if _fs_match(pattern, filename, is_dir, sep, True, symlinks, root, is_fd):
+                if _fs_match(pattern, filename, is_dir, sep, True, symlinks, root, dir_fd):
                     matched = False
                     break
 
     return matched
 
 
-def _match_pattern(filename, include, exclude, real, path, follow, root_dir=None):
+def _match_pattern(filename, include, exclude, real, path, follow, root_dir=None, dir_fd=None):
     """Match includes and excludes."""
 
     if real:
@@ -1689,15 +1686,10 @@ def _match_pattern(filename, include, exclude, real, path, follow, root_dir=None
             cwd = '.'
             ptype = UNICODE
 
-        is_fd = False
-        if isinstance(root_dir, int):
-            if SUPPORT_DIR_FD:
-                root = root_dir
-                is_fd = True
-            else:
-                root_dir = None
-        if not is_fd:
-            root = root_dir if root_dir else cwd
+        root = root_dir if root_dir else cwd
+
+        if dir_fd is not None and not SUPPORT_DIR_FD:
+            dir_fd = None
 
         if not is_fd and type(filename) != type(root):
             raise TypeError(
@@ -1716,11 +1708,11 @@ def _match_pattern(filename, include, exclude, real, path, follow, root_dir=None
         is_abs = (RE_WIN_MOUNT[ptype] if util.platform() == "windows" else RE_MOUNT[ptype]).match(filename) is not None
         if is_abs:
             exists = os.path.lexists(filename)
-        elif not is_fd:
+        elif dir_fd is None:
             exists = os.path.lexists(os.path.join(root, filename))
         else:
             try:
-                os.lstat(filename, dir_fd=root)
+                os.lstat(os.path.join(root, filename), dir_fd=dir_fd)
             except (OSError, ValueError):
                 exists = False
             else:
@@ -1728,8 +1720,9 @@ def _match_pattern(filename, include, exclude, real, path, follow, root_dir=None
 
         if not exists:
             return False
-        if path:
-            return _match_real(filename, include, exclude, follow, symlinks, root, is_fd)
+        else:
+            symlinks = {}
+            return _match_real(filename, include, exclude, follow, symlinks, root, dir_fd)
 
     matched = False
     for pattern in include:
@@ -1807,7 +1800,7 @@ class WcRegexp(util.Immutable):
             self._follow != other._follow
         )
 
-    def match(self, filename, root_dir=None):
+    def match(self, filename, root_dir=None, dir_fd=None):
         """Match filename."""
 
         return _match_pattern(
@@ -1817,7 +1810,8 @@ class WcRegexp(util.Immutable):
             self._real,
             self._path,
             self._follow,
-            root_dir=root_dir
+            root_dir=root_dir,
+            dir_fd=dir_fd
         )
 
 
