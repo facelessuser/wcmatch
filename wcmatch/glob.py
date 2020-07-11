@@ -21,6 +21,7 @@ CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFT
 IN THE SOFTWARE.
 """
 import os
+import re
 import sys
 import functools
 from . import _wcparse
@@ -38,6 +39,17 @@ __all__ = (
 # and `scandir` will not work with bytes on the wrong system.
 WIN = sys.platform.startswith('win')
 NO_SCANDIR_WORKAROUND = util.PY36
+
+_RE_PATHLIB_STRIP = [
+    re.compile(r'(?:^(?:\./)*|(?:/\.)*(?:/$)?)'),
+    re.compile(br'(?:^(?:\./)*|(?:/\.)*(?:/$)?)')
+
+]
+
+_RE_WIN_PATHLIB_STRIP = [
+    re.compile(r'(?:^(?:\.[\\/])*|(?:[\\/]\.)*(?:[\\/]$)?)'),
+    re.compile(br'(?:^(?:\.[\\/])*|(?:[\\/]\.)*(?:[\\/]$)?)')
+]
 
 C = CASE = _wcparse.CASE
 I = IGNORECASE = _wcparse.IGNORECASE
@@ -60,6 +72,7 @@ T = GLOBTILDE = _wcparse.GLOBTILDE
 Q = NOUNIQUE = _wcparse.NOUNIQUE
 
 K = MARK = 0x100000
+_PATHLIB = 0x200000
 
 # Internal flags
 _EXTMATCHBASE = _wcparse._EXTMATCHBASE
@@ -126,6 +139,7 @@ class Glob(object):
         self.root_dir = util.fscodec(root_dir, self.is_bytes) if root_dir is not None else self.current
         self.nounique = bool(flags & NOUNIQUE)
         self.mark = bool(flags & MARK)
+        self.pathlib = bool(flags & _PATHLIB)
         if self.mark:
             flags ^= MARK
         self.negateall = bool(flags & NEGATEALL)
@@ -153,8 +167,10 @@ class Glob(object):
         self._parse_patterns(pattern)
         if self.flags & FORCEWIN:
             self.sep = b'\\' if self.is_bytes else '\\'
+            self.pathlib_strip = _RE_WIN_PATHLIB_STRIP[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
         else:
             self.sep = b'/' if self.is_bytes else '/'
+            self.pathlib_strip = _RE_PATHLIB_STRIP[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
 
     def _iter_patterns(self, patterns):
         """Iterate expanded patterns."""
@@ -327,12 +343,24 @@ class Glob(object):
         except OSError:  # pragma: no cover
             pass
 
-    def _glob_dir(self, curdir, matcher, dir_only=False, deep=False):
+    def _glob_dir(self, curdir, matcher, dir_only=False, deep=False, pmatch=False):
         """Recursive directory glob."""
 
         files = list(self._iter(curdir, dir_only, deep))
         for file, is_dir, hidden, is_link in files:
+            parent_matched = False
             if file in self.specials:
+                # Glob will return the same folder in different ways.
+                # Given the pattern `**/.*` (if `DOTGLOB` is enabled)
+                # will return both `.hidden` and `.hidden/.`. These are
+                # technically unique matches, but `pathlib` will normalize
+                # out the `.` directory and return two `pathlib` objects of
+                # `.hidden`. In this scenario (and only for `pathlib`) avoid
+                # returning duplicates.
+                if (
+                    self.pathlib and pmatch and file == self.specials[0]
+                ):
+                    continue
                 if matcher is not None and matcher(file):
                     yield os.path.join(curdir, file), True
                 continue
@@ -340,10 +368,11 @@ class Glob(object):
             path = os.path.join(curdir, file)
             follow = not is_link or self.follow_links
             if (matcher is None and not hidden and (follow or not deep)) or (matcher and matcher(file)):
+                parent_matched = True
                 yield path, is_dir
 
             if deep and not hidden and is_dir and follow:
-                yield from self._glob_dir(path, matcher, dir_only, deep)
+                yield from self._glob_dir(path, matcher, dir_only, deep, parent_matched)
 
     def _glob(self, curdir, this, rest):
         """
@@ -446,6 +475,12 @@ class Glob(object):
 
         if self.nounique:
             return True
+
+        # `pathlib` will normalize out `.` directories, so when we compare unique paths,
+        # strip out `.` as `parent/./child` and `parent/child` will both appear as
+        # `parent/child` in `pathlib` results.
+        if self.pathlib:
+            path = self.pathlib_strip.sub('', path)
 
         unique = False
         if (path.lower() if self.case_sensitive else path) not in self.seen:

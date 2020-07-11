@@ -1,5 +1,19 @@
 # Changelog
 
+## 6.1.1
+
+- **FIX**: If given a pattern of `**/.*` with `DOTGLOB` enabled, `pathlib` can potentially return a path object for
+  `.hidden` and `.hidden/.`. While this is perfectly acceptable according to Bash style globbing, `pathlib` will
+  normalize the `.` directory out of the path and return two identical paths of `.hidden`. This is really only an
+  issue when dealing with deep globs (`**`/`GLOBSTAR`). In this scenario, if a parent has already been returned, do not
+  return the `.` form of itself to avoid duplicate results for a single pattern. This logic is only relevant for
+  `pathlib` with `GLOBSTAR` patterns.
+- **FIX**: When `NOUNIQUE` is enabled and `pathlib` is being used, you can still get non-unique results because while
+  `parent/./child` and `parent/child` are unique results, `pathlib` will normalize them both to look like
+  `parent/child`. This can be confusing to the user as they appear to be duplicates because all the user can see is the
+  normalized path. Add logic to filter these types of duplicates when using `pathlib` to ensure only unique results are
+  returned.
+
 ## 6.1
 
 - **NEW**: Recognize extended UNC, such as: `//?/UNC/server/mount`, `//?/UNC/c:`, etc.

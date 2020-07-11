@@ -36,6 +36,7 @@ _NOABSOLUTE = _wcparse._NOABSOLUTE
 _PATHNAME = _wcparse.PATHNAME
 _FORCEWIN = _wcparse.FORCEWIN
 _FORCEUNIX = _wcparse.FORCEUNIX
+_PATHLIB = glob._PATHLIB
 
 FLAG_MASK = (
     CASE |
@@ -85,7 +86,7 @@ class Path(pathlib.Path):
         """
 
         if self.is_dir():
-            flags = self._translate_flags(flags | _NOABSOLUTE)
+            flags = self._translate_flags(flags | _NOABSOLUTE) | _PATHLIB
             for filename in glob.iglob(patterns, flags=flags, root_dir=str(self), limit=limit):
                 yield self.joinpath(filename)
 
