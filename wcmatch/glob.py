@@ -480,7 +480,7 @@ class Glob(object):
         # strip out `.` as `parent/./child` and `parent/child` will both appear as
         # `parent/child` in `pathlib` results.
         if self.pathlib:
-            path = self.pathlib_strip.sub('', path)
+            path = self.pathlib_strip.sub(self.empty, path)
 
         unique = False
         if (path.lower() if self.case_sensitive else path) not in self.seen:

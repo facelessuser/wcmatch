@@ -919,7 +919,57 @@ class TestHidden(_TestGlob):
     cases = [
         [('**', '.*'), [('a', '.'), ('a', '..'), ('.aa',), ('.bb',), ('.',), ('..',)]],
         [('*', '.*'), [('a', '.'), ('a', '..')]],
-        [('.*',), [('.aa',), ('.bb',), ('.',), ('..',)]]
+        [('.*',), [('.aa',), ('.bb',), ('.',), ('..',)]],
+        [
+            ('**', '.*'),
+            [
+                ('a', '.'), ('a', '..'), ('.aa',), ('.aa', '.'), ('.aa', '..'),
+                ('.bb',), ('.bb', '.'), ('.bb', '..'), ('.',), ('..',)
+            ],
+            glob.D
+        ],
+        [
+            ('**', '.*|**', '.', '.aa', '.'),
+            [
+                ('a', '.'), ('a', '..'), ('.aa',), ('.aa', '.'), ('.aa', '..'),
+                ('.bb',), ('.bb', '.'), ('.bb', '..'), ('.',), ('..',), ('.', '.aa', '.')
+            ],
+            glob.D | glob.S
+        ],
+
+        # Test `pathlib` mode. `pathlib` normalizes out `.` directories, so when evaluating unique values,
+        # normalize paths with `.`.
+
+        # Prevent matching `.aa` and `.aa/.` (same with `.bb`)
+        [('**', '.*'), [('a', '.'), ('a', '..'), ('.aa',), ('.bb',), ('.',), ('..',)], glob._PATHLIB],
+        [
+            ('**', '.*'),
+            [
+                ('a', '.'), ('a', '..'), ('.aa',), ('.aa', '..'),
+                ('.bb',), ('.bb', '..'), ('.',), ('..',)
+            ],
+            glob._PATHLIB | glob.D
+        ],
+        # Prevent matching `.aa/.` and `./.aa/.` as they are all the same as `.aa`
+        [
+            ('**', '.*|**', '.', '.aa', '.'),
+            [
+                ('a', '.'), ('a', '..'), ('.aa',), ('.aa', '..'),
+                ('.bb',), ('.bb', '..'), ('.',), ('..',)
+            ],
+            glob._PATHLIB | glob.D | glob.S
+        ],
+        # Unique logic is disabled, so we can match `.aa` from one pattern and `./.aa/.` from another pattern.
+        # Duplicates are still restricted from a single pattern, so `.aa/.` is not found in the first pattern as
+        # `.aa` was already found, but unique results across multi-patterns is not enforced.
+        [
+            ('**', '.*|**', '.', '.aa', '.'),
+            [
+                ('a', '.'), ('a', '..'), ('.aa',), ('.aa', '..'),
+                ('.bb',), ('.bb', '..'), ('.',), ('..',), ('.', '.aa', '.')
+            ],
+            glob._PATHLIB | glob.D | glob.S | glob.NOUNIQUE
+        ]
     ]
 
     @classmethod
