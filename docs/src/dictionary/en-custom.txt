@@ -24,6 +24,7 @@ UNC
 Wcmatch
 Wildcard
 XORed
+Zsh
 accessor
 amongst
 basename
@@ -65,6 +66,7 @@ subclassed
 subclasses
 subdirectories
 sublicense
+subpatterns
 symlink
 symlinked
 symlinks
@@ -75,3 +77,4 @@ unclosed
 unordered
 versa
 wildcard
+zsh

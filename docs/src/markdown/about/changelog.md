@@ -1,18 +1,23 @@
 # Changelog
 
-## 6.1.1
+## 6.2
 
-- **FIX**: If given a pattern of `**/.*` with `DOTGLOB` enabled, `pathlib` can potentially return a path object for
-  `.hidden` and `.hidden/.`. While this is perfectly acceptable according to Bash style globbing, `pathlib` will
-  normalize the `.` directory out of the path and return two identical paths of `.hidden`. This is really only an
-  issue when dealing with deep globs (`**`/`GLOBSTAR`). In this scenario, if a parent has already been returned, do not
-  return the `.` form of itself to avoid duplicate results for a single pattern. This logic is only relevant for
-  `pathlib` with `GLOBSTAR` patterns.
-- **FIX**: When `NOUNIQUE` is enabled and `pathlib` is being used, you can still get non-unique results because while
-  `parent/./child` and `parent/child` are unique results, `pathlib` will normalize them both to look like
-  `parent/child`. This can be confusing to the user as they appear to be duplicates because all the user can see is the
-  normalized path. Add logic to filter these types of duplicates when using `pathlib` to ensure only unique results are
-  returned.
+- **NEW**: When using a pattern such as `.*`, our implementation could return both `.hidden` and `.hidden/.`. `pathlib`
+  normalizes `.` in file paths and will cause both patterns to be normalize to `.hidden`. This causes confusion to users
+  as returned results can have two exact file paths from a singular pattern. `pathlib`'s `rglob` and `glob` now enable
+  the new `NOSPECIAL` flag by default so that `.` and `..` will not be returned with "magic" patterns, only a literal
+  `.` and `..` can cause a path of `.` and `..` to be returned. This will prevent duplicates being returned for a single
+  pattern.
+- **NEW**: Add `NOSPECIAL` flag for `glob` and `pathlib` modules to prevent special directories `.` and `..` from being
+  matched except when they are explicitly defined with a literal pattern. This models Zsh shells behavior and Python's
+  default glob behavior. Patterns such a `.*` will not match `.` or `..`, but `.` and `..` can.
+- **FIX**: A negative extended glob patterns (`!()`) incorrectly allowed for hidden files to be returned when one of the
+  subpatterns started with `.`, even when `DOTMATCH`/`DOTGLOB` was not enabled.
+- **FIX**: When `NOUNIQUE` is enabled and `pathlib` is being used, you could still get non-unique results because while
+  `parent/./child` and `parent/child` are unique results, `pathlib` would normalize them both to look like
+  `parent/child` causing two identical patterns to be returned. This was confusing to the user as they appear to be
+  duplicates because all the user can see is the normalized path. Logic was added to filter these types of duplicates
+  when using `pathlib` to ensure only unique results are returned.
 
 ## 6.1
 

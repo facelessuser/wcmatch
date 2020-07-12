@@ -42,7 +42,7 @@ matching:
   documentation.
 
 - A [`globmatch`](#purepathglobmatch) method has been added to `PurePath` classes (and `Path` classes which are derived
-  from `PurePath`) which is like [`match`](#purepathmatch) except without the recursive behavior. See
+  from `PurePath`) which is like [`match`](#purepathmatch) except without the right to left behavior. See
   [`match`](#purepathmatch) and [`globmatch`](purepathglobmatch) for more information.
 
 - [`glob`](#pathglob) and [`rglob`](#pathrglob) do not enable [`GLOBSTAR`](#pathlibglobstar) or

@@ -283,7 +283,7 @@ class _TestGlob:
         else:
             p = [p]
         res = glob.glob(p, **kwargs)
-        print("RESULTS: ", res)
+        print("RESULTS: ", sorted(res))
         if res:
             cls.assert_equal({type(r) for r in res}, {str})
         cls.assert_count_equal(glob.iglob(p, **kwargs), res)
@@ -350,7 +350,7 @@ class _TestGlob:
         print("PATTERN: ", pattern)
         print("FLAGS: ", bin(flags))
         print("NEGATIVE: ", bin(negative))
-        print("EXPECTED: ", results)
+        print("EXPECTED: ", sorted(results) if results is not None else results)
 
         if cls.cwd_temp:
             if negative:
@@ -941,23 +941,21 @@ class TestHidden(_TestGlob):
         # normalize paths with `.`.
 
         # Prevent matching `.aa` and `.aa/.` (same with `.bb`)
-        [('**', '.*'), [('a', '.'), ('a', '..'), ('.aa',), ('.bb',), ('.',), ('..',)], glob._PATHLIB],
+        [('**', '.*'), [('.aa',), ('.bb',)], glob.Z],
         [
             ('**', '.*'),
             [
-                ('a', '.'), ('a', '..'), ('.aa',), ('.aa', '..'),
-                ('.bb',), ('.bb', '..'), ('.',), ('..',)
+                ('.aa',), ('.bb',)
             ],
-            glob._PATHLIB | glob.D
+            glob.Z | glob.D
         ],
         # Prevent matching `.aa/.` and `./.aa/.` as they are all the same as `.aa`
         [
             ('**', '.*|**', '.', '.aa', '.'),
             [
-                ('a', '.'), ('a', '..'), ('.aa',), ('.aa', '..'),
-                ('.bb',), ('.bb', '..'), ('.',), ('..',)
+                ('.aa',), ('.bb',), ('.', '.aa', '.')
             ],
-            glob._PATHLIB | glob.D | glob.S
+            glob.Z | glob.D | glob.S
         ],
         # Unique logic is disabled, so we can match `.aa` from one pattern and `./.aa/.` from another pattern.
         # Duplicates are still restricted from a single pattern, so `.aa/.` is not found in the first pattern as
@@ -965,10 +963,9 @@ class TestHidden(_TestGlob):
         [
             ('**', '.*|**', '.', '.aa', '.'),
             [
-                ('a', '.'), ('a', '..'), ('.aa',), ('.aa', '..'),
-                ('.bb',), ('.bb', '..'), ('.',), ('..',), ('.', '.aa', '.')
+                ('.aa',), ('.bb',), ('.', '.aa', '.')
             ],
-            glob._PATHLIB | glob.D | glob.S | glob.NOUNIQUE
+            glob.Z | glob.D | glob.S | glob.Q
         ]
     ]
 

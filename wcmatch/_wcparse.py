@@ -122,8 +122,8 @@ MINUS_NEGATIVE_SYM = frozenset((b'-', '-'))
 ROUND_BRACKET = frozenset((b'(', '('))
 EXT_TYPES = frozenset(('*', '?', '+', '@', '!'))
 
-# Common flags are found between `0x0001 - 0xffff`
-# Implementation specific (`glob` vs `fnmatch` vs `wcmatch`) are found between `0x00010000 - 0xffff0000`
+# Common flags are found between `0x0001 - 0xffffff`
+# Implementation specific (`glob` vs `fnmatch` vs `wcmatch`) are found between `0x01000000 - 0xff000000`
 # Internal special flags are found at `0x100000000` and above
 CASE = 0x0001
 IGNORECASE = 0x0002
@@ -145,6 +145,7 @@ FORCEWIN = 0x10000
 FORCEUNIX = 0x20000
 GLOBTILDE = 0x40000
 NOUNIQUE = 0x80000
+NOSPECIAL = 0x100000
 
 # Internal flag
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
@@ -174,6 +175,7 @@ FLAG_MASK = (
     GLOBTILDE |
     SPLIT |
     NOUNIQUE |
+    NOSPECIAL |
     _TRANSLATE |
     _ANCHOR |
     _EXTMATCHBASE |
@@ -264,6 +266,10 @@ class WcGlob(namedtuple('WcGlob', ['pattern', 'is_magic', 'is_globstar', 'dir_on
 
 class PathNameException(Exception):
     """Path name exception."""
+
+
+class DotException(Exception):
+    """Dot exception."""
 
 
 class PatternLimitException(Exception):
@@ -982,6 +988,7 @@ class WcParse(object):
         self.extmatchbase = bool(flags & _EXTMATCHBASE)
         self.rtl = bool(flags & _RTL)
         self.anchor = bool(flags & _ANCHOR)
+        self.nospecial = bool(flags & NOSPECIAL)
         self.case_sensitive = get_case(flags)
         self.in_list = False
         self.flags = flags
@@ -1161,6 +1168,8 @@ class WcParse(object):
                 subindex = i.index
                 try:
                     value = self._references(i, True)
+                except DotException:
+                    value = re.escape(next(i))
                 except PathNameException:
                     raise StopIteration
                 except StopIteration:
@@ -1234,14 +1243,74 @@ class WcParse(object):
                 i.rewind(1)
             else:
                 value = re.escape(c)
+        elif c == '.':
+            # Let dots be handled special
+            i.rewind(1)
+            raise DotException
         else:
             # \a, \b, \c, etc.
             value = re.escape(c)
-            if c == '.' and self.after_start and self.in_list:
-                self.allow_special_dir = True
-                self.reset_dir_track()
 
         return value
+
+    def _handle_dot(self, i, current):
+        """Handle dot."""
+
+        is_current = True
+        is_previous = False
+
+        if self.after_start and self.pathname:
+            try:
+                index = i.index
+                c = next(i)
+                if c == '.' and is_current:
+                    is_previous = True
+                    is_current = False
+                elif c == '.' and is_previous:
+                    is_previous = False
+                    raise StopIteration
+                elif c == '|' and self.in_list:
+                    raise StopIteration
+                elif c == '\\':
+                    try:
+                        self._references(i, True)
+                        # Was not what we expected
+                        is_current = False
+                        is_previous = False
+                        raise StopIteration
+                    except DotException:
+                        c = next(i)
+                        if is_current:
+                            is_previous = True
+                            is_current = False
+                        elif is_previous:
+                            is_previous = False
+                    except PathNameException:
+                        # Looks like escape was a valid slash
+                        # Store pattern accordingly
+                        raise StopIteration
+                    except StopIteration:
+                        # Ran out of characters so assume backslash
+                        if self.sep != '\\' or not self.pathname:
+                            is_current = False
+                            is_previous = False
+                        raise StopIteration
+                elif c == '/':
+                    if not self.pathname:
+                        is_current = False
+                        is_previous = False
+                    raise StopIteration
+                else:
+                    is_current = False
+                    is_previous = False
+                    raise StopIteration
+            except StopIteration:
+                i.rewind(i.index - index)
+
+        if not is_current or not is_previous:
+            current.append(r'(?!\.[.]?{})\.'.format(self.path_eop))
+        else:
+            current.append(re.escape('.'))
 
     def _handle_star(self, i, current):
         """Handle star."""
@@ -1286,6 +1355,8 @@ class WcParse(object):
                             self._references(i, True)
                             # Was not what we expected
                             # Assume two single stars
+                        except DotException:
+                            pass
                         except PathNameException:
                             # Looks like escape was a valid slash
                             # Store pattern accordingly
@@ -1374,6 +1445,7 @@ class WcParse(object):
         temp_in_list = self.in_list
         temp_inv_ext = self.inv_ext
         self.in_list = True
+
         if reset_dot:
             self.allow_special_dir = False
 
@@ -1395,8 +1467,11 @@ class WcParse(object):
                 elif c == '*':
                     self._handle_star(i, extended)
                 elif c == '.' and self.after_start:
-                    extended.append(re.escape(c))
-                    self.allow_special_dir = True
+                    if self.nospecial:
+                        self._handle_dot(i, current)
+                    else:
+                        extended.append(re.escape(c))
+                    self.allow_special_dir = self.dot and not self.nospecial
                     self.reset_dir_track()
                 elif c == '?':
                     extended.append(self._restrict_sequence() + _QMARK)
@@ -1412,6 +1487,8 @@ class WcParse(object):
                 elif c == '\\':
                     try:
                         extended.append(self._references(i))
+                    except DotException:
+                        continue
                     except StopIteration:
                         # We've reached the end.
                         # Do nothing because this is going to abort the `extmatch` anyways.
@@ -1543,6 +1620,8 @@ class WcParse(object):
             if self.extend and c in EXT_TYPES and self.parse_extend(c, i, current, True):
                 # Nothing to do
                 pass
+            elif c == '.' and self.nospecial and self.after_start:
+                self._handle_dot(i, current)
             elif c == '*':
                 self._handle_star(i, current)
             elif c == '?':
@@ -1565,6 +1644,8 @@ class WcParse(object):
                         self.consume_path_sep(i)
                         self.matchbase = False
                     current.append(value)
+                except DotException:
+                    continue
                 except StopIteration:
                     i.rewind(i.index - index)
                     current.append(re.escape(c))

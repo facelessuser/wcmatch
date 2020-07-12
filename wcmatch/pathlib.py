@@ -1,7 +1,9 @@
 """Pathlib implementation that uses our own glob."""
 import pathlib
 import os
+import re
 from . import glob
+from . import util
 from . import _wcparse
 
 __all__ = (
@@ -28,6 +30,7 @@ X = MATCHBASE = glob.MATCHBASE
 O = NODIR = glob.NODIR
 A = NEGATEALL = glob.NEGATEALL
 Q = NOUNIQUE = glob.NOUNIQUE
+Z = NOSPECIAL = glob.NOSPECIAL
 
 # Internal flags
 _EXTMATCHBASE = _wcparse._EXTMATCHBASE
@@ -36,7 +39,6 @@ _NOABSOLUTE = _wcparse._NOABSOLUTE
 _PATHNAME = _wcparse.PATHNAME
 _FORCEWIN = _wcparse.FORCEWIN
 _FORCEUNIX = _wcparse.FORCEUNIX
-_PATHLIB = glob._PATHLIB
 
 FLAG_MASK = (
     CASE |
@@ -55,10 +57,53 @@ FLAG_MASK = (
     NODIR |
     NEGATEALL |
     NOUNIQUE |
+    NOSPECIAL |
     _EXTMATCHBASE |
     _RTL |
     _NOABSOLUTE
 )
+
+_RE_PATHLIB_STRIP = [
+    re.compile(r'(?:^(?:\./)*|(?:/\.)*(?:/$)?)'),
+    re.compile(br'(?:^(?:\./)*|(?:/\.)*(?:/$)?)')
+
+]
+
+_RE_WIN_PATHLIB_STRIP = [
+    re.compile(r'(?:^(?:\.[\\/])*|(?:[\\/]\.)*(?:[\\/]$)?)'),
+    re.compile(br'(?:^(?:\.[\\/])*|(?:[\\/]\.)*(?:[\\/]$)?)')
+]
+
+
+class _PathlibGlob(glob.Glob):
+    """Specialized glob for `pathlib`."""
+
+    def __init__(self, pattern, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
+        """Initialize."""
+
+        super().__init__(pattern, flags, root_dir, limit)
+
+        if self.flags & _FORCEWIN:
+            self.pathlib_strip = _RE_WIN_PATHLIB_STRIP[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
+        else:
+            self.pathlib_strip = _RE_PATHLIB_STRIP[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
+
+    def is_unique(self, path):
+        """Test if path is unique."""
+
+        if self.nounique:
+            return True
+
+        # `pathlib` will normalize out `.` directories, so when we compare unique paths,
+        # strip out `.` as `parent/./child` and `parent/child` will both appear as
+        # `parent/child` in `pathlib` results.
+        path = self.pathlib_strip.sub(self.empty, path)
+
+        unique = False
+        if (path.lower() if self.case_sensitive else path) not in self.seen:
+            self.seen.add(path)
+            unique = True
+        return unique
 
 
 class Path(pathlib.Path):
@@ -86,8 +131,8 @@ class Path(pathlib.Path):
         """
 
         if self.is_dir():
-            flags = self._translate_flags(flags | _NOABSOLUTE) | _PATHLIB
-            for filename in glob.iglob(patterns, flags=flags, root_dir=str(self), limit=limit):
+            flags = self._translate_flags(flags | _NOABSOLUTE) | NOSPECIAL
+            for filename in _PathlibGlob(util.to_tuple(patterns), flags, str(self), limit).glob():
                 yield self.joinpath(filename)
 
     def rglob(self, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
