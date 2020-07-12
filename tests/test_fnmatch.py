@@ -119,6 +119,7 @@ class TestFnMatch:
         ['*(?|.)abc', '.abc', True, fnmatch.E],
         ['*(?|*)abc', '.abc', True, fnmatch.E],
         ['!(test)', '.abc', True, fnmatch.E],
+        ['!(test)', '..', True, fnmatch.E],
 
         # Turn off `dotmatch` cases
         ['.abc', '.abc', True, fnmatch.D],
@@ -142,6 +143,7 @@ class TestFnMatch:
         ['a*(?|*)bc', 'a.bc', True, fnmatch.E | fnmatch.D],
         ['!(test)', '.abc', False, fnmatch.D | fnmatch.E],
         ['!(test)', 'abc', True, fnmatch.D | fnmatch.E],
+        ['!(test)', '..', False, fnmatch.D | fnmatch.E],
 
         # POSIX style character classes
         ['[[:alnum:]]bc', 'zbc', True, 0],

@@ -1259,55 +1259,54 @@ class WcParse(object):
         is_current = True
         is_previous = False
 
-        if self.after_start and self.pathname:
+        if self.after_start and self.pathname and self.nospecial:
             try:
                 index = i.index
-                c = next(i)
-                if c == '.' and is_current:
-                    is_previous = True
-                    is_current = False
-                elif c == '.' and is_previous:
-                    is_previous = False
-                    raise StopIteration
-                elif c == '|' and self.in_list:
-                    raise StopIteration
-                elif c == '\\':
-                    try:
-                        self._references(i, True)
-                        # Was not what we expected
+                while True:
+                    c = next(i)
+                    if c == '.' and is_current:
+                        is_previous = True
+                        is_current = False
+                    elif c == '.' and is_previous:
+                        is_previous = False
+                        raise StopIteration
+                    elif c in ('|', ')') and self.in_list:
+                        raise StopIteration
+                    elif c == '\\':
+                        try:
+                            self._references(i, True)
+                            # Was not what we expected
+                            is_current = False
+                            is_previous = False
+                            raise StopIteration
+                        except DotException:
+                            if is_current:
+                                is_previous = True
+                                is_current = False
+                                c = next(i)
+                            else:
+                                is_previous = False
+                                raise StopIteration
+                        except PathNameException:
+                            # Looks like escape was a valid slash
+                            # Store pattern accordingly
+                            raise StopIteration
+                        except StopIteration:
+                            # Ran out of characters so assume backslash
+                            if self.sep != '\\' or not self.pathname:
+                                is_current = False
+                                is_previous = False
+                            raise StopIteration
+                    elif c == '/':
+                        raise StopIteration
+                    else:
                         is_current = False
                         is_previous = False
                         raise StopIteration
-                    except DotException:
-                        c = next(i)
-                        if is_current:
-                            is_previous = True
-                            is_current = False
-                        elif is_previous:
-                            is_previous = False
-                    except PathNameException:
-                        # Looks like escape was a valid slash
-                        # Store pattern accordingly
-                        raise StopIteration
-                    except StopIteration:
-                        # Ran out of characters so assume backslash
-                        if self.sep != '\\' or not self.pathname:
-                            is_current = False
-                            is_previous = False
-                        raise StopIteration
-                elif c == '/':
-                    if not self.pathname:
-                        is_current = False
-                        is_previous = False
-                    raise StopIteration
-                else:
-                    is_current = False
-                    is_previous = False
-                    raise StopIteration
             except StopIteration:
                 i.rewind(i.index - index)
 
-        if not is_current or not is_previous:
+        if not is_current and not is_previous:
             current.append(r'(?!\.[.]?{})\.'.format(self.path_eop))
         else:
             current.append(re.escape('.'))
@@ -1466,13 +1465,11 @@ class WcParse(object):
                     pass
                 elif c == '*':
                     self._handle_star(i, extended)
-                elif c == '.' and self.after_start:
-                    if self.nospecial:
-                        self._handle_dot(i, current)
-                    else:
-                        extended.append(re.escape(c))
-                    self.allow_special_dir = self.dot and not self.nospecial
-                    self.reset_dir_track()
+                elif c == '.':
+                    self._handle_dot(i, extended)
+                    if self.after_start:
+                        self.allow_special_dir = self.dot and not self.nospecial
+                        self.reset_dir_track()
                 elif c == '?':
                     extended.append(self._restrict_sequence() + _QMARK)
                 elif c == '/':
@@ -1620,7 +1617,7 @@ class WcParse(object):
             if self.extend and c in EXT_TYPES and self.parse_extend(c, i, current, True):
                 # Nothing to do
                 pass
-            elif c == '.' and self.nospecial and self.after_start:
+            elif c == '.':
                 self._handle_dot(i, current)
             elif c == '*':
                 self._handle_star(i, current)

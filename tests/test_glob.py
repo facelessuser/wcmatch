@@ -966,6 +966,22 @@ class TestHidden(_TestGlob):
                 ('.aa',), ('.bb',), ('.', '.aa', '.')
             ],
             glob.Z | glob.D | glob.S | glob.Q
+        ],
+        # Enable `pathlib` mode to ensure unique across multiple `pathlib` patterns.
+        [
+            ('**', '.*|**', '.', '.aa', '.'),
+            [
+                ('.aa',), ('.bb',)
+            ],
+            glob.Z | glob.D | glob.S | glob._PATHLIB
+        ],
+        # `NOUNIQUE` disables `pathlib` mode unique filtering.
+        [
+            ('**', '.*|**', '.', '.aa', '.'),
+            [
+                ('.aa',), ('.bb',), ('.', '.aa', '.')
+            ],
+            glob.Z | glob.D | glob.S | glob.Q | glob._PATHLIB
         ]
     ]
 

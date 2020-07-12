@@ -22,6 +22,7 @@ IN THE SOFTWARE.
 """
 import os
 import sys
+import re
 import functools
 from . import _wcparse
 from . import util
@@ -62,6 +63,8 @@ Z = NOSPECIAL = _wcparse.NOSPECIAL
 
 K = MARK = 0x1000000
 
+_PATHLIB = 0x8000000
+
 # Internal flags
 _EXTMATCHBASE = _wcparse._EXTMATCHBASE
 _RTL = _wcparse._RTL
@@ -93,6 +96,17 @@ FLAG_MASK = (
     _RTL |
     _NOABSOLUTE
 )
+
+_RE_PATHLIB_STRIP = [
+    re.compile(r'(?:^(?:\./)*|(?:/\.)*(?:/$)?)'),
+    re.compile(br'(?:^(?:\./)*|(?:/\.)*(?:/$)?)')
+
+]
+
+_RE_WIN_PATHLIB_STRIP = [
+    re.compile(r'(?:^(?:\.[\\/])*|(?:[\\/]\.)*(?:[\\/]$)?)'),
+    re.compile(br'(?:^(?:\.[\\/])*|(?:[\\/]\.)*(?:[\\/]$)?)')
+]
 
 
 def _flag_transform(flags):
@@ -136,6 +150,9 @@ class Glob(object):
         self.nodir = bool(flags & NODIR)
         if self.nodir:
             flags ^= NODIR
+        self.pathlib = bool(flags & _PATHLIB)
+        if self.pathlib:
+            flags ^= _PATHLIB
         # Right to left searching is only for matching
         if flags & _RTL:  # pragma: no cover
             flags ^= _RTL
@@ -155,8 +172,10 @@ class Glob(object):
         self._parse_patterns(pattern)
         if self.flags & FORCEWIN:
             self.sep = b'\\' if self.is_bytes else '\\'
+            self.pathlib_strip = _RE_WIN_PATHLIB_STRIP[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
         else:
             self.sep = b'/' if self.is_bytes else '/'
+            self.pathlib_strip = _RE_PATHLIB_STRIP[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
 
     def _iter_patterns(self, patterns):
         """Iterate expanded patterns."""
@@ -448,6 +467,12 @@ class Glob(object):
 
         if self.nounique:
             return True
+
+        if self.pathlib:
+            # `pathlib` will normalize out `.` directories, so when we compare unique paths,
+            # strip out `.` as `parent/./child` and `parent/child` will both appear as
+            # `parent/child` in `pathlib` results.
+            path = self.pathlib_strip.sub(self.empty, path)
 
         unique = False
         if (path.lower() if self.case_sensitive else path) not in self.seen:
