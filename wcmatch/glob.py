@@ -31,7 +31,8 @@ __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE", "NOUNIQUE",
     "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX", "GLOBTILDE",
-    "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T", "Q",
+    "NODOTDIR", "SCANDOTDIR",
+    "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T", "Q", "Z",
     "iglob", "glob", "globmatch", "globfilter", "escape", "raw_escape"
 )
 
@@ -59,9 +60,10 @@ W = FORCEWIN = _wcparse.FORCEWIN
 U = FORCEUNIX = _wcparse.FORCEUNIX
 T = GLOBTILDE = _wcparse.GLOBTILDE
 Q = NOUNIQUE = _wcparse.NOUNIQUE
-Z = NOSPECIAL = _wcparse.NOSPECIAL
+Z = NODOTDIR = _wcparse.NODOTDIR
 
 K = MARK = 0x1000000
+SCANDOTDIR = 0x2000000
 
 _PATHLIB = 0x8000000
 
@@ -91,21 +93,21 @@ FLAG_MASK = (
     FORCEUNIX |
     GLOBTILDE |
     NOUNIQUE |
-    NOSPECIAL |
+    NODOTDIR |
     _EXTMATCHBASE |
     _RTL |
     _NOABSOLUTE
 )
 
 _RE_PATHLIB_STRIP = [
-    re.compile(r'(?:^(?:\./)*|(?:/\.)*(?:/$)?)'),
-    re.compile(br'(?:^(?:\./)*|(?:/\.)*(?:/$)?)')
+    re.compile(r'(?:^(?:\.(?:/|$))+|(?:/\.(?:/?$|(?=/)))+|/$)'),
+    re.compile(br'(?:^(?:\.(?:/|$))+|(?:/\.(?:/?$|(?=/)))+|/$)')
 
 ]
 
 _RE_WIN_PATHLIB_STRIP = [
-    re.compile(r'(?:^(?:\.[\\/])*|(?:[\\/]\.)*(?:[\\/]$)?)'),
-    re.compile(br'(?:^(?:\.[\\/])*|(?:[\\/]\.)*(?:[\\/]$)?)')
+    re.compile(r'(?:^(?:\.(?:[\\/]|$))+|(?:[\\/]\.(?:[\\/]?$|(?=[\\/])))+|[\\/]$)'),
+    re.compile(br'(?:^(?:\.(?:[\\/]|$))+|(?:[\\/]\.(?:[\\/]?$|(?=[\\/])))+|[\\/]$)')
 ]
 
 
@@ -142,6 +144,8 @@ class Glob(object):
         self.root_dir = util.fscodec(root_dir, self.is_bytes) if root_dir is not None else self.current
         self.nounique = bool(flags & NOUNIQUE)
         self.mark = bool(flags & MARK)
+        # Only scan for `.` and `..` if it is specifically requested.
+        scandotdir = flags & SCANDOTDIR
         if self.mark:
             flags ^= MARK
         self.negateall = bool(flags & NEGATEALL)
@@ -157,6 +161,8 @@ class Glob(object):
         if flags & _RTL:  # pragma: no cover
             flags ^= _RTL
         self.flags = _flag_transform(flags | REALPATH)
+        if not scandotdir and not self.flags & NODOTDIR:
+            self.flags |= NODOTDIR
         self.raw_chars = bool(self.flags & RAWCHARS)
         self.follow_links = bool(self.flags & FOLLOW)
         self.dot = bool(self.flags & DOTMATCH)

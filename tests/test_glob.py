@@ -385,7 +385,8 @@ class Testglob(_TestGlob):
         # Glob one directory
         [('a*',), [('a',), ('aab',), ('aaa',)]],
         [('*a',), [('a',), ('aaa',)]],
-        [('.*',), [('.',), ('..',), ('.aa',), ('.bb',)]],
+        [('.*',), [('.',), ('..',), ('.aa',), ('.bb',)], glob.SCANDOTDIR],
+        [('.*',), [('.aa',), ('.bb',)]],
         [('?aa',), [('aaa',)]],
         [('aa?',), [('aaa',), ('aab',)]],
         [('aa[ab]',), [('aaa',), ('aab',)]],
@@ -917,16 +918,16 @@ class TestHidden(_TestGlob):
     """Test hidden specific cases."""
 
     cases = [
-        [('**', '.*'), [('a', '.'), ('a', '..'), ('.aa',), ('.bb',), ('.',), ('..',)]],
-        [('*', '.*'), [('a', '.'), ('a', '..')]],
-        [('.*',), [('.aa',), ('.bb',), ('.',), ('..',)]],
+        [('**', '.*'), [('a', '.'), ('a', '..'), ('.aa',), ('.bb',), ('.',), ('..',)], glob.SCANDOTDIR],
+        [('*', '.*'), [('a', '.'), ('a', '..')], glob.SCANDOTDIR],
+        [('.*',), [('.aa',), ('.bb',), ('.',), ('..',)], glob.SCANDOTDIR],
         [
             ('**', '.*'),
             [
                 ('a', '.'), ('a', '..'), ('.aa',), ('.aa', '.'), ('.aa', '..'),
                 ('.bb',), ('.bb', '.'), ('.bb', '..'), ('.',), ('..',)
             ],
-            glob.D
+            glob.D | glob.SCANDOTDIR
         ],
         [
             ('**', '.*|**', '.', '.aa', '.'),
@@ -934,20 +935,23 @@ class TestHidden(_TestGlob):
                 ('a', '.'), ('a', '..'), ('.aa',), ('.aa', '.'), ('.aa', '..'),
                 ('.bb',), ('.bb', '.'), ('.bb', '..'), ('.',), ('..',), ('.', '.aa', '.')
             ],
-            glob.D | glob.S
+            glob.D | glob.S | glob.SCANDOTDIR
         ],
 
         # Test `pathlib` mode. `pathlib` normalizes out `.` directories, so when evaluating unique values,
         # normalize paths with `.`.
 
         # Prevent matching `.aa` and `.aa/.` (same with `.bb`)
+        [('**', '.*'), [('.aa',), ('.bb',)]],
         [('**', '.*'), [('.aa',), ('.bb',)], glob.Z],
+        [('**', '.*'), [('.aa',), ('.bb',)], glob.SCANDOTDIR | glob.Z],
+
         [
             ('**', '.*'),
             [
                 ('.aa',), ('.bb',)
             ],
-            glob.Z | glob.D
+            glob.D
         ],
         # Prevent matching `.aa/.` and `./.aa/.` as they are all the same as `.aa`
         [
@@ -955,7 +959,7 @@ class TestHidden(_TestGlob):
             [
                 ('.aa',), ('.bb',), ('.', '.aa', '.')
             ],
-            glob.Z | glob.D | glob.S
+            glob.D | glob.S
         ],
         # Unique logic is disabled, so we can match `.aa` from one pattern and `./.aa/.` from another pattern.
         # Duplicates are still restricted from a single pattern, so `.aa/.` is not found in the first pattern as
@@ -965,7 +969,7 @@ class TestHidden(_TestGlob):
             [
                 ('.aa',), ('.bb',), ('.', '.aa', '.')
             ],
-            glob.Z | glob.D | glob.S | glob.Q
+            glob.D | glob.S | glob.Q
         ],
         # Enable `pathlib` mode to ensure unique across multiple `pathlib` patterns.
         [
@@ -973,7 +977,7 @@ class TestHidden(_TestGlob):
             [
                 ('.aa',), ('.bb',)
             ],
-            glob.Z | glob.D | glob.S | glob._PATHLIB
+            glob.D | glob.S | glob._PATHLIB
         ],
         # `NOUNIQUE` disables `pathlib` mode unique filtering.
         [
@@ -981,7 +985,7 @@ class TestHidden(_TestGlob):
             [
                 ('.aa',), ('.bb',), ('.', '.aa', '.')
             ],
-            glob.Z | glob.D | glob.S | glob.Q | glob._PATHLIB
+            glob.D | glob.S | glob.Q | glob._PATHLIB
         ]
     ]
 

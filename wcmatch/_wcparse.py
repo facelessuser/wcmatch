@@ -145,7 +145,7 @@ FORCEWIN = 0x10000
 FORCEUNIX = 0x20000
 GLOBTILDE = 0x40000
 NOUNIQUE = 0x80000
-NOSPECIAL = 0x100000
+NODOTDIR = 0x100000
 
 # Internal flag
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
@@ -175,7 +175,7 @@ FLAG_MASK = (
     GLOBTILDE |
     SPLIT |
     NOUNIQUE |
-    NOSPECIAL |
+    NODOTDIR |
     _TRANSLATE |
     _ANCHOR |
     _EXTMATCHBASE |
@@ -988,7 +988,7 @@ class WcParse(object):
         self.extmatchbase = bool(flags & _EXTMATCHBASE)
         self.rtl = bool(flags & _RTL)
         self.anchor = bool(flags & _ANCHOR)
-        self.nospecial = bool(flags & NOSPECIAL)
+        self.nodotdir = bool(flags & NODOTDIR)
         self.case_sensitive = get_case(flags)
         self.in_list = False
         self.flags = flags
@@ -1259,7 +1259,7 @@ class WcParse(object):
         is_current = True
         is_previous = False
 
-        if self.after_start and self.pathname and self.nospecial:
+        if self.after_start and self.pathname and self.nodotdir:
             try:
                 index = i.index
                 while True:
@@ -1446,7 +1446,7 @@ class WcParse(object):
         self.in_list = True
 
         if reset_dot:
-            self.allow_special_dir = False
+            self.match_dot_dir = False
 
         # Start list parsing
         success = True
@@ -1468,7 +1468,7 @@ class WcParse(object):
                 elif c == '.':
                     self._handle_dot(i, extended)
                     if self.after_start:
-                        self.allow_special_dir = self.dot and not self.nospecial
+                        self.match_dot_dir = self.dot and not self.nodotdir
                         self.reset_dir_track()
                 elif c == '?':
                     extended.append(self._restrict_sequence() + _QMARK)
@@ -1516,7 +1516,7 @@ class WcParse(object):
                 # If pattern is at the end, anchor the match to the end.
                 current.append(_EXCLA_GROUP % ''.join(extended))
                 if self.pathname:
-                    if not temp_after_start or self.allow_special_dir:
+                    if not temp_after_start or self.match_dot_dir:
                         star = self.path_star
                     elif temp_after_start and not self.dot:
                         star = self.path_star_dot2
