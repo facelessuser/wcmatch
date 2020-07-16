@@ -32,7 +32,7 @@ __all__ = (
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE", "NOUNIQUE",
     "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX", "GLOBTILDE",
     "NODOTDIR", "SCANDOTDIR",
-    "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T", "Q", "Z",
+    "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T", "Q", "Z", "SD",
     "iglob", "glob", "globmatch", "globfilter", "escape", "raw_escape"
 )
 
@@ -63,7 +63,7 @@ Q = NOUNIQUE = _wcparse.NOUNIQUE
 Z = NODOTDIR = _wcparse.NODOTDIR
 
 K = MARK = 0x1000000
-SCANDOTDIR = 0x2000000
+SD = SCANDOTDIR = 0x2000000
 
 _PATHLIB = 0x8000000
 
@@ -233,7 +233,7 @@ class Glob(object):
 
         # A single positive pattern will not find multiples of the same file
         # disable unique mode so that we won't waste time or memory computing unique returns.
-        if len(self.pattern) <= 1 and not self.nounique:
+        if len(self.pattern) <= 1 and not self.flags & NODOTDIR and not self.nounique:
             self.nounique = True
 
     def _is_hidden(self, name):

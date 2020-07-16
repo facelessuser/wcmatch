@@ -9,7 +9,7 @@ __all__ = (
     "EXTGLOB", "EXTMATCH", "NEGATE", "MINUSNEGATE", "BRACE",
     "REALPATH", "FOLLOW", "MATCHBASE", "NEGATEALL", "NODIR", "NOUNIQUE",
     "NODOTDIR", "SCANDOTDIR",
-    "C", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A", "Q", "Z",
+    "C", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A", "Q", "Z", "SD",
     "Path", "PurePath", "WindowsPath", "PosixPath", "PurePosixPath", "PureWindowsPath"
 )
 
@@ -31,7 +31,7 @@ A = NEGATEALL = glob.NEGATEALL
 Q = NOUNIQUE = glob.NOUNIQUE
 Z = NODOTDIR = glob.NODOTDIR
 
-SCANDOTDIR = glob.SCANDOTDIR
+SD = SCANDOTDIR = glob.SCANDOTDIR
 
 # Internal flags
 _EXTMATCHBASE = _wcparse._EXTMATCHBASE
