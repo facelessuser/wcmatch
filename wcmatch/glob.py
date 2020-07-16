@@ -99,15 +99,15 @@ FLAG_MASK = (
     _NOABSOLUTE
 )
 
-_RE_PATHLIB_STRIP = [
-    re.compile(r'(?:^(?:\.(?:/|$))+|(?:/\.(?:/?$|(?=/)))+|/$)'),
-    re.compile(br'(?:^(?:\.(?:/|$))+|(?:/\.(?:/?$|(?=/)))+|/$)')
+_RE_PATHLIB_NORM = [
+    re.compile(r'(?:(?:(?:/|^)\.(?:/?$|(?=/)))+|/$)'),
+    re.compile(br'(?:(?:(?:/|^)\.(?:/?$|(?=/)))+|/$)')
 
 ]
 
-_RE_WIN_PATHLIB_STRIP = [
-    re.compile(r'(?:^(?:\.(?:[\\/]|$))+|(?:[\\/]\.(?:[\\/]?$|(?=[\\/])))+|[\\/]$)'),
-    re.compile(br'(?:^(?:\.(?:[\\/]|$))+|(?:[\\/]\.(?:[\\/]?$|(?=[\\/])))+|[\\/]$)')
+_RE_WIN_PATHLIB_NORM = [
+    re.compile(r'(?:(?:(?:[\\/]|^)\.(?:[\\/]?$|(?=[\\/])))+|[\\/]$)'),
+    re.compile(br'(?:(?:(?:[\\/]|^)\.(?:[\\/]?$|(?=[\\/])))+|[\\/]$)')
 ]
 
 
@@ -178,10 +178,10 @@ class Glob(object):
         self._parse_patterns(pattern)
         if self.flags & FORCEWIN:
             self.sep = b'\\' if self.is_bytes else '\\'
-            self.pathlib_strip = _RE_WIN_PATHLIB_STRIP[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
+            self.pathlib_norm = _RE_WIN_PATHLIB_NORM[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
         else:
             self.sep = b'/' if self.is_bytes else '/'
-            self.pathlib_strip = _RE_PATHLIB_STRIP[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
+            self.pathlib_norm = _RE_PATHLIB_NORM[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
 
     def _iter_patterns(self, patterns):
         """Iterate expanded patterns."""
@@ -474,12 +474,6 @@ class Glob(object):
         if self.nounique:
             return True
 
-        if self.pathlib:
-            # `pathlib` will normalize out `.` directories, so when we compare unique paths,
-            # strip out `.` as `parent/./child` and `parent/child` will both appear as
-            # `parent/child` in `pathlib` results.
-            path = self.pathlib_strip.sub(self.empty, path)
-
         unique = False
         if (path.lower() if self.case_sensitive else path) not in self.seen:
             self.seen.add(path)
@@ -490,7 +484,7 @@ class Glob(object):
         """Format path."""
 
         path = os.path.join(path, self.empty) if dir_only or (self.mark and is_dir) else path
-        if self.is_unique(path):
+        if self.is_unique(self.pathlib_norm.sub(self.empty, path) if self.pathlib else path):
             yield path
 
     def glob(self):
