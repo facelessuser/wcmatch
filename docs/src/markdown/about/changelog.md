@@ -1,23 +1,23 @@
 # Changelog
 
-## 6.2
+## 7.0
 
-- **NEW**: When using a pattern such as `.*`, our implementation could return both `.hidden` and `.hidden/.`. `pathlib`
-  normalizes `.` in file paths and will cause both patterns to be normalize to `.hidden`. This causes confusion to users
-  as returned results can have two exact file paths from a singular pattern. `pathlib`'s `rglob` and `glob` now enable
-  the new `NOSPECIAL` flag by default so that `.` and `..` will not be returned with "magic" patterns, only a literal
-  `.` and `..` can cause a path of `.` and `..` to be returned. This will prevent duplicates being returned for a single
-  pattern.
-- **NEW**: Add `NOSPECIAL` flag for `glob` and `pathlib` modules to prevent special directories `.` and `..` from being
-  matched except when they are explicitly defined with a literal pattern. This models Zsh shells behavior and Python's
-  default glob behavior. Patterns such a `.*` will not match `.` or `..`, but `.` and `..` can.
-- **FIX**: A negative extended glob patterns (`!()`) incorrectly allowed for hidden files to be returned when one of the
+- **NEW**: Search functions that crawl the filesystem, such as `glob.glob`, `glob.iglob`, `pathlib.Path.glob`, and
+  `pathlib.Path.rglob`, will no longer return `.` and `..` with magic patterns such as `.*`. A literal pattern of `.`
+  and `..` is required to match the special directories `.` and `..`. `scandir` does not return `.` and `..` by default,
+  and we will not inject them into results unless the new flag `SCANDOTDIR` is enabled.
+- **NEW**: Flag `NODOTDIR` has been added to disable patterns such as `.*` from matching `.` and `..` in matching
+  functions (that don't crawl the filesystem) such as `globmatch`, `pathlib.PurePath.match`, etc. When enabled, matching
+  functions will require a literal pattern of `.` and `..` to match the special directories `.` and `..`.
+- **FIX**: Negative extended glob patterns (`!(...)`) incorrectly allowed for hidden files to be returned when one of the
   subpatterns started with `.`, even when `DOTMATCH`/`DOTGLOB` was not enabled.
-- **FIX**: When `NOUNIQUE` is enabled and `pathlib` is being used, you could still get non-unique results because while
-  `parent/./child` and `parent/child` are unique results, `pathlib` would normalize them both to look like
-  `parent/child` causing two identical patterns to be returned. This was confusing to the user as they appear to be
-  duplicates because all the user can see is the normalized path. Logic was added to filter these types of duplicates
-  when using `pathlib` to ensure only unique results are returned.
+- **FIX**: When `NOUNIQUE` is enabled and `pathlib` is being used, you could still get non-unique results across
+  patterns expanded with `BRACE` or `SPLIT` (or even by simply providing a list of patterns). While `parent/./child` and
+  `parent/child` are unique results, `pathlib` would normalize them both to look like `parent/child` causing two
+  identical patterns to be returned. Also, since `pathlib` will strip trailing slashes, two unique results of `path/`
+  and `path` would get normalized as `path`. This was confusing to the user as they appear to be duplicates because all
+  the user can see is the normalized path, not what they originally were. Logic was added to filter these types of
+  duplicates when using `pathlib` to ensure only unique results are returned.
 
 ## 6.1
 

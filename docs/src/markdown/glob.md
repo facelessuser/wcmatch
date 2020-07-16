@@ -67,8 +67,10 @@ Pattern           | Meaning
   when a literal `.` is used at the start of the pattern (`.*`, `.`, `..`, etc.), `.` and `..` can potentially be
   matched.
 
-- In general, Wildcard Match's behavior is modeled off of Bash's, so unlike Python's default [`glob`][glob], Wildcard
-  Match's `glob` will match and return `.` and `..` in certain cases just like Bash does.
+- In general, Wildcard Match's behavior is modeled off of Bash's, prior to version 7.0, unlike Python's default
+  [`glob`][glob], Wildcard Match's `glob` would match and return `.` and `..` for magic patterns like `.*`. In 7.0 we
+  now avoid returning `.` and `..` in these cases. You can force this Bash-like behavior with the flag
+  [`SCANDOTDIR`](#globscandotdir).
 
     Python's default:
 
@@ -83,7 +85,7 @@ Pattern           | Meaning
     ```pycon3
     >>> from wcmatch import glob
     >>> glob.glob('docs/.*')
-    ['docs/.', 'docs/..']
+    []
     ```
 
     Bash:
@@ -92,6 +94,18 @@ Pattern           | Meaning
     $ echo docs/.*
     docs/. docs/..
     ```
+
+    Bash-like behavior with [`SCANDOTDIR`](#globscandotdir):
+
+    ```pycon3
+    >>> from wcmatch import glob
+    >>> glob.glob('docs/.*', flags=glob.SCANDOTDIR)
+    ['docs/.', 'docs/..']
+    ```
+
+    !!! new "New 7.0"
+        Prior to 7.0 `.` and `..` would get returned with non-literal patterns such as `.*`. This is no longer the
+        default. Legacy behavior can be restored via [`SCANDOTDIR`](#globscandotdir).
 
 --8<-- "posix.txt"
 
@@ -634,6 +648,61 @@ Alternatively `DOTMATCH` will also be accepted for consistency with the other pr
 the same and are provided as a convenience in case the user finds one more intuitive than the other since `DOTGLOB` is
 often the name used in Bash.
 
+#### `glob.NODOTDIR, glob.Z` {: #globnodotdir}
+
+Match functions such as [`globmatch`](#globglobmatch) and [`globfilter`](#globglobfilter) follow bash's behavior and can
+match `.` and `..` in some scenarios with non-literal patterns. For instance, a pattern of `.*` will match both `.` and
+`..`.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.globfilter(['.', '..'], '.*')
+['.', '..']
+```
+
+Searching functions such as as [`glob`](#globglob) and [`iglob`](#globiglob) do not return `.` and `..` in these cases
+by default. If you'd like the match functions to also work this way, you can use `NODOTDIR`. Then only literal patterns
+of `.` and `..` will force a match of these special directories.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.globfilter(['.', '..'], '.*', flags=glob.NODOTDIR)
+[]
+>>> glob.globfilter(['.', '..'], '.', flags=glob.NODOTDIR)
+['.']
+>>> glob.globfilter(['.', '..'], '..', flags=glob.NODOTDIR)
+['..']
+```
+
+!!! new "New 7.0"
+    `NODOTDIR` was added in 7.0.
+
+#### `glob.SCANDOTDIR, glob.SD` {: #globscandotdir}
+
+Searching functions such as as [`glob`](#globglob) and [`iglob`](#globiglob) do not return `.` and `..` when patterns
+like `.*` are used. This is for a couple reasons:
+
+1. 99% of the time, when a user specifies `.*`, they don't actually want [`glob`](#globglob) to return `.` and `..`.
+2. `scandir`, Python's file crawling function, does not return `.` and `..`.
+
+Prior to version 7.0, we used to return `.` and `..` when patterns such as `.*` were used, `SCANDOTDIR` was provided
+to bring back the legacy, Bash-like feel in case it was desired.
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob('.*')
+['.codecov.yml', '.tox', '.coverage', '.coveragerc', '.gitignore', '.github', '.pyspelling.yml', '.git']
+>>> glob.glob('.*', flags=glob.SCANDOTDIR)
+['.', '..', '.codecov.yml', '.tox', '.coverage', '.coveragerc', '.gitignore', '.github', '.pyspelling.yml', '.git']
+```
+
+This flag has no affect when used match functions such as [`globmatch`](#globglobmatch) and
+[`globfilter`](#globglobfilter). Match functions follow the more Bash-like behavior by default (unless
+[`NODOTDIR`](#globnodotdir) is used).
+
+!!! new "New 7.0"
+    `SCANDOTDIR` was added in 7.0.
+
 #### `glob.EXTGLOB, glob.E` {: #globextglob}
 
 `EXTGLOB` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`,
@@ -654,10 +723,10 @@ often the name used in Bash.
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything
 else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
-Redundant, identical patterns are discarded[^1] by default, and `glob` and `iglob` will limit the returned values to
-unique results. If you need [`glob`](#globglob) or [`iglob`](#globiglob) to behave more like Bash and return all
-results, you can set [`NOUNIQUE`](#globnounique). [`NOUNIQUE`](#globnounique) has no effect on matching functions such
-as [`globmatch`](#globglobmatch).
+Duplicate patterns will be discarded[^1] by default, and `glob` and `iglob` will return only unique results. If you need
+[`glob`](#globglob) or [`iglob`](#globiglob) to behave more like Bash and return all results, you can set
+[`NOUNIQUE`](#globnounique). [`NOUNIQUE`](#globnounique) has no effect on matching functions such as
+[`globmatch`](#globglobmatch) and [`globfilter`](#globfilter).
 
 For simple patterns, it may make more sense to use [`EXTGLOB`](#globextglob) which will only generate a single pattern
 which will perform much better: `@(ab|ac|ad)`.
@@ -669,7 +738,7 @@ which will perform much better: `@(ab|ac|ad)`.
     times. Sometimes patterns like this are needed, so construct patterns thoughtfully and carefully.
 
     2. `BRACE` and [`SPLIT`](#globsplit) both expand patterns into multiple patterns. Using these two syntaxes
-    simultaneously can exponential increase in duplicate patterns:
+    simultaneously can exponential increase duplicate patterns:
 
         ```pycon3
         >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
@@ -677,8 +746,8 @@ which will perform much better: `@(ab|ac|ad)`.
         ```
 
         This effect is reduced as redundant, identical patterns are optimized away[^1], but when using crawling
-    functions ([`glob`](#globglob)) *and* [`NOUNIQUE`](#globnounique) of that optimization is removed, and all of those
-    patterns will be crawled. For this reason, especially when using functions like [`glob`](#globglob), it is
+    functions (like [`glob`](#globglob)) *and* [`NOUNIQUE`](#globnounique) that optimization is removed, and all of
+    those patterns will be crawled. For this reason, especially when using functions like [`glob`](#globglob), it is
     recommended to use one syntax or the other.
 
 [^1]: Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
@@ -691,9 +760,14 @@ This is provided to help with some interfaces that might need a way to define mu
 really well with [`EXTGLOB`](#globextglob) and takes into account sequences (`[]`) and extended patterns (`*(...)`) and
 will not parse `|` within them.  You can also escape the delimiters if needed: `\|`.
 
+Duplicate patterns will be discarded[^1] by default, and `glob` and `iglob` will return only unique results. If you need
+[`glob`](#globglob) or [`iglob`](#globiglob) to behave more like Bash and return all results, you can set
+[`NOUNIQUE`](#globnounique). [`NOUNIQUE`](#globnounique) has no effect on matching functions such as
+[`globmatch`](#globglobmatch) and [`globfilter`](#globfilter).
+
 While `SPLIT` is not as powerful as [`BRACE`](#globbrace), it's syntax is very easy to use, and when paired with
-[`EXTGLOB`](#globextglob), it feels natural and comes a bit closer. It also much harder to create massive expansions
-of patterns with it, except when paired *with* [`BRACE`](#globbrace). See [`BRACE`](#globbrace) and it's warnings
+[`EXTGLOB`](#globextglob), it feels natural and comes a bit closer. It is also much harder to create massive expansions
+of patterns with it, except when paired *with* [`BRACE`](#globbrace). See [`BRACE`](#globbrace) and its warnings
 related to pairing it with `SPLIT`.
 
 ```pycon3
@@ -704,7 +778,7 @@ True
 True
 ```
 
-### `glob.NOUNIQUE, glob.Q` {: #globnounique}
+#### `glob.NOUNIQUE, glob.Q` {: #globnounique}
 
 `NOUNIQUE` is used to disable Wildcard Match's unique results return. This mimics Bash's output behavior if that is
 desired.
@@ -720,11 +794,20 @@ desired.
 By default, only unique paths are returned in [`glob`](#globglob) and [`iglob`](#globiglob). Normally this is what a
 programmer would want from such a library, so input patterns are reduced to unique patterns[^1] to reduce excessive
 matching with redundant patterns and excessive crawls through the file system. Also, as two different patterns that have
-been fed into [`glob`](#globglob) may match the same file, the results are also filtered as to not return duplicates.
+been fed into [`glob`](#globglob) may match the same file, the results are also filtered as to not return the
+duplicates.
+
+Unique results is are accomplished by filtering out duplicate patterns and by retaining an internal set of returned
+files to determine duplicates. The internal set of files is not retained if only a single, inclusive pattern is
+provided. Exclusive patterns via [`NEGATE`](#globnegate) will not trigger the logic. Singular inclusive patterns that
+use pattern expansions due to [`BRACE`](#globbrace) or [`SPLIT`](#globsplit) will act as if multiple patterns were
+provided, and will trigger the duplicate filtering logic. This is mentioned as functions such as [`iglob`](#globiglob),
+which normally are expected to not retain results in memory, will be forced to retain a set to ensure unique results if
+multiple inclusive patterns are provided.
 
 `NOUNIQUE` disables all of the aforementioned "unique" optimizations, but only for [`glob`](#globglob) and
 [`iglob`](#globiglob). Functions like [`globmatch`](#globglobmatch) and [`globfilter`](#globglobfilter) would get no
-benefit from disabling "unique" optimizations, they would only run slower, so `NOUNIQUE` will be ignored.
+benefit from disabling "unique" optimizations as they only match what they are given.
 
 !!! new "New in 6.0"
     "Unique" optimizations were added in 6.0, along with `NOUNIQUE`.

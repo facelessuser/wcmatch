@@ -35,52 +35,94 @@ The API is the same as Python's default [`pathlib`][pathlib] except for the few 
 matching:
 
 - Each `pathlib` object's [`glob`](#pathglob), [`rglob`](#pathrglob), and [`match`](#purepathmatch) methods are now
-  driven by the [`wcmatch.glob`](./glob.md) library.
+  driven by the [`wcmatch.glob`](./glob.md) library. As a result, some of the defaults and accepted parameters are
+  different. Also, many new optional features can be enabled via [flags](#flags).
 
-- [`glob`](#pathglob) and [`rglob`](#pathrglob) can take a single string pattern or a list of patterns. They also accept
-  [flags](#flags) via the `flags` keyword. This matches the interfaces found detailed in our [`glob`](./glob.md)
-  documentation.
+- [`glob`](#pathglob), [`rglob`](#pathrglob), and  [`match`](#purepathmatch) can take a single string pattern or a list
+  of patterns. They also accept [flags](#flags) via the `flags` keyword. This matches the interfaces found detailed in
+  our [`glob`](./glob.md) documentation.
 
-- A [`globmatch`](#purepathglobmatch) method has been added to `PurePath` classes (and `Path` classes which are derived
-  from `PurePath`) which is like [`match`](#purepathmatch) except without the right to left behavior. See
+- [`glob`](#pathglob), [`rglob`](#pathrglob), and [`match`](#purepathmatch) do not enable [`GLOBSTAR`](#pathlibglobstar)
+  or [`DOTGLOB`](#pathlibdotglob) by default. These flags must be passed in to take advantage of this functionality.
+
+- A [`globmatch`](#purepathglobmatch) function has been added to `PurePath` classes (and `Path` classes which are
+  derived from `PurePath`) which is like [`match`](#purepathmatch) except without the right to left behavior. See
   [`match`](#purepathmatch) and [`globmatch`](purepathglobmatch) for more information.
 
-- [`glob`](#pathglob) and [`rglob`](#pathrglob) do not enable [`GLOBSTAR`](#pathlibglobstar) or
-  [`DOTGLOB`](#pathlibdotglob) by default. These flags must be passed in to take advantage of this functionality.
+- If file searching methods ([`glob`](#pathglob) and [`rglob`](#pathrglob)) are given multiple patterns, they will
+  ensure duplicate results are filtered out. This only occurs when more than one inclusive pattern are given, or a
+  pattern is expanded into multiple, inclusive patterns via [`BRACE`](#pathlibbrace) or [`SPLIT`](#pathlibsplit). When
+  this occurs, an internal set is kept internally to track the results returned so that duplicates can be filtered.
+  This will not occur if only a singular inclusive pattern is given or the [`NOUNIQUE`](#pathlibnounique) is specified.
 
-- Python's [`pathlib`][pathlib], when using `match` has logic to ignore `.` when used as a directory. In our
-  implementation, `.` explicitly matches a path with `.` as a directory part. Since [`pathlib`][pathlib] normalizes
-  paths by removing `.` directories, there is really no reason to use them in your patterns. If you expect `.`, when
-  used as a directory, to be ignored, then this is a difference you should be aware of.
+- Python's [`pathlib`][pathlib], has logic to ignore `.` when used as a directory in both the file path and glob
+  pattern. We do not alter how [`pathlib`][pathlib] stores paths, but our implementation allows explicit use of `.` as a
+  literal directory and will match accordingly. With that said, since [`pathlib`][pathlib] normalizes paths by removing
+  `.` directories, in most cases you won't notice the difference, except when it comes to a path that is literally just
+  `.`.
 
-    Our behavior mirrors Bash in that when you glob with `.` your paths are returned with `.`. And when you don't, the
-    path's are returned without:
+    Python's default glob:
 
-    ```console
-    $ echo ./wcmatch/*.py
-    ./wcmatch/__init__.py ./wcmatch/__meta__.py ./wcmatch/_wcparse.py ./wcmatch/fnmatch.py ./wcmatch/glob.py ./wcmatch/pathlib.py ./wcmatch/util.py ./wcmatch/wcmatch.py
+    ```pycon3
+    >>> import pathlib
+    >>> list(pathlib.Path('.').glob('docs/./src'))
+    [PosixPath('docs/src')]
     ```
 
-    ```console
-    $ echo wcmatch/*.py
-    wcmatch/__init__.py wcmatch/__meta__.py wcmatch/_wcparse.py wcmatch/fnmatch.py wcmatch/glob.py wcmatch/pathlib.py wcmatch/util.py wcmatch/wcmatch.py
+    Ours:
+
+    ```pycon3
+    >>> form wcmatch import pathlib
+    >>> list(pathlib.Path('.').glob('docs/./src'))
+    [PosixPath('docs/src')]
     ```
 
-    [`globmatch`](./glob.md#globglobmatch)'s goal, which [`match`](#purepathmatch) uses, is to match what
-    [`glob`](./glob.md#globglob) globs. So when you use [`match`](#purepathmatch) with a `.`, you are requesting a path
-    where `.` is explicitly used.
+    Python's default glob:
+
+    ```pycon3
+    >>> import pathlib
+    >>> pathlib.Path('.').match('.')
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "/usr/local/Cellar/python@3.8/3.8.3/Frameworks/Python.framework/Versions/3.8/lib/python3.8/pathlib.py", line 976, in match
+        raise ValueError("empty pattern")
+    ValueError: empty pattern
+    ```
+
+    Ours:
+
+    ```pycon3
+    >>> from wcmatch import pathlib
+    >>> pathlib.Path('.').match('.')
+    True
+    ```
 
 ### Similarities
 
-As far as similarities, all non-glob related methods should behave exactly like Python's as our version is derived from
-theirs. [`glob`](#pathglob), [`rglob`](#pathrglob), and [`match`](#purepathmatch) should mimic the basic behavior of
-Python's original [`pathlib`][pathlib] library as well, just with the enhancements and configurability that Wildcard
-Match's [`glob`](./glob.md) provides:
+- [`glob`](#pathglob), [`rglob`](#pathrglob), and [`match`](#purepathmatch) should mimic the basic behavior of
+  Python's original [`pathlib`][pathlib] library, just with the enhancements and configurability that Wildcard
+  Match's [`glob`](./glob.md) provides.
 
 - [`glob`](#pathglob) and [`rglob`](#pathrglob) will yield an iterator of the results.
 
-- [`rglob`](#pathrglob) and [`match`](#purepathmatch) will exhibit the same *recursive* type behavior as the original
-  implementation.
+- [`rglob`](#pathrglob) will exhibit the same *recursive* behavior.
+
+- [`match`](#purepathmatch) will exhibit the same right to left behavior.
+
+- Prior to version 7.0, Wildcard Match used to return `.` and `..` in [`glob`](#pathglob) and [`rglob`](#pathrglob) when
+  wildcard patterns such as `.*` were used. This created some confusion as while Wildcard Match may return `.hidden` and
+  `.hidden/.` with a pattern like `**/.*`, `pathlib` would normalize both of these paths to `.hidden`. This made it
+  difficult for users to understand why `.hidden` was matched twice.  Even more confusing to users was when `**/.*`
+  would match `not-hidden/.` but be returned normailzed as `not-hidden`.
+
+    From 7.0 and beyond, [`glob`](#pathglob) and [`rglob`](#pathrglob) will no longer return `.` and `..` unless a
+    literal `.` and `..` pattern are used. This matches Python's default pathlib functionality and is generally less
+    confusing to the user. You can enable the legacy behavior with [`SCANDOTDIR`](#pathlibscandotdir) if desired, but
+    all the mentioned side effects will be present.
+
+    !!! new "New 7.0"
+        [`glob`](#pathglob) and [`rglob`](#pathrglob) now only return `.` and `..` when literal patterns of `.` and
+        `..` are used.
 
 ## Classes
 
@@ -426,6 +468,68 @@ Alternatively `DOTMATCH` will also be accepted for consistency with the other pr
 the same and are provided as a convenience in case the user finds one more intuitive than the other since `DOTGLOB` is
 often the name used in Bash.
 
+#### `pathlib.NODOTDIR, glob.Z` {: #pathibnodotdir}
+
+Match functions such as [`match`](#purepathmatch) and [`globmatch`](#purepathglobmatch) follow bash's behavior and can
+match `.` and `..` in some scenarios with non-literal patterns. For instance, a pattern of `.*` will match both `.` and
+`..`.
+
+```pycon3
+>>> from wcmatch import pathlib
+>>> pathlib.Path('..').match('.*')
+True
+```
+
+Searching functions such as as [`glob`](#pathglob) and [`rglob`](#pathrglob) do not return `.` and `..` in these cases
+by default. If you'd like the match functions to also work this way, you can use `NODOTDIR`. Then only literal patterns
+of `.` and `..` will force a match of these special directories.
+
+```pycon3
+>>> from wcmatch import glob
+>>> pathlib.Path('..').match('.*', flags=pathlib.NODOTDIR)
+False
+>>> pathlib.Path('..').match('..', flags=pathlib.NODOTDIR)
+True
+```
+
+!!! new "New 7.0"
+    `NODOTDIR` was added in 7.0.
+
+#### `pathlib.SCANDOTDIR, pathlib.SD` {: #pathlibscandotdir}
+
+!!! warning "Not recommended for `pathlib`"
+    `pathlib` supports all of the same flags that the [`wcmatch.glob`](./glob.md) library does. But due to how
+    `pathlib` normalizes the paths that get returned, enabling `SCANDOTDIR` will only give confusing duplicates if using
+    patterns such as `.*`. This is not a bug, but is something to be aware of.
+
+Searching functions such as as [`glob`](#pathglob) and [`rglob`](#pathrglob) do not return `.` and `..` when patterns
+like `.*` are used. This is for a couple reasons:
+
+1. 99% of the time, when a user specifies `.*`, they don't actually want [`glob`](#pathglob) to return `.` and `..`.
+2. `scandir`, Python's file crawling function, does not return `.` and `..`.
+3. `pathlib` normalizes paths by stripping out `.`. So when using [`glob`](#pathglob), you might use a pattern to find
+   hidden files `**/.*` and get both `.hidden` and `.hidden/.`. `pathlib` will then normalize the paths and return two
+   `.hidden` results. This is very confusing to users.
+
+Prior to version 7.0, we used to return `.` and `..` when patterns such as `.*` were used, `SCANDOTDIR` was provided
+to bring back the legacy, Bash-like feel in case it was desired. But as noted above, the results, due to file path
+normalization, may be surprising.
+
+```pycon3
+>>> from wcmatch import pathlib
+>>> list(pathlib.Path('.').glob('.*'))
+[PosixPath('.codecov.yml'), PosixPath('.tox'), PosixPath('.coverage'), PosixPath('.coveragerc'), PosixPath('.gitignore'), PosixPath('.github'), PosixPath('.pyspelling.yml'), PosixPath('.git')]
+>>> glob.glob('.*', flags=glob.SCANDOTDIR)
+['.', '..', '.codecov.yml', '.tox', '.coverage', '.coveragerc', '.gitignore', '.github', '.pyspelling.yml', '.git']
+```
+
+This flag has no affect when used match functions such as [`globmatch`](#globglobmatch) and
+[`globfilter`](#globglobfilter). Match functions follow the more Bash-like behavior by default (unless
+[`NODOTDIR`](#globnodotdir) is used).
+
+!!! new "New 7.0"
+    `SCANDOTDIR` was added in 7.0.
+
 #### `pathlib.EXTGLOB, pathlib.E` {: #pathlibextglob}
 
 `EXTGLOB` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`,
@@ -446,13 +550,13 @@ often the name used in Bash.
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything
 else. When applied, a pattern will be expanded into multiple patterns. Each pattern will then be parsed separately.
 
-Redundant, identical patterns are discarded[^1] by default, and `glob` and `iglob` will limit the returned values to
-unique results. If you need [`glob`](#pathglob) or [`iglob`](#pathrglob) to behave more like Bash and return all
+Duplicate patterns will be discarded[^1] by default, and [`glob`](#pathglob) and [`rglob`](#pathrglob) will return only
+unique results. If you need [`glob`](#pathglob) or [`rglob`](#pathrglob) to behave more like Bash and return all
 results, you can set [`NOUNIQUE`](#pathlibnounique). [`NOUNIQUE`](#pathlibnounique) has no effect on matching functions
-such as [`globmatch`](#purepathglobmatch).
+such as [`globmatch`](#purepathglobmatch) and [`match`](#purepathmatch).
 
-For simple patterns, it may make more sense to use [`EXTGLOB`](#pathlibextglob) which will only generate a single pattern
-which will perform much better: `@(ab|ac|ad)`.
+For simple patterns, it may make more sense to use [`EXTGLOB`](#pathlibextglob) which will only generate a single
+pattern which will perform much better: `@(ab|ac|ad)`.
 
 !!! warning "Massive Expansion Risk"
     1. It is important to note that each pattern is crawled separately, so patterns such as `{1..100}` would generate
@@ -461,7 +565,7 @@ which will perform much better: `@(ab|ac|ad)`.
     hundred times. Sometimes patterns like this are needed, so construct patterns thoughtfully and carefully.
 
     2. `BRACE` and [`SPLIT`](#pathlibsplit) both expand patterns into multiple patterns. Using these two syntaxes
-    simultaneously can exponential increase in duplicate patterns:
+    simultaneously can exponential increase duplicate patterns:
 
         ```pycon3
         >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
@@ -469,8 +573,8 @@ which will perform much better: `@(ab|ac|ad)`.
         ```
 
         This effect is reduced as redundant, identical patterns are optimized away[^1], but when using crawling
-    functions ([`glob`](#pathglob)) *and* [`NOUNIQUE`](#pathlibnounique) of that optimization is removed, and all of
-    those patterns will be crawled. For this reason, especially when using functions like [`glob`](#pathglob), it is
+    functions (like in [`glob`](#pathglob)) *and* [`NOUNIQUE`](#pathlibnounique) that optimization is removed, and all
+    of those patterns will be crawled. For this reason, especially when using functions like [`glob`](#pathglob), it is
     recommended to use one syntax or the other.
 
 [^1]: Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
@@ -480,13 +584,18 @@ which will perform much better: `@(ab|ac|ad)`.
 
 `SPLIT` is used to take a string of multiple patterns that are delimited by `|` and split them into separate patterns.
 This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It pairs
-really well with [`EXTGLOB`](#pathlibextglob) and takes into account sequences (`[]`) and extended patterns (`*(...)`) and
-will not parse `|` within them.  You can also escape the delimiters if needed: `\|`.
+really well with [`EXTGLOB`](#pathlibextglob) and takes into account sequences (`[]`) and extended patterns (`*(...)`)
+and will not parse `|` within them.  You can also escape the delimiters if needed: `\|`.
+
+Duplicate patterns will be discarded[^1] by default, and [`glob`](#pathglob) and [`rglob`](#pathrglob) will return only
+unique results. If you need [`glob`](#pathglob) or [`rglob`](#pathrglob) to behave more like Bash and return all
+results, you can set [`NOUNIQUE`](#pathlibnounique). [`NOUNIQUE`](#pathlibnounique) has no effect on matching functions
+such as [`globmatch`](#purepathglobmatch) and [`match`](#purepathmatch).
 
 While `SPLIT` is not as powerful as [`BRACE`](#pathlibbrace), it's syntax is very easy to use, and when paired with
-[`EXTGLOB`](#pathlibextglob), it feels natural and comes a bit closer. It also much harder to create massive expansions
-of patterns with it, except when paired *with* [`BRACE`](#pathlibbrace). See [`BRACE`](#pathlibbrace) and it's warnings
-related to pairing it with `SPLIT`.
+[`EXTGLOB`](#pathlibextglob), it feels natural and comes a bit closer. It is also much harder to create massive
+expansions of patterns with it, except when paired *with* [`BRACE`](#pathlibbrace). See [`BRACE`](#pathlibbrace) and
+its warnings related to pairing it with `SPLIT`.
 
 ```pycon3
 >>> from wcmatch import pathlib
@@ -494,7 +603,7 @@ related to pairing it with `SPLIT`.
 [WindowsPath('README.md'), WindowsPath('LICENSE.md')]
 ```
 
-### `pathlib.NOUNIQUE, pathlib.Q` {: #pathlibnounique}
+#### `pathlib.NOUNIQUE, pathlib.Q` {: #pathlibnounique}
 
 `NOUNIQUE` is used to disable Wildcard Match's unique results return. This mimics Bash's output behavior if that is
 desired.
@@ -510,11 +619,20 @@ desired.
 By default, only unique paths are returned in [`glob`](#pathglob) and [`rglob`](#pathrglob). Normally this is what a
 programmer would want from such a library, so input patterns are reduced to unique patterns[^1] to reduce excessive
 matching with redundant patterns and excessive crawls through the file system. Also, as two different patterns that have
-been fed into [`glob`](#pathglob) may match the same file, the results are also filtered as to not return duplicates.
+been fed into [`glob`](#pathglob) may match the same file, the results are also filtered as to not return the
+duplicates.
+
+Unique results are accomplished by filtering out duplicate patterns and by retaining an internal set of returned files
+to determine duplicates. The internal set of files is not retained if only a single, inclusive pattern is provided.
+Exclusive patterns via [`NEGATE`](#pathlibnegate) will not trigger the logic, but singular inclusive patterns that use
+pattern expansions due to [`BRACE`](#pathlibbrace) or [`SPLIT`](#pathlibsplit) will act as if multiple patterns were
+provided, and will trigger the duplicate filtering logic. Lastly, if [`SCANDOTDIR`](#pathlibscandotdir) is enabled, even
+singular inclusive patterns will trigger duplicate filtering logic to protect against cases where `pathlib` will
+normalize two unique results to be the same path, such as `.hidden` and `.hidden/.` which get normalized to `.hidden`.
 
 `NOUNIQUE` disables all of the aforementioned "unique" optimizations, but only for [`glob`](#globglob) and
 [`rglob`](#pathrglob). Functions like [`globmatch`](#purepathglobmatch) and [`match`](#purepathmatch) would get no
-benefit from disabling "unique" optimizations, they would only run slower, so `NOUNIQUE` will be ignored.
+benefit from disabling "unique" optimizations as they only match what they are given.
 
 !!! new "New in 6.0"
     "Unique" optimizations were added in 6.0, along with `NOUNIQUE`.
