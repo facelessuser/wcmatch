@@ -2,6 +2,10 @@
 
 ## 7.0
 
+- **NEW**: Recognize extended UNC, such as: `//?/UNC/server/mount`, `//?/UNC/c:`, etc.
+- **NEW**: Allow escaping any character in Windows drives for better compatibility with `SPLIT` and `BRACE` which
+  requires a user to escape `{`, `}` and `|` to avoid expanding a pattern.
+- **NEW**: `raw_escape` now accepts the `raw_chars` parameter so that translation of Python raw escapes can be disabled.
 - **NEW**: Search functions that crawl the filesystem, such as `glob.glob`, `glob.iglob`, `pathlib.Path.glob`, and
   `pathlib.Path.rglob`, will no longer return `.` and `..` with magic patterns such as `.*`. A literal pattern of `.`
   and `..` is required to match the special directories `.` and `..`. `scandir` does not return `.` and `..` by default,
@@ -18,21 +22,17 @@
   and `path` would get normalized as `path`. This was confusing to the user as they appear to be duplicates because all
   the user can see is the normalized path, not what they originally were. Logic was added to filter these types of
   duplicates when using `pathlib` to ensure only unique results are returned.
+- **FIX**: Fix corner cases with `escape` and `raw_escape` with back slashes.
+- **FIX**: Ensure that `globmatch` does not match `test//` with pattern `test/*`.
 
 ## 6.1
 
-- **NEW**: Recognize extended UNC, such as: `//?/UNC/server/mount`, `//?/UNC/c:`, etc.
-- **NEW**: Allow escaping any character in Windows drives for better compatibility with `SPLIT` and `BRACE` which
-  requires a user to escape `{`, `}` and `|` to avoid expanding a pattern.
-- **NEW**: `raw_escape` now accepts the `raw_chars` parameter so that translation of Python raw escapes can be disabled.
 - **NEW**: `EXTMATCH`/`EXTGLOB` can now be used with `NEGATE` without needing `MINUSNEGATE`. If a pattern starts with
   `!(`, and `NEGATE` and `EXTMATCH`/`EXTGLOB` are both enabled, the pattern will not be treated as a `NEGATE` pattern
   (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate a pattern that starts with a literal `(`, you must
   escape the bracket: `!\(`.
 - **FIX**: Support Python 3.9.
 - **FIX**: Adjust pattern limit logic of `glob` to be consistent with other functions.
-- **BUG**: Fix corner cases with `escape` and `raw_escape` with back slashes.
-- **BUG**: Ensure that `globmatch` does not match `test//` with pattern `test/*`.
 
 ## 6.0.3
 

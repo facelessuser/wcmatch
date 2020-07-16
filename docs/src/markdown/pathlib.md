@@ -113,10 +113,10 @@ matching:
   wildcard patterns such as `.*` were used. This created some confusion as while Wildcard Match may return `.hidden` and
   `.hidden/.` with a pattern like `**/.*`, `pathlib` would normalize both of these paths to `.hidden`. This made it
   difficult for users to understand why `.hidden` was matched twice.  Even more confusing to users was when `**/.*`
-  would match `not-hidden/.` but be returned normailzed as `not-hidden`.
+  would match `not-hidden/.` but be returned normalized as `not-hidden`.
 
     From 7.0 and beyond, [`glob`](#pathglob) and [`rglob`](#pathrglob) will no longer return `.` and `..` unless a
-    literal `.` and `..` pattern are used. This matches Python's default pathlib functionality and is generally less
+    literal `.` and `..` pattern are used. This matches Python's default `pathlib` functionality and is generally less
     confusing to the user. You can enable the legacy behavior with [`SCANDOTDIR`](#pathlibscandotdir) if desired, but
     all the mentioned side effects will be present.
 
