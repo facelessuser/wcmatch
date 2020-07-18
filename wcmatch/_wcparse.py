@@ -299,10 +299,10 @@ class PatternLimitException(Exception):
     """Pattern limit exception."""
 
 
-def raw_escape(pattern, unix=None):
+def raw_escape(pattern, unix=None, raw_chars=True):
     """Apply raw character transform before applying escape."""
 
-    return _escape(util.norm_pattern(pattern, False, True), unix, True)
+    return _escape(util.norm_pattern(pattern, False, raw_chars), unix, True)
 
 
 def escape(pattern, unix=None):
