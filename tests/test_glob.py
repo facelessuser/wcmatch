@@ -1057,8 +1057,8 @@ class TestGlobEscapes(unittest.TestCase):
         check('[', r'\[')
         check('?', r'\?')
         check('*', r'\*')
-        check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_]]')
-        check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_]]/')
+        check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_\]\]')
+        check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_\]\]/')
 
     def test_raw_escape(self):
         """Test path escapes."""
@@ -1068,8 +1068,8 @@ class TestGlobEscapes(unittest.TestCase):
         check('[', r'\[', raw=True)
         check('?', r'\?', raw=True)
         check('*', r'\*', raw=True)
-        check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_]]', raw=True)
-        check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_]]/', raw=True)
+        check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_\]\]', raw=True)
+        check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_\]\]/', raw=True)
         check(r'\x3f', r'\?', raw=True)
 
     @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
@@ -1079,8 +1079,8 @@ class TestGlobEscapes(unittest.TestCase):
         check = self.check_escape
         check('a:\\?', r'a:\\\?')
         check('b:\\*', r'b:\\\*')
-        check(r'\\\\?\\c:\\?', r'\\\\?\\c:\\\?')
-        check(r'\\\\*\\*\\*', r'\\\\*\\*\\\*')
+        check('\\\\?\\c:\\?', r'\\\\?\\c:\\\?')
+        check('\\\\*\\*\\*', r'\\\\*\\*\\\*')
         check('//?/c:/?', r'//?/c:/\?')
         check('//*/*/*', r'//*/*/\*')
 
@@ -1090,8 +1090,8 @@ class TestGlobEscapes(unittest.TestCase):
         check = self.check_escape
         check('a:\\?', r'a:\\\?', unix=False)
         check('b:\\*', r'b:\\\*', unix=False)
-        check(r'\\\\?\\c:\\?', r'\\\\?\\c:\\\?', unix=False)
-        check(r'\\\\*\\*\\*', r'\\\\*\\*\\\*', unix=False)
+        check('\\\\?\\c:\\?', r'\\\\?\\c:\\\?', unix=False)
+        check('\\\\*\\*\\*', r'\\\\*\\*\\\*', unix=False)
         check('//?/c:/?', r'//?/c:/\?', unix=False)
         check('//*/*/*', r'//*/*/\*', unix=False)
 
@@ -1101,8 +1101,8 @@ class TestGlobEscapes(unittest.TestCase):
         check = self.check_escape
         check('a:\\?', r'a:\\\?', unix=True)
         check('b:\\*', r'b:\\\*', unix=True)
-        check(r'\\\\?\\c:\\?', r'\\\\\\\\\?\\\\c:\\\\\?', unix=True)
-        check(r'\\\\*\\*\\*', r'\\\\\\\\\*\\\\\*\\\\\*', unix=True)
+        check('\\\\?\\c:\\?', r'\\\\\?\\c:\\\?', unix=True)
+        check('\\\\*\\*\\*', r'\\\\\*\\\*\\\*', unix=True)
         check('//?/c:/?', r'//\?/c:/\?', unix=True)
         check('//*/*/*', r'//\*/\*/\*', unix=True)
 

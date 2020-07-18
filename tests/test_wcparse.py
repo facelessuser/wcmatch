@@ -114,16 +114,15 @@ class TestWcparse(unittest.TestCase):
     def test_unc_pattern(self):
         """Test UNC pattern."""
 
-        self.assertEqual(_wcparse.RE_WIN_PATH[0].match('//?/UNC/server/mount').group(0), '//?/UNC/server/mount')
-        self.assertEqual(_wcparse.RE_WIN_PATH[0].match('//?/UNC/server/mount/').group(0), '//?/UNC/server/mount/')
-        self.assertEqual(_wcparse.RE_WIN_PATH[0].match('//?/UNC/server/mount/path').group(0), '//?/UNC/server/mount/')
-        # Python doesn't support `//./UNC/server/mount`. Not sure why, but we'll mimic what they do.
-        self.assertEqual(_wcparse.RE_WIN_PATH[0].match('//./UNC/server/mount/path').group(0), '//./UNC/')
-        self.assertEqual(_wcparse.RE_WIN_PATH[0].match('//?/UNC/c:').group(0), '//?/UNC/')
-        self.assertEqual(_wcparse.RE_WIN_PATH[0].match('//?/UNC/c:/').group(0), '//?/UNC/')
-        self.assertEqual(_wcparse.RE_WIN_PATH[0].match('//?/c:').group(0), '//?/c:')
-        self.assertEqual(_wcparse.RE_WIN_PATH[0].match('//?/c:/').group(0), '//?/c:/')
-        self.assertEqual(_wcparse.RE_WIN_PATH[0].match('//?/what').group(0), '//?/what')
-        self.assertEqual(_wcparse.RE_WIN_PATH[0].match('//server/mount').group(0), '//server/mount')
-        self.assertEqual(_wcparse.RE_WIN_PATH[0].match('//server/mount/').group(0), '//server/mount/')
-        self.assertIsNone(_wcparse.RE_WIN_PATH[0].match('//server'))
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//?/UNC/server/mount').group(0), '//?/UNC/server/mount')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//?/UNC/server/mount/').group(0), '//?/UNC/server/mount/')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//?/UNC/server/mount/path').group(0), '//?/UNC/server/mount/')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//./UNC/server/mount/path').group(0), '//./UNC/server/mount/')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//?/UNC/c:').group(0), '//?/UNC/')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//?/UNC/c:/').group(0), '//?/UNC/')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//?/c:').group(0), '//?/c:')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//?/c:/').group(0), '//?/c:/')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//?/what').group(0), '//?/what')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//server/mount').group(0), '//server/mount')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//server/mount/').group(0), '//server/mount/')
+        self.assertIsNone(_wcparse.RE_WIN_DRIVE[0].match('//server'))

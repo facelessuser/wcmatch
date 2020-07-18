@@ -2,13 +2,15 @@
 
 ## 6.1
 
-- **NEW**: Recognize extended UNC in the form `//?/UNC/server/mount` and `//?/UNC/c:`.
+- **NEW**: Recognize extended UNC, such as: `//?/UNC/server/mount`, `//?/UNC/c:`, etc.
+- **NEW**: Allow escaping `{`, `}` and `|` in Windows drives for better compatibility with `SPLIT` and `BRACE`.
 - **NEW**: `EXTMATCH`/`EXTGLOB` can now be used with `NEGATE` without needing `MINUSNEGATE`. If a pattern starts with
   `!(`, and `NEGATE` and `EXTMATCH`/`EXTGLOB` are both enabled, the pattern will not be treated as a `NEGATE` pattern
   (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate a pattern that starts with a literal `(`, you must
   escape the bracket: `!\(`.
 - **FIX**: Support Python 3.9.
 - **FIX**: Adjust pattern limit logic of `glob` to be consistent with other functions.
+- **BUG**: Fix corner cases with `escape` and `raw_escape` with back slashes.
 
 ## 6.0.3
 

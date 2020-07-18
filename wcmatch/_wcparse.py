@@ -34,33 +34,83 @@ BYTES = 1
 
 PATTERN_LIMIT = 1000
 
-RE_WIN_PATH = (
+RE_WIN_DRIVE_ESCAPED = (
     re.compile(
         r'''(?x)
         (
-            (?:\\\\|/){2}[?](?:\\\\|/)(?:[A-Za-z]:|UNC(?:(?:\\\\|/)[^\\/]+){2}) |
-            (?:\\\\|/){2}[^\\/]+(?:\\\\|/)[^\\/]+|
-            [A-Za-z]:
+            (?:\\\\|/){2}[?.](?:\\\\|/)(?:
+                [a-z]:|
+                unc(?:(?:\\\\|/)(?:\\[{}|]|[^\\/])+){2} |
+                (?:global(?:\\\\|/))+(?:[a-z]:|unc(?:(?:\\\\|/)(?:\\[{}|]|[^\\/])+){2}|[^\\/]+)
+            ) |
+            (?:\\\\|/){2}(?:\\[{}|]|[^\\/])+(?:\\\\|/)(?:\\[{}|]|[^\\/])+|
+            [a-z]:
         )((?:\\\\|/){1}|$)
-        '''
+        ''',
+        re.I
     ),
     re.compile(
         br'''(?x)
         (
-            (?:\\\\|/){2}[?](?:\\\\|/)(?:[A-Za-z]:|UNC(?:(?:\\\\|/)[^\\/]+){2}) |
-            (?:\\\\|/){2}[^\\/]+(?:\\\\|/)[^\\/]+|
-            [A-Za-z]:
+            (?:\\\\|/){2}[?.](?:\\\\|/)(?:
+                [a-z]:|
+                unc(?:(?:\\\\|/)(?:\\[{}|]|[^\\/])+){2} |
+                (?:global(?:\\\\|/))+(?:[a-z]:|unc(?:(?:\\\\|/)(?:\\[{}|]|[^\\/])+){2}|[^\\/]+)
+            ) |
+            (?:\\\\|/){2}(?:\\[{}|]|[^\\/])+(?:\\\\|/)(?:\\[{}|]|[^\\/])+|
+            [a-z]:
         )((?:\\\\|/){1}|$)
-        '''
+        ''',
+        re.I
     )
 )
-RE_WIN_MAGIC = (
-    re.compile(r'([-!~*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))'),
-    re.compile(br'([-!~*?(\[|^{]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
+
+RE_WIN_DRIVE = (
+    re.compile(
+        r'''(?x)
+        (
+            (?:\\\\|/){2}[?.](?:\\\\|/)(?:
+                [a-z]:|
+                unc(?:(?:\\\\|/)[^\\/]+){2} |
+                (?:global(?:\\\\|/))+(?:[a-z]:|unc(?:(?:\\\\|/)[^\\/]+){2}|[^\\/]+)
+            ) |
+            (?:\\\\|/){2}[^\\/]+(?:\\\\|/)[^\\/]+|
+            [a-z]:
+        )((?:\\\\|/){1}|$)
+        ''',
+        re.I
+    ),
+    re.compile(
+        br'''(?x)
+        (
+            (?:\\\\|/){2}[?.](?:\\\\|/)(?:
+                [a-z]:|
+                unc(?:(?:\\\\|/)[^\\/]+){2} |
+                (?:global(?:\\\\|/))+(?:[a-z]:|unc(?:(?:\\\\|/)[^\\/]+){2}|[^\\/]+)
+            ) |
+            (?:\\\\|/){2}[^\\/]+(?:\\\\|/)[^\\/]+|
+            [a-z]:
+        )((?:\\\\|/){1}|$)
+        ''',
+        re.I
+    )
+)
+
+RE_WIN_DRIVE_UNESCAPE = (
+    re.compile(r'\\([\\{}|])'),
+    re.compile(br'\\([\\{}|])')
+)
+RE_MAGIC_ESCAPE = (
+    re.compile(r'([-!~*?()\[\]|^{}]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))'),
+    re.compile(br'([-!~*?()\[\]|^{}]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
 )
 RE_MAGIC = (
     re.compile(r'([-!~*?(\[|^{\\])'),
     re.compile(br'([-!~*?(\[|^{\\])')
+)
+RE_WIN_DRIVE_MAGIC = (
+    re.compile(r'([{}|]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))'),
+    re.compile(br'([{}|]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
 )
 RE_WIN_MOUNT = (
     re.compile(r'\\|[a-z]:(?:\\|$)', re.I),
@@ -252,29 +302,51 @@ class PatternLimitException(Exception):
 def raw_escape(pattern, unix=None):
     """Apply raw character transform before applying escape."""
 
-    pattern = util.norm_pattern(pattern, False, True)
-    return escape(pattern, unix)
+    return _escape(util.norm_pattern(pattern, False, True), unix, True)
 
 
 def escape(pattern, unix=None):
+    """Normal escape."""
+
+    return _escape(pattern, unix)
+
+
+def _escape(pattern, unix=None, raw=False):
     """Escape."""
 
-    is_bytes = isinstance(pattern, bytes)
-    ptype = BYTES if is_bytes else UNICODE
-    replace = br'\\\1' if is_bytes else r'\\\1'
-    win = ((unix is None and util.platform() == "windows") or unix is False)
-    magic = RE_WIN_MAGIC[ptype] if win else RE_MAGIC[ptype]
+    if isinstance(pattern, bytes):
+        drive_pat = RE_WIN_DRIVE[BYTES]
+        magic = RE_MAGIC_ESCAPE[BYTES]
+        drive_magic = RE_WIN_DRIVE_MAGIC[BYTES]
+        replace = br'\\\1'
+        slash = b'\\'
+        double_slash = b'\\\\'
+        drive = b''
+    else:
+        drive_pat = RE_WIN_DRIVE[UNICODE]
+        magic = RE_MAGIC_ESCAPE[UNICODE]
+        drive_magic = RE_WIN_DRIVE_MAGIC[UNICODE]
+        replace = r'\\\1'
+        slash = '\\'
+        double_slash = '\\\\'
+        drive = ''
+
+    if not raw:
+        pattern = pattern.replace(slash, double_slash)
 
     # Handle windows drives special.
     # Windows drives are handled special internally.
     # So we shouldn't escape them as we'll just have to
     # detect and undo it later.
-    drive = b'' if is_bytes else ''
-    if win:
-        m = RE_WIN_PATH[ptype].match(pattern)
+    length = 0
+    if ((unix is None and util.platform() == "windows") or unix is False):
+        m = drive_pat.match(pattern)
         if m:
+            # Replace splitting magic chars
             drive = m.group(0)
-    pattern = pattern[len(drive):]
+            length = len(drive)
+            drive = drive_magic.sub(replace, m.group(0))
+    pattern = pattern[length:]
 
     return drive + magic.sub(replace, pattern)
 
@@ -671,9 +743,9 @@ class WcPathSplit(object):
 
         # Detect and store away windows drive as a literal
         if self.win_drive_detect:
-            m = RE_WIN_PATH[UNICODE].match(pattern)
+            m = RE_WIN_DRIVE_ESCAPED[UNICODE].match(pattern)
             if m:
-                drive = m.group(0).replace('\\\\', '\\')
+                drive = RE_WIN_DRIVE_UNESCAPE[UNICODE].sub(r'\1', m.group(0))
                 if self.is_bytes:
                     drive = drive.encode('latin-1')
                 parts.append(WcGlob(drive, False, False, True, True))
@@ -1418,9 +1490,9 @@ class WcParse(object):
         iter(i)
         root_specified = False
         if self.win_drive_detect:
-            m = RE_WIN_PATH[UNICODE].match(pattern)
+            m = RE_WIN_DRIVE_ESCAPED[UNICODE].match(pattern)
             if m:
-                drive = m.group(0).replace('\\\\', '\\')
+                drive = RE_WIN_DRIVE_UNESCAPE[UNICODE].sub(r'\1', m.group(0))
                 if drive.endswith('\\'):
                     slash = True
                 drive = drive[:-1]
