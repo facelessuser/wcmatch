@@ -110,3 +110,23 @@ class TestWcparse(unittest.TestCase):
         """Test that tilde position gives 1 when tilde is found and `NEGATE` is enabled."""
 
         self.assertEqual(_wcparse.tilde_pos('!~pattern', _wcparse.GLOBTILDE | _wcparse.REALPATH | _wcparse.NEGATE), 1)
+
+    def test_unc_pattern(self):
+        """Test UNC pattern."""
+
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//?/UNC/server/mount').group(0), '//?/UNC/server/mount')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//?/UNC/server/mount/').group(0), '//?/UNC/server/mount/')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//?/UNC/server/mount/path').group(0), '//?/UNC/server/mount/')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//./UNC/server/mount/path').group(0), '//./UNC/server/mount/')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//?/UNC/c:').group(0), '//?/UNC/')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//?/UNC/c:/').group(0), '//?/UNC/')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//?/c:').group(0), '//?/c:')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//?/c:/').group(0), '//?/c:/')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//?/what').group(0), '//?/what')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//server/mount').group(0), '//server/mount')
+        self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//server/mount/').group(0), '//server/mount/')
+        self.assertIsNone(_wcparse.RE_WIN_DRIVE[0].match('//server'))
+        self.assertEqual(
+            _wcparse.RE_WIN_DRIVE[0].match('//?/GLOBAL/UNC/server/mount/temp').group(0),
+            '//?/GLOBAL/UNC/server/mount/'
+        )
