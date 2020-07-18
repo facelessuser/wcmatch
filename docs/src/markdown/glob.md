@@ -45,7 +45,9 @@ Pattern           | Meaning
 - Windows drives are recognized as either `C:/` and `//Server/mount/`. If a path uses an ambiguous root (`/some/path`),
   the system will assume the drive of the current working directory.
 
-- Meta characters have no effect when inside a UNC path: `//Server?/mount*/`.
+- Meta characters have no effect when inside a UNC path: `//Server?/mount*/`. The one exception is pattern expansion
+  characters like `{}` which are used by [brace expansion](#globbrace) and `|` used by [pattern splitting](#globsplit).
+  Pattern expansion characters are the only characters that can be escaped in a Windows drive/mount.
 
 - If [`FORCEUNIX`](#globforceunix) is applied on a Windows system, match and filter commands that do not touch the file
   system will **not** have slashes normalized. In addition, drive letters will also not be handled. Essentially, paths
@@ -421,8 +423,9 @@ def escape(pattern, unix=None):
 ```
 
 This escapes special glob meta characters so they will be treated as literal characters.  It escapes using backslashes.
-It will escape `-`, `!`, `*`, `?`, `(`, `[`, `|`, `^`, `{`, and `\`. On Windows, it will specifically only escape `\`
-when not already escaped (`\\`). `/` and `\\` (on Windows) are not escaped as they are path separators.
+It will escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `^`, `{`, `}`, and `\`. It is made to handle normal strings.
+If for some reason you wish to use raw strings (`r'raw/string'`), it is recommended that you use
+[`raw_escape`](#globraw_escape).
 
 ```pycon3
 >>> from wcmatch import glob
@@ -432,38 +435,79 @@ when not already escaped (`\\`). `/` and `\\` (on Windows) are not escaped as th
 True
 ```
 
-On a Windows system, drives are not escaped since meta characters are not parsed in drives. Drives on Windows are
-generally treated special. This is because a drive could contain special characters like in `\\?\c:\`.
+Can also be handle Windows style with `/` or `\\` path separators:
+
+```pycon3
+>>> from wmcatch import glob
+>>> glob.escape('some\\path?\\**file**{}.txt')
+'some\\\\path\\?\\\\\\*\\*file\\*\\*\\{\\}.txt'
+>>> glob.globmatch('some\\path?\\**file**{}.txt', glob.escape('some\\path?\\**file**{}.txt'))
+True
+```
+
+On a Windows system, drives only allow escaping `{`, `}`, and `|` for support with [`BRACE`](#globbrace) and/or
+[`SPLIT`](#globsplit). This is because characters (except for pattern expansion characters) are not parsed in drives.
+Drives on Windows are generally treated special.
+
+```pycon3
+>>> from wmcatch import glob
+>>> glob.escape('//./Volume{b75e2c83-0000-0000-0000-602f00000000}\Test\Foo.txt', unix=False)
+'//./Volume\\{b75e2c83-0000-0000-0000-602f00000000\\}\\\\Test\\\\Foo.txt'
+```
 
 `escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since
-[`globmatch`](#globglobmatch) allows you to match Unix style paths on a Windows system, and vice versa. You can force
+[`globmatch`](#globglobmatch) allows you to match Unix style paths on a Windows system and vice versa, You can force
 Unix style escaping or Windows style escaping via the `unix` parameter. When `unix` is `None`, the escape style will be
 detected, when `unix` is `True` Linux/Unix style escaping will be used, and when `unix` is `False` Windows style
 escaping will be used.
 
 ```pycon3
->>> glob.escape('some/path?/**file**{}.txt', platform=glob.UNIX)
+>>> glob.escape('some/path?/**file**{}.txt', unix=True)
 ```
 
 !!! new "New 5.0"
     The `unix` parameter is now `None` by default. Set to `True` to force Linux/Unix style escaping or set to `False` to
     force Windows style escaping.
 
+!!! new "New 7.0"
+    `{`, `}`, and `|` will be escaped in Windows drives. Additionally, users can escape these characters in Windows
+    drives manually in their match patterns as well.
+
 #### `glob.raw_escape`
 
 ```py3
-def raw_escape(pattern, unix=None):
+def raw_escape(pattern, unix=None, raw_chars=True):
 ```
 
-This is like [`escape`](#globescape) except it will apply raw character string escapes before doing meta character
-escapes.  This is meant for use with the [`RAWCHARS`](#globrawchars) flag.
+This is like [`escape`](#globescape) except it will escape paths provided as raw strings. Raw strings will be treated
+like a normal python string and handle Python specific escapes as well. This is good if you have an interface that
+provides strings in this form (maybe from a GUI or otherwise). You can disable the Python specific escapes by setting
+`raw_chars` to `False`. `raw_chars` is meant to be used when the [`RAWCHARS`](#globrawchars) flag is also set.
 
 ```pycon3
 >>> from wcmatch import glob
 >>> glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt')
 'some/path\\?/\\*\\*file\\*\\*\\{}.txt'
->>> glob.globmatch('some/path?/**file**{}.txt', glob.escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt'), flags=glob.RAWCHARS)
+>>> glob.globmatch('some/path?/**file**{}.txt', glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt'), flags=glob.RAWCHARS)
 True
+```
+
+Can also be handle Windows style with `/` or `\\` path separators:
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.raw_escape(r'some\\path?\\\x2a\x2afile\x2a\x2a{}.txt', unix=False)
+'some\\\\path\\?\\\\\\*\\*file\\*\\*\\{\\}.txt'
+>>> glob.globmatch('some\\path?\\**file**{}.txt', glob.raw_escape(r'some\\path?\\\x2a\x2afile\x2a\x2a{}.txt', unix=False), flags=glob.RAWCHARS)
+True
+```
+
+When disabling `raw_chars`, Python style escapes will no longer be evaluated:
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt', raw_chars=False)
+'some/path\\?/\\\\x2a\\\\x2afile\\\\x2a\\\\x2a\\{\\}.txt'
 ```
 
 `raw_escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since
@@ -473,12 +517,18 @@ detected, when `unix` is `True` Linux/Unix style escaping will be used, and when
 escaping will be used.
 
 ```pycon3
->>> glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt', platform=glob.UNIX)
+>>> glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt')
 ```
 
 !!! new "New 5.0"
     The `unix` parameter is now `None` by default. Set to `True` to force Linux/Unix style escaping or set to `False` to
     force Windows style escaping.
+
+!!! new "New 7.0"
+    `{`, `}`, and `|` will be escaped in Windows drives. Additionally, users can escape these characters in Windows
+    drives manually in their match patterns as well.
+
+    `raw_chars` option was added.
 
 ## Flags
 
