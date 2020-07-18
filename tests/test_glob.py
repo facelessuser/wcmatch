@@ -1039,12 +1039,12 @@ class TestGlobCornerCaseMarked(Testglob):
 class TestGlobEscapes(unittest.TestCase):
     """Test escaping."""
 
-    def check_escape(self, arg, expected, raw=False, unix=None):
+    def check_escape(self, arg, expected, raw=False, unix=None, raw_chars=True):
         """Verify escapes."""
 
         if raw:
-            self.assertEqual(glob.raw_escape(arg, unix=unix), expected)
-            self.assertEqual(glob.raw_escape(os.fsencode(arg), unix=unix), os.fsencode(expected))
+            self.assertEqual(glob.raw_escape(arg, unix=unix, raw_chars=raw_chars), expected)
+            self.assertEqual(glob.raw_escape(os.fsencode(arg), unix=unix, raw_chars=raw_chars), os.fsencode(expected))
         else:
             self.assertEqual(glob.escape(arg, unix=unix), expected)
             self.assertEqual(glob.escape(os.fsencode(arg), unix=unix), os.fsencode(expected))
@@ -1064,13 +1064,25 @@ class TestGlobEscapes(unittest.TestCase):
         """Test path escapes."""
 
         check = self.check_escape
-        check('abc', 'abc', raw=True)
-        check('[', r'\[', raw=True)
-        check('?', r'\?', raw=True)
-        check('*', r'\*', raw=True)
-        check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_\]\]', raw=True)
-        check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_\]\]/', raw=True)
+        check(r'abc', 'abc', raw=True)
+        check(r'[', r'\[', raw=True)
+        check(r'?', r'\?', raw=True)
+        check(r'*', r'\*', raw=True)
+        check(r'[[_/*?*/_]]', r'\[\[_/\*\?\*/_\]\]', raw=True)
+        check(r'/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_\]\]/', raw=True)
         check(r'\x3f', r'\?', raw=True)
+
+    def test_raw_escape_no_raw_chars(self):
+        """Test path escapes with no raw character translations."""
+
+        check = self.check_escape
+        check(r'abc', 'abc', raw=True, raw_chars=False)
+        check(r'[', r'\[', raw=True, raw_chars=False)
+        check(r'?', r'\?', raw=True, raw_chars=False)
+        check(r'*', r'\*', raw=True, raw_chars=False)
+        check(r'[[_/*?*/_]]', r'\[\[_/\*\?\*/_\]\]', raw=True, raw_chars=False)
+        check(r'/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_\]\]/', raw=True, raw_chars=False)
+        check(r'\x3f', r'\\x3f', raw=True, raw_chars=False)
 
     @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
     def test_escape_windows(self):
@@ -1094,6 +1106,11 @@ class TestGlobEscapes(unittest.TestCase):
         check('\\\\*\\*\\*', r'\\\\*\\*\\\*', unix=False)
         check('//?/c:/?', r'//?/c:/\?', unix=False)
         check('//*/*/*', r'//*/*/\*', unix=False)
+        check(
+            '//./Volume{b75e2c83-0000-0000-0000-602f00000000}/temp',
+            r'//./Volume\{b75e2c83-0000-0000-0000-602f00000000\}/temp',
+            unix=False
+        )
 
     def test_escape_forced_unix(self):
         """Test forced windows Unix."""

@@ -126,3 +126,7 @@ class TestWcparse(unittest.TestCase):
         self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//server/mount').group(0), '//server/mount')
         self.assertEqual(_wcparse.RE_WIN_DRIVE[0].match('//server/mount/').group(0), '//server/mount/')
         self.assertIsNone(_wcparse.RE_WIN_DRIVE[0].match('//server'))
+        self.assertEqual(
+            _wcparse.RE_WIN_DRIVE[0].match('//?/GLOBAL/UNC/server/mount/temp').group(0),
+            '//?/GLOBAL/UNC/server/mount/'
+        )
