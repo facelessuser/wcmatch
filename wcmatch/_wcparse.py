@@ -332,9 +332,10 @@ def _get_win_drive(pattern, regex=False, case_sensitive=False):
     if m:
         end = m.end(0)
         if m.group(3) and RE_WIN_DRIVE_LETTER.match(m.group(0)):
-            drive = RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m.group(3))
             if regex:
-                drive = escape_drive(drive, case_sensitive)
+                drive = escape_drive(RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m.group(0)), case_sensitive)
+            else:
+                drive = m.group(0)
             slash = bool(m.group(4))
             root_specified = True
         elif m.group(2):
@@ -358,7 +359,7 @@ def _get_win_drive(pattern, regex=False, case_sensitive=False):
                     break
             if count == complete:
                 if not regex:
-                    drive = '\\\\' + '\\'.join(part)
+                    drive = '\\\\{}\\'.format('\\'.join(part))
                 else:
                     drive = r'[\\/]{2}' + r'[\\/]'.join([escape_drive(p, case_sensitive) for p in part])
     elif pattern.startswith('\\\\'):
@@ -764,8 +765,8 @@ class WcPathSplit(object):
                 if self.is_bytes:
                     drive = drive.encode('latin-1')
                 parts.append(WcGlob(drive, False, False, True, True))
-                i.advance(end)
-                start = end
+                start = end - 1
+                i.advance(start)
             elif drive is None and root_specified:
                 parts.append(WcGlob(b'\\' if self.is_bytes else '\\', False, False, True, True))
                 start = 1
