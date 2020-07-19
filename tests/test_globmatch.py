@@ -659,7 +659,33 @@ class TestGlobFilter:
                 b".", b"..", b"...", b'.../', b"test/", b"file", b"/file"
             ]
         ),
-        [b'**/*', [b'...', b'file', b'test/...', b'test/.file', b"/file"], glob.O | glob.D]
+        [b'**/*', [b'...', b'file', b'test/...', b'test/.file', b"/file"], glob.O | glob.D],
+
+        # Test Windows drives
+        GlobFiles(
+            [
+                '//?/UNC/LOCALHOST/c$/temp', '//./UNC/LOCALHOST/c$/temp', '//?/GLOBAL/UNC/LOCALHOST/c$/temp',
+                '//?/GLOBAL/global/UNC/LOCALHOST/c$/temp', '//?/C:/temp'
+            ]
+        ),
+
+        ['//?/unc/localhost/c$/*', ['//?/UNC/LOCALHOST/c$/temp'], glob.W],
+        ['//./unc/localhost/c$/*', ['//./UNC/LOCALHOST/c$/temp'], glob.W],
+        ['//?/global/unc/localhost/c$/*', ['//?/GLOBAL/UNC/LOCALHOST/c$/temp'], glob.W],
+        ['//?/global/global/unc/localhost/c$/*', ['//?/GLOBAL/global/UNC/LOCALHOST/c$/temp'], glob.W],
+        ['//?/c:/*', ['//?/C:/temp'], glob.W],
+
+        GlobFiles(
+            [
+                b'//?/UNC/LOCALHOST/c$/temp', b'//./UNC/LOCALHOST/c$/temp', b'//?/GLOBAL/UNC/LOCALHOST/c$/temp',
+                b'//?/GLOBAL/global/UNC/LOCALHOST/c$/temp', b'//?/C:/temp'
+            ]
+        ),
+        [b'//?/unc/localhost/c$/*', [b'//?/UNC/LOCALHOST/c$/temp'], glob.W],
+        [b'//./unc/localhost/c$/*', [b'//./UNC/LOCALHOST/c$/temp'], glob.W],
+        [b'//?/global/unc/localhost/c$/*', [b'//?/GLOBAL/UNC/LOCALHOST/c$/temp'], glob.W],
+        [b'//?/global/global/unc/localhost/c$/*', [b'//?/GLOBAL/global/UNC/LOCALHOST/c$/temp'], glob.W],
+        [b'//?/c:/*', [b'//?/C:/temp'], glob.W]
     ]
 
     @classmethod
