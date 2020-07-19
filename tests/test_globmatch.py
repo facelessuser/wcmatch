@@ -2,6 +2,7 @@
 """Tests for `globmatch`."""
 import unittest
 import pytest
+import re
 import os
 import sys
 import wcmatch.glob as glob
@@ -612,6 +613,16 @@ class TestGlobFilter:
         ['TEST/test', [], glob.U],
         ['test\\/TEST', [], glob.U],
 
+        # Ensure we don't count slashes with `*`.
+        GlobFiles(['test/test', 'test//']),
+
+        ['test/*', ['test/test']],
+        ['test/*', ['test/test'], glob.W],
+
+        GlobFiles(['test\\test', 'test\\\\']),
+
+        ['test/*', ['test\\test'], glob.W],
+
         GlobFiles(['c:/some/path', '//host/share/some/path']),
 
         # Test Windows drive and UNC host/share case sensitivity
@@ -648,7 +659,33 @@ class TestGlobFilter:
                 b".", b"..", b"...", b'.../', b"test/", b"file", b"/file"
             ]
         ),
-        [b'**/*', [b'...', b'file', b'test/...', b'test/.file', b"/file"], glob.O | glob.D]
+        [b'**/*', [b'...', b'file', b'test/...', b'test/.file', b"/file"], glob.O | glob.D],
+
+        # Test Windows drives
+        GlobFiles(
+            [
+                '//?/UNC/LOCALHOST/c$/temp', '//./UNC/LOCALHOST/c$/temp', '//?/GLOBAL/UNC/LOCALHOST/c$/temp',
+                '//?/GLOBAL/global/UNC/LOCALHOST/c$/temp', '//?/C:/temp'
+            ]
+        ),
+
+        ['//?/unc/localhost/c$/*', ['//?/UNC/LOCALHOST/c$/temp'], glob.W],
+        ['//./unc/localhost/c$/*', ['//./UNC/LOCALHOST/c$/temp'], glob.W],
+        ['//?/global/unc/localhost/c$/*', ['//?/GLOBAL/UNC/LOCALHOST/c$/temp'], glob.W],
+        ['//?/global/global/unc/localhost/c$/*', ['//?/GLOBAL/global/UNC/LOCALHOST/c$/temp'], glob.W],
+        ['//?/c:/*', ['//?/C:/temp'], glob.W],
+
+        GlobFiles(
+            [
+                b'//?/UNC/LOCALHOST/c$/temp', b'//./UNC/LOCALHOST/c$/temp', b'//?/GLOBAL/UNC/LOCALHOST/c$/temp',
+                b'//?/GLOBAL/global/UNC/LOCALHOST/c$/temp', b'//?/C:/temp'
+            ]
+        ),
+        [b'//?/unc/localhost/c$/*', [b'//?/UNC/LOCALHOST/c$/temp'], glob.W],
+        [b'//./unc/localhost/c$/*', [b'//./UNC/LOCALHOST/c$/temp'], glob.W],
+        [b'//?/global/unc/localhost/c$/*', [b'//?/GLOBAL/UNC/LOCALHOST/c$/temp'], glob.W],
+        [b'//?/global/global/unc/localhost/c$/*', [b'//?/GLOBAL/global/UNC/LOCALHOST/c$/temp'], glob.W],
+        [b'//?/c:/*', [b'//?/C:/temp'], glob.W]
     ]
 
     @classmethod
@@ -986,8 +1023,8 @@ class TestGlobMatchSpecial(unittest.TestCase):
         if util.PY37:
             value = (
                 [
-                    '^(?s:(?:(?!(?:/|^)\\.).)*?(?:^|$|/)+'
-                    '(?!(?:\\.{1,2})(?:$|/))(?![/.])[\x00-\x7f]/+stuff/+(?=.)'
+                    '^(?s:(?:(?!(?:/|^)\\.).)*?(?:^|$|/)+' +
+                    ('(?!(?:\\.{1,2})(?:$|/))(?![/.])[\x00-\x7f]/+stuff/+(?=[^%s])' % re.escape('/')) +
                     '(?!(?:\\.{1,2})(?:$|/))(?:(?!\\.)[^/]*?)?[/]*?)$'
                 ],
                 []
@@ -995,8 +1032,8 @@ class TestGlobMatchSpecial(unittest.TestCase):
         elif util.PY36:
             value = (
                 [
-                    '^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+'
-                    '(?!(?:\\.{1,2})(?:$|\\/))(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=.)'
+                    '^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+' +
+                    ('(?!(?:\\.{1,2})(?:$|\\/))(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=[^%s])' % re.escape('/')) +
                     '(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'
                 ],
                 []
@@ -1004,8 +1041,8 @@ class TestGlobMatchSpecial(unittest.TestCase):
         else:
             value = (
                 [
-                    '(?s)^(?:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+'
-                    '(?!(?:\\.{1,2})(?:$|\\/))(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=.)'
+                    '(?s)^(?:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+' +
+                    ('(?!(?:\\.{1,2})(?:$|\\/))(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=[^%s])' % re.escape('/')) +
                     '(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'
                 ],
                 []
