@@ -178,6 +178,7 @@ class TestPathlibGlobmatch:
         if path is None:
             path = pathlib.Path(name)
 
+        print('PATH: ', str(path))
         print("PATTERN: ", pattern)
         print("FILE: ", name)
         print("GOAL: ", goal)

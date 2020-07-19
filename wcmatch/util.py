@@ -19,6 +19,7 @@ RE_NORM = re.compile(
     (\\[abfnrtv\\])|
     (\\(?:U[\da-fA-F]{8}|u[\da-fA-F]{4}|x[\da-fA-F]{2}|([0-7]{1,3})))|
     (\\N\{[^}]*?\})|
+    (\\[^NUux]) |
     (\\[NUux])
     '''
 )
@@ -28,6 +29,7 @@ RE_BNORM = re.compile(
     (/|\\/)|
     (\\[abfnrtv\\])|
     (\\(?:x[\da-fA-F]{2}|([0-7]{1,3})))|
+    (\\[^x]) |
     (\\[x])
     '''
 )
@@ -77,7 +79,7 @@ def to_tuple(values):
     return (values,) if isinstance(values, (str, bytes)) else tuple(values)
 
 
-def norm_pattern(pattern, normalize, is_raw_chars):
+def norm_pattern(pattern, normalize, is_raw_chars, ignore_escape=False):
     r"""
     Normalize pattern.
 
@@ -89,7 +91,7 @@ def norm_pattern(pattern, normalize, is_raw_chars):
 
     is_bytes = isinstance(pattern, bytes)
 
-    if not normalize and not is_raw_chars:
+    if not normalize and not is_raw_chars and not ignore_escape:
         return pattern
 
     def norm_char(token):
@@ -114,11 +116,13 @@ def norm_pattern(pattern, normalize, is_raw_chars):
             char = norm_char(bytes([int(m.group(3)[2:], 16)]) if is_bytes else chr(int(m.group(3)[2:], 16)))
         elif is_raw_chars and not is_bytes and m.group(5):
             char = norm_char(unicodedata.lookup(m.group(5)[3:-1]))
-        elif not is_raw_chars:
+        elif not is_raw_chars or m.group(5 if is_bytes else 6):
             char = m.group(0)
+            if ignore_escape:
+                char = (b'\\' if is_bytes else '\\') + char
         else:
-            value = m.group(5) if is_bytes else m.group(6)
-            pos = m.start(5) if is_bytes else m.start(6)
+            value = m.group(6) if is_bytes else m.group(7)
+            pos = m.start(6) if is_bytes else m.start(7)
             raise SyntaxError("Could not convert character value %s at position %d" % (value, pos))
         return char
 

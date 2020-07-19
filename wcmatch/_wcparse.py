@@ -34,36 +34,10 @@ BYTES = 1
 
 PATTERN_LIMIT = 1000
 
-RE_WIN_DRIVE_ESCAPED = (
-    re.compile(
-        r'''(?x)
-        (
-            (?:\\\\|/){2}[?.](?:\\\\|/)(?:
-                [a-z]:|
-                unc(?:(?:\\\\|/)(?:\\[{}|]|[^\\/])+){2} |
-                (?:global(?:\\\\|/))+(?:[a-z]:|unc(?:(?:\\\\|/)(?:\\[{}|]|[^\\/])+){2}|[^\\/]+)
-            ) |
-            (?:\\\\|/){2}(?:\\[{}|]|[^\\/])+(?:\\\\|/)(?:\\[{}|]|[^\\/])+|
-            [a-z]:
-        )((?:\\\\|/){1}|$)
-        ''',
-        re.I
-    ),
-    re.compile(
-        br'''(?x)
-        (
-            (?:\\\\|/){2}[?.](?:\\\\|/)(?:
-                [a-z]:|
-                unc(?:(?:\\\\|/)(?:\\[{}|]|[^\\/])+){2} |
-                (?:global(?:\\\\|/))+(?:[a-z]:|unc(?:(?:\\\\|/)(?:\\[{}|]|[^\\/])+){2}|[^\\/]+)
-            ) |
-            (?:\\\\|/){2}(?:\\[{}|]|[^\\/])+(?:\\\\|/)(?:\\[{}|]|[^\\/])+|
-            [a-z]:
-        )((?:\\\\|/){1}|$)
-        ''',
-        re.I
-    )
-)
+RE_WIN_DRIVE_START = re.compile(r'((?:\\\\|/){2}((?:\\[^\\/]|[^\\/])+)|([\\]?[a-z][\\]?:))((?:\\\\|/)|$)', re.I)
+RE_WIN_DRIVE_LETTER = re.compile(r'([a-z]:)((?:\\|/)|$)', re.I)
+RE_WIN_DRIVE_PART = re.compile(r'((?:\\[^\\/]|[^\\/])+)((?:\\\\|/)|$)', re.I)
+RE_WIN_DRIVE_UNESCAPE = re.compile(r'\\(.)', re.I)
 
 RE_WIN_DRIVE = (
     re.compile(
@@ -96,10 +70,6 @@ RE_WIN_DRIVE = (
     )
 )
 
-RE_WIN_DRIVE_UNESCAPE = (
-    re.compile(r'\\([\\{}|])'),
-    re.compile(br'\\([\\{}|])')
-)
 RE_MAGIC_ESCAPE = (
     re.compile(r'([-!~*?()\[\]|^{}]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))'),
     re.compile(br'([-!~*?()\[\]|^{}]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
@@ -302,7 +272,7 @@ class PatternLimitException(Exception):
 def raw_escape(pattern, unix=None, raw_chars=True):
     """Apply raw character transform before applying escape."""
 
-    return _escape(util.norm_pattern(pattern, False, raw_chars), unix, True)
+    return _escape(util.norm_pattern(pattern, False, raw_chars, True), unix, True)
 
 
 def escape(pattern, unix=None):
@@ -349,6 +319,52 @@ def _escape(pattern, unix=None, raw=False):
     pattern = pattern[length:]
 
     return drive + magic.sub(replace, pattern)
+
+
+def _get_win_drive(pattern, regex=False, case_sensitive=False):
+    """Get Windows drive."""
+
+    drive = None
+    slash = False
+    end = 0
+    root_specified = False
+    m = RE_WIN_DRIVE_START.match(pattern)
+    if m:
+        end = m.end(0)
+        if m.group(3) and RE_WIN_DRIVE_LETTER.match(m.group(0)):
+            drive = RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m.group(3))
+            if regex:
+                drive = escape_drive(drive, case_sensitive)
+            slash = bool(m.group(4))
+            root_specified = True
+        elif m.group(2):
+            root_specified = True
+            part = [RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m.group(2))]
+            is_special = part[-1].lower() in ('.', '?')
+            complete = 1
+            first = 1
+            count = 0
+            for count, m in enumerate(RE_WIN_DRIVE_PART.finditer(pattern, m.end(0)), 1):
+                end = m.end(0)
+                part.append(RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m.group(1)))
+                slash = bool(m.group(2))
+                if is_special:
+                    if count == first and part[-1].lower() == 'unc':
+                        complete += 2
+                    elif count == first and part[-1].lower() == 'global':
+                        first += 1
+                        complete += 1
+                if count == complete:
+                    break
+            if count == complete:
+                if not regex:
+                    drive = '\\\\' + '\\'.join(part)
+                else:
+                    drive = r'[\\/]{2}' + r'[\\/]'.join([escape_drive(p, case_sensitive) for p in part])
+    elif pattern.startswith('\\\\'):
+        root_specified = True
+
+    return root_specified, drive, slash, end
 
 
 def is_negative(pattern, flags):
@@ -743,15 +759,14 @@ class WcPathSplit(object):
 
         # Detect and store away windows drive as a literal
         if self.win_drive_detect:
-            m = RE_WIN_DRIVE_ESCAPED[UNICODE].match(pattern)
-            if m:
-                drive = RE_WIN_DRIVE_UNESCAPE[UNICODE].sub(r'\1', m.group(0))
+            root_specified, drive, slash, end = _get_win_drive(pattern)
+            if drive is not None:
                 if self.is_bytes:
                     drive = drive.encode('latin-1')
                 parts.append(WcGlob(drive, False, False, True, True))
-                start = m.end(0) - 1
-                i.advance(start + 1)
-            elif pattern.startswith('\\\\'):
+                i.advance(end)
+                start = end
+            elif drive is None and root_specified:
                 parts.append(WcGlob(b'\\' if self.is_bytes else '\\', False, False, True, True))
                 start = 1
                 i.advance(2)
@@ -1490,19 +1505,16 @@ class WcParse(object):
         iter(i)
         root_specified = False
         if self.win_drive_detect:
-            m = RE_WIN_DRIVE_ESCAPED[UNICODE].match(pattern)
-            if m:
-                drive = RE_WIN_DRIVE_UNESCAPE[UNICODE].sub(r'\1', m.group(0))
-                if drive.endswith('\\'):
-                    slash = True
-                drive = drive[:-1]
-                current.append(escape_drive(drive, self.case_sensitive))
+            root_specified, drive, slash, end = _get_win_drive(pattern, True, self.case_sensitive)
+            if drive is not None:
+                if self.is_bytes:
+                    drive = drive.encode('latin-1')
+                current.append(drive)
                 if slash:
                     current.append(self.get_path_sep() + _ONE_OR_MORE)
-                i.advance(m.end(0))
+                i.advance(end)
                 self.consume_path_sep(i)
-                root_specified = True
-            elif pattern.startswith('\\\\'):
+            elif drive is None and root_specified:
                 root_specified = True
         elif not self.win_drive_detect and self.pathname and pattern.startswith('/'):
             root_specified = True
