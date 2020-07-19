@@ -7,10 +7,10 @@ library in order to provide file matching and globbing that more closely follows
 ways these libraries are similar to Python's builtin libraries as they provide a similar interface to match, filter, and
 glob the file system. But they also include a number of features found in Bash's globbing such as backslash escaping,
 brace expansion, extended glob pattern groups, etc. They also add a number of new useful functions as well, such as
-[`globmatch`](./glob.md#globglobmatch) which functions like [`fnmatch`](./fnmatch.md#fnmatchfnmatch), but for paths.
+[`globmatch`](./glob.md#globmatch) which functions like [`fnmatch`](./fnmatch.md#fnmatch), but for paths.
 
 Wildcard Match also adds a file search utility called [`wcmatch`](./wcmatch.md) that is built on top of
-[`fnmatch`](./fnmatch.md#fnmatchfnmatch) and [`globmatch`](./glob.md#globglobmatch). It was originally written for
+[`fnmatch`](./fnmatch.md#fnmatch) and [`globmatch`](./glob.md#globmatch). It was originally written for
 [Rummage](https://github.com/facelessuser/Rummage), but split out into this project to be used by other projects that
 may find its approach useful.
 
