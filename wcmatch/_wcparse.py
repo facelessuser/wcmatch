@@ -1587,8 +1587,6 @@ class WcParse(object):
         if self.win_drive_detect:
             root_specified, drive, slash, end = _get_win_drive(pattern, True, self.case_sensitive)
             if drive is not None:
-                if self.is_bytes:
-                    drive = drive.encode('latin-1')
                 current.append(drive)
                 if slash:
                     current.append(self.get_path_sep() + _ONE_OR_MORE)

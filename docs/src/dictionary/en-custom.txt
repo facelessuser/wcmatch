@@ -6,6 +6,7 @@ EXTGLOB
 EXTMATCH
 EmojiOne
 Fnmatch
+GUIDs
 GitHub
 Gitter
 Glob
@@ -74,6 +75,7 @@ syntaxes
 tuple
 un
 unclosed
+unintuitive
 unordered
 versa
 wildcard

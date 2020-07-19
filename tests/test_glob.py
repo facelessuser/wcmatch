@@ -1353,6 +1353,12 @@ class TestTilde(unittest.TestCase):
         files = os.listdir(os.path.expanduser('~'))
         self.assertEqual(len(glob.glob('~/*', flags=glob.T | glob.D)), len(files))
 
+    def test_tilde_bytes(self):
+        """Test tilde in bytes."""
+
+        files = os.listdir(os.path.expanduser(b'~'))
+        self.assertEqual(len(glob.glob(b'~/*', flags=glob.T | glob.D)), len(files))
+
     def test_tilde_user(self):
         """Test tilde user cases."""
 

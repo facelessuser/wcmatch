@@ -28,7 +28,7 @@ These changes were done for a couple of reasons:
    `.hidden` and `.hidden/.` would normalize those results to return two `.hidden` results. This is generally unhelpful
    and unintuitive.
 
-3. Python's `scandir`, wich is used to crawl the file system, doesnt actually return `.` and `..`. In order to do this
+3. Python's `scandir`, which is used to crawl the file system, doesn't actually return `.` and `..`. In order to do this
    in the past, we had to inject them into the results.
 
 For the majority of people, this is most likely an improvement vs a hindrance, but if the old behavior is desired, you
@@ -39,7 +39,7 @@ can use the new option [`SCANDOTDIR`](../glob.md#scandotdir) to bring this behav
 ### Windows Drive Detection
 
 Improvements with handling Windows drive and UNC paths have been added. This glob patterns will now properly respect
-extended UNC paths usch as `//?/UNC/LOCALHOSt/c$` and others. This is good because now you can specify these type of
+extended UNC paths such as `//?/UNC/LOCALHOSt/c$` and others. This is good because now you can specify these type of
 paths and not have to worry about escaping meta characters within the drive name. Also, since we don't scan all
 available drives and mounts, meta characters such as `*` are not helpful anyways.
 
@@ -49,7 +49,7 @@ is due to the fact that pattern expansion occurs before the a pattern is evaluat
 
 Starting in 7.0 glob patterns can have `{`, `}` and `|` escaped in the Windows drive or mount portion of the pattern.
 Additionally, both the [`escape`](../glob.md#escape) and [`raw_escape`](../glob.md#raw_escape) functions will properly
-escape these characters. This means you can use patterns such as Windows volumes with GUIDs safely with 
+escape these characters. This means you can use patterns such as Windows volumes with GUIDs safely with
 [`BRACE`](../glob.md#brace):
 
 ```pycon3
@@ -72,4 +72,4 @@ across multiple patterns still could. If three different patterns returned `file
 you'd get three identical results of `file/path`. These cases will now properly get caught and filtered out by during
 file globbing.
 
-As always, this uinque behavior can be disabled via [`NOUNIQUE`](../glob.md#nounique).
+As always, this unique behavior can be disabled via [`NOUNIQUE`](../glob.md#nounique).
