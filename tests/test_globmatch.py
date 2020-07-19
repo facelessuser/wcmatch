@@ -2,6 +2,7 @@
 """Tests for `globmatch`."""
 import unittest
 import pytest
+import re
 import os
 import sys
 import wcmatch.glob as glob
@@ -612,6 +613,16 @@ class TestGlobFilter:
         ['TEST/test', [], glob.U],
         ['test\\/TEST', [], glob.U],
 
+        # Ensure we don't count slashes with `*`.
+        GlobFiles(['test/test', 'test//']),
+
+        ['test/*', ['test/test']],
+        ['test/*', ['test/test'], glob.W],
+
+        GlobFiles(['test\\test', 'test\\\\']),
+
+        ['test/*', ['test\\test'], glob.W],
+
         GlobFiles(['c:/some/path', '//host/share/some/path']),
 
         # Test Windows drive and UNC host/share case sensitivity
@@ -986,8 +997,8 @@ class TestGlobMatchSpecial(unittest.TestCase):
         if util.PY37:
             value = (
                 [
-                    '^(?s:(?:(?!(?:/|^)\\.).)*?(?:^|$|/)+'
-                    '(?!(?:\\.{1,2})(?:$|/))(?![/.])[\x00-\x7f]/+stuff/+(?=.)'
+                    '^(?s:(?:(?!(?:/|^)\\.).)*?(?:^|$|/)+' +
+                    ('(?!(?:\\.{1,2})(?:$|/))(?![/.])[\x00-\x7f]/+stuff/+(?=[^%s])' % re.escape('/')) +
                     '(?!(?:\\.{1,2})(?:$|/))(?:(?!\\.)[^/]*?)?[/]*?)$'
                 ],
                 []
@@ -995,8 +1006,8 @@ class TestGlobMatchSpecial(unittest.TestCase):
         elif util.PY36:
             value = (
                 [
-                    '^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+'
-                    '(?!(?:\\.{1,2})(?:$|\\/))(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=.)'
+                    '^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+' +
+                    ('(?!(?:\\.{1,2})(?:$|\\/))(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=[^%s])' % re.escape('/')) +
                     '(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'
                 ],
                 []
@@ -1004,8 +1015,8 @@ class TestGlobMatchSpecial(unittest.TestCase):
         else:
             value = (
                 [
-                    '(?s)^(?:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+'
-                    '(?!(?:\\.{1,2})(?:$|\\/))(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=.)'
+                    '(?s)^(?:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+' +
+                    ('(?!(?:\\.{1,2})(?:$|\\/))(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=[^%s])' % re.escape('/')) +
                     '(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'
                 ],
                 []

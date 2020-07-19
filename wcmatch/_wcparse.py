@@ -221,6 +221,7 @@ _PATH_EOP = r'(?:$|%(sep)s)'
 # in addition to slashes.
 _GLOBSTAR_DIV = r'(?:^|$|%s)+'
 # Lookahead to see there is one character.
+_NEED_CHAR_PATH = r'(?=[^%(sep)s])'
 _NEED_CHAR = r'(?=.)'
 _NEED_SEP = r'(?=%s)'
 # Group that matches one or none
@@ -333,9 +334,9 @@ def _get_win_drive(pattern, regex=False, case_sensitive=False):
         end = m.end(0)
         if m.group(3) and RE_WIN_DRIVE_LETTER.match(m.group(0)):
             if regex:
-                drive = escape_drive(RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m.group(0)), case_sensitive)
+                drive = escape_drive(RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m.group(3)), case_sensitive)
             else:
-                drive = m.group(0)
+                drive = RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m.group(0))
             slash = bool(m.group(4))
             root_specified = True
         elif m.group(2):
@@ -359,7 +360,7 @@ def _get_win_drive(pattern, regex=False, case_sensitive=False):
                     break
             if count == complete:
                 if not regex:
-                    drive = '\\\\{}\\'.format('\\'.join(part))
+                    drive = '\\\\{}{}'.format('\\'.join(part), '\\' if slash else '')
                 else:
                     drive = r'[\\/]{2}' + r'[\\/]'.join([escape_drive(p, case_sensitive) for p in part])
     elif pattern.startswith('\\\\'):
@@ -1006,6 +1007,10 @@ class WcParse(object):
         self.path_star_dot2 = _PATH_STAR_NO_DOTMATCH % sep
         self.path_gstar_dot1 = _PATH_GSTAR_DOTMATCH % sep
         self.path_gstar_dot2 = _PATH_GSTAR_NO_DOTMATCH % sep
+        if self.pathname:
+            self.need_char = _NEED_CHAR_PATH % sep
+        else:
+            self.need_char = _NEED_CHAR
 
     def set_after_start(self):
         """Set tracker for character after the start of a directory."""
@@ -1304,7 +1309,7 @@ class WcParse(object):
                     value = globstar
 
         if self.after_start and value != globstar:
-            value = _NEED_CHAR + value
+            value = self.need_char + value
             # Consume duplicate starts
             try:
                 c = next(i)
@@ -1450,7 +1455,7 @@ class WcParse(object):
                         star = _NO_DOT + _STAR
 
                 if temp_after_start:
-                    star = _NEED_CHAR + star
+                    star = self.need_char + star
                 # Place holder for closing, but store the proper star
                 # so we know which one to use
                 current.append(InvPlaceholder(star))

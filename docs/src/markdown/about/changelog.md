@@ -4,7 +4,7 @@
 
 - **NEW**: Recognize extended UNC, such as: `//?/UNC/server/mount`, `//?/UNC/c:`, etc.
 - **NEW**: Allow escaping any character in Windows drives for better compatibility with `SPLIT` and `BRACE` which
-  requires a user to eascape `{`, `}` and `|` to avoid expanding a pattern.
+  requires a user to escape `{`, `}` and `|` to avoid expanding a pattern.
 - **NEW**: `raw_escape` now accepts the `raw_chars` parameter so that translation of Python raw escapes can be disabled.
 - **NEW**: `EXTMATCH`/`EXTGLOB` can now be used with `NEGATE` without needing `MINUSNEGATE`. If a pattern starts with
   `!(`, and `NEGATE` and `EXTMATCH`/`EXTGLOB` are both enabled, the pattern will not be treated as a `NEGATE` pattern
@@ -13,6 +13,7 @@
 - **FIX**: Support Python 3.9.
 - **FIX**: Adjust pattern limit logic of `glob` to be consistent with other functions.
 - **BUG**: Fix corner cases with `escape` and `raw_escape` with back slashes.
+- **BUG**: Ensure that `globmatch` does not match `test//` with pattern `test/*`.
 
 ## 6.0.3
 
