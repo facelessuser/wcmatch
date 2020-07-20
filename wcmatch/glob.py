@@ -145,7 +145,7 @@ class Glob(object):
         self.nounique = bool(flags & NOUNIQUE)
         self.mark = bool(flags & MARK)
         # Only scan for `.` and `..` if it is specifically requested.
-        scandotdir = flags & SCANDOTDIR
+        self.scandotdir = flags & SCANDOTDIR
         if self.mark:
             flags ^= MARK
         self.negateall = bool(flags & NEGATEALL)
@@ -161,7 +161,7 @@ class Glob(object):
         if flags & _RTL:  # pragma: no cover
             flags ^= _RTL
         self.flags = _flag_transform(flags | REALPATH)
-        if not scandotdir and not self.flags & NODOTDIR:
+        if not self.scandotdir and not self.flags & NODOTDIR:
             self.flags |= NODOTDIR
         self.raw_chars = bool(self.flags & RAWCHARS)
         self.follow_links = bool(self.flags & FOLLOW)
@@ -235,7 +235,12 @@ class Glob(object):
 
         # A single positive pattern will not find multiples of the same file
         # disable unique mode so that we won't waste time or memory computing unique returns.
-        if len(self.pattern) <= 1 and not self.flags & NODOTDIR and not self.nounique:
+        if (
+            len(self.pattern) <= 1 and
+            not self.flags & NODOTDIR and
+            not self.nounique and
+            not (self.pathlib and self.scandotdir)
+        ):
             self.nounique = True
 
     def _is_hidden(self, name):
