@@ -437,11 +437,8 @@ def escape(pattern, unix=None):
 ```
 
 This escapes special glob meta characters so they will be treated as literal characters. It escapes using backslashes.
-It will escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `^`, `{`, and `}`. `\` will be escaped on Linux/Unix
-systems. Its intended use is escaping paths or path parts for use in patterns.
-
-Raw strings can be used as well, but if you wish to use raw strings that represent a Python string (where `\` are
-actually denoted by `\\`), then you may wish to use [`raw_escape`](#raw_escape).
+It will escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `^`, `{`, `}`. and `\`. Its intended use is escaping paths
+  or path parts for use in patterns.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -451,13 +448,20 @@ actually denoted by `\\`), then you may wish to use [`raw_escape`](#raw_escape).
 True
 ```
 
+Raw strings can be used as well, but if you wish to use raw strings that represent a Python string (where `\` are
+actually denoted by `\\`), then you may wish to use [`raw_escape`](#raw_escape).
+
 `escape` can also handle Windows style with `/` or `\\` path separators:
 
 ```pycon3
 >>> from wmcatch import glob
->>> glob.escape('some\\path?\\**file**{}.txt')
+>>> glob.escape('some\\path?\\**file**{}.txt', unix=False)
 'some\\\\path\\?\\\\\\*\\*file\\*\\*\\{\\}.txt'
->>> glob.globmatch('some\\path?\\**file**{}.txt', glob.escape('some\\path?\\**file**{}.txt'))
+>>> glob.globmatch('some\\path?\\**file**{}.txt', glob.escape('some\\path?\\**file**{}.txt'), flags=glob.FORCEWIN)
+True
+>>> glob.escape('some/path?/**file**{}.txt', unix=False)
+'some/path\\?/\\*\\*file\\*\\*\\{\\}.txt'
+>>> glob.globmatch('some\\path?\\**file**{}.txt', glob.escape('some/path?/**file**{}.txt'), flags=glob.FORCEWIN)
 True
 ```
 
@@ -498,7 +502,7 @@ def raw_escape(pattern, unix=None, raw_chars=True):
 
 This is like [`escape`](#escape) except it will escape paths provided as raw strings. Or more specifically, strings
 whose content is a representation of a Python string. Simply using Python raw strings does not mean you need to use
-`raw_escape`, as `escape` can handle raw strings well enough:
+`raw_escape` as `escape` can handle raw strings well enough:
 
 ```pycon3
 >>> glob.escape(r'my\file-[work].txt', unix=False)
@@ -523,23 +527,17 @@ needed, a new option called `raw_chars` (`True` by default) has been added so th
 'my\\\\file\\-\\\\x31.txt'
 ```
 
-`raw_escape` allows you to match exactly what is specified in the raw string.
-
-```pycon3
->>> from wcmatch import glob
->>> glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt')
-'some/path\\?/\\*\\*file\\*\\*\\{}.txt'
->>> glob.globmatch('some/path?/**file**{}.txt', glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt'), flags=glob.RAWCHARS)
-True
-```
-
 It also handles Windows style paths with `/` or `\\` path separators:
 
 ```pycon3
 >>> from wcmatch import glob
 >>> glob.raw_escape(r'some\\path?\\\x2a\x2afile\x2a\x2a{}.txt', unix=False)
 'some\\\\path\\?\\\\\\*\\*file\\*\\*\\{\\}.txt'
->>> glob.globmatch('some\\path?\\**file**{}.txt', glob.raw_escape(r'some\\path?\\\x2a\x2afile\x2a\x2a{}.txt', unix=False), flags=glob.RAWCHARS)
+>>> glob.globmatch('some\\path?\\**file**{}.txt', glob.raw_escape(r'some\\path?\\\x2a\x2afile\x2a\x2a{}.txt', unix=False), flags=glob.RAWCHARS | glob.FORCEWIN)
+True
+>>> glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt', unix=False)
+'some/path\\?/\\*\\*file\\*\\*\\{\\}.txt'
+>>> glob.globmatch('some\\path?\\**file**{}.txt', glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt', unix=False), flags=glob.RAWCHARS | glob.FORCEWIN)
 True
 ```
 

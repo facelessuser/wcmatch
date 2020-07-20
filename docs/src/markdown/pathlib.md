@@ -517,10 +517,14 @@ normalization, may be surprising.
 
 ```pycon3
 >>> from wcmatch import pathlib
->>> list(pathlib.Path('.').glob('.*'))
-[PosixPath('.codecov.yml'), PosixPath('.tox'), PosixPath('.coverage'), PosixPath('.coveragerc'), PosixPath('.gitignore'), PosixPath('.github'), PosixPath('.pyspelling.yml'), PosixPath('.git')]
->>> glob.glob('.*', flags=glob.SCANDOTDIR)
-['.', '..', '.codecov.yml', '.tox', '.coverage', '.coveragerc', '.gitignore', '.github', '.pyspelling.yml', '.git']
+>>> list(pathlib.Path('temp').glob('**/.*', flags=glob.GLOBSTAR | glob.DOTGLOB))
+[PosixPath('temp/.hidden'), PosixPath('temp/.DS_Store')]
+>>> list(glob.glob('**/.*', flags=glob.GLOBSTAR | glob.DOTGLOB | glob.SCANDOTDIR, root_dir="temp"))
+['.', '..', '.hidden', '.hidden/.', '.hidden/..', '.DS_Store']
+>>> list(pathlib.Path('temp').glob('**/.*', flags=pathlib.GLOBSTAR | pathlib.DOTGLOB | pathlib.SCANDOTDIR))
+[PosixPath('temp'), PosixPath('temp/..'), PosixPath('temp/.hidden'), PosixPath('temp/.hidden/..'), PosixPath('temp/.DS_Store')]
+>>> list(pathlib.Path('temp').glob('**/.*', flags=pathlib.GLOBSTAR | pathlib.DOTGLOB | pathlib.SCANDOTDIR | pathlib.NOUNIQUE))
+[PosixPath('temp'), PosixPath('temp/..'), PosixPath('temp/.hidden'), PosixPath('temp/.hidden'), PosixPath('temp/.hidden/..'), PosixPath('temp/.DS_Store')]
 ```
 
 This flag has no affect when used match functions such as [`globmatch`](#globmatch) and
