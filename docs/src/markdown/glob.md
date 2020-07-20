@@ -436,10 +436,12 @@ matched if it matches at least one inclusion pattern and matches **none** of the
 def escape(pattern, unix=None):
 ```
 
-This escapes special glob meta characters so they will be treated as literal characters.  It escapes using backslashes.
-It will escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `^`, `{`, `}`, and `\`. It is made to handle normal strings.
-If for some reason you wish to use raw strings (`r'raw/string'`), it is recommended that you use
-[`raw_escape`](#raw_escape).
+This escapes special glob meta characters so they will be treated as literal characters. It escapes using backslashes.
+It will escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `^`, `{`, and `}`. `\` will be escaped on Linux/Unix
+systems. Its intended use is escaping paths or path parts for use in patterns.
+
+Raw strings can be used as well, but if you wish to use raw strings that represent a Python string (where `\` are
+actually denoted by `\\`), then you may wish to use [`raw_escape`](#raw_escape).
 
 ```pycon3
 >>> from wcmatch import glob
@@ -449,7 +451,7 @@ If for some reason you wish to use raw strings (`r'raw/string'`), it is recommen
 True
 ```
 
-Can also be handle Windows style with `/` or `\\` path separators:
+`escape` can also handle Windows style with `/` or `\\` path separators:
 
 ```pycon3
 >>> from wmcatch import glob
@@ -459,9 +461,10 @@ Can also be handle Windows style with `/` or `\\` path separators:
 True
 ```
 
-On a Windows system, drives only allow escaping `{`, `}`, and `|` for support with [`BRACE`](#brace) and/or
-[`SPLIT`](#split). This is because characters (except for pattern expansion characters) are not parsed in drives.
-Drives on Windows are generally treated special.
+On a Windows system, meta characters are not processed in drives/mounts except pattern expansion characters such `{`,
+`}`, and `|` when using [`BRACE`](#brace) and/or [`SPLIT`](#split). These pattern expansion happens in an earlier step
+and are handled a bit differently. These characters are the only ones that need to be escaped in Windows drives and will
+be properly escaped by `escape`.
 
 ```pycon3
 >>> from wmcatch import glob
@@ -470,7 +473,7 @@ Drives on Windows are generally treated special.
 ```
 
 `escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since
-[`globmatch`](#globmatch) allows you to match Unix style paths on a Windows system and vice versa, You can force
+[`globmatch`](#globmatch) allows you to match Unix style paths on a Windows system and vice versa, you can force
 Unix style escaping or Windows style escaping via the `unix` parameter. When `unix` is `None`, the escape style will be
 detected, when `unix` is `True` Linux/Unix style escaping will be used, and when `unix` is `False` Windows style
 escaping will be used.
@@ -493,10 +496,34 @@ escaping will be used.
 def raw_escape(pattern, unix=None, raw_chars=True):
 ```
 
-This is like [`escape`](#escape) except it will escape paths provided as raw strings. Raw strings will be treated
-like a normal python string and handle Python specific escapes as well. This is good if you have an interface that
-provides strings in this form (maybe from a GUI or otherwise). You can disable the Python specific escapes by setting
-`raw_chars` to `False`. `raw_chars` is meant to be used when the [`RAWCHARS`](#rawchars) flag is also set.
+This is like [`escape`](#escape) except it will escape paths provided as raw strings. Or more specifically, strings
+whose content is a representation of a Python string. Simply using Python raw strings does not mean you need to use
+`raw_escape`, as `escape` can handle raw strings well enough:
+
+```pycon3
+>>> glob.escape(r'my\file-[work].txt', unix=False)
+'my\\\\file\\-\\[work\\].txt'
+```
+
+But if you are accepting an input from a source that is giving you a representation of a Python string (where `\` is
+represented by two `\`), then `raw_escape` is what you want:
+
+```pycon3
+>>> glob.raw_escape(r'my\\file-[work].txt', unix=False)
+'my\\\\file\\-\\[work\\].txt'
+```
+
+By default `raw_escape` always translates Python character back references into actual characters, but if this is not
+needed, a new option called `raw_chars` (`True` by default) has been added so this behavior can be disabled:
+
+```pycon3
+>>> glob.raw_escape(r'my\\file-\x31.txt', unix=False)
+'my\\\\file\\-1.txt'
+>>> glob.raw_escape(r'my\\file-\x31.txt', unix=False, raw_chars=False)
+'my\\\\file\\-\\\\x31.txt'
+```
+
+`raw_escape` allows you to match exactly what is specified in the raw string.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -506,7 +533,7 @@ provides strings in this form (maybe from a GUI or otherwise). You can disable t
 True
 ```
 
-Can also be handle Windows style with `/` or `\\` path separators:
+It also handles Windows style paths with `/` or `\\` path separators:
 
 ```pycon3
 >>> from wcmatch import glob
@@ -516,22 +543,14 @@ Can also be handle Windows style with `/` or `\\` path separators:
 True
 ```
 
-When disabling `raw_chars`, Python style escapes will no longer be evaluated:
-
-```pycon3
->>> from wcmatch import glob
->>> glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt', raw_chars=False)
-'some/path\\?/\\\\x2a\\\\x2afile\\\\x2a\\\\x2a\\{\\}.txt'
-```
-
 `raw_escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since
-[`globmatch`](#globmatch) allows you to match Unix style paths on a Windows system, and vice versa. You can force
+[`globmatch`](#globmatch) allows you to match Unix style paths on a Windows system, and vice versa, you can force
 Unix style escaping or Windows style escaping via the `unix` parameter. When `unix` is `None`, the escape style will be
 detected, when `unix` is `True` Linux/Unix style escaping will be used, and when `unix` is `False` Windows style
 escaping will be used.
 
 ```pycon3
->>> glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt')
+>>> glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt', unix=True)
 ```
 
 !!! new "New 5.0"

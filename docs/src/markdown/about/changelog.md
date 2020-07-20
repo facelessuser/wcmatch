@@ -7,7 +7,8 @@ Check out [Release Notes](./release.md#upgrade-to-70) to learn more about upgrad
 - **NEW**: Recognize extended UNC paths.
 - **NEW**: Allow escaping any character in Windows drives for better compatibility with `SPLIT` and `BRACE` which
   requires a user to escape `{`, `}` and `|` to avoid expanding a pattern.
-- **NEW**: `raw_escape` now accepts the `raw_chars` parameter so that translation of Python raw escapes can be disabled.
+- **NEW**: `raw_escape` now accepts the `raw_chars` parameter so that translation of Python character back references
+  can be disabled.
 - **NEW**: Search functions that crawl the filesystem, such as `glob.glob`, `glob.iglob`, `pathlib.Path.glob`, and
   `pathlib.Path.rglob`, will no longer return `.` and `..` with magic patterns such as `.*`. A literal pattern of `.`
   and `..` is required to match the special directories `.` and `..`.

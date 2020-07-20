@@ -34,6 +34,7 @@ builtin
 centric
 configurability
 deMorgan
+deduping
 deprecations
 falsy
 filename
