@@ -1031,6 +1031,16 @@ class TestHidden(_TestGlob):
                 ('.aa',), ('.bb',), ('.', '.aa', '.')
             ],
             glob.D | glob.S | glob.Q | glob._PATHLIB
+        ],
+        # `pathlib` should still filter out duplicates if `.` and trailing slashes are normalized and
+        # a single patter is used.
+        [
+            ('**', '.*'),
+            [
+                ('.', ), ('..', ), ('.aa',), ('.bb',), ('.bb', '..'),
+                ('a', '.'), ('a', '..'), ('.aa', '..')
+            ],
+            glob.D | glob.S | glob.SCANDOTDIR | glob._PATHLIB
         ]
     ]
 
