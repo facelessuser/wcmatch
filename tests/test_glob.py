@@ -914,6 +914,51 @@ class TestGlobMarked(Testglob):
     DEFAULT_FLAGS = glob.BRACE | glob.EXTGLOB | glob.GLOBSTAR | glob.FOLLOW | glob.MARK
 
 
+class TestPathlibNorm(unittest.TestCase):
+    """Test normalization cases."""
+
+    def test_norm(self):
+        """Test normalization."""
+
+        self.assertEqual(glob.Glob('.')._pathlib_norm('/./test'), '/test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('/.'), '/')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('test/.'), 'test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('test/./'), 'test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('./.'), '')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('.'), '')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('test/./.test/'), 'test/.test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('/.test/'), '/.test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('/../../././.'), '/../..')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('./././././'), '')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('././../../'), '../..')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('/././../../'), '/../..')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('/'), '/')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('/.'), '/')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('./'), '')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('./test'), 'test')
+
+    @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
+    def test_norm_windows(self):
+        """Test normalization on Windows."""
+
+        self.assertEqual(glob.Glob('.')._pathlib_norm('\\.\\test'), '\\test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('\\.'), '\\')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('test\\.'), 'test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('test\\.\\'), 'test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('.\\.'), '')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('.'), '')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('test\\.\\.test\\'), 'test\\.test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('\\.test\\'), '\\.test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('\\..\\..\\.\\.\\.'), '\\..\\..')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('.\\.\\.\\.\\.\\'), '')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('.\\.\\..\\..\\'), '..\\..')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('\\.\\.\\..\\..\\'), '\\..\\..')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('\\'), '\\')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('\\.'), '\\')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('.\\'), '')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('.\\test'), 'test')
+
+
 class TestHidden(_TestGlob):
     """Test hidden specific cases."""
 

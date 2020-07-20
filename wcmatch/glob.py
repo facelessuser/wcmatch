@@ -99,15 +99,15 @@ FLAG_MASK = (
     _NOABSOLUTE
 )
 
-_RE_PATHLIB_NORM = [
-    re.compile(r'(?:(?:(?:/|^)\.(?:/?$|(?=/)))+|/$)'),
-    re.compile(br'(?:(?:(?:/|^)\.(?:/?$|(?=/)))+|/$)')
+_RE_PATHLIB_DOT_NORM = [
+    re.compile(r'(?:((?<=^)|(?<=/))\.(?:/|$))+'),
+    re.compile(br'(?:((?<=^)|(?<=/))\.(?:/|$))+')
 
 ]
 
-_RE_WIN_PATHLIB_NORM = [
-    re.compile(r'(?:(?:(?:[\\/]|^)\.(?:[\\/]?$|(?=[\\/])))+|[\\/]$)'),
-    re.compile(br'(?:(?:(?:[\\/]|^)\.(?:[\\/]?$|(?=[\\/])))+|[\\/]$)')
+_RE_WIN_PATHLIB_DOT_NORM = [
+    re.compile(r'(?:((?<=^)|(?<=[\\/]))\.(?:[\\/]|$))+'),
+    re.compile(br'(?:((?<=^)|(?<=[\\/]))\.(?:[\\/]|$))+')
 ]
 
 
@@ -178,10 +178,12 @@ class Glob(object):
         self._parse_patterns(pattern)
         if self.flags & FORCEWIN:
             self.sep = b'\\' if self.is_bytes else '\\'
-            self.pathlib_norm = _RE_WIN_PATHLIB_NORM[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
+            self.seps = (b'/' if self.is_bytes else '/', self.sep)
+            self.pathlib_norm = _RE_WIN_PATHLIB_DOT_NORM[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
         else:
             self.sep = b'/' if self.is_bytes else '/'
-            self.pathlib_norm = _RE_PATHLIB_NORM[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
+            self.seps = (self.sep,)
+            self.pathlib_norm = _RE_PATHLIB_DOT_NORM[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
 
     def _iter_patterns(self, patterns):
         """Iterate expanded patterns."""
@@ -480,11 +482,17 @@ class Glob(object):
             unique = True
         return unique
 
+    def _pathlib_norm(self, path):
+        """Normalize path as `pathlib` does."""
+
+        path = self.pathlib_norm.sub(self.empty, path)
+        return path[:-1] if len(path) > 1 and path[-1:] in self.seps else path
+
     def format_path(self, path, is_dir, dir_only):
         """Format path."""
 
         path = os.path.join(path, self.empty) if dir_only or (self.mark and is_dir) else path
-        if self.is_unique(self.pathlib_norm.sub(self.empty, path) if self.pathlib else path):
+        if self.is_unique(self._pathlib_norm(path) if self.pathlib else path):
             yield path
 
     def glob(self):
