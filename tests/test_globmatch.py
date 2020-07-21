@@ -301,6 +301,10 @@ class TestGlobFilter:
         ['a/.*/b', ['a/./b', 'a/../b', 'a/.d/b'], glob.D],
         ['a/*/b', ['a/c/b'], 0],
         ['a/.*/b', ['a/./b', 'a/../b', 'a/.d/b'], 0],
+        ['a/.*/b', ['a/.d/b'], glob.Z],
+        # Escaped `.` will still be treated as a `.`
+        [r'a/\.*/b', ['a/./b', 'a/../b', 'a/.d/b'], 0],
+        [r'a/\.*/b', ['a/.d/b'], glob.Z],
 
         # this also tests that changing the options needs
         # to change the cache key, even if the pattern is
@@ -481,7 +485,8 @@ class TestGlobFilter:
         GlobFiles(
             [
                 'a/b/.x/c', 'a/b/.x/c/d', 'a/b/.x/c/d/e', 'a/b/.x', 'a/b/.x/',
-                'a/.x/b', '.x', '.x/', '.x/a', '.x/a/b', 'a/.x/b/.x/c', '.x/.x'
+                'a/.x/b', '.x', '.x/', '.x/a', '.x/a/b', 'a/.x/b/.x/c', '.x/.x',
+                'test.x/a'
             ]
         ),
         [
@@ -489,6 +494,20 @@ class TestGlobFilter:
             [
                 '.x/', '.x/a', '.x/a/b', 'a/.x/b', 'a/b/.x/', 'a/b/.x/c',
                 'a/b/.x/c/d', 'a/b/.x/c/d/e'
+            ]
+        ],
+
+        [
+            '**.x/*',
+            [
+                'test.x/a', '.x/a'
+            ]
+        ],
+
+        [
+            r'**\.x/*',
+            [
+                'test.x/a', '.x/a'
             ]
         ],
 
@@ -529,25 +548,76 @@ class TestGlobFilter:
         ['@(test\\', ['@(test\\']],
         ['@(test[)', ['test[']],
 
+        # Dot tests
+        GlobFiles(
+            [
+                '.', '..', '.abc', 'abc', '...', '..abc'
+            ]
+        ),
+
+        # Basic dot tests
+        ['[.]abc', []],
+        [r'[\.]abc', []],
+        ['.abc', ['.abc']],
+        [r'\.abc', ['.abc']],
+        ['[.]abc', ['.abc'], glob.D],
+        [r'[\.]abc', ['.abc'], glob.D],
+
+        ['.', ['.']],
+        ['..', ['..']],
+        ['.*', ['.', '..', '.abc', '...', '..abc']],
+        [r'.\a*', ['.abc']],
+        [r'\.', ['.']],
+        [r'\..', ['..']],
+        [r'\.\.', ['..']],
+        ['..*', ['..', '...', '..abc']],
+        [r'...', ['...']],
+        [r'..\.', ['...']],
+
+        ['.', ['.'], glob.Z],
+        ['..', ['..'], glob.Z],
+        ['.*', ['.abc', '...', '..abc'], glob.Z],
+        [r'.\a*', ['.abc'], glob.Z],
+        [r'\.', ['.'], glob.Z],
+        [r'\..', ['..'], glob.Z],
+        [r'\.\.', ['..'], glob.Z],
+        ['..*', ['...', '..abc'], glob.Z],
+        [r'...', ['...'], glob.Z],
+        [r'..\.', ['...'], glob.Z],
+
+        # Dot tests trailing slashes
+        GlobFiles(
+            [
+                './', '../', '.abc/', 'abc/', '.../', '..abc/'
+            ]
+        ),
+        ['./', ['./']],
+        ['../', ['../']],
+        ['..\\', [] if util.is_case_sensitive() else ['../']],
+        ['./', ['./'], glob.Z],
+        ['../', ['../'], glob.Z],
+        ['..\\', [] if util.is_case_sensitive() else ['../'], glob.Z],
+
         # Inverse dot tests
         GlobFiles(
             [
                 '.', '..', '.abc', 'abc'
             ]
         ),
+
         # We enable glob.N by default, so staring with `!`
         # is a problem without glob.M
         ['!(test)', ['abc'], glob.M],
         ['!(test)', ['.abc', 'abc'], glob.D | glob.M],
         ['.!(test)', ['.', '..', '.abc'], glob.M],
         ['.!(test)', ['.', '..', '.abc'], glob.D | glob.M],
-        ['!(.)', ['..', '.abc', 'abc'], glob.M],
-        [r'!(\.)', ['..', '.abc', 'abc'], glob.M],
-        [r'!(\x2e)', ['..', '.abc', 'abc'], glob.M | glob.R],
-        ['@(!(.))', ['..', '.abc', 'abc'], glob.M],
-        ['!(@(.))', ['..', '.abc', 'abc'], glob.M],
-        ['+(!(.))', ['..', '.abc', 'abc'], glob.M],
-        ['!(+(.))', ['.abc', 'abc'], glob.M],
+        ['!(.)', ['abc'], glob.M],
+        [r'!(\.)', ['abc'], glob.M],
+        [r'!(\x2e)', ['abc'], glob.M | glob.R],
+        ['@(!(.))', ['abc'], glob.M],
+        ['!(@(.))', ['abc'], glob.M],
+        ['+(!(.))', ['abc'], glob.M],
+        ['!(+(.))', ['abc'], glob.M],
         ['!(?)', ['abc'], glob.M],
         ['!(*)', [], glob.M],
         ['!([.])', ['abc'], glob.M],
@@ -557,10 +627,13 @@ class TestGlobFilter:
         ['@(!(.))', ['..', '.abc', 'abc'], glob.M | glob.D],
         ['!(@(.))', ['..', '.abc', 'abc'], glob.M | glob.D],
         ['+(!(.))', ['..', '.abc', 'abc'], glob.M | glob.D],
+        ['+(!(.))', ['.abc', 'abc'], glob.M | glob.D | glob.Z],
         ['!(+(.))', ['.abc', 'abc'], glob.M | glob.D],
         ['!(?)', ['.abc', 'abc'], glob.M | glob.D],
         ['!(*)', [], glob.M | glob.D],
         ['!([.])', ['.abc', 'abc'], glob.M | glob.D],
+        ['@(..|.)', ['.', '..']],
+        ['@(..|.)', ['.', '..'], glob.Z],
 
         # More extended pattern dot related tests
         ['*(.)', ['.', '..']],

@@ -1,19 +1,38 @@
 # Changelog
 
-## 6.1
+## 7.0
 
-- **NEW**: Recognize extended UNC, such as: `//?/UNC/server/mount`, `//?/UNC/c:`, etc.
+Check out [Release Notes](./release.md#upgrade-to-70) to learn more about upgrading to 7.0.
+
+- **NEW**: Recognize extended UNC paths.
 - **NEW**: Allow escaping any character in Windows drives for better compatibility with `SPLIT` and `BRACE` which
   requires a user to escape `{`, `}` and `|` to avoid expanding a pattern.
-- **NEW**: `raw_escape` now accepts the `raw_chars` parameter so that translation of Python raw escapes can be disabled.
+- **NEW**: `raw_escape` now accepts the `raw_chars` parameter so that translation of Python character back references
+  can be disabled.
+- **NEW**: Search functions that crawl the filesystem, such as `glob.glob`, `glob.iglob`, `pathlib.Path.glob`, and
+  `pathlib.Path.rglob`, will no longer return `.` and `..` with magic patterns such as `.*`. A literal pattern of `.`
+  and `..` is required to match the special directories `.` and `..`.
+- **NEW**: Add `SCANDOTDIR` flag to enable previous behavior in search functions that caused pattern like `.*` to match
+  `.` and `..`.
+- **NEW**: Flag `NODOTDIR` has been added to disable patterns such as `.*` from matching `.` and `..` in matching
+  functions (that don't crawl the filesystem) such as `globmatch`, `pathlib.PurePath.match`, etc. When enabled, matching
+  functions will require a literal pattern of `.` and `..` to match the special directories `.` and `..`.
+- **FIX**: Negative extended glob patterns (`!(...)`) incorrectly allowed for hidden files to be returned when one of the
+  subpatterns started with `.`, even when `DOTMATCH`/`DOTGLOB` was not enabled.
+- **FIX**: When `NOUNIQUE` is enabled and `pathlib` is being used, you could still get non-unique results across
+  patterns expanded with `BRACE` or `SPLIT` (or even by simply providing a list of patterns). Ensure that unique results
+  are only returned when `NOUNIQUE` is not enabled.
+- **FIX**: Fix corner cases with `escape` and `raw_escape` with back slashes.
+- **FIX**: Ensure that `globmatch` does not match `test//` with pattern `test/*`.
+
+## 6.1
+
 - **NEW**: `EXTMATCH`/`EXTGLOB` can now be used with `NEGATE` without needing `MINUSNEGATE`. If a pattern starts with
   `!(`, and `NEGATE` and `EXTMATCH`/`EXTGLOB` are both enabled, the pattern will not be treated as a `NEGATE` pattern
   (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate a pattern that starts with a literal `(`, you must
   escape the bracket: `!\(`.
 - **FIX**: Support Python 3.9.
 - **FIX**: Adjust pattern limit logic of `glob` to be consistent with other functions.
-- **BUG**: Fix corner cases with `escape` and `raw_escape` with back slashes.
-- **BUG**: Ensure that `globmatch` does not match `test//` with pattern `test/*`.
 
 ## 6.0.3
 

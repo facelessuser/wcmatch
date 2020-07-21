@@ -22,6 +22,7 @@ IN THE SOFTWARE.
 """
 import os
 import sys
+import re
 import functools
 from . import _wcparse
 from . import util
@@ -30,7 +31,8 @@ __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE", "NOUNIQUE",
     "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX", "GLOBTILDE",
-    "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T", "Q",
+    "NODOTDIR", "SCANDOTDIR",
+    "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T", "Q", "Z", "SD",
     "iglob", "glob", "globmatch", "globfilter", "escape", "raw_escape"
 )
 
@@ -58,8 +60,12 @@ W = FORCEWIN = _wcparse.FORCEWIN
 U = FORCEUNIX = _wcparse.FORCEUNIX
 T = GLOBTILDE = _wcparse.GLOBTILDE
 Q = NOUNIQUE = _wcparse.NOUNIQUE
+Z = NODOTDIR = _wcparse.NODOTDIR
 
-K = MARK = 0x100000
+K = MARK = 0x1000000
+SD = SCANDOTDIR = 0x2000000
+
+_PATHLIB = 0x8000000
 
 # Internal flags
 _EXTMATCHBASE = _wcparse._EXTMATCHBASE
@@ -87,10 +93,22 @@ FLAG_MASK = (
     FORCEUNIX |
     GLOBTILDE |
     NOUNIQUE |
+    NODOTDIR |
     _EXTMATCHBASE |
     _RTL |
     _NOABSOLUTE
 )
+
+_RE_PATHLIB_DOT_NORM = [
+    re.compile(r'(?:((?<=^)|(?<=/))\.(?:/|$))+'),
+    re.compile(br'(?:((?<=^)|(?<=/))\.(?:/|$))+')
+
+]
+
+_RE_WIN_PATHLIB_DOT_NORM = [
+    re.compile(r'(?:((?<=^)|(?<=[\\/]))\.(?:[\\/]|$))+'),
+    re.compile(br'(?:((?<=^)|(?<=[\\/]))\.(?:[\\/]|$))+')
+]
 
 
 def _flag_transform(flags):
@@ -126,6 +144,8 @@ class Glob(object):
         self.root_dir = util.fscodec(root_dir, self.is_bytes) if root_dir is not None else self.current
         self.nounique = bool(flags & NOUNIQUE)
         self.mark = bool(flags & MARK)
+        # Only scan for `.` and `..` if it is specifically requested.
+        self.scandotdir = flags & SCANDOTDIR
         if self.mark:
             flags ^= MARK
         self.negateall = bool(flags & NEGATEALL)
@@ -134,10 +154,15 @@ class Glob(object):
         self.nodir = bool(flags & NODIR)
         if self.nodir:
             flags ^= NODIR
+        self.pathlib = bool(flags & _PATHLIB)
+        if self.pathlib:
+            flags ^= _PATHLIB
         # Right to left searching is only for matching
         if flags & _RTL:  # pragma: no cover
             flags ^= _RTL
         self.flags = _flag_transform(flags | REALPATH)
+        if not self.scandotdir and not self.flags & NODOTDIR:
+            self.flags |= NODOTDIR
         self.raw_chars = bool(self.flags & RAWCHARS)
         self.follow_links = bool(self.flags & FOLLOW)
         self.dot = bool(self.flags & DOTMATCH)
@@ -153,8 +178,12 @@ class Glob(object):
         self._parse_patterns(pattern)
         if self.flags & FORCEWIN:
             self.sep = b'\\' if self.is_bytes else '\\'
+            self.seps = (b'/' if self.is_bytes else '/', self.sep)
+            self.pathlib_norm = _RE_WIN_PATHLIB_DOT_NORM[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
         else:
             self.sep = b'/' if self.is_bytes else '/'
+            self.seps = (self.sep,)
+            self.pathlib_norm = _RE_PATHLIB_DOT_NORM[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
 
     def _iter_patterns(self, patterns):
         """Iterate expanded patterns."""
@@ -206,7 +235,12 @@ class Glob(object):
 
         # A single positive pattern will not find multiples of the same file
         # disable unique mode so that we won't waste time or memory computing unique returns.
-        if len(self.pattern) <= 1 and not self.nounique:
+        if (
+            len(self.pattern) <= 1 and
+            not self.flags & NODOTDIR and
+            not self.nounique and
+            not (self.pathlib and self.scandotdir)
+        ):
             self.nounique = True
 
     def _is_hidden(self, name):
@@ -453,11 +487,17 @@ class Glob(object):
             unique = True
         return unique
 
+    def _pathlib_norm(self, path):
+        """Normalize path as `pathlib` does."""
+
+        path = self.pathlib_norm.sub(self.empty, path)
+        return path[:-1] if len(path) > 1 and path[-1:] in self.seps else path
+
     def format_path(self, path, is_dir, dir_only):
         """Format path."""
 
         path = os.path.join(path, self.empty) if dir_only or (self.mark and is_dir) else path
-        if self.is_unique(path):
+        if self.is_unique(self._pathlib_norm(path) if self.pathlib else path):
             yield path
 
     def glob(self):

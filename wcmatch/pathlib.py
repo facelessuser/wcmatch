@@ -8,7 +8,8 @@ __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "NEGATE", "MINUSNEGATE", "BRACE",
     "REALPATH", "FOLLOW", "MATCHBASE", "NEGATEALL", "NODIR", "NOUNIQUE",
-    "C", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A", "Q",
+    "NODOTDIR", "SCANDOTDIR",
+    "C", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A", "Q", "Z", "SD",
     "Path", "PurePath", "WindowsPath", "PosixPath", "PurePosixPath", "PureWindowsPath"
 )
 
@@ -28,6 +29,9 @@ X = MATCHBASE = glob.MATCHBASE
 O = NODIR = glob.NODIR
 A = NEGATEALL = glob.NEGATEALL
 Q = NOUNIQUE = glob.NOUNIQUE
+Z = NODOTDIR = glob.NODOTDIR
+
+SD = SCANDOTDIR = glob.SCANDOTDIR
 
 # Internal flags
 _EXTMATCHBASE = _wcparse._EXTMATCHBASE
@@ -36,6 +40,8 @@ _NOABSOLUTE = _wcparse._NOABSOLUTE
 _PATHNAME = _wcparse.PATHNAME
 _FORCEWIN = _wcparse.FORCEWIN
 _FORCEUNIX = _wcparse.FORCEUNIX
+
+_PATHLIB = glob._PATHLIB
 
 FLAG_MASK = (
     CASE |
@@ -54,6 +60,7 @@ FLAG_MASK = (
     NODIR |
     NEGATEALL |
     NOUNIQUE |
+    NODOTDIR |
     _EXTMATCHBASE |
     _RTL |
     _NOABSOLUTE
@@ -85,7 +92,8 @@ class Path(pathlib.Path):
         """
 
         if self.is_dir():
-            flags = self._translate_flags(flags | _NOABSOLUTE)
+            scandotdir = flags & SCANDOTDIR
+            flags = self._translate_flags(flags | _NOABSOLUTE) | ((_PATHLIB | SCANDOTDIR) if scandotdir else _PATHLIB)
             for filename in glob.iglob(patterns, flags=flags, root_dir=str(self), limit=limit):
                 yield self.joinpath(filename)
 

@@ -283,7 +283,7 @@ class _TestGlob:
         else:
             p = [p]
         res = glob.glob(p, **kwargs)
-        print("RESULTS: ", res)
+        print("RESULTS: ", sorted(res))
         if res:
             cls.assert_equal({type(r) for r in res}, {str})
         cls.assert_count_equal(glob.iglob(p, **kwargs), res)
@@ -350,7 +350,7 @@ class _TestGlob:
         print("PATTERN: ", pattern)
         print("FLAGS: ", bin(flags))
         print("NEGATIVE: ", bin(negative))
-        print("EXPECTED: ", results)
+        print("EXPECTED: ", sorted(results) if results is not None else results)
 
         if cls.cwd_temp:
             if negative:
@@ -385,7 +385,8 @@ class Testglob(_TestGlob):
         # Glob one directory
         [('a*',), [('a',), ('aab',), ('aaa',)]],
         [('*a',), [('a',), ('aaa',)]],
-        [('.*',), [('.',), ('..',), ('.aa',), ('.bb',)]],
+        [('.*',), [('.',), ('..',), ('.aa',), ('.bb',)], glob.SCANDOTDIR],
+        [('.*',), [('.aa',), ('.bb',)]],
         [('?aa',), [('aaa',)]],
         [('aa?',), [('aaa',), ('aab',)]],
         [('aa[ab]',), [('aaa',), ('aab',)]],
@@ -913,13 +914,134 @@ class TestGlobMarked(Testglob):
     DEFAULT_FLAGS = glob.BRACE | glob.EXTGLOB | glob.GLOBSTAR | glob.FOLLOW | glob.MARK
 
 
+class TestPathlibNorm(unittest.TestCase):
+    """Test normalization cases."""
+
+    def test_norm(self):
+        """Test normalization."""
+
+        self.assertEqual(glob.Glob('.')._pathlib_norm('/./test'), '/test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('/.'), '/')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('test/.'), 'test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('test/./'), 'test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('./.'), '')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('.'), '')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('test/./.test/'), 'test/.test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('/.test/'), '/.test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('/../../././.'), '/../..')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('./././././'), '')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('././../../'), '../..')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('/././../../'), '/../..')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('/'), '/')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('/.'), '/')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('./'), '')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('./test'), 'test')
+
+    @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
+    def test_norm_windows(self):
+        """Test normalization on Windows."""
+
+        self.assertEqual(glob.Glob('.')._pathlib_norm('\\.\\test'), '\\test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('\\.'), '\\')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('test\\.'), 'test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('test\\.\\'), 'test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('.\\.'), '')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('.'), '')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('test\\.\\.test\\'), 'test\\.test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('\\.test\\'), '\\.test')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('\\..\\..\\.\\.\\.'), '\\..\\..')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('.\\.\\.\\.\\.\\'), '')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('.\\.\\..\\..\\'), '..\\..')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('\\.\\.\\..\\..\\'), '\\..\\..')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('\\'), '\\')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('\\.'), '\\')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('.\\'), '')
+        self.assertEqual(glob.Glob('.')._pathlib_norm('.\\test'), 'test')
+
+
 class TestHidden(_TestGlob):
     """Test hidden specific cases."""
 
     cases = [
-        [('**', '.*'), [('a', '.'), ('a', '..'), ('.aa',), ('.bb',), ('.',), ('..',)]],
-        [('*', '.*'), [('a', '.'), ('a', '..')]],
-        [('.*',), [('.aa',), ('.bb',), ('.',), ('..',)]]
+        [('**', '.*'), [('a', '.'), ('a', '..'), ('.aa',), ('.bb',), ('.',), ('..',)], glob.SCANDOTDIR],
+        [('*', '.*'), [('a', '.'), ('a', '..')], glob.SCANDOTDIR],
+        [('.*',), [('.aa',), ('.bb',), ('.',), ('..',)], glob.SCANDOTDIR],
+        [
+            ('**', '.*'),
+            [
+                ('a', '.'), ('a', '..'), ('.aa',), ('.aa', '.'), ('.aa', '..'),
+                ('.bb',), ('.bb', '.'), ('.bb', '..'), ('.',), ('..',)
+            ],
+            glob.D | glob.SCANDOTDIR
+        ],
+        [
+            ('**', '.*|**', '.', '.aa', '.'),
+            [
+                ('a', '.'), ('a', '..'), ('.aa',), ('.aa', '.'), ('.aa', '..'),
+                ('.bb',), ('.bb', '.'), ('.bb', '..'), ('.',), ('..',), ('.', '.aa', '.')
+            ],
+            glob.D | glob.S | glob.SCANDOTDIR
+        ],
+
+        # Test `pathlib` mode. `pathlib` normalizes out `.` directories, so when evaluating unique values,
+        # normalize paths with `.`.
+
+        # Prevent matching `.aa` and `.aa/.` (same with `.bb`)
+        [('**', '.*'), [('.aa',), ('.bb',)]],
+        [('**', '.*'), [('.aa',), ('.bb',)], glob.Z],
+        [('**', '.*'), [('.aa',), ('.bb',)], glob.SCANDOTDIR | glob.Z],
+
+        [
+            ('**', '.*'),
+            [
+                ('.aa',), ('.bb',)
+            ],
+            glob.D
+        ],
+        # Prevent matching `.aa/.` and `./.aa/.` as they are all the same as `.aa`
+        [
+            ('**', '.*|**', '.', '.aa', '.'),
+            [
+                ('.aa',), ('.bb',), ('.', '.aa', '.')
+            ],
+            glob.D | glob.S
+        ],
+        # Unique logic is disabled, so we can match `.aa` from one pattern and `./.aa/.` from another pattern.
+        # Duplicates are still restricted from a single pattern, so `.aa/.` is not found in the first pattern as
+        # `.aa` was already found, but unique results across multi-patterns is not enforced.
+        [
+            ('**', '.*|**', '.', '.aa', '.'),
+            [
+                ('.aa',), ('.bb',), ('.', '.aa', '.')
+            ],
+            glob.D | glob.S | glob.Q
+        ],
+        # Enable `pathlib` mode to ensure unique across multiple `pathlib` patterns.
+        [
+            ('**', '.*|**', '.', '.aa', '.'),
+            [
+                ('.aa',), ('.bb',)
+            ],
+            glob.D | glob.S | glob._PATHLIB
+        ],
+        # `NOUNIQUE` disables `pathlib` mode unique filtering.
+        [
+            ('**', '.*|**', '.', '.aa', '.'),
+            [
+                ('.aa',), ('.bb',), ('.', '.aa', '.')
+            ],
+            glob.D | glob.S | glob.Q | glob._PATHLIB
+        ],
+        # `pathlib` should still filter out duplicates if `.` and trailing slashes are normalized and
+        # a single patter is used.
+        [
+            ('**', '.*'),
+            [
+                ('.', ), ('..', ), ('.aa',), ('.bb',), ('.bb', '..'),
+                ('a', '.'), ('a', '..'), ('.aa', '..')
+            ],
+            glob.D | glob.S | glob.SCANDOTDIR | glob._PATHLIB
+        ]
     ]
 
     @classmethod
@@ -1285,6 +1407,12 @@ class TestTilde(unittest.TestCase):
 
         files = os.listdir(os.path.expanduser('~'))
         self.assertEqual(len(glob.glob('~/*', flags=glob.T | glob.D)), len(files))
+
+    def test_tilde_bytes(self):
+        """Test tilde in bytes."""
+
+        files = os.listdir(os.path.expanduser(b'~'))
+        self.assertEqual(len(glob.glob(b'~/*', flags=glob.T | glob.D)), len(files))
 
     def test_tilde_user(self):
         """Test tilde user cases."""

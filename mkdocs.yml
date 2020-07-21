@@ -9,6 +9,8 @@ copyright: |
 docs_dir: docs/src/markdown
 theme:
   name: material
+  icon:
+    logo: material/book-open-page-variant
   palette:
     primary: drac-purple
     accent: drac-purple
@@ -26,6 +28,7 @@ nav:
   - Wcmatch: wcmatch.md
   - About:
       - Changelog: about/changelog.md
+      - Release Notes: about/release.md
       - License: about/license.md
 
 markdown_extensions:
