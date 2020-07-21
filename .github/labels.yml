@@ -4,10 +4,11 @@ template: 'facelessuser:master-labels:labels.yml:master'
 
 brace_expansion: true
 extended_glob: true
+minus_negate: false
 
 rules:
   - labels: ['C: infrastructure']
-    patterns: ['*|{tools,requirements,.github}/**|-*.md']
+    patterns: ['*|{tools,requirements,.github}/**|!*.md']
 
   - labels: ['C: source']
     patterns: ['wcmatch/**']
@@ -19,19 +20,19 @@ rules:
     patterns: ['docs/**|*.md']
 
   - labels: ['C: glob']
-    patterns: ['**/?(test_)glob*|-docs/**']
+    patterns: ['**/?(test_)glob*|!docs/**']
 
   - labels: ['C: fnmatch']
-    patterns: ['**/?(test_)fnmatch*|-docs/**']
+    patterns: ['**/?(test_)fnmatch*|!docs/**']
 
   - labels: ['C: wcmatch']
-    patterns: ['**/?(test_)wcmatch*|-docs/**']
+    patterns: ['**/?(test_)wcmatch*|!docs/**']
 
   - labels: ['C: pathlib']
-    patterns: ['**/?(test_)pathlib*|-docs/**']
+    patterns: ['**/?(test_)pathlib*|!docs/**']
 
   - labels: ['C: pattern-parser']
-    patterns: ['**/?(test_|_)wcparse*|-docs/**']
+    patterns: ['**/?(test_|_)wcparse*|!docs/**']
 
 # Label management
 
