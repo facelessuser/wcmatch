@@ -25,8 +25,7 @@ Check out [Release Notes](./release.md#upgrade-to-70) to learn more about upgrad
   are only returned when `NOUNIQUE` is not enabled.
 - **FIX**: Fix corner cases with `escape` and `raw_escape` with back slashes.
 - **FIX**: Ensure that `globmatch` does not match `test//` with pattern `test/*`.
-- **FIX**: `pathlib.match` should not evaluate symlinks (when using `REALPATH`) that are on the left hand side of what
-  was matched.
+- **FIX**: `pathlib.match` should not evaluate symlinks that are on the left hand side of what was matched.
 
 ## 6.1
 
