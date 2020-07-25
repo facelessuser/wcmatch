@@ -63,14 +63,18 @@ Pattern           | Meaning
 - By default, file and directory names starting with `.` are only matched with literal `.`.  The patterns `*`, `**`,
   `?`, and `[]` will not match a leading `.`.  To alter this behavior, you can use the [`DOTGLOB`](#dotglob) flag.
 
+- [`NEGATE`](#negate) will always enable [`DOTGLOB`](#dotglob) in exclude patterns.
+
 - Even with [`DOTGLOB`](#dotglob) enabled, special tokens will not match a special directory (`.` or `..`).  But
   when a literal `.` is used at the start of the pattern (`.*`, `.`, `..`, etc.), `.` and `..` can potentially be
   matched.
 
-- In general, Wildcard Match's behavior is modeled off of Bash's, prior to version 7.0, unlike Python's default
-  [`glob`][glob], Wildcard Match's `glob` would match and return `.` and `..` for magic patterns like `.*`. In 7.0 we
-  now avoid returning `.` and `..` in these cases. You can force this Bash-like behavior with the flag
-  [`SCANDOTDIR`](#scandotdir).
+- In general, Wildcard Match's behavior is modeled off of Bash's, and prior to version 7.0, unlike Python's default
+  [`glob`][glob], Wildcard Match's [`glob`](#glob) would match and return `.` and `..` for magic patterns like `.*`.
+  This is because our directory scanning logic inserts `.` and `..` into results to be faithful to Bash. While this
+  emulates Bash's behavior, it can be surprising to the user. In 7.0 we now avoid returning `.` and `..` in our
+  directory scanner. You can once again enable the old Bash-like behavior with the flag [`SCANDOTDIR`](#scandotdir) if
+  this old behavior is desired.
 
     Python's default:
 
@@ -80,7 +84,7 @@ Pattern           | Meaning
     []
     ```
 
-    Wcmatch:
+    Wildcard Match:
 
     ```pycon3
     >>> from wcmatch import glob
@@ -95,7 +99,7 @@ Pattern           | Meaning
     docs/. docs/..
     ```
 
-    Bash-like behavior with [`SCANDOTDIR`](#scandotdir):
+    Bash-like behavior restored in Wildcard Match [`SCANDOTDIR`](#scandotdir):
 
     ```pycon3
     >>> from wcmatch import glob
@@ -103,9 +107,46 @@ Pattern           | Meaning
     ['docs/.', 'docs/..']
     ```
 
+    It is important to stress that this logic only relates to directory scanning and does not fundamentally alter glob
+    patterns.  We can still match a path of `..` with `.*` when strictly doing a match:
+
+    ```pycon3
+    >>> from wcmatch import glob
+    >>> glob.globmatch('..', '.*')
+    True
+    ```
+
+    Nor does it affect exclude results as they are used to filter the results after directory scanning:
+
+    ```pycon3
+    >>> from wcmatch import glob
+    >>> glob.glob('..')
+    ['..']
+    >>> glob.glob(['..', '!.*'], flags=glob.NEGATE)
+    []
+    ```
+
+    If we wish to fundamentally alter the pattern matching behavior, we can use [`NODOTDIR`](#nodotdir). This would
+    provide a more Zsh feel.
+
+    ```pycon3
+    >>> from wcmatch import glob
+    >>> glob.glob(['..', '!.*'], flags=glob.NEGATE | glob.NODOTDIR)
+    ['..']
+    >>> glob.glob(['..', '!..'], flags=glob.NEGATE | glob.NODOTDIR)
+    []
+    >>> glob.globmatch('..', '.*', flags=glob.NODOTDIR)
+    False
+    ```
+
+    !!! new "Changes 7.0"
+        Prior to 7.0 `.` and `..` would get returned by our directory scanner. This is no longer the default.
+
     !!! new "New 7.0"
-        Prior to 7.0 `.` and `..` would get returned with non-literal patterns such as `.*`. This is no longer the
-        default. Legacy behavior can be restored via [`SCANDOTDIR`](#scandotdir).
+        Legacy behavior of directory scanning, in relation to `.` and `..`, can be restored via
+        [`SCANDOTDIR`](#scandotdir).
+
+        [`NODOTDIR`](#nodotdir) was added in 7.0.
 
 --8<-- "posix.txt"
 
@@ -423,7 +464,7 @@ matched if it matches at least one inclusion pattern and matches **none** of the
 (['^(?s:(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'], ['^(?s:(?=.)(?!(?:\\.{1,2})(?:$|\\/))[^\\/]*?\\/+(?=.)(?!(?:\\.{1,2})(?:$|\\/))[^\\/]*?\\.\\{py\\,txt\\}[\\/]*?)$'])
 ```
 
-!!! warning "Changed 4.0"
+!!! new "Changes 4.0"
     Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic to how
     it used to be, but is more efficient.
 
@@ -584,15 +625,18 @@ handle standard string escapes and Unicode including `#!py3 r'\N{CHAR NAME}'`.
 
 #### `glob.NEGATE, glob.N` {: #negate}
 
-`NEGATE` causes patterns that start with `!` to be treated as exclusion patterns. A pattern of `!*.py` would match any
-file but Python files. Exclusion patterns cannot be used by themselves though, and must be paired with a normal,
-inclusion pattern, either by utilizing the [`SPLIT`](#split) flag, or providing multiple patterns in a list.
-Assuming the [`SPLIT`](#split) flag, this means using it in a pattern such as `inclusion|!exclusion`.
+`NEGATE` causes patterns that start with `!` to be treated as exclusion patterns. A pattern of `!*.py` exclude any
+Python files. Exclusion patterns cannot be used by themselves though, and must be paired with a normal, inclusion
+pattern, either by utilizing the [`SPLIT`](#split) flag, or providing multiple patterns in a list. Assuming the
+[`SPLIT`](#split) flag, this means using it in a pattern such as `inclusion|!exclusion`.
 
 If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match
 unless the file matches the excluded pattern. This is done with the [`NEGATEALL`](#negateall) flag.
 
-!!! warning "Changes 4.0"
+`NEGATE` enables [`DOTGLOB`](#dotglob) in all exclude patterns, this cannot be disabled. This will not affect the
+inclusion patterns.
+
+!!! new "Changes 4.0"
     In 4.0, `NEGATE` now requires a non-exclusion pattern to be paired with it or it will match nothing. If you really
     need something similar to the old behavior, that would assume a default inclusion pattern, you can use the
     [`NEGATEALL`](#negateall).
@@ -667,22 +711,16 @@ often the name used in Bash.
 
 #### `glob.NODOTDIR, glob.Z` {: #globnodotdir}
 
-Match functions such as [`globmatch`](#globmatch) and [`globfilter`](#globfilter) follow bash's behavior and can
-match `.` and `..` in some scenarios with non-literal patterns. For instance, a pattern of `.*` will match both `.` and
-`..`.
+`NOTDOTDIR` fundamentally changes how glob patterns deal with `.` and `..`. This is great if you'd prefer a more Zsh
+feel when it comes to special directory matching. When `NODOTDIR` is enabled, "magic" patterns, such as `.*`, will not
+match the special directories of `.` and `..`. In order to match these special directories, you will have to use
+literal glob patterns of `.` and `..`. This can be used in all glob API functions that accept flags, and will affect
+inclusion patterns as well as exclusion patterns.
 
 ```pycon3
 >>> from wcmatch import glob
 >>> glob.globfilter(['.', '..'], '.*')
 ['.', '..']
-```
-
-Searching functions such as as [`glob`](#glob) and [`iglob`](#iglob) do not return `.` and `..` in these cases
-by default. If you'd like the match functions to also work this way, you can use `NODOTDIR`. Then only literal patterns
-of `.` and `..` will force a match of these special directories.
-
-```pycon3
->>> from wcmatch import glob
 >>> glob.globfilter(['.', '..'], '.*', flags=glob.NODOTDIR)
 []
 >>> glob.globfilter(['.', '..'], '.', flags=glob.NODOTDIR)
@@ -691,19 +729,32 @@ of `.` and `..` will force a match of these special directories.
 ['..']
 ```
 
+Also affects exclusion patterns:
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob(['..', '!.*'], flags=glob.NEGATE)
+[]
+>>> glob.glob(['..', '!.*'], flags=glob.NEGATE | glob.NODOTDIR)
+['..']
+>>> glob.glob(['..', '!..'], flags=glob.NEGATE | glob.NODOTDIR)
+[]
+```
+
 !!! new "New 7.0"
     `NODOTDIR` was added in 7.0.
 
 #### `glob.SCANDOTDIR, glob.SD` {: #scandotdir}
 
-Searching functions such as as [`glob`](#glob) and [`iglob`](#iglob) do not return `.` and `..` when patterns
-like `.*` are used. This is for a couple reasons:
+`SCANDOTDIR` controls the directory scanning behavior of [`glob`](#glob) and [`iglob`](#iglob). The directory scanner
+of these functions do not return `.` and `..` in their results. This means unless you use an explicit `.` or `..` in
+your glob pattern, `.` and `..` will not be returned. When `SCANDOTDIR` is enabled, `.` and `..` will be returned when a
+directory is scanned causing "magic" patterns, such as `.*`, to match `.` and `..`.
 
-1. 99% of the time, when a user specifies `.*`, they don't actually want [`glob`](#glob) to return `.` and `..`.
-2. `scandir`, Python's file crawling function, does not return `.` and `..`.
-
-Prior to version 7.0, we used to return `.` and `..` when patterns such as `.*` were used, `SCANDOTDIR` was provided
-to bring back the legacy, Bash-like feel in case it was desired.
+This only controls the directory scanning behavior and not how glob patterns behave. Exclude patterns, which filter,
+the returned results via [`NEGATE`](#negate), can still match `.` and `..` with "magic" patterns such as `.*` regardless
+of whether `SCANDOTDIR` is enabled or not. It will also have no affect on [`globmatch`](#globmatch). To fundamentally
+change how glob patterns behave, you can use [`NODOTDIR`](#nodotdir).
 
 ```pycon3
 >>> from wcmatch import glob
@@ -712,10 +763,6 @@ to bring back the legacy, Bash-like feel in case it was desired.
 >>> glob.glob('.*', flags=glob.SCANDOTDIR)
 ['.', '..', '.codecov.yml', '.tox', '.coverage', '.coveragerc', '.gitignore', '.github', '.pyspelling.yml', '.git']
 ```
-
-This flag has no affect when used match functions such as [`globmatch`](#globmatch) and
-[`globfilter`](#globfilter). Match functions follow the more Bash-like behavior by default (unless
-[`NODOTDIR`](#globnodotdir) is used).
 
 !!! new "New 7.0"
     `SCANDOTDIR` was added in 7.0.

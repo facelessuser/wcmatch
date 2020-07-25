@@ -50,15 +50,15 @@ matching:
   [`match`](#match) and [`globmatch`](purepathglobmatch) for more information.
 
 - If file searching methods ([`glob`](#glob) and [`rglob`](#rglob)) are given multiple patterns, they will
-  ensure duplicate results are filtered out. This only occurs when more than one inclusive pattern are given, or a
+  ensure duplicate results are filtered out. This only occurs when more than one inclusive pattern is given, or a
   pattern is expanded into multiple, inclusive patterns via [`BRACE`](#brace) or [`SPLIT`](#split). When
-  this occurs, an internal set is kept internally to track the results returned so that duplicates can be filtered.
-  This will not occur if only a singular inclusive pattern is given or the [`NOUNIQUE`](#nounique) is specified.
+  this occurs, an internal set is kept to track the results returned so that duplicates can be filtered. This will not
+  occur if only a single, inclusive pattern is given or the [`NOUNIQUE`](#nounique) flag is specified.
 
-- Python's [`pathlib`][pathlib], has logic to ignore `.` when used as a directory in both the file path and glob
-  pattern. We do not alter how [`pathlib`][pathlib] stores paths, but our implementation allows explicit use of `.` as a
-  literal directory and will match accordingly. With that said, since [`pathlib`][pathlib] normalizes paths by removing
-  `.` directories, in most cases you won't notice the difference, except when it comes to a path that is literally just
+- Python's [`pathlib`][pathlib] has logic to ignore `.` when used as a directory in both the file path and glob pattern.
+  We do not alter how [`pathlib`][pathlib] stores paths, but our implementation allows explicit use of `.` as a literal
+  directory and will match accordingly. With that said, since [`pathlib`][pathlib] normalizes paths by removing `.`
+  directories, in most cases, you won't notice the difference, except when it comes to a path that is literally just
   `.`.
 
     Python's default glob:
@@ -109,20 +109,28 @@ matching:
 
 - [`match`](#match) will exhibit the same right to left behavior.
 
-- Prior to version 7.0, Wildcard Match used to return `.` and `..` in [`glob`](#glob) and [`rglob`](#rglob) when
-  wildcard patterns such as `.*` were used. This created some confusion as while Wildcard Match may return `.hidden` and
-  `.hidden/.` with a pattern like `**/.*`, `pathlib` would normalize both of these paths to `.hidden`. This made it
-  difficult for users to understand why `.hidden` was matched twice.  Even more confusing to users was when `**/.*`
-  would match `not-hidden/.` but be returned normalized as `not-hidden`.
+- Prior to version 7.0, Wildcard Match used to return `.` and `..` when scanning a directory for a "magic" pattern, this
+  would cause [`glob`](#glob) and [`rglob`](#rglob) to return `.` and `..` for "magic" patterns such as `.*`. While this
+  matched Bash's behavior quite well, this did not match Python's default library and created some confusion in certain
+  scenarios. In version 7.0+, Wildcard Match's directory scanning will no longer return `.` and `..`. In order to match
+  `.` and `..`, a literal pattern of `.` or `..` should be used.
 
-    From 7.0 and beyond, [`glob`](#glob) and [`rglob`](#rglob) will no longer return `.` and `..` unless a
-    literal `.` and `..` pattern are used. This matches Python's default `pathlib` functionality and is generally less
-    confusing to the user. You can enable the legacy behavior with [`SCANDOTDIR`](#scandotdir) if desired, but
-    all the mentioned side effects will be present.
+    It is important to note that this only affects the directory scanning behavior, a glob pattern of `.*` will still
+    match `.` and `..`, you just won't see these results when a directory is scanned for a "magic" pattern. Exclude
+    patterns via [`NEGATE`](#negate) will still match `.` and `..` with `.*` as these are applied to the final results
+    after directory scanning has occurred.
+
+    For an example why this change is important to `pathlib`, let's consider the pattern `**/.*`. Wildcard Match's glob
+    patterns would reasonably match `.hidden` and `.hidden/.` with such a pattern. `pathlib` would normalize both of
+    these results to simply `.hidden` as `.` and trailing slashes would get removed. This made it difficult for users to
+    understand why `.hidden` was matched twice.  Even more confusing to users was when `**/.*` would match
+    `not-hidden/.` but be normalized as `not-hidden`.
+
+    For more information as to why these changes were made, please see the
+    [Release Note](./about/release.md#upgrade-to-70).
 
     !!! new "New 7.0"
-        [`glob`](#glob) and [`rglob`](#rglob) now only return `.` and `..` when literal patterns of `.` and
-        `..` are used.
+        [`glob`](#glob) and [`rglob`](#rglob) directory scanning does not return `.` and `..`.
 
 ## Classes
 
@@ -405,13 +413,16 @@ handle standard string escapes and Unicode including `#!py3 r'\N{CHAR NAME}'`.
 
 #### `pathlib.NEGATE, pathlib.N` {: #negate}
 
-`NEGATE` causes patterns that start with `!` to be treated as exclusion patterns. A pattern of `!*.py` would match any
-file but Python files. Exclusion patterns cannot be used by themselves though, and must be paired with a normal,
-inclusion pattern, either by utilizing the [`SPLIT`](#split) flag, or providing multiple patterns in a list.
-Assuming the [`SPLIT`](#split) flag, this means using it in a pattern such as `inclusion|!exclusion`.
+`NEGATE` causes patterns that start with `!` to be treated as exclusion patterns. A pattern of `!*.py` would exclude any
+Python files. Exclusion patterns cannot be used by themselves though, and must be paired with a normal, inclusion
+pattern, either by utilizing the [`SPLIT`](#split) flag, or providing multiple patterns in a list. Assuming the
+[`SPLIT`](#split) flag, this means using it in a pattern such as `inclusion|!exclusion`.
 
 If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match
 unless the file matches the excluded pattern. This is done with the [`NEGATEALL`](#negateall) flag.
+
+`NEGATE` enables [`DOTGLOB`](#dotglob) in all exclude patterns, this cannot be disabled. This will not affect the
+inclusion patterns.
 
 #### `pathlib.NEGATEALL, pathlib.A` {: #negateall}
 
@@ -470,26 +481,32 @@ often the name used in Bash.
 
 #### `pathlib.NODOTDIR, glob.Z` {: #nodotdir}
 
-Match functions such as [`match`](#match) and [`globmatch`](#globmatch) follow bash's behavior and can
-match `.` and `..` in some scenarios with non-literal patterns. For instance, a pattern of `.*` will match both `.` and
-`..`.
+`NOTDOTDIR` fundamentally changes how glob patterns deal with `.` and `..`. This is great if you'd prefer a more Zsh
+feel when it comes to special directory matching. When `NODOTDIR` is enabled, "magic" patterns, such as `.*`, will not
+match the special directories of `.` and `..`. In order to match these special directories, you will have to use
+literal glob patterns of `.` and `..`. This can be used in all glob API functions that accept flags, and will affect
+inclusion patterns as well as exclusion patterns.
 
 ```pycon3
 >>> from wcmatch import pathlib
 >>> pathlib.Path('..').match('.*')
 True
-```
-
-Searching functions such as as [`glob`](#glob) and [`rglob`](#rglob) do not return `.` and `..` in these cases
-by default. If you'd like the match functions to also work this way, you can use `NODOTDIR`. Then only literal patterns
-of `.` and `..` will force a match of these special directories.
-
-```pycon3
->>> from wcmatch import glob
 >>> pathlib.Path('..').match('.*', flags=pathlib.NODOTDIR)
 False
 >>> pathlib.Path('..').match('..', flags=pathlib.NODOTDIR)
 True
+```
+
+Also affects exclusion patterns:
+
+```pycon3
+>>> from wcmatch import pathlib
+>>> list(pathlib.Path('.').glob(['docs/..', '!*/.*'], flags=pathlib.NEGATE))
+[]
+>>> list(pathlib.Path('.').glob(['docs/..', '!*/.*'], flags=pathlib.NEGATE | pathlib.NODOTDIR))
+[PosixPath('docs/..')]
+>>> list(pathlib.Path('.').glob(['docs/..', '!*/..'], flags=pathlib.NEGATE | pathlib.NODOTDIR))
+[]
 ```
 
 !!! new "New 7.0"
@@ -502,34 +519,33 @@ True
     `pathlib` normalizes the paths that get returned, enabling `SCANDOTDIR` will only give confusing duplicates if using
     patterns such as `.*`. This is not a bug, but is something to be aware of.
 
-Searching functions such as as [`glob`](#glob) and [`rglob`](#rglob) do not return `.` and `..` when patterns
-like `.*` are used. This is for a couple reasons:
+`SCANDOTDIR` controls the directory scanning behavior of [`glob`](#glob) and [`rglob`](#rglob). The directory scanner
+of these functions do not return `.` and `..` in their results. This means unless you use an explicit `.` or `..` in
+your glob pattern, `.` and `..` will not be returned. When `SCANDOTDIR` is enabled, `.` and `..` will be returned when a
+directory is scanned causing "magic" patterns, such as `.*`, to match `.` and `..`.
 
-1. 99% of the time, when a user specifies `.*`, they don't actually want [`glob`](#glob) to return `.` and `..`.
-2. `scandir`, Python's file crawling function, does not return `.` and `..`.
-3. `pathlib` normalizes paths by stripping out `.`. So when using [`glob`](#glob), you might use a pattern to find
-   hidden files `**/.*` and get both `.hidden` and `.hidden/.`. `pathlib` will then normalize the paths and return two
-   `.hidden` results. This is very confusing to users.
-
-Prior to version 7.0, we used to return `.` and `..` when patterns such as `.*` were used, `SCANDOTDIR` was provided
-to bring back the legacy, Bash-like feel in case it was desired. But as noted above, the results, due to file path
-normalization, may be surprising.
+This only controls the directory scanning behavior and not how glob patterns behave. Exclude patterns, which filter,
+the returned results via [`NEGATE`](#negate), can still match `.` and `..` with "magic" patterns such as `.*` regardless
+of whether `SCANDOTDIR` is enabled or not. It will also have no affect on [`globmatch`](#globmatch). To fundamentally
+change how glob patterns behave, you can use [`NODOTDIR`](#nodotdir).
 
 ```pycon3
 >>> from wcmatch import pathlib
 >>> list(pathlib.Path('temp').glob('**/.*', flags=glob.GLOBSTAR | glob.DOTGLOB))
 [PosixPath('temp/.hidden'), PosixPath('temp/.DS_Store')]
->>> list(glob.glob('**/.*', flags=glob.GLOBSTAR | glob.DOTGLOB | glob.SCANDOTDIR, root_dir="temp"))
-['.', '..', '.hidden', '.hidden/.', '.hidden/..', '.DS_Store']
 >>> list(pathlib.Path('temp').glob('**/.*', flags=pathlib.GLOBSTAR | pathlib.DOTGLOB | pathlib.SCANDOTDIR))
 [PosixPath('temp'), PosixPath('temp/..'), PosixPath('temp/.hidden'), PosixPath('temp/.hidden/..'), PosixPath('temp/.DS_Store')]
->>> list(pathlib.Path('temp').glob('**/.*', flags=pathlib.GLOBSTAR | pathlib.DOTGLOB | pathlib.SCANDOTDIR | pathlib.NOUNIQUE))
-[PosixPath('temp'), PosixPath('temp/..'), PosixPath('temp/.hidden'), PosixPath('temp/.hidden'), PosixPath('temp/.hidden/..'), PosixPath('temp/.DS_Store')]
 ```
 
-This flag has no affect when used match functions such as [`globmatch`](#globmatch) and
-[`globfilter`](#globfilter). Match functions follow the more Bash-like behavior by default (unless
-[`NODOTDIR`](#nodotdir) is used).
+Notice when we turn off unique result filtering how we get multiple `temp/.hidden` results. This is due to how `pathlib`
+normalizes directories. When comparing the results to a non-`pathlib` glob, the results make a bit more sense.
+
+```pycon
+>>> list(pathlib.Path('temp').glob('**/.*', flags=pathlib.GLOBSTAR | pathlib.DOTGLOB | pathlib.SCANDOTDIR | pathlib.NOUNIQUE))
+[PosixPath('temp'), PosixPath('temp/..'), PosixPath('temp/.hidden'), PosixPath('temp/.hidden'), PosixPath('temp/.hidden/..'), PosixPath('temp/.DS_Store')]
+>>> list(glob.glob('**/.*', flags=glob.GLOBSTAR | glob.DOTGLOB | glob.SCANDOTDIR, root_dir="temp"))
+['.', '..', '.hidden', '.hidden/.', '.hidden/..', '.DS_Store']
+```
 
 !!! new "New 7.0"
     `SCANDOTDIR` was added in 7.0.

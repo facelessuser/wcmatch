@@ -161,6 +161,7 @@ class Glob(object):
         if flags & _RTL:  # pragma: no cover
             flags ^= _RTL
         self.flags = _flag_transform(flags | REALPATH)
+        self.negate_flags = self.flags
         if not self.scandotdir and not self.flags & NODOTDIR:
             self.flags |= NODOTDIR
         self.raw_chars = bool(self.flags & RAWCHARS)
@@ -217,7 +218,7 @@ class Glob(object):
                 # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
                 # This is faster as compiled patterns usually compare the include patterns first,
                 # and then the exclude, but glob will already know it wants to include the file.
-                self.npatterns.append(_wcparse._compile(p, self.flags))
+                self.npatterns.append(_wcparse._compile(p, self.negate_flags))
             else:
                 self.pattern.append(_wcparse.WcPathSplit(p, self.flags).split())
 
