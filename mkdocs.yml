@@ -8,6 +8,7 @@ copyright: |
 
 docs_dir: docs/src/markdown
 theme:
+  custom_dir: docs/theme
   name: material
   icon:
     logo: material/book-open-page-variant
@@ -68,8 +69,8 @@ markdown_extensions:
   - pymdownx.caret:
   - pymdownx.smartsymbols:
   - pymdownx.emoji:
-      emoji_index: !!python/name:pymdownx.emoji.twemoji
-      emoji_generator: !!python/name:pymdownx.emoji.to_svg
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
   - pymdownx.escapeall:
       hardbreak: True
       nbsp: True
