@@ -9,21 +9,23 @@ Check out [Release Notes](./release.md#upgrade-to-70) to learn more about upgrad
   requires a user to escape `{`, `}` and `|` to avoid expanding a pattern.
 - **NEW**: `raw_escape` now accepts the `raw_chars` parameter so that translation of Python character back references
   can be disabled.
-- **NEW**: Search functions that crawl the filesystem, such as `glob.glob`, `glob.iglob`, `pathlib.Path.glob`, and
-  `pathlib.Path.rglob`, will no longer return `.` and `..` with magic patterns such as `.*`. A literal pattern of `.`
-  and `..` is required to match the special directories `.` and `..`.
-- **NEW**: Add `SCANDOTDIR` flag to enable previous behavior in search functions that caused pattern like `.*` to match
-  `.` and `..`.
+- **NEW**: Search functions that use `scandir` will not return `.` and `..` for wildcard patterns that require iterating
+  over a directory to match the files against a pattern. This matches Python's glob and is most likely what most users
+  expect. Using a literal `.` or `..` in a pattern will still cause `.` and `..` to be matched.
+- **NEW**: Add `SCANDOTDIR` flag to enable previous behavior of injecting `.` and `..` in `scandir` results.
+  This means that wildcard patterns (such as `.*`) will cause `glob` to return `.` and `..`, which matches Bash's
+  behavior. This only controls `scandir` behavior and will not affect match patterns in things like `globmatch`.
 - **NEW**: Flag `NODOTDIR` has been added to disable patterns such as `.*` from matching `.` and `..` in matching
   functions (that don't crawl the filesystem) such as `globmatch`, `pathlib.PurePath.match`, etc. When enabled, matching
   functions will require a literal pattern of `.` and `..` to match the special directories `.` and `..`.
-- **FIX**: Negative extended glob patterns (`!(...)`) incorrectly allowed for hidden files to be returned when one of the
-  subpatterns started with `.`, even when `DOTMATCH`/`DOTGLOB` was not enabled.
+- **FIX**: Negative extended glob patterns (`!(...)`) incorrectly allowed for hidden files to be returned when one of
+  the subpatterns started with `.`, even when `DOTMATCH`/`DOTGLOB` was not enabled.
 - **FIX**: When `NOUNIQUE` is enabled and `pathlib` is being used, you could still get non-unique results across
   patterns expanded with `BRACE` or `SPLIT` (or even by simply providing a list of patterns). Ensure that unique results
   are only returned when `NOUNIQUE` is not enabled.
 - **FIX**: Fix corner cases with `escape` and `raw_escape` with back slashes.
 - **FIX**: Ensure that `globmatch` does not match `test//` with pattern `test/*`.
+- **FIX**: `pathlib.match` should not evaluate symlinks that are on the left hand side of what was matched.
 
 ## 6.1
 

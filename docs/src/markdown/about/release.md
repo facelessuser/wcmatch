@@ -4,37 +4,148 @@
 
 Notable changes will be highlighted here to help with migration to 7.0.
 
-### Globbing
+### Globbing Special Directories
 
 File globbing with [`glob.glob`](../glob.md#glob),  [`glob.iglob`](../glob.md#iglob),
-[`pathlib.path.glob`](../pathlib.md#glob), and [`pathlib.Path.rglob`](../pathlib.md#rglob) no longer return `.` and `..`
-unless a literal pattern of `.` or `..`  is used. You cannot glob these special directories with something like `**/.*`
-anymore.
+[`pathlib.path.glob`](../pathlib.md#glob), and [`pathlib.Path.rglob`](../pathlib.md#rglob) no longer inject `.` and `..`
+into results when scanning directories. This *only* affects the results of a scanned directory and does not
+fundamentally change how glob patterns evaluate a path. If there is a desire to have glob pattern evaluation adopt this
+behavior, the flag [`NODITDIR`](../glob.md#nodotdir) can be enabled, and will change pattern evaluation to act the same
+way.
 
-File matching functions such as [`glob.globmatch`](../glob.md#globmatch) are more lenient and do not enforce this logic
-on pattern matching, but if desired, [`NODOTDIR`](../glob.md#nodotdir) can be used to mirror the behavior in matching
-functions as well.
+Python's default glob will not return `.` or `..` for any "magic" (non-literal) patterns in `glob`. This is because
+magic patterns trigger glob to iterate over a directory in an attempt to find a file that can can match the given
+"magic" pattern. Since `.` and `..` are not returned by `scandir`, `.` and `..` never get evaluated. Literal
+patterns can side step the directory iterating with a simple check to see if the file exists. What this
+means is that a "magic" pattern of `.*` will not match `.` or `..`, but a literal pattern of `.` or `..` will.
+
+These examples will illustrate the behavior. In the first example, Python's `pathlib` is used to glob a
+directory. We can note that not a single entry in the results is `.` or `..`.
+
+```pycon3
+>>> import pathlib
+>>> list(pathlib.Path('.').glob('.*'))
+[PosixPath('.DS_Store'), PosixPath('.codecov.yml'), PosixPath('.tox'), PosixPath('.coverage'), PosixPath('.coveragerc'), PosixPath('.gitignore'), PosixPath('.github'), PosixPath('.pyspelling.yml'), PosixPath('.git')]
+```
+
+We can also show that if we search for the literal pattern of `..` that glob will then return `..` in the results.
+
+```pycon3
+>>> import pathlib
+>>> list(pathlib.Path('.').glob('..'))
+[PosixPath('..')]
+```
+
+When using the `match` function, we see that the pattern can match `..` just fine. This illustrates that it is not the
+patterns the pattern logic that restricts this, but a result of the behavior exhibited by `scandir`.
+
+```pycon3
+>>> import pathlib
+>>> pathlib.Path('..').match('.*')
+True
+```
+
+While our algorithm is more complicated due to some of the features we support, and it may oversimplify things to say we
+now turn off injecting `.` and `..` into `scandir` results, bit for all intents and purposes, all of our file system
+globbing functions exhibit the same behavior as Python's default glob now.
+
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob('.*')
+['.DS_Store', '.codecov.yml', '.tox', '.coverage', '.coveragerc', '.gitignore', '.github', '.pyspelling.yml', '.git']
+>>> glob.glob('..')
+['..']
+>>> glob.globmatch('..', '.*')
+True
+```
+
+Because this change only affects how files are returned when iterating the directories, we can notice that exclude
+patterns, which are used to filter the results, can match `.` or `..` with `.*`:
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob('..')
+['..']
+>>> glob.glob(['..', '!.*'], flags=glob.NEGATE)
+[]
+```
+
+If we want to modify the pattern matcher and not just the the directory scanner, we can use the flag
+[`NODITDIR`](../glob.md#nodotdir).
+
+```pycon3
+>>> from wcmatch import glob
+>>> glob.glob(['..', '!.*'], flags=glob.NEGATE | glob.NODOTDIR)
+['..']
+>>> glob.glob(['..', '!..'], flags=glob.NEGATE | glob.NODOTDIR)
+[]
+```
 
 These changes were done for a couple of reasons:
 
 1. Generally, it is rare to specifically want `.` and `..`, so often when people glob with something like `**/.*`, they
    are just trying to get hidden files. While we generally model our behavior off Bash, there are many alternative
    shells (such as Zsh) that do not return `.` and `..` except when a literal pattern of `.` and `..` is
-   provided. Even Python's default glob doesn't return `.` and `..`.
+   provided.
 
-1. Python's `pathlib`, which Wildcard Match's `pathlib` is derived from, normalizes paths by stripping out `.`
-   directories and trimming off trailing slashes.  This means patterns such as `**/.*` which would normally match both
-   `.hidden` and `.hidden/.` would normalize those results to return two `.hidden` results. This is generally unhelpful
-   and unintuitive. This normalization cannot be be avoided without rewriting portions of `pathlib`. Our intention is to
-   provide better globbing and matching, not to rewrite `pathlib`.
+2. Many people who come to use our library are probably coming from having experience with Python's glob. By mirroring
+   this behavior out of the box, it may help people adapt to the library easier.
 
-3. Python's `scandir`, which is used to crawl the file system, doesn't actually return `.` and `..`. In order to do this
-   in the past, we had to inject them into the results.
+3. Python's `pathlib`, which Wildcard Match's `pathlib` is derived from, normalizes paths by stripping out `.`
+   directories and trimming off trailing slashes.  This means patterns such as `**/.*`, which would normally match both
+   `.hidden` and `.hidden/.`, would normalize those results to return two `.hidden` results. Mirroring this behavior
+   helps provide more sane results and prevent confusing duplicates when using `pathlib`.
 
-For the majority of people, this is most likely an improvement vs a hindrance, but if the old behavior is desired, you
-can use the new option [`SCANDOTDIR`](../glob.md#scandotdir) to bring this behavior back. Due to the way
-[`pathlib`](../pathlib.md) normalizes paths, it [`SCANDOTDIR`](../glob.md#scandotdir) is probably not recommended with
-[`pathlib`](../pathlib.md).
+4. This is not unique behavior to Python's glob and our implementation. For example, let's take a look at
+   [`node-glob`](https://github.com/isaacs/node-glob) and its underlying match library called
+   [`minimatch`](https://github.com/isaacs/minimatch).
+
+    ```js
+    > glob('.*', {}, function (er, files) {
+    ... console.log(files)
+    ... })
+    > [
+      '.codecov.yml',
+      '.coverage',
+      '.coveragerc',
+      '.DS_Store',
+      '.git',
+      '.github',
+      '.gitignore',
+      '.pyspelling.yml',
+      '.tox'
+    ]
+    ```
+
+    We also see that the file matching library has no issues matching `.` or `..` with `.*`.
+
+
+    ```js
+    > minimatch("..", ".*")
+    true
+    ```
+
+    We can also see that ignore patterns, just like our ignore patterns, are applied to the results, and are unaffected
+    by the underlying behavior of the directory scanner:
+
+    ```js
+    > glob('..', {}, function (er, files) {
+    ... console.log(files)
+    ... })
+    > [ '..' ]
+    > glob('..', {ignore: ['.*']}, function (er, files) {
+    ... console.log(files)
+    ... })
+    > []
+    ```
+
+For the majority of people, this is most likely an improvement rather than a hindrance, but if the old behavior is
+desired, you can use the new option [`SCANDOTDIR`](../glob.md#scandotdir) which restores the logic that emulates the
+feel of `scandir` returning `.` and `..` when iterating a directory.
+
+Due to the way [`pathlib`](../pathlib.md) normalizes paths, [`SCANDOTDIR`](../glob.md#scandotdir) is not recommended to
+be used with [`pathlib`](../pathlib.md).
 
 ### Windows Drive Handling
 
@@ -44,7 +155,7 @@ Unfortunately, our implementation used to only handle very basic UNC cases, and 
 were attempted, failure was likely.
 
 7.0 brings improvements related to Windows drives and UNC paths. Glob patterns will now properly respect extended UNC
-paths such as `//?/UNC/LOCALHOSt/c$` and others. This means you can use these patterns without issues. And just like
+paths such as `//?/UNC/LOCALHOST/c$` and others. This means you can use these patterns without issues. And just like
 simple cases (`//server/mount`), extended case do not require escaping meta characters, except when using pattern
 expansion syntax that is available via [`BRACE`](../glob.md#brace) and [`SPLIT`](../glob.md#split).
 
@@ -86,7 +197,7 @@ this behavior:
 'my\\\\file\\-\\\\x31.txt'
 ```
 
-### `pathlib` Duplicate Results
+### Reduction of `pathlib` Duplicate Results
 
 In general, glob should return only unique results for a single inclusive pattern (exclusion patterns are not
 considered). If given multiple patterns, or if given a pattern that is expanded into multiple via
@@ -100,11 +211,12 @@ In general, this works well, but due to `pathlib`'s path normalization quirks, t
 would still be returned for multiple patterns, and even a case where duplicates were returned for a single pattern.
 
 Due to `pathlib` file path normalization, `.` directories are stripped out, and trailing slashes are stripped off paths.
-With the changes noted in [Globbing](#globbing) single pattern cases no longer return duplicate paths, but results
-across multiple patterns still could. For instance, it is possible that three different patterns, provided at the same
-time (or through pattern expansion) could match the following paths: `file/./path`, `file/path/.` and `file/path`. Each
-of these results are unique as far as glob is concerned, but due to the `pathlib` normalization of `.` and trailing
-slashes, `pathlib` glob will return all three of these results as `file/path`, giving three identical results.
+With the changes noted in [Globbing](#globbing-special-directories) single pattern cases no longer return duplicate
+paths, but results across multiple patterns still could. For instance, it is possible that three different patterns,
+provided at the same time (or through pattern expansion) could match the following paths: `file/./path`, `file/path/.`
+and `file/path`. Each of these results are unique as far as glob is concerned, but due to the `pathlib` normalization of
+`.` and trailing slashes, `pathlib` glob will return all three of these results as `file/path`, giving three identical
+results.
 
 In 7.0, logic was added to detect `pathlib` normalization cases and ensure that redundant results are not returned.
 

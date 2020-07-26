@@ -1041,7 +1041,30 @@ class TestHidden(_TestGlob):
                 ('a', '.'), ('a', '..'), ('.aa', '..')
             ],
             glob.D | glob.S | glob.SCANDOTDIR | glob._PATHLIB
-        ]
+        ],
+
+        Options(default_negate='**/./.*/*'),
+
+        # `SCANDOTDIR` does not change our patterns (the negate pattern for instance),
+        # just what is returned when scanning a folder with a wildcard.
+        [
+            ('**', '.*', '.aa', '*'),
+            [
+                ('.', '.bb', 'H')
+            ],
+            glob.D | glob.S | glob.N
+        ],
+
+        # Should we allow this? Or should `NODOTDIR` not apply to `NEGATE` patterns.
+        [
+            ('**', '.*', '.aa', '*'),
+            [
+                ('.', '.bb', 'H'), ('.', '.aa', 'G')
+            ],
+            glob.D | glob.S | glob.N | glob.Z
+        ],
+
+        Options(default_negate='**')
     ]
 
     @classmethod

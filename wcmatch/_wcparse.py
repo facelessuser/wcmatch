@@ -1677,6 +1677,7 @@ class WcParse(object):
         p = p.decode('latin-1') if self.is_bytes else p
 
         if self.negative:
+            # TODO: Do we prevent `NODOTDIR` for negative patterns?
             self.globstar_capture = False
             self.dot = True
 
@@ -1694,16 +1695,22 @@ class WcParse(object):
             self.globstar = globstar
 
         elif self.rtl:
+            # Add a `**` that can capture anything: dots, special directories, symlinks, etc.
+            # We are simulating right to left, so everything on the left should be accepted without
+            # question.
             globstar = self.globstar
             dot = self.dot
             gstar = self.path_gstar_dot1
+            globstar_capture = self.globstar_capture
             self.path_gstar_dot1 = _PATH_GSTAR_RTL_MATCH
             self.dot = True
             self.globstar = True
+            self.globstar_capture = False
             self.root('**', prepend)
             self.globstar = globstar
             self.dot = dot
             self.path_gstar_dot1 = gstar
+            self.globstar_capture = globstar_capture
 
         if p:
             self.root(p, result)

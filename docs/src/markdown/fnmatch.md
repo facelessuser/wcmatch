@@ -145,7 +145,7 @@ matched if it matches at least one inclusion pattern and matches **none** of the
 (['^(?s:(?=.)(?![.]).*?)$'], ['^(?s:(?=.).*?\\.a)$', '^(?s:(?=.).*?\\.b)$', '^(?s:(?=.).*?\\.c)$'])
 ```
 
-!!! warning "Changed 4.0"
+!!! new "Changes 4.0"
     Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic to how
     it used to be, but is more efficient.
 
