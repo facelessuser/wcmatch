@@ -109,29 +109,6 @@ matching:
 
 - [`match`](#match) will exhibit the same right to left behavior.
 
-- Prior to version 7.0, Wildcard Match used to return `.` and `..` when scanning a directory for a "magic" pattern, this
-  would cause [`glob`](#glob) and [`rglob`](#rglob) to return `.` and `..` for "magic" patterns such as `.*`. While this
-  matched Bash's behavior quite well, this did not match Python's default library and created some confusion in certain
-  scenarios. In version 7.0+, Wildcard Match's directory scanning will no longer return `.` and `..`. In order to match
-  `.` and `..`, a literal pattern of `.` or `..` should be used.
-
-    It is important to note that this only affects the directory scanning behavior, a glob pattern of `.*` will still
-    match `.` and `..`, you just won't see these results when a directory is scanned for a "magic" pattern. Exclude
-    patterns via [`NEGATE`](#negate) will still match `.` and `..` with `.*` as these are applied to the final results
-    after directory scanning has occurred.
-
-    For an example why this change is important to `pathlib`, let's consider the pattern `**/.*`. Wildcard Match's glob
-    patterns would reasonably match `.hidden` and `.hidden/.` with such a pattern. `pathlib` would normalize both of
-    these results to simply `.hidden` as `.` and trailing slashes would get removed. This made it difficult for users to
-    understand why `.hidden` was matched twice.  Even more confusing to users was when `**/.*` would match
-    `not-hidden/.` but be normalized as `not-hidden`.
-
-    For more information as to why these changes were made, please see the
-    [Release Note](./about/release.md#upgrade-to-70).
-
-    !!! new "New 7.0"
-        [`glob`](#glob) and [`rglob`](#rglob) directory scanning does not return `.` and `..`.
-
 ## Classes
 
 #### `pathlib.PurePath` {: #purepath}

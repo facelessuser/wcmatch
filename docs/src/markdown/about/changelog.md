@@ -11,13 +11,12 @@ Check out [Release Notes](./release.md#upgrade-to-70) to learn more about upgrad
   can be disabled.
 - **NEW**: Search functions that use `scandir` will not return `.` and `..` for wildcard patterns that require iterating
   over a directory to match the files against a pattern. This matches Python's glob and is most likely what most users
-  expect. Using a literal `.` or `..` in a pattern will still cause `.` and `..` to be matched.
+  expect. Pattern matching logic is unaffected.
 - **NEW**: Add `SCANDOTDIR` flag to enable previous behavior of injecting `.` and `..` in `scandir` results.
-  This means that wildcard patterns (such as `.*`) will cause `glob` to return `.` and `..`, which matches Bash's
-  behavior. This only controls `scandir` behavior and will not affect match patterns in things like `globmatch`.
-- **NEW**: Flag `NODOTDIR` has been added to disable patterns such as `.*` from matching `.` and `..` in matching
-  functions (that don't crawl the filesystem) such as `globmatch`, `pathlib.PurePath.match`, etc. When enabled, matching
-  functions will require a literal pattern of `.` and `..` to match the special directories `.` and `..`.
+  `SCANDOTDIR` has no affect on match functions such as `globmatch` which don't use directory scanning.
+- **NEW**: Flag `NODOTDIR` has been added to disable patterns such as `.*` from matching `.` and `..`. When enabled,
+  matching logic is changed to require a literal pattern of `.` and `..` to match the special directories `.` and `..`.
+  This is more Zsh like.
 - **FIX**: Negative extended glob patterns (`!(...)`) incorrectly allowed for hidden files to be returned when one of
   the subpatterns started with `.`, even when `DOTMATCH`/`DOTGLOB` was not enabled.
 - **FIX**: When `NOUNIQUE` is enabled and `pathlib` is being used, you could still get non-unique results across
