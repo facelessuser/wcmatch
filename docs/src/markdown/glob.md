@@ -72,9 +72,10 @@ Pattern           | Meaning
 - In general, Wildcard Match's behavior is modeled off of Bash's, and prior to version 7.0, unlike Python's default
   [`glob`][glob], Wildcard Match's [`glob`](#glob) would match and return `.` and `..` for magic patterns like `.*`.
   This is because our directory scanning logic inserts `.` and `..` into results to be faithful to Bash. While this
-  emulates Bash's behavior, it can be surprising to the user. In 7.0 we now avoid returning `.` and `..` in our
-  directory scanner. You can once again enable the old Bash-like behavior with the flag [`SCANDOTDIR`](#scandotdir) if
-  this old behavior is desired.
+  emulates Bash's behavior, it can be surprising to the user, especially if they are used to Python's default glob. In
+  7.0 we now avoid returning `.` and `..` in our directory scanner. This does not affect how patterns are matched, just
+  what is returned via our directory scan logic. You can once again enable the old Bash-like behavior with the flag
+  [`SCANDOTDIR`](#scandotdir) if this old behavior is desired.
 
     Python's default:
 
