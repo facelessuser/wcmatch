@@ -28,6 +28,7 @@ nav:
   - Pathlib: pathlib.md
   - Wcmatch: wcmatch.md
   - About:
+      - Contributing &amp; Support: about/contributing.md
       - Changelog: about/changelog.md
       - Release Notes: about/release.md
       - License: about/license.md
@@ -83,6 +84,7 @@ markdown_extensions:
   - pymdownx.keys:
       separator: "\uff0b"
   - pymdownx.details:
+  - pymdownx.saneheaders:
 
 extra:
   social:
