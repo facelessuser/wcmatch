@@ -921,7 +921,20 @@ class TestGlobMatch:
         ['*(*.json|!(*.js))', 'other.bar', True, glob.N],
         ['+(*.json|!(*.js))', 'other.bar', True, glob.N],
         ['@(*.json|!(*.js))', 'other.bar', True, glob.N],
-        ['?(*.json|!(*.js))', 'other.bar', True, glob.N]
+        ['?(*.json|!(*.js))', 'other.bar', True, glob.N],
+
+        # Complex inverse cases
+        ['!(not )@(this)', 'not this', False, glob.N],
+        ['!(not )@(this)', 'but this', True, glob.N],
+        ['!(not)!( this)', 'not this', True, glob.N],
+        ['!(not @(this ))@(okay)', 'not this okay', False, glob.N],
+        ['!(not @(this ))@(okay)', 'but this okay', True, glob.N],
+        ['!(not !(this ))@(okay)', 'but this okay', True, glob.N],
+        ['!(but !(that ))@(okay)', 'but this okay', False, glob.N],
+        ['!(but !(this ))@(okay)', 'but this okay', True, glob.N],
+        ['!(not)!( this)@( okay)', 'but this okay', True, glob.N],
+        ['@(but!( that))@( okay)', "but this okay", True, glob.N],
+        ['!(@(but!( that))@( okay))', "but this okay", False, glob.N],
     ]
 
     @classmethod
