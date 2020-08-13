@@ -1,5 +1,9 @@
 # Changelog
 
+## 7.1
+
+- **FIX**: Ensure that when using `REALPATH` that all symlinks are evaluated.
+
 ## 7.0
 
 Check out [Release Notes](./release.md#upgrade-to-70) to learn more about upgrading to 7.0.
