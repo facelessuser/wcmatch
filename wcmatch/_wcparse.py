@@ -1778,7 +1778,7 @@ def _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root):
                                 matched = not is_link
                             if not matched:
                                 break
-                if matched:
+                if not matched:
                     break
     return matched
 
