@@ -991,6 +991,7 @@ class WcParse(object):
         self.nodotdir = bool(flags & NODOTDIR)
         self.case_sensitive = get_case(flags)
         self.in_list = False
+        self.inv_nest = False
         self.flags = flags
         self.inv_ext = 0
         self.unix = is_unix_style(self.flags)
@@ -1408,7 +1409,7 @@ class WcParse(object):
         else:
             current.append(value)
 
-    def clean_up_inverse(self, current):
+    def clean_up_inverse(self, current, nested=False):
         """
         Clean up current.
 
@@ -1430,7 +1431,8 @@ class WcParse(object):
         while index >= 0:
             if isinstance(current[index], InvPlaceholder):
                 content = current[index + 1:]
-                content.append(_EOP if not self.pathname else self.path_eop)
+                if not nested:
+                    content.append(_EOP if not self.pathname else self.path_eop)
                 current[index] = (''.join(content)) + (_EXCLA_GROUP_CLOSE % str(current[index]))
             index -= 1
         self.inv_ext = 0
@@ -1443,7 +1445,9 @@ class WcParse(object):
         temp_after_start = self.after_start
         temp_in_list = self.in_list
         temp_inv_ext = self.inv_ext
+        temp_inv_nest = self.inv_nest
         self.in_list = True
+        self.inv_nest = c == '!'
 
         if reset_dot:
             self.match_dot_dir = False
@@ -1477,7 +1481,7 @@ class WcParse(object):
                         extended.append(self._restrict_extended_slash())
                     extended.append(re.escape(c))
                 elif c == "|":
-                    self.clean_up_inverse(extended)
+                    self.clean_up_inverse(extended, temp_inv_nest and self.inv_nest)
                     extended.append(c)
                     if temp_after_start:
                         self.set_start_dir()
@@ -1502,7 +1506,6 @@ class WcParse(object):
 
                 self.update_dir_state()
 
-            self.clean_up_inverse(extended)
             if list_type == '?':
                 current.append(_QMARK_GROUP % ''.join(extended))
             elif list_type == '*':
@@ -1534,6 +1537,9 @@ class WcParse(object):
                 # so we know which one to use
                 current.append(InvPlaceholder(star))
 
+            if temp_in_list:
+                self.clean_up_inverse(current, temp_inv_nest and self.inv_nest)
+
         except StopIteration:
             success = False
             self.inv_ext = temp_inv_ext
@@ -1542,6 +1548,8 @@ class WcParse(object):
         # Either restore if extend parsing failed, or reset if it worked
         if not temp_in_list:
             self.in_list = False
+        if not temp_inv_nest:
+            self.inv_nest = False
         if success:
             self.reset_dir_track()
         else:
