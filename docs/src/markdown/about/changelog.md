@@ -1,6 +1,6 @@
 # Changelog
 
-## 7.1
+## 7.0.1
 
 - **FIX**: Ensure that when using `REALPATH` that all symlinks are evaluated.
 - **FIX**: Fix issue where an extended pattern pattern can't follow right behind an inverse extended pattern.
