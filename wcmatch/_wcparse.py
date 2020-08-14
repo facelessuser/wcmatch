@@ -1432,20 +1432,13 @@ class WcParse(object):
         index = len(current) - 1
         while index >= 0:
             if isinstance(current[index], InvPlaceholder):
-                if self.capture:
-                    # We need to prevent capturing groups from being inserted into the negate group.
-                    # This will cause duplicate captures which we do not want.
-                    content = []
-                    for c in content[index + 1:]:
-                        if c.startswith('(') and c[1:3] != '?:' and c.endswith((')', ')*', ')+', ')?')):
-                            content.append(c.replace('(', '(?:', 1))
-                        else:
-                            content.append(c)
-                else:
-                    content = current[index + 1:]
+                content = current[index + 1:]
                 if not nested:
                     content.append(_EOP if not self.pathname else self.path_eop)
-                current[index] = (''.join(content)) + (_EXCLA_GROUP_CLOSE % str(current[index]))
+                current[index] = (
+                    (''.join(content).replace('(?#)', '?:') if self.capture else ''.join(content)) +
+                    (_EXCLA_GROUP_CLOSE % str(current[index]))
+                )
             index -= 1
         self.inv_ext = 0
 
@@ -1462,7 +1455,8 @@ class WcParse(object):
         self.in_list = True
         self.inv_nest = c == '!'
         self.capture_groups = []
-        capture_mark = "?:" if not self.capture else ""
+        # Use non-capturing groups or capturing with a comment marker
+        capture_mark = "?:" if not self.capture else "(?#)"
 
         if reset_dot:
             self.match_dot_dir = False
@@ -1697,6 +1691,7 @@ class WcParse(object):
             self.update_dir_state()
 
         self.clean_up_inverse(current)
+
         if self.pathname:
             current.append(_PATH_TRAIL % self.get_path_sep())
 
