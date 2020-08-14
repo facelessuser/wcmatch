@@ -1100,6 +1100,30 @@ class TestGlobMatchSpecial(unittest.TestCase):
         self.assertEqual(1, len(pos))
         self.assertEqual(1, len(neg))
 
+    def test_capture_groups(self):
+        """Test capture groups."""
+
+        gpat = glob.translate("test/@(this)/+(many)/?(meh)*(!)/!(not this)@(.md)", flags=glob.E)
+        pat = re.compile(gpat[0][0])
+        match = pat.match('test/this/manymanymany/meh!!!!!/okay.md')
+        self.assertEqual(('this', 'manymanymany', 'meh', '!!!!!', 'okay', '.md'), match.groups())
+
+    def test_nested_capture_groups(self):
+        """Test nested capture groups."""
+
+        gpat = glob.translate("@(file)@(+([[:digit:]]))@(.*)", flags=glob.E)
+        pat = re.compile(gpat[0][0])
+        match = pat.match('file33.test.txt')
+        self.assertEqual(('file', '33', '33', '.test.txt'), match.groups())
+
+    def test_list_groups(self):
+        """Test capture groups with lists."""
+
+        gpat = glob.translate("+(f|i|l|e)+([[:digit:]])@(.*)", flags=glob.E)
+        pat = re.compile(gpat[0][0])
+        match = pat.match('file33.test.txt')
+        self.assertEqual(('file', '33', '.test.txt'), match.groups())
+
     def test_glob_translate(self):
         """Test glob translation."""
 

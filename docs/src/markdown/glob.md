@@ -465,12 +465,29 @@ matched if it matches at least one inclusion pattern and matches **none** of the
 (['^(?s:(?=.)(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'], ['^(?s:(?=.)(?!(?:\\.{1,2})(?:$|\\/))[^\\/]*?\\/+(?=.)(?!(?:\\.{1,2})(?:$|\\/))[^\\/]*?\\.\\{py\\,txt\\}[\\/]*?)$'])
 ```
 
+When using [`EXTGLOB`](#extglob) patterns, patterns will be returned with capturing groups around the groups:
+
+While in regex patterns like `#!py3 r'(a)+'` would capture only the last character, even though multiple where matched,
+we wrap the entire group to be captured: `#!py3 '+(a)'` --> `#!py3 r'((a)+)'`.
+
+```pycon3
+>>> from wcmatch import glob
+>>> import re
+>>> gpat = glob.translate("@(file)+([[:digit:]])@(.*)", flags=glob.EXTGLOB)
+>>> pat = re.compile(gpat[0][0])
+>>> pat.match('file33.test.txt').groups()
+('file', '33', '.test.txt')
+```
+
 !!! new "Changes 4.0"
     Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic to how
     it used to be, but is more efficient.
 
 !!! new "New 6.0"
     `limit` was added in 6.0.
+
+!!! new "New 7.0"
+    Translate patterns now provide capturing groups for [`EXTGLOB`](#extglob) groups.
 
 #### `glob.escape` {: #escape}
 

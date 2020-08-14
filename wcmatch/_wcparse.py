@@ -227,19 +227,24 @@ _NEED_CHAR_PATH = r'(?=[^%(sep)s])'
 _NEED_CHAR = r'(?=.)'
 _NEED_SEP = r'(?=%s)'
 # Group that matches one or none
-_QMARK_GROUP = r'(%s%s)?'
+_QMARK_GROUP = r'(?:%s)?'
+_QMARK_CAPTURE_GROUP = r'((?#)(?:%s)?)'
 # Group that matches Zero or more
-_STAR_GROUP = r'(%s%s)*'
+_STAR_GROUP = r'(?:%s)*'
+_STAR_CAPTURE_GROUP = r'((?#)(?:%s)*)'
 # Group that matches one or more
-_PLUS_GROUP = r'(%s%s)+'
+_PLUS_GROUP = r'(?:%s)+'
+_PLUS_CAPTURE_GROUP = r'((?#)(?:%s)+)'
 # Group that matches exactly one
-_GROUP = r'(%s%s)'
+_GROUP = r'(?:%s)'
+_CAPTURE_GROUP = r'((?#)%s)'
 # Inverse group that matches none
 # This is the start. Since Python can't
 # do variable look behinds, we have stuff
 # everything at the end that it needs to lookahead
 # for. So there is an opening and a closing.
-_EXCLA_GROUP = r'(%s(?!(?:%s)'
+_EXCLA_GROUP = r'(?:(?!(?:%s)'
+_EXCLA_CAPTURE_GROUP = r'((?#)(?!(?:%s)'
 # Closing for inverse group
 _EXCLA_GROUP_CLOSE = r')%s)'
 # Restrict root
@@ -1518,25 +1523,25 @@ class WcParse(object):
                 self.update_dir_state()
 
             if list_type == '?':
-                current.append(_QMARK_GROUP % (capture_mark, ''.join(extended)))
+                current.append((_QMARK_CAPTURE_GROUP if self.capture else _QMARK_GROUP) % ''.join(extended))
                 if self.capture:
                     self.capture_groups.append(True)
             elif list_type == '*':
-                current.append(_STAR_GROUP % (capture_mark, ''.join(extended)))
+                current.append((_STAR_CAPTURE_GROUP if self.capture else _STAR_GROUP) % ''.join(extended))
                 if self.capture:
                     self.capture_groups.append(True)
             elif list_type == '+':
-                current.append(_PLUS_GROUP % (capture_mark, ''.join(extended)))
+                current.append((_PLUS_CAPTURE_GROUP if self.capture else _PLUS_GROUP) % ''.join(extended))
                 if self.capture:
                     self.capture_groups.append(True)
             elif list_type == '@':
-                current.append(_GROUP % (capture_mark, ''.join(extended)))
+                current.append((_CAPTURE_GROUP if self.capture else _GROUP) % ''.join(extended))
                 if self.capture:
                     self.capture_groups.append(True)
             elif list_type == '!':
                 self.inv_ext += 1
                 # If pattern is at the end, anchor the match to the end.
-                current.append(_EXCLA_GROUP % (capture_mark, ''.join(extended)))
+                current.append((_EXCLA_CAPTURE_GROUP if self.capture else _EXCLA_GROUP) % ''.join(extended))
                 if self.capture:
                     self.capture_groups.append(True)
                 if self.pathname:
@@ -1758,6 +1763,10 @@ class WcParse(object):
             pattern = r'^(?s{}:{})$'.format(case_flag, ''.join(result))
         else:
             pattern = r'(?s{})^(?:{})$'.format(case_flag, ''.join(result))
+
+        if self.capture:
+            # Strip out unnecessary regex comments
+            pattern = pattern.replace('(?#)', '')
 
         if self.is_bytes:
             pattern = pattern.encode('latin-1')

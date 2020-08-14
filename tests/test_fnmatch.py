@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for `fnmatch`."""
 import unittest
+import re
 import pytest
 import wcmatch.fnmatch as fnmatch
 from unittest import mock
@@ -325,6 +326,30 @@ class TestFnMatchTranslate(unittest.TestCase):
         """Translate pattern to regex after splitting."""
 
         return fnmatch.translate(pattern, flags=flags | fnmatch.SPLIT)
+
+    def test_capture_groups(self):
+        """Test capture groups."""
+
+        gpat = fnmatch.translate("test @(this) +(many) ?(meh)*(!) !(not this)@(.md)", flags=fnmatch.E)
+        pat = re.compile(gpat[0][0])
+        match = pat.match('test this manymanymany meh!!!!! okay.md')
+        self.assertEqual(('this', 'manymanymany', 'meh', '!!!!!', 'okay', '.md'), match.groups())
+
+    def test_nested_capture_groups(self):
+        """Test nested capture groups."""
+
+        gpat = fnmatch.translate("@(file)@(+([[:digit:]]))@(.*)", flags=fnmatch.E)
+        pat = re.compile(gpat[0][0])
+        match = pat.match('file33.test.txt')
+        self.assertEqual(('file', '33', '33', '.test.txt'), match.groups())
+
+    def test_list_groups(self):
+        """Test capture groups with lists."""
+
+        gpat = fnmatch.translate("+(f|i|l|e)+([[:digit:]])@(.*)", flags=fnmatch.E)
+        pat = re.compile(gpat[0][0])
+        match = pat.match('file33.test.txt')
+        self.assertEqual(('file', '33', '.test.txt'), match.groups())
 
     def test_split_parsing(self):
         """Test wildcard parsing."""
