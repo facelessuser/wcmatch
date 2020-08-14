@@ -1460,8 +1460,6 @@ class WcParse(object):
         self.in_list = True
         self.inv_nest = c == '!'
         self.capture_groups = []
-        # Use non-capturing groups or capturing with a comment marker
-        capture_mark = "?:" if not self.capture else "(?#)"
 
         if reset_dot:
             self.match_dot_dir = False

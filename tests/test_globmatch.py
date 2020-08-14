@@ -1105,7 +1105,7 @@ class TestGlobMatchSpecial(unittest.TestCase):
 
         gpat = glob.translate("test/@(this)/+(many)/?(meh)*(!)/!(not this)@(.md)", flags=glob.E)
         pat = re.compile(gpat[0][0])
-        match = pat.match('test/this/manymanymany/meh!!!!!/okay.md')
+        match = pat.match(os.path.normpath('test/this/manymanymany/meh!!!!!/okay.md'))
         self.assertEqual(('this', 'manymanymany', 'meh', '!!!!!', 'okay', '.md'), match.groups())
 
     def test_nested_capture_groups(self):
