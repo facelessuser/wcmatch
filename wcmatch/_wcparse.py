@@ -1332,7 +1332,6 @@ class WcParse(object):
                 star = self.path_star
                 globstar = self.path_gstar_dot1
             if self.globstar_capture:
-                self.capture_groups.append(False)
                 globstar = '({})'.format(globstar)
         else:
             if self.after_start and not self.dot:
@@ -1456,10 +1455,8 @@ class WcParse(object):
         temp_in_list = self.in_list
         temp_inv_ext = self.inv_ext
         temp_inv_nest = self.inv_nest
-        temp_capture_groups = self.capture_groups
         self.in_list = True
         self.inv_nest = c == '!'
-        self.capture_groups = []
 
         if reset_dot:
             self.match_dot_dir = False
@@ -1522,26 +1519,16 @@ class WcParse(object):
 
             if list_type == '?':
                 current.append((_QMARK_CAPTURE_GROUP if self.capture else _QMARK_GROUP) % ''.join(extended))
-                if self.capture:
-                    self.capture_groups.append(True)
             elif list_type == '*':
                 current.append((_STAR_CAPTURE_GROUP if self.capture else _STAR_GROUP) % ''.join(extended))
-                if self.capture:
-                    self.capture_groups.append(True)
             elif list_type == '+':
                 current.append((_PLUS_CAPTURE_GROUP if self.capture else _PLUS_GROUP) % ''.join(extended))
-                if self.capture:
-                    self.capture_groups.append(True)
             elif list_type == '@':
                 current.append((_CAPTURE_GROUP if self.capture else _GROUP) % ''.join(extended))
-                if self.capture:
-                    self.capture_groups.append(True)
             elif list_type == '!':
                 self.inv_ext += 1
                 # If pattern is at the end, anchor the match to the end.
                 current.append((_EXCLA_CAPTURE_GROUP if self.capture else _EXCLA_GROUP) % ''.join(extended))
-                if self.capture:
-                    self.capture_groups.append(True)
                 if self.pathname:
                     if not temp_after_start or self.match_dot_dir:
                         star = self.path_star
@@ -1576,13 +1563,10 @@ class WcParse(object):
             self.inv_nest = False
 
         if success:
-            temp_capture_groups.extend(self.capture_groups)
-            self.capture_groups = temp_capture_groups
             self.reset_dir_track()
         else:
             self.dir_start = temp_dir_start
             self.after_start = temp_after_start
-            self.capture_groups = temp_capture_groups
 
         return success
 
@@ -1704,7 +1688,6 @@ class WcParse(object):
         result = ['']
         prepend = ['']
         self.negative = False
-        self.capture_groups = []
 
         p = self.pattern
 
