@@ -228,18 +228,23 @@ _NEED_CHAR = r'(?=.)'
 _NEED_SEP = r'(?=%s)'
 # Group that matches one or none
 _QMARK_GROUP = r'(?:%s)?'
+_QMARK_CAPTURE_GROUP = r'((?#)(?:%s)?)'
 # Group that matches Zero or more
 _STAR_GROUP = r'(?:%s)*'
+_STAR_CAPTURE_GROUP = r'((?#)(?:%s)*)'
 # Group that matches one or more
 _PLUS_GROUP = r'(?:%s)+'
+_PLUS_CAPTURE_GROUP = r'((?#)(?:%s)+)'
 # Group that matches exactly one
 _GROUP = r'(?:%s)'
+_CAPTURE_GROUP = r'((?#)%s)'
 # Inverse group that matches none
 # This is the start. Since Python can't
 # do variable look behinds, we have stuff
 # everything at the end that it needs to lookahead
 # for. So there is an opening and a closing.
 _EXCLA_GROUP = r'(?:(?!(?:%s)'
+_EXCLA_CAPTURE_GROUP = r'((?#)(?!(?:%s)'
 # Closing for inverse group
 _EXCLA_GROUP_CLOSE = r')%s)'
 # Restrict root
@@ -989,6 +994,7 @@ class WcParse(object):
         self.rtl = bool(flags & _RTL)
         self.anchor = bool(flags & _ANCHOR)
         self.nodotdir = bool(flags & NODOTDIR)
+        self.capture = self.translate
         self.case_sensitive = get_case(flags)
         self.in_list = False
         self.inv_nest = False
@@ -1433,7 +1439,10 @@ class WcParse(object):
                 content = current[index + 1:]
                 if not nested:
                     content.append(_EOP if not self.pathname else self.path_eop)
-                current[index] = (''.join(content)) + (_EXCLA_GROUP_CLOSE % str(current[index]))
+                current[index] = (
+                    (''.join(content).replace('(?#)', '?:') if self.capture else ''.join(content)) +
+                    (_EXCLA_GROUP_CLOSE % str(current[index]))
+                )
             index -= 1
         self.inv_ext = 0
 
@@ -1457,10 +1466,12 @@ class WcParse(object):
         index = i.index
         list_type = c
         extended = []
+
         try:
             c = next(i)
             if c != '(':
                 raise StopIteration
+
             while c != ')':
                 c = next(i)
 
@@ -1507,17 +1518,17 @@ class WcParse(object):
                 self.update_dir_state()
 
             if list_type == '?':
-                current.append(_QMARK_GROUP % ''.join(extended))
+                current.append((_QMARK_CAPTURE_GROUP if self.capture else _QMARK_GROUP) % ''.join(extended))
             elif list_type == '*':
-                current.append(_STAR_GROUP % ''.join(extended))
+                current.append((_STAR_CAPTURE_GROUP if self.capture else _STAR_GROUP) % ''.join(extended))
             elif list_type == '+':
-                current.append(_PLUS_GROUP % ''.join(extended))
+                current.append((_PLUS_CAPTURE_GROUP if self.capture else _PLUS_GROUP) % ''.join(extended))
             elif list_type == '@':
-                current.append(_GROUP % ''.join(extended))
+                current.append((_CAPTURE_GROUP if self.capture else _GROUP) % ''.join(extended))
             elif list_type == '!':
                 self.inv_ext += 1
                 # If pattern is at the end, anchor the match to the end.
-                current.append(_EXCLA_GROUP % ''.join(extended))
+                current.append((_EXCLA_CAPTURE_GROUP if self.capture else _EXCLA_GROUP) % ''.join(extended))
                 if self.pathname:
                     if not temp_after_start or self.match_dot_dir:
                         star = self.path_star
@@ -1550,6 +1561,7 @@ class WcParse(object):
             self.in_list = False
         if not temp_inv_nest:
             self.inv_nest = False
+
         if success:
             self.reset_dir_track()
         else:
@@ -1666,6 +1678,7 @@ class WcParse(object):
             self.update_dir_state()
 
         self.clean_up_inverse(current)
+
         if self.pathname:
             current.append(_PATH_TRAIL % self.get_path_sep())
 
@@ -1732,6 +1745,10 @@ class WcParse(object):
         else:
             pattern = r'(?s{})^(?:{})$'.format(case_flag, ''.join(result))
 
+        if self.capture:
+            # Strip out unnecessary regex comments
+            pattern = pattern.replace('(?#)', '')
+
         if self.is_bytes:
             pattern = pattern.encode('latin-1')
 
@@ -1766,8 +1783,7 @@ def _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root):
         # Lets look at the captured `globstar` groups and see if that part of the path
         # contains symlinks.
         if not follow:
-            groups = m.groups()
-            last = len(groups)
+            last = len(m.groups())
             for i, star in enumerate(m.groups(), 1):
                 if star:
                     at_end = m.end(i) == end
@@ -1815,12 +1831,12 @@ def _match_real(filename, include, exclude, follow, symlinks, root):
             break
 
     if matched:
-        matched = True
         if exclude:
             for pattern in exclude:
                 if _fs_match(pattern, filename, is_dir, sep, True, symlinks, root):
                     matched = False
                     break
+
     return matched
 
 
@@ -1828,8 +1844,6 @@ def _match_pattern(filename, include, exclude, real, path, follow, root_dir=None
     """Match includes and excludes."""
 
     if real:
-
-        symlinks = {}
         if isinstance(filename, bytes):
             root = root_dir if root_dir else b'.'
             ptype = BYTES
@@ -1844,10 +1858,11 @@ def _match_pattern(filename, include, exclude, real, path, follow, root_dir=None
         else:
             exists = os.path.lexists(filename)
 
-        if not exists:
-            return False
-        if path:
+        if exists:
+            symlinks = {}
             return _match_real(filename, include, exclude, follow, symlinks, root)
+        else:
+            return False
 
     matched = False
     for pattern in include:

@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.1
+
+- **NEW**: Translate functions will now use capturing groups for `EXTGLOB`/`EXTMATCH` groups in the returned regular
+  expression patterns.
+
 ## 7.0.1
 
 - **FIX**: Ensure that when using `REALPATH` that all symlinks are evaluated.
