@@ -1,6 +1,6 @@
 # Release Notes
 
-## Upgrade to 7.0
+## Upgrade to 7.0 {: #upgrade-to-\7.0}
 
 Notable changes will be highlighted here to help with migration to 7.0.
 

@@ -13,7 +13,7 @@
 
 ## 7.0
 
-Check out [Release Notes](./release.md#upgrade-to-70) to learn more about upgrading to 7.0.
+Check out [Release Notes](./release.md#upgrade-to-7.0) to learn more about upgrading to 7.0.
 
 - **NEW**: Recognize extended UNC paths.
 - **NEW**: Allow escaping any character in Windows drives for better compatibility with `SPLIT` and `BRACE` which
