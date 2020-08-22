@@ -486,7 +486,7 @@ we wrap the entire group to be captured: `#!py3 '+(a)'` --> `#!py3 r'((a)+)'`.
 !!! new "New 6.0"
     `limit` was added in 6.0.
 
-!!! new "New 7.0"
+!!! new "New 7.1"
     Translate patterns now provide capturing groups for [`EXTGLOB`](#extglob) groups.
 
 #### `glob.escape` {: #escape}
