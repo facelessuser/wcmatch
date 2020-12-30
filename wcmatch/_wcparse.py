@@ -1609,22 +1609,22 @@ def _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root, dir_fd):
                             base = os.path.join(root, filename[:m.start(i)])
                         for part in parts:
                             base = os.path.join(base, part)
+                            key = (dir_fd, base)
                             if is_dir or i != last or not at_end:
-                                is_link = symlinks.get(base, None)
-                                if is_link is not None:
-                                    matched = not is_link
-                                else:
-                                    if dir_fd is ConnectionError:
+                                is_link = symlinks.get(key, None)
+                                if is_link is None:
+                                    if dir_fd is None:
                                         is_link = os.path.islink(base)
+                                        symlinks[key] = is_link
                                     else:
                                         try:
                                             st = os.lstat(base, dir_fd=dir_fd)
-                                        except (OSError, ValueError, AttributeError):  # pragma: no cover
+                                        except (OSError, ValueError):  # pragma: no cover
                                             is_link = False
                                         else:
                                             is_link = stat.S_ISLNK(st.st_mode)
-                                    symlinks[base] = is_link
-                                    matched = not is_link
+                                        symlinks[key] = is_link
+                                matched = not is_link
                                 if not matched:
                                     break
                     if not matched:

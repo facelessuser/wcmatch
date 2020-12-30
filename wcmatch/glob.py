@@ -580,7 +580,7 @@ class Glob(object):
         if not self.dir_fd:
             return os.path.lexists(self.prepend_base(path))
         try:
-            os.lstat(self.prepend_base(path), dir_fd=self.root_dir)
+            os.lstat(self.prepend_base(path), dir_fd=self.dir_fd)
         except (OSError, ValueError):  # pragma: no cover
             return False
         else:
