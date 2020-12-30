@@ -55,6 +55,7 @@
 
 - **NEW**: Drop Python 3.5 support.
 - **NEW**: Formally support Python 3.9 support.
+- **NEW**: Add support for `dir_fd` in glob patterns.
 - **FIX**: Small fix for regular expression output to ensure `NODIR` pattern looks at both `/` and `\\` on Windows.
 
 ## 7.1
