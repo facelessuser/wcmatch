@@ -1,5 +1,10 @@
 # Changelog
 
+## 7.2
+
+- **NEW**: Drop Python 3.5 support.
+- **NEW**: Formally support Python 3.9 support.
+
 ## 7.1
 
 - **NEW**: Translate functions will now use capturing groups for `EXTGLOB`/`EXTMATCH` groups in the returned regular
