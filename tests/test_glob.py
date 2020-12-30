@@ -1122,13 +1122,11 @@ class TestCWD(_TestGlob):
 
         self.assert_equal(glob.glob('EF', root_dir=self.tempdir), ['EF'])
 
-    @pytest.mark.skipif(not util.PY36, reason="path-like interface not supported on Python < 3.6")
     def test_cwd_root_dir_pathlike(self):
         """Test root level glob when we switch directory via `root_dir` with a path-like object."""
 
         self.assert_equal(glob.glob('EF', root_dir=pathlib.Path(self.tempdir)), ['EF'])
 
-    @pytest.mark.skipif(not util.PY36, reason="path-like interface not supported on Python < 3.6")
     def test_cwd_root_dir_pathlike_bytes(self):
         """Test root level glob when we switch directory via `root_dir` with a path-like object."""
 

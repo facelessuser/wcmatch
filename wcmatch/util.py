@@ -9,7 +9,6 @@ from functools import wraps
 import warnings
 
 PY37 = (3, 7) <= sys.version_info
-PY36 = (3, 6) <= sys.version_info
 
 CASE_FS = os.path.normcase('A') != os.path.normcase('a')
 

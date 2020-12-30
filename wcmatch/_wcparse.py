@@ -485,20 +485,7 @@ def get_case(flags):
 def escape_drive(drive, case):
     """Escape drive."""
 
-    if case and not util.PY36:
-        escaped = []
-        upper = drive.upper()
-        lower = drive.lower()
-
-        for index, u in enumerate(upper):
-            l = lower[index]
-            if u != l:
-                escaped.append('[{}{}]'.format(re.escape(l), re.escape(u)))
-            else:
-                escaped.append(re.escape(l))
-        return ''.join(escaped)
-    else:
-        return '(?i:{})'.format(re.escape(drive)) if case else re.escape(drive)
+    return '(?i:{})'.format(re.escape(drive)) if case else re.escape(drive)
 
 
 def is_unix_style(flags):
@@ -1740,10 +1727,7 @@ class WcParse(object):
             result = prepend + result
 
         case_flag = 'i' if not self.case_sensitive else ''
-        if util.PY36:
-            pattern = r'^(?s{}:{})$'.format(case_flag, ''.join(result))
-        else:
-            pattern = r'(?s{})^(?:{})$'.format(case_flag, ''.join(result))
+        pattern = r'^(?s{}:{})$'.format(case_flag, ''.join(result))
 
         if self.capture:
             # Strip out unnecessary regex comments
