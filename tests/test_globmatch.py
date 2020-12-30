@@ -1139,19 +1139,10 @@ class TestGlobMatchSpecial(unittest.TestCase):
                 ],
                 []
             )
-        elif util.PY36:
-            value = (
-                [
-                    '^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+' +
-                    ('(?!(?:\\.{1,2})(?:$|\\/))(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=[^%s])' % re.escape('/')) +
-                    '(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'
-                ],
-                []
-            )
         else:
             value = (
                 [
-                    '(?s)^(?:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+' +
+                    '^(?s:(?:(?!(?:\\/|^)\\.).)*?(?:^|$|\\/)+' +
                     ('(?!(?:\\.{1,2})(?:$|\\/))(?![\\/.])[\x00-\x7f]\\/+stuff\\/+(?=[^%s])' % re.escape('/')) +
                     '(?!(?:\\.{1,2})(?:$|\\/))(?:(?!\\.)[^\\/]*?)?[\\/]*?)$'
                 ],
@@ -1525,7 +1516,6 @@ class TestGlobMatchSpecial(unittest.TestCase):
         self.assertFalse(glob.globmatch('markdown', 'markdown', flags=glob.REALPATH))
         self.assertTrue(glob.globmatch('markdown', 'markdown', flags=glob.REALPATH, root_dir='docs/src'))
 
-    @pytest.mark.skipif(not util.PY36, reason="path-like interface not supported on Python < 3.6")
     def test_match_root_dir_pathlib(self):
         """Test root directory with `globmatch` using `pathlib`."""
 
@@ -1536,7 +1526,6 @@ class TestGlobMatchSpecial(unittest.TestCase):
             glob.globmatch(pathlib.Path('markdown'), 'markdown', flags=glob.REALPATH, root_dir=pathlib.Path('docs/src'))
         )
 
-    @pytest.mark.skipif(not util.PY36, reason="path-like interface not supported on Python < 3.6")
     def test_match_root_dir_pathlib_bytes(self):
         """Test root directory with `globmatch` using `pathlib`."""
 
@@ -1551,7 +1540,6 @@ class TestGlobMatchSpecial(unittest.TestCase):
             )
         )
 
-    @pytest.mark.skipif(not util.PY36, reason="path-like interface not supported on Python < 3.6")
     def test_filter_root_dir_pathlib(self):
         """Test root directory with `globfilter`."""
 
@@ -1566,7 +1554,6 @@ class TestGlobMatchSpecial(unittest.TestCase):
 
         self.assertTrue(all([isinstance(result, pathlib.Path) for result in results]))
 
-    @pytest.mark.skipif(not util.PY36, reason="path-like interface not supported on Python < 3.6")
     def test_filter_root_dir_pathlib_bytes(self):
         """Test root directory with `globfilter`."""
 

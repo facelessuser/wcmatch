@@ -39,7 +39,6 @@ __all__ = (
 # We don't use `util.platform` only because we mock it in tests,
 # and `scandir` will not work with bytes on the wrong system.
 WIN = sys.platform.startswith('win')
-NO_SCANDIR_WORKAROUND = util.PY36
 
 C = CASE = _wcparse.CASE
 I = IGNORECASE = _wcparse.IGNORECASE
@@ -323,42 +322,26 @@ class Glob(object):
             yield special, True, True, False
 
         try:
-            if NO_SCANDIR_WORKAROUND:
-                # Our current directory can be empty if the path starts with magic,
-                # But we don't want to return paths with '.', so just use it to list
-                # files, but use '' when constructing the path.
-                with os.scandir(scandir) as scan:
-                    for f in scan:
-                        try:
-                            hidden = self._is_hidden(f.name)
-                            try:
-                                is_dir = f.is_dir()
-                            except OSError:  # pragma: no cover
-                                is_dir = False
-                            if is_dir:
-                                is_link = f.is_symlink()
-                            else:
-                                # We don't care if a file is a link
-                                is_link = False
-                            if (not dir_only or is_dir):
-                                yield f.name, is_dir, hidden, is_link
-                        except OSError:  # pragma: no cover
-                            pass
-            else:
-                for f in os.listdir(scandir):
-                    hidden = self._is_hidden(f)
-                    path = os.path.join(scandir, f)
+            # Our current directory can be empty if the path starts with magic,
+            # But we don't want to return paths with '.', so just use it to list
+            # files, but use '' when constructing the path.
+            with os.scandir(scandir) as scan:
+                for f in scan:
                     try:
-                        is_dir = os.path.isdir(path)
+                        hidden = self._is_hidden(f.name)
+                        try:
+                            is_dir = f.is_dir()
+                        except OSError:  # pragma: no cover
+                            is_dir = False
+                        if is_dir:
+                            is_link = f.is_symlink()
+                        else:
+                            # We don't care if a file is a link
+                            is_link = False
+                        if (not dir_only or is_dir):
+                            yield f.name, is_dir, hidden, is_link
                     except OSError:  # pragma: no cover
-                        is_dir = False
-                    if is_dir:
-                        is_link = os.path.islink(path)
-                    else:
-                        is_link = False
-                    if (not dir_only or is_dir):
-                        yield f, is_dir, hidden, is_link
-
+                        pass
         except OSError:  # pragma: no cover
             pass
 
