@@ -1136,6 +1136,44 @@ class TestCWD(_TestGlob):
 
         self.assert_equal(glob.glob('EF', root_dir=pathlib.Path(self.tempdir)), ['EF'])
 
+    @pytest.mark.skipif(not glob.SUPPORT_DIR_FD, reason="dir_fd is not supported on this system")
+    def test_cwd_fd_dir(self):
+        """Test file descriptor."""
+
+        dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
+        self.assert_equal(glob.glob('EF', dir_fd=dir_fd), ['EF'])
+        os.close(dir_fd)
+
+    def test_cwd_fd_dir_globmatch(self):
+        """Test file descriptor."""
+
+        if glob.SUPPORT_DIR_FD:
+            dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
+            self.assert_equal(glob.globmatch('EF', 'EF', dir_fd=dir_fd, flags=glob.REALPATH), True)
+            os.close(dir_fd)
+        else:
+            # Windows doesn't support `dir_fd`, let's fabricate a scenario and verify it doesn't match.
+            dir_fd = 1
+            self.assert_equal(glob.globmatch('EF', 'EF', dir_fd=dir_fd, flags=glob.REALPATH), False)
+
+    def test_cwd_fd_dir_globmatch_NO_FOLLOW(self):
+        """Test file descriptor."""
+
+        if glob.SUPPORT_DIR_FD:
+            dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
+            self.assert_equal(
+                glob.globmatch('a/bcd/EF', 'a/**/EF', dir_fd=dir_fd, flags=glob.REALPATH | glob.GLOBSTAR),
+                True
+            )
+            os.close(dir_fd)
+        else:
+            # Windows doesn't support `dir_fd`, let's fabricate a scenario and verify it doesn't match.
+            dir_fd = 1
+            self.assert_equal(
+                glob.globmatch('a/bcd/EF', 'a/**/EF', dir_fd=dir_fd, flags=glob.REALPATH | glob.GLOBSTAR),
+                False
+            )
+
 
 class TestCase(_TestGlob):
     """Test files in the current working directory."""
