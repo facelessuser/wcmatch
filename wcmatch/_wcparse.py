@@ -1619,7 +1619,7 @@ def _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root, dir_fd):
                                     else:
                                         try:
                                             st = os.lstat(base, dir_fd=dir_fd)
-                                        except (OSError, ValueError, AttributeError):
+                                        except (OSError, ValueError, AttributeError):  # pragma: no cover
                                             is_link = False
                                         else:
                                             is_link = stat.S_ISLNK(st.st_mode)
@@ -1629,7 +1629,7 @@ def _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root, dir_fd):
                                     break
                     if not matched:
                         break
-            except OSError:
+            except OSError:  # pragma: no cover
                 matched = False
     return matched
 
@@ -1648,7 +1648,7 @@ def _match_real(filename, include, exclude, follow, symlinks, root, dir_fd):
         else:
             try:
                 st = os.stat(os.path.join(root, filename), dir_fd=dir_fd)
-            except (OSError, ValueError):
+            except (OSError, ValueError):  # pragma: no cover
                 is_file_dir = False
             else:
                 is_file_dir = stat.S_ISDIR(st.st_mode)
@@ -1713,7 +1713,7 @@ def _match_pattern(filename, include, exclude, real, path, follow, root_dir=None
         else:
             try:
                 os.lstat(os.path.join(root, filename), dir_fd=dir_fd)
-            except (OSError, ValueError):
+            except (OSError, ValueError):  # pragma: no cover
                 exists = False
             else:
                 exists = True
