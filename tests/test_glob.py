@@ -1144,35 +1144,64 @@ class TestCWD(_TestGlob):
         self.assert_equal(glob.glob('EF', dir_fd=dir_fd), ['EF'])
         os.close(dir_fd)
 
-    def test_cwd_fd_dir_globmatch(self):
-        """Test file descriptor."""
+    @pytest.mark.skipif(not glob.SUPPORT_DIR_FD, reason="dir_fd is not supported on this system")
+    def test_cwd_dir_fd_globmatch(self):
+        """Test file descriptor on `globmatch`."""
 
-        if glob.SUPPORT_DIR_FD:
-            dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
-            self.assert_equal(glob.globmatch('EF', 'EF', dir_fd=dir_fd, flags=glob.REALPATH), True)
-            os.close(dir_fd)
-        else:
-            # Windows doesn't support `dir_fd`, let's fabricate a scenario and verify it doesn't match.
-            dir_fd = 1
-            self.assert_equal(glob.globmatch('EF', 'EF', dir_fd=dir_fd, flags=glob.REALPATH), False)
+        dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
+        self.assert_equal(glob.globmatch('EF', 'EF', dir_fd=dir_fd, flags=glob.REALPATH), True)
+        os.close(dir_fd)
 
-    def test_cwd_fd_dir_globmatch_NO_FOLLOW(self):
-        """Test file descriptor."""
+    @pytest.mark.skipif(glob.SUPPORT_DIR_FD, reason="dir_fd is supported on this system")
+    def test_cwd_dir_fd_globmatch_unsupported(self):
+        """Test file descriptor on unsupported system."""
 
-        if glob.SUPPORT_DIR_FD:
-            dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
-            self.assert_equal(
-                glob.globmatch('a/bcd/EF', 'a/**/EF', dir_fd=dir_fd, flags=glob.REALPATH | glob.GLOBSTAR),
-                True
-            )
-            os.close(dir_fd)
-        else:
-            # Windows doesn't support `dir_fd`, let's fabricate a scenario and verify it doesn't match.
-            dir_fd = 1
-            self.assert_equal(
-                glob.globmatch('a/bcd/EF', 'a/**/EF', dir_fd=dir_fd, flags=glob.REALPATH | glob.GLOBSTAR),
-                False
-            )
+        # Windows doesn't support `dir_fd`, let's fabricate a scenario and verify it doesn't match.
+        dir_fd = 1
+        self.assert_equal(glob.globmatch('EF', 'EF', dir_fd=dir_fd, flags=glob.REALPATH), False)
+
+    @pytest.mark.skipif(not glob.SUPPORT_DIR_FD, reason="dir_fd is not supported on this system")
+    def test_cwd_dir_fd_globmatch_no_follow(self):
+        """Test file descriptor with `globmatch`, but cover link logic."""
+
+        dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
+        self.assert_equal(
+            glob.globmatch('a/bcd/EF', 'a/**/EF', dir_fd=dir_fd, flags=glob.REALPATH | glob.GLOBSTAR),
+            True
+        )
+        os.close(dir_fd)
+
+    @pytest.mark.skipif(glob.SUPPORT_DIR_FD, reason="dir_fd is supported on this system")
+    def test_cwd_dir_fd_globmatch_no_follow_unsupported(self):
+        """Test file descriptor with `globmatch` on unsupported systems, but cover link logic."""
+
+        # Windows doesn't support `dir_fd`, let's fabricate a scenario and verify it doesn't match.
+        dir_fd = 1
+        self.assert_equal(
+            glob.globmatch('a/bcd/EF', 'a/**/EF', dir_fd=dir_fd, flags=glob.REALPATH | glob.GLOBSTAR),
+            False
+        )
+
+    @pytest.mark.skipif(not glob.SUPPORT_DIR_FD, reason="dir_fd is not supported on this system")
+    def test_cwd_dir_fd_root_dir(self):
+        """Test file descriptor and root directory together."""
+
+        dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
+        root_dir = 'a'
+        self.assert_equal(glob.glob('bcd/EF', dir_fd=dir_fd, root_dir=root_dir), [os.path.join('bcd', 'EF')])
+        os.close(dir_fd)
+
+    @pytest.mark.skipif(not glob.SUPPORT_DIR_FD, reason="dir_fd is not supported on this system")
+    def test_cwd_dir_fd_root_dir_globmatch_no_follow(self):
+        """Test file descriptor and root directory on `globmatch`, but cover link logic."""
+
+        dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
+        root_dir = 'a'
+        self.assert_equal(
+            glob.globmatch('bcd/EF', '**/EF', dir_fd=dir_fd, root_dir=root_dir, flags=glob.REALPATH | glob.GLOBSTAR),
+            True
+        )
+        os.close(dir_fd)
 
 
 class TestCase(_TestGlob):
