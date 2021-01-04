@@ -8,7 +8,7 @@ from wcmatch import wcmatch
 
 `wcmatch.WcMatch` was originally written to provide a simple user interface for searching specific files in
 [Rummage](https://github.com/facelessuser/Rummage). A class was needed to facilitate a user interface where a user could
-select a base path, define one or more file patterns they wanted to search for, and provide folders to exclude if
+select a root directory, define one or more file patterns they wanted to search for, and provide folders to exclude if
 needed. It needed to be aware of hidden files on different systems, not just ignoring files that start with `.`. It also
 needed to be extendable so we could further filter returned files by size, creation date, or whatever else was decided.
 While [`glob`](./glob.md) is a fantastic file and folder search tool, it just didn't make sense for such a user
@@ -16,14 +16,22 @@ interface.
 
 ## `wcmatch.WcMatch` {: #wcmatch}
 
-`WcMatch` is an extendable file search class. It allows you to specify a base path, file patterns, and optional folder
-exclude patterns. You can specify whether you want to see hidden files and whether the search should be recursive. You
-can also derive from the class and tap into specific hooks to change what is returned or done when a file is matched,
-skipped, or when there is an error. There are also hooks where you can inject additional, custom filtering.
+```py3
+class WcMatch:
+    """Finds files by wildcard."""
+
+    def __init__(self, root_dir=".", file_pattern=None, **kwargs):
+        """Initialize the directory walker object."""
+```
+
+`WcMatch` is an extendable file search class. It allows you to specify a root directory path, file patterns, and
+optional folder exclude patterns. You can specify whether you want to see hidden files and whether the search should be
+recursive. You can also derive from the class and tap into specific hooks to change what is returned or done when a file
+is matched, skipped, or when there is an error. There are also hooks where you can inject additional, custom filtering.
 
 Parameter         | Default       | Description
 ----------------- | ------------- | -----------
-`directory`       |               | The base directory to search.
+`root_dir`        |               | The root directory to search.
 `file_pattern`    | `#!py3 ''`    | One or more patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#minusnegate) is set). The default is an empty string, but if an empty string is used, all files will be matched.
 `exclude_pattern` | `#!py3 ''`    | Zero or more folder exclude patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#minusnegate) is set).
 `flags`           | `#!py3 0`     | Flags to alter behavior of folder and file matching. See [Flags](#flags) for more info.
@@ -33,10 +41,6 @@ Parameter         | Default       | Description
     Dots are not treated special in `wcmatch`. When the `HIDDEN` flag is not included, all hidden files (system and dot
     files) are excluded from the crawling processes, so there is no risk of `*` matching a dot file as it will not show
     up in the crawl. If the `HIDDEN` flag is included, `*`, `?`, and `[.]` will then match dot files.
-
-!!! danger "Removed in 3.0"
-    `show_hidden` and `recursive` were removed to provide a more consistent interface. Hidden files and recursion can be
-    enabled via the [`HIDDEN`](#hidden) and [`RECURSIVE`](#recursive) flag respectively.
 
 !!! new "New 6.0"
     `limit` was added in 6.0.
@@ -72,7 +76,7 @@ Excluding directories:
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '*.md|*.txt', 'docs', flags=wcmatch.RECURSIVE).match()
+>>> wcmatch.WcMatch('.', '*.md|*.txt', exclude_pattern='docs', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
@@ -80,7 +84,7 @@ Using file negation patterns:
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '*.md|*.txt|!README*', 'docs', flags=wcmatch.RECURSIVE).match()
+>>> wcmatch.WcMatch('.', '*.md|*.txt|!README*', exclude_pattern='docs', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
@@ -89,7 +93,7 @@ You can also use negation patterns in directory exclude. Here we avoid all folde
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '*.md|*.txt', '*|!requirements', flags=wcmatch.RECURSIVE).match()
+>>> wcmatch.WcMatch('.', '*.md|*.txt', exclude_pattern='*|!requirements', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
@@ -97,7 +101,7 @@ Negative patterns can be given by themselves.
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '*.md|*.txt', '!requirements', flags=wcmatch.RECURSIVE).match()
+>>> wcmatch.WcMatch('.', '*.md|*.txt', exclude_pattern='!requirements', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
@@ -186,9 +190,6 @@ Checks if an abort has been issued.
 True
 ```
 
-!!! new "New 4.1"
-    `is_aborted` was added in 4.1.0.
-
 #### `WcMatch.get_skipped` {: #get_skipped}
 
 Returns the number of skipped files. Files in skipped folders are not included in the count.
@@ -207,12 +208,16 @@ Returns the number of skipped files. Files in skipped folders are not included i
 #### `WcMatch.on_init` {: #on_init}
 
 ```py3
-   def on_init(self, *args, **kwargs):
+   def on_init(self, **kwargs):
         """Handle custom init."""
 ```
 
-Any arguments or keyword arguments not processed by the main initializer are sent to `on_init`. This allows you to
+Any keyword arguments not processed by the main initializer are sent to `on_init`. This allows you to
 specify additional arguments when deriving from `WcMatch`.
+
+!!! new "Changed 8.0"
+    Starting in 8.0, `on_init` only accepts keyword arguments as now `WcMatch` requires all parameters (except
+    `root_dir` and `file_pattern`) to be keyword parameters and must explicitly be specified in the form `key=value`.
 
 #### `WcMatch.on_validate_directory` {: #on_validate_directory}
 
@@ -290,40 +295,25 @@ file meta data. `on_match` must return something, and all results will be return
 `on_reset` is a hook to provide a way to reset any custom logic in classes that have derived from `WcMatch`. `on_reset`
 is called on every new [`match`](#match) call.
 
-!!! new "New 4.0"
-    `on_reset` was added in 4.0.
-
 ## Flags
 
 #### `wcmatch.RECURSIVE, wcmatch.RV` {: #recursive}
 
 `RECURSIVE` forces a recursive search that will crawl all subdirectories.
 
-!!! new "New 3.0"
-    Added in 3.0 and must be used instead of the old `recursive` parameter which has also been removed as of 3.0.
-
 #### `wcmatch.HIDDEN, wcmatch.HD` {: #hidden}
 
 `HIDDEN` enables the crawling of hidden directories and will return hidden files if the wildcard pattern matches. This
 enables not just dot files, but system hidden files as well.
-
-!!! new "New 3.0"
-    Added in 3.0 and must be used instead of the old `show_hidden` parameter which has also been removed as of 3.0.
 
 #### `wcmatch.SYMLINK, wcmatch.SL` {: #symlink}
 
 `SYMLINK` enables the crawling of symlink directories. By default, symlink directories are ignored during the file
 crawl.
 
-!!! new "New 3.0"
-    Added in 3.0. Additionally, symlinks are now ignored by default moving forward if `SYMLINK` is not enabled.
-
 #### `wcmatch.CASE, wcmatch.C` {: #case}
 
 `CASE` forces case sensitivity. `CASE` has higher priority than [`IGNORECASE`](#ignorecase).
-
-!!! new "New 4.3"
-    `CASE` is new in 4.3.0.
 
 #### `wcmatch.IGNORECASE, wcmatch.I` {: #ignorecase}
 
@@ -384,8 +374,9 @@ pattern which will perform much better: `@(ab|ac|ad)`.
 
 `DIRPATHNAME` will enable path name searching for excluded folder patterns, but it will not apply to file patterns. This
 is mainly provided for cases where you may have multiple folders with the same name, but you want to target a specific
-folder to exclude. The path name compared will be the entire path relative to the base path.  So if the provided base
-folder was `.`, and the folder under evaluation is `./some/folder`, `some/folder` will be matched against the pattern.
+folder to exclude. The path name compared will be the entire path relative to the root directory.  So if the provided
+root directory folder was `.`, and the folder under evaluation is `./some/folder`, `some/folder` will be matched against
+the pattern.
 
 ```pycon3
 >>> from wcmatch import wcmatch
@@ -396,8 +387,9 @@ folder was `.`, and the folder under evaluation is `./some/folder`, `some/folder
 #### `wcmatch.FILEPATHNAME, wcmatch.FP` {: #filepathname}
 
 `FILEPATHNAME` will enable path name searching for the file patterns, but it will not apply to directory exclude
-patterns. The path name compared will be the entire path relative to the base path.  So if the provided base folder was
-`.`, and the file under evaluation is `./some/file.txt`, `some/file.txt` will be matched against the pattern.
+patterns. The path name compared will be the entire path relative to the root directory path.  So if the provided root
+directory was `.`, and the file under evaluation is `./some/file.txt`, `some/file.txt` will be matched against the
+pattern.
 
 ```pycon3
 >>> from wcmatch import wcmatch

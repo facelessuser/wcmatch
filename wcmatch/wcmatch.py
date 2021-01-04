@@ -78,16 +78,15 @@ FLAG_MASK = (
 )
 
 
-class WcMatch(object):
+class WcMatch:
     """Finds files by wildcard."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, root_dir, file_pattern=None, exclude_pattern=None, flags=0, limit=_wcparse.PATHNAME, **kwargs):
         """Initialize the directory walker object."""
 
         self._abort = False
-        args = list(args)
         self._skipped = 0
-        self._directory = _wcparse.norm_slash(args.pop(0), 0)
+        self._directory = _wcparse.norm_slash(root_dir, 0)
         self.is_bytes = isinstance(self._directory, bytes)
         if not self._directory:
             if self.is_bytes:
@@ -97,16 +96,16 @@ class WcMatch(object):
         else:
             curdir = self._directory
         self.sep = os.fsencode(os.sep) if self.is_bytes else os.sep
-        self.base = curdir if curdir.endswith(self.sep) else curdir + self.sep
-        self.file_pattern = args.pop(0) if args else kwargs.pop('file_pattern', b'' if self.is_bytes else '')
+        self._root_dir = curdir if curdir.endswith(self.sep) else curdir + self.sep
+        self.file_pattern = file_pattern
         if not self.file_pattern:
             self.file_pattern = _wcparse.WcRegexp(
                 (re.compile(br'^.*$', re.DOTALL),) if self.is_bytes else (re.compile(r'^.*$', re.DOTALL),)
             )
-        self.exclude_pattern = args.pop(0) if args else kwargs.pop('exclude_pattern', b'' if self.is_bytes else '')
-        self._parse_flags(args.pop(0) if args else kwargs.pop('flags', 0))
-        self.limit = kwargs.pop('limit', _wcparse.PATTERN_LIMIT)
-        self.on_init(*args, **kwargs)
+        self.exclude_pattern = exclude_pattern if exclude_pattern is not None else (b'' if self.is_bytes else '')
+        self._parse_flags(flags)
+        self.limit = limit
+        self.on_init(**kwargs)
         self.file_check, self.folder_exclude_check = self._compile(self.file_pattern, self.exclude_pattern)
 
     def _parse_flags(self, flags):
@@ -189,7 +188,7 @@ class WcMatch(object):
 
         return not self.folder_exclude_check.match(directory + self.sep if self.dir_pathname else directory)
 
-    def on_init(self, *args, **kwargs):
+    def on_init(self, **kwargs):
         """Handle custom initialization."""
 
     def on_validate_directory(self, base, name):
@@ -238,9 +237,9 @@ class WcMatch(object):
     def _walk(self):
         """Start search for valid files."""
 
-        self._base_len = len(self.base)
+        self._base_len = len(self._root_dir)
 
-        for base, dirs, files in os.walk(self.base, followlinks=self.follow_links):
+        for base, dirs, files in os.walk(self._root_dir, followlinks=self.follow_links):
             if self.is_aborted():
                 break
 

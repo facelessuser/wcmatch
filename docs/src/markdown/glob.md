@@ -479,10 +479,6 @@ we wrap the entire group to be captured: `#!py3 '+(a)'` --> `#!py3 r'((a)+)'`.
 ('file', '33', '.test.txt')
 ```
 
-!!! new "Changes 4.0"
-    Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic to how
-    it used to be, but is more efficient.
-
 !!! new "New 6.0"
     `limit` was added in 6.0.
 
@@ -629,9 +625,6 @@ escaping will be used.
 On Windows, drive letters (`C:`) and UNC host/share (`//host/share`) portions of a path will still be treated case
 insensitively, but the rest of the path will have case sensitive logic applied.
 
-!!! new "New 4.3"
-    `CASE` is new in 4.3.0.
-
 #### `glob.IGNORECASE, glob.I` {: #ignorecase}
 
 `IGNORECASE` forces case insensitivity. [`CASE`](#case) has higher priority than `IGNORECASE`.
@@ -654,11 +647,6 @@ unless the file matches the excluded pattern. This is done with the [`NEGATEALL`
 `NEGATE` enables [`DOTGLOB`](#dotglob) in all exclude patterns, this cannot be disabled. This will not affect the
 inclusion patterns.
 
-!!! new "Changes 4.0"
-    In 4.0, `NEGATE` now requires a non-exclusion pattern to be paired with it or it will match nothing. If you really
-    need something similar to the old behavior, that would assume a default inclusion pattern, you can use the
-    [`NEGATEALL`](#negateall).
-
 #### `glob.NEGATEALL, glob.A` {: #negateall}
 
 `NEGATEALL` can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the
@@ -678,16 +666,9 @@ When `MINUSNEGATE` is used with [`NEGATE`](#negate), exclusion patterns are reco
 
 `GLOBSTAR` enables the feature where `**` matches zero or more directories.
 
-!!! new "New 3.0"
-    `GLOBSTAR` will no longer match or traverse symlink directories. This models the recent behavior in Bash 5.0. To
-    crawl symlink directories, the new [`FOLLOW`](#follow) flag must be enabled.
-
 #### `glob.FOLLOW, glob.L` {: #follow}
 
 `FOLLOW` will cause [`GLOBSTAR`](#globstar) patterns (`**`) to match and traverse symlink directories.
-
-!!! new "New 3.0"
-    `FOLLOW` was added in 3.0.
 
 #### `glob.REALPATH, glob.P` {: #realpath}
 
@@ -713,9 +694,6 @@ logic so that the path must meet the following in order to match:
 
 Since `REALPATH` causes the file system to be referenced when matching a path, flags such as
 [`FORCEUNIX`](#forceunix) and [`FORCEWIN`](#forcewin) are not allowed with this flag and will be ignored.
-
-!!! new "New 3.0"
-    `REALPATH` was added in 3.0.
 
 #### `glob.DOTGLOB, glob.D` {: #dotglob}
 
@@ -942,9 +920,6 @@ enabled, ensuring the files have trailing slashes can still save you a call to `
 ['appveyor.yml', 'base.patch', 'basematch.diff', 'docs', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'requirements', 'setup.cfg', 'setup.py', 'tests', 'tools', 'tox.ini', 'wcmatch']
 ```
 
-!!! new "New 4.0"
-    `MARK` added in 4.0.
-
 #### `glob.MATCHBASE, glob.X` {: #matchbase}
 
 `MATCHBASE`, when a pattern has no slashes in it, will cause [`glob`](#glob) and [`iglob`](#iglob) to seek for
@@ -958,9 +933,6 @@ start with `.` and will not match such files and directories if [`DOTGLOB`](#dot
 >>> glob.glob('*.txt', flags=glob.MATCHBASE)
 ['docs/src/dictionary/en-custom.txt', 'docs/src/markdown/_snippets/abbr.txt', 'docs/src/markdown/_snippets/links.txt', 'docs/src/markdown/_snippets/posix.txt', 'docs/src/markdown/_snippets/refs.txt', 'requirements/docs.txt', 'requirements/lint.txt', 'requirements/setup.txt', 'requirements/test.txt', 'requirements/tools.txt']
 ```
-
-!!! new "New 4.0"
-    `MATCHBASE` added in 4.0.
 
 #### `glob.NODIR, glob.O` {: #nodir}
 
@@ -985,9 +957,6 @@ or [`iglob`](#iglob). It also will not work when using the [`REALPATH`](#realpat
 
 If `FORCEWIN` is used along side [`FORCEUNIX`](#forceunix), both will be ignored.
 
-!!! new "New 4.2"
-    `FORCEWIN` is new in 4.2.0.
-
 #### `glob.FORCEUNIX, glob.U` {: #forceunix}
 
 `FORCEUNIX` will force Linux/Unix path and case logic to be used on Windows systems. This is great if you need to match
@@ -1000,9 +969,6 @@ When using `FORCEUNIX`, the paths are assumed to be case sensitive, but you can 
 use case insensitivity.
 
 If `FORCEUNIX` is used along side [`FORCEWIN`](#forcewin), both will be ignored.
-
-!!! new "New 4.2"
-    `FORCEUNIX` is new in 4.2.0.
 
 --8<--
 refs.txt

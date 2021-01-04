@@ -159,10 +159,6 @@ we wrap the entire group to be captured: `#!py3 '+(a)'` --> `#!py3 r'((a)+)'`.
 ('file', '33', '.test.txt')
 ```
 
-!!! new "Changes 4.0"
-    Translate now outputs exclusion patterns so that if they match, the file is excluded. This is opposite logic to how
-    it used to be, but is more efficient.
-
 !!! new "New 6.0"
     `limit` was added in 6.0.
 
@@ -174,9 +170,6 @@ we wrap the entire group to be captured: `#!py3 '+(a)'` --> `#!py3 r'((a)+)'`.
 #### `fnmatch.CASE, fnmatch.C` {: #case}
 
 `CASE` forces case sensitivity. `CASE` has higher priority than [`IGNORECASE`](#ignorecase).
-
-!!! new "New 4.3"
-    `CASE` is new in 4.3.0.
 
 #### `fnmatch.IGNORECASE, fnmatch.I` {: #ignorecase}
 
@@ -196,11 +189,6 @@ Assuming the `SPLIT` flag, this means using it in a pattern such as `inclusion|!
 
 If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match
 unless the file matches the excluded pattern. This is done with the [`NEGATEALL`](#negateall) flag.
-
-!!! warning "Changes 4.0"
-    In 4.0, `NEGATE` now requires a non-exclusion pattern to be paired with it or it will match nothing. If you really
-    need something similar to the old behavior, that would assume a default inclusion pattern, you can use the
-    [`NEGATEALL`](#negateall).
 
 #### `fnmatch.NEGATEALL, fnmatch.A` {: #negateall}
 
@@ -286,9 +274,6 @@ normalized. This is great if you need to match Windows specific names on a Linux
 
 If `FORCEWIN` is used along side [`FORCEUNIX`](#forceunix), both will be ignored.
 
-!!! new "New 4.2"
-    `FORCEWIN` is new in 4.2.0.
-
 #### `fnmatch.FORCEUNIX, fnmatch.U` {: #forceunix}
 
 `FORCEUNIX` will force Linux/Unix name and case logic to be used on Windows systems. This is great if you need to match
@@ -298,9 +283,6 @@ When using `FORCEUNIX`, the names are assumed to be case sensitive, but you can 
 to use case insensitivity.
 
 If `FORCEUNIX` is used along side [`FORCEWIN`](#forcewin), both will be ignored.
-
-!!! new "New 4.2"
-    `FORCEUNIX` is new in 4.2.0.
 
 --8<--
 refs.txt
