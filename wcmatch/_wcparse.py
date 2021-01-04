@@ -1691,7 +1691,7 @@ def _match_pattern(filename, include, exclude, real, path, follow, root_dir=None
         if dir_fd is not None and not SUPPORT_DIR_FD:
             dir_fd = None
 
-        if not is_fd and type(filename) != type(root):
+        if type(filename) != type(root):
             raise TypeError(
                 "The filename and root directory should be of the same type, not {} and {}".format(
                     type(filename), type(root_dir)

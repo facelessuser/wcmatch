@@ -23,6 +23,7 @@
   logic.
 - **NEW**: Deprecate `raw_escape` in `glob` as it is very niche and the same can be accomplished simply by using
   `#!py3 codecs.decode(string, 'unicode_escape')` and then using `escape`.
+- **NEW**: Add support for `dir_fd` in glob patterns.
 - **FIX**: Use `os.fspath` to convert path-like objects to string/bytes, whatever the return from `__fspath__` is what
   Wildcard Match will accept. Don't try to convert paths via `__str__` or `__bytes__` as not all path-like objects may
   implement both.
@@ -55,7 +56,6 @@
 
 - **NEW**: Drop Python 3.5 support.
 - **NEW**: Formally support Python 3.9 support.
-- **NEW**: Add support for `dir_fd` in glob patterns.
 - **FIX**: Small fix for regular expression output to ensure `NODIR` pattern looks at both `/` and `\\` on Windows.
 
 ## 7.1
