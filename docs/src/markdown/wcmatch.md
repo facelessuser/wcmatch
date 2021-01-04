@@ -8,7 +8,7 @@ from wcmatch import wcmatch
 
 `wcmatch.WcMatch` was originally written to provide a simple user interface for searching specific files in
 [Rummage](https://github.com/facelessuser/Rummage). A class was needed to facilitate a user interface where a user could
-select a base path, define one or more file patterns they wanted to search for, and provide folders to exclude if
+select a root directory, define one or more file patterns they wanted to search for, and provide folders to exclude if
 needed. It needed to be aware of hidden files on different systems, not just ignoring files that start with `.`. It also
 needed to be extendable so we could further filter returned files by size, creation date, or whatever else was decided.
 While [`glob`](./glob.md) is a fantastic file and folder search tool, it just didn't make sense for such a user
@@ -31,7 +31,7 @@ is matched, skipped, or when there is an error. There are also hooks where you c
 
 Parameter         | Default       | Description
 ----------------- | ------------- | -----------
-`root_dir`        | `#!py3 '.'`   | The root directory to search.
+`root_dir`        |               | The root directory to search.
 `file_pattern`    | `#!py3 ''`    | One or more patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#minusnegate) is set). The default is an empty string, but if an empty string is used, all files will be matched.
 `exclude_pattern` | `#!py3 ''`    | Zero or more folder exclude patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#minusnegate) is set).
 `flags`           | `#!py3 0`     | Flags to alter behavior of folder and file matching. See [Flags](#flags) for more info.
@@ -44,10 +44,6 @@ Parameter         | Default       | Description
 
 !!! new "New 6.0"
     `limit` was added in 6.0.
-
-!!! new "Changed 8.0"
-    Starting in 8.0, `on_init` only accepts keyword arguments as now WcMatch requires all parameters (except `root_dir`
-    and `file_pattern`) to be keyword parameters and must explicitly be specified in the form `key=value`.
 
 ### Multi-Pattern Limits
 
@@ -80,7 +76,7 @@ Excluding directories:
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '*.md|*.txt', 'docs', flags=wcmatch.RECURSIVE).match()
+>>> wcmatch.WcMatch('.', '*.md|*.txt', exclude_pattern='docs', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
@@ -88,7 +84,7 @@ Using file negation patterns:
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '*.md|*.txt|!README*', 'docs', flags=wcmatch.RECURSIVE).match()
+>>> wcmatch.WcMatch('.', '*.md|*.txt|!README*', exclude_pattern='docs', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
@@ -97,7 +93,7 @@ You can also use negation patterns in directory exclude. Here we avoid all folde
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '*.md|*.txt', '*|!requirements', flags=wcmatch.RECURSIVE).match()
+>>> wcmatch.WcMatch('.', '*.md|*.txt', exclude_pattern='*|!requirements', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
@@ -105,7 +101,7 @@ Negative patterns can be given by themselves.
 
 ```pycon3
 >>> from wcmatch import wcmatch
->>> wcmatch.WcMatch('.', '*.md|*.txt', '!requirements', flags=wcmatch.RECURSIVE).match()
+>>> wcmatch.WcMatch('.', '*.md|*.txt', exclude_pattern='!requirements', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
 
@@ -220,8 +216,8 @@ Any keyword arguments not processed by the main initializer are sent to `on_init
 specify additional arguments when deriving from `WcMatch`.
 
 !!! new "Changed 8.0"
-    Starting in 8.0, `on_init` only accepts keyword arguments as now WcMatch requires all parameters (except `root_dir`
-    and `file_pattern`) to be keyword parameters and must explicitly be specified in the form `key=value`.
+    Starting in 8.0, `on_init` only accepts keyword arguments as now `WcMatch` requires all parameters (except
+    `root_dir` and `file_pattern`) to be keyword parameters and must explicitly be specified in the form `key=value`.
 
 #### `WcMatch.on_validate_directory` {: #on_validate_directory}
 
@@ -378,8 +374,9 @@ pattern which will perform much better: `@(ab|ac|ad)`.
 
 `DIRPATHNAME` will enable path name searching for excluded folder patterns, but it will not apply to file patterns. This
 is mainly provided for cases where you may have multiple folders with the same name, but you want to target a specific
-folder to exclude. The path name compared will be the entire path relative to the base path.  So if the provided base
-folder was `.`, and the folder under evaluation is `./some/folder`, `some/folder` will be matched against the pattern.
+folder to exclude. The path name compared will be the entire path relative to the root directory.  So if the provided
+root directory folder was `.`, and the folder under evaluation is `./some/folder`, `some/folder` will be matched against
+the pattern.
 
 ```pycon3
 >>> from wcmatch import wcmatch
@@ -390,8 +387,9 @@ folder was `.`, and the folder under evaluation is `./some/folder`, `some/folder
 #### `wcmatch.FILEPATHNAME, wcmatch.FP` {: #filepathname}
 
 `FILEPATHNAME` will enable path name searching for the file patterns, but it will not apply to directory exclude
-patterns. The path name compared will be the entire path relative to the base path.  So if the provided base folder was
-`.`, and the file under evaluation is `./some/file.txt`, `some/file.txt` will be matched against the pattern.
+patterns. The path name compared will be the entire path relative to the root directory path.  So if the provided root
+directory was `.`, and the file under evaluation is `./some/file.txt`, `some/file.txt` will be matched against the
+pattern.
 
 ```pycon3
 >>> from wcmatch import wcmatch

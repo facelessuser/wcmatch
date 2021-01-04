@@ -81,7 +81,7 @@ FLAG_MASK = (
 class WcMatch:
     """Finds files by wildcard."""
 
-    def __init__(self, root_dir=".", file_pattern=None, **kwargs):
+    def __init__(self, root_dir, file_pattern=None, exclude_pattern=None, flags=0, limit=_wcparse.PATHNAME, **kwargs):
         """Initialize the directory walker object."""
 
         self._abort = False
@@ -96,15 +96,15 @@ class WcMatch:
         else:
             curdir = self._directory
         self.sep = os.fsencode(os.sep) if self.is_bytes else os.sep
-        self.base = curdir if curdir.endswith(self.sep) else curdir + self.sep
+        self._root_dir = curdir if curdir.endswith(self.sep) else curdir + self.sep
         self.file_pattern = file_pattern
         if not self.file_pattern:
             self.file_pattern = _wcparse.WcRegexp(
                 (re.compile(br'^.*$', re.DOTALL),) if self.is_bytes else (re.compile(r'^.*$', re.DOTALL),)
             )
-        self.exclude_pattern = kwargs.pop('exclude_pattern', b'' if self.is_bytes else '')
-        self._parse_flags(kwargs.pop('flags', 0))
-        self.limit = kwargs.pop('limit', _wcparse.PATTERN_LIMIT)
+        self.exclude_pattern = exclude_pattern if exclude_pattern is not None else (b'' if self.is_bytes else '')
+        self._parse_flags(flags)
+        self.limit = limit
         self.on_init(**kwargs)
         self.file_check, self.folder_exclude_check = self._compile(self.file_pattern, self.exclude_pattern)
 
@@ -237,9 +237,9 @@ class WcMatch:
     def _walk(self):
         """Start search for valid files."""
 
-        self._base_len = len(self.base)
+        self._base_len = len(self._root_dir)
 
-        for base, dirs, files in os.walk(self.base, followlinks=self.follow_links):
+        for base, dirs, files in os.walk(self._root_dir, followlinks=self.follow_links):
             if self.is_aborted():
                 break
 

@@ -322,14 +322,14 @@ class TestWcmatch(_TestWcmatch):
             '*.txt*',
             flags=self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
         )
-        self.assertEqual(walker.base, target)
+        self.assertEqual(walker._root_dir, target)
 
         walker = wcmatch.WcMatch(
             b'',
             b'*.txt*',
             flags=self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
         )
-        self.assertEqual(walker.base, os.fsencode(target))
+        self.assertEqual(walker._root_dir, os.fsencode(target))
 
     def test_empty_string_file(self):
         """Test when file pattern is an empty string."""
