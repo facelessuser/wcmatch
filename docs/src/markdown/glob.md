@@ -743,11 +743,11 @@ Also affects exclusion patterns:
 #### `glob.SCANDOTDIR, glob.SD` {: #scandotdir}
 
 `SCANDOTDIR` controls the directory scanning behavior of [`glob`](#glob) and [`iglob`](#iglob). The directory scanner
-of these functions do not return `.` and `..` in their results. This means unless you use an explicit `.` or `..` in
-your glob pattern, `.` and `..` will not be returned. When `SCANDOTDIR` is enabled, `.` and `..` will be returned when a
-directory is scanned causing "magic" patterns, such as `.*`, to match `.` and `..`.
+of these functions do not return `.` and `..` in their results. This means that unless you use an explicit `.` or `..`
+in your glob pattern, `.` and `..` will not be returned. When `SCANDOTDIR` is enabled, `.` and `..` will be returned
+when a directory is scanned causing "magic" patterns, such as `.*`, to match `.` and `..`.
 
-This only controls the directory scanning behavior and not how glob patterns behave. Exclude patterns, which filter,
+This only controls the directory scanning behavior and not how glob patterns behave. Exclude patterns, which filter
 the returned results via [`NEGATE`](#negate), can still match `.` and `..` with "magic" patterns such as `.*` regardless
 of whether `SCANDOTDIR` is enabled or not. It will also have no affect on [`globmatch`](#globmatch). To fundamentally
 change how glob patterns behave, you can use [`NODOTDIR`](#nodotdir).
