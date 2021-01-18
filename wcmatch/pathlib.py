@@ -5,7 +5,7 @@ from . import glob
 from . import _wcparse
 
 __all__ = (
-    "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
+    "ASCII", "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "NEGATE", "MINUSNEGATE", "BRACE",
     "REALPATH", "FOLLOW", "MATCHBASE", "NEGATEALL", "NODIR", "NOUNIQUE",
     "NODOTDIR", "SCANDOTDIR",
@@ -32,6 +32,7 @@ Q = NOUNIQUE = glob.NOUNIQUE
 Z = NODOTDIR = glob.NODOTDIR
 
 SD = SCANDOTDIR = glob.SCANDOTDIR
+ASCII = _wcparse.ASCII
 
 # Internal flags
 _EXTMATCHBASE = _wcparse._EXTMATCHBASE
@@ -44,6 +45,7 @@ _FORCEUNIX = _wcparse.FORCEUNIX
 _PATHLIB = glob._PATHLIB
 
 FLAG_MASK = (
+    ASCII |
     CASE |
     IGNORECASE |
     RAWCHARS |

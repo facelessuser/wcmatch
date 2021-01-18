@@ -1,2 +1,2 @@
 bracex>=2.0
-backrefs>=4.1
+uniprops

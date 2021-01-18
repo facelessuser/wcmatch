@@ -23,7 +23,7 @@ IN THE SOFTWARE.
 from . import _wcparse
 
 __all__ = (
-    "CASE", "EXTMATCH", "IGNORECASE", "RAWCHARS",
+    "ASCII", "CASE", "EXTMATCH", "IGNORECASE", "RAWCHARS",
     "NEGATE", "MINUSNEGATE", "DOTMATCH", "BRACE", "SPLIT",
     "NEGATEALL", "FORCEWIN", "FORCEUNIX",
     "C", "I", "R", "N", "M", "D", "E", "S", "B", "A", "W", "U",
@@ -43,7 +43,10 @@ A = NEGATEALL = _wcparse.NEGATEALL
 W = FORCEWIN = _wcparse.FORCEWIN
 U = FORCEUNIX = _wcparse.FORCEUNIX
 
+ASCII = _wcparse.ASCII
+
 FLAG_MASK = (
+    ASCII |
     CASE |
     IGNORECASE |
     RAWCHARS |

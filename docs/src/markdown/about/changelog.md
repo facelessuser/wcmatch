@@ -2,12 +2,14 @@
 
 ## 8.0
 
+- **NEW**: Remove dependency on `backrefs` for POSIX properties and instead use `uniprops` which is a separate library
+  created from the Unicode logic in `backrefs`. Now we only depend on the Unicode logic and not the rest of the
+  `backrefs` library.
 - **NEW**: `WcMatch`'s `on_init` hook now only accepts `kwargs` and not `args`.
-- **NEW**: Cosmetic change of referring to the first `__init__` parameter as `root_dir` instead of `base`. This is to
-  make it more clear when we are talking about the overall root directory that all paths are relative to vs the base
-  base path of a file which is relative to the root directory and the actual file name.
-- **NEW**: Internal attribute of `WcMatch` changed from `base` to `_root_dir`. This attribute is not really meant to be
-  referenced by users and as been marked as private.
+- **NEW**: Added `ASCII` flag to `fnmatch`, `glob`, `pathlib` and `wcmatch` to force ASCII logic in POSIX character
+  classes.
+- **FIX**: POSIX character classes were defaulting to ASCII ranges even in Unicode strings which did not match the
+  documentation. This is now fixed, but the old logic can be forced with the `ASCII` flag in Unicode strings.
 
 ## 7.2
 

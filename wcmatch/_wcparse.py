@@ -25,9 +25,9 @@ import functools
 import copyreg
 import bracex
 import os
+import uniprops
 from collections import namedtuple
 from . import util
-from backrefs import uniprops
 
 UNICODE = 0
 BYTES = 1
@@ -146,6 +146,7 @@ FORCEUNIX = 0x20000
 GLOBTILDE = 0x40000
 NOUNIQUE = 0x80000
 NODOTDIR = 0x100000
+ASCII = 0x100001
 
 # Internal flag
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
@@ -155,6 +156,7 @@ _NOABSOLUTE = 0x800000000  # Do not allow absolute patterns
 _RTL = 0x1000000000  # Match from right to left
 
 FLAG_MASK = (
+    ASCII |
     CASE |
     IGNORECASE |
     RAWCHARS |
@@ -964,6 +966,7 @@ class WcParse(object):
         """Initialize."""
 
         self.pattern = pattern
+        self.ascii = bool(flags & ASCII)
         self.no_abs = bool(flags & _NOABSOLUTE)
         self.braces = bool(flags & BRACE)
         self.is_bytes = isinstance(pattern, bytes)
@@ -1100,7 +1103,12 @@ class WcParse(object):
             # is the end of a range.
             if end_range and i.index - 1 >= end_range:
                 result[-1] = '\\' + result[-1]
-            posix_type = uniprops.POSIX_BYTES if self.is_bytes else uniprops.POSIX
+            if self.is_bytes:
+                posix_type = uniprops.POSIX_ASCII
+            elif self.ascii:
+                posix_type = uniprops.POSIX
+            else:
+                posix_type = uniprops.POSIX_UNICODE
             result.append(uniprops.get_posix_property(m.group(1), posix_type))
         return last_posix
 
@@ -1196,12 +1204,12 @@ class WcParse(object):
             if value == '[]':
                 # We specified some ranges, but they are all
                 # out of reach.  Create an impossible sequence to match.
-                result = ['[^%s]' % ('\x00-\xff' if self.is_bytes else uniprops.UNICODE_RANGE)]
+                result = ['[^%s]' % (uniprops.ASCII_RANGE if self.is_bytes else uniprops.UNICODE_RANGE)]
             elif value == '[^]':
                 # We specified some range, but hey are all
                 # out of reach. Since this is exclusive
                 # that means we can match *anything*.
-                result = ['[%s]' % ('\x00-\xff' if self.is_bytes else uniprops.UNICODE_RANGE)]
+                result = ['[%s]' % (uniprops.ASCII_RANGE if self.is_bytes else uniprops.UNICODE_RANGE)]
             else:
                 result = [value]
 
