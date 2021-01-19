@@ -8,6 +8,9 @@
   base path of a file which is relative to the root directory and the actual file name.
 - **NEW**: Internal attribute of `WcMatch` changed from `base` to `_root_dir`. This attribute is not really meant to be
   referenced by users and as been marked as private.
+- **NEW**: Drop requirement for `backrefs` and update documentation to note that POSIX properties never actually enabled
+  the use of Unicode properties. While the documentation stated this and it was probably intended, it was never actually
+  enabled. Currently, Wildcard match has chosen to keep with the ASCII definition for now.
 
 ## 7.2
 

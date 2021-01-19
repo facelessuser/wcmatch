@@ -27,10 +27,13 @@ import bracex
 import os
 from collections import namedtuple
 from . import util
-from backrefs import uniprops
+from . import posix
 
 UNICODE = 0
 BYTES = 1
+
+UNICODE_RANGE = '\u0000-\U0010ffff'
+ASCII_RANGE = '\x00-\xff'
 
 PATTERN_LIMIT = 1000
 
@@ -1100,8 +1103,7 @@ class WcParse(object):
             # is the end of a range.
             if end_range and i.index - 1 >= end_range:
                 result[-1] = '\\' + result[-1]
-            posix_type = uniprops.POSIX_BYTES if self.is_bytes else uniprops.POSIX
-            result.append(uniprops.get_posix_property(m.group(1), posix_type))
+            result.append(posix.get_posix_property(m.group(1), self.is_bytes))
         return last_posix
 
     def _sequence(self, i):
@@ -1196,12 +1198,12 @@ class WcParse(object):
             if value == '[]':
                 # We specified some ranges, but they are all
                 # out of reach.  Create an impossible sequence to match.
-                result = ['[^%s]' % ('\x00-\xff' if self.is_bytes else uniprops.UNICODE_RANGE)]
+                result = ['[^%s]' % (ASCII_RANGE if self.is_bytes else UNICODE_RANGE)]
             elif value == '[^]':
                 # We specified some range, but hey are all
                 # out of reach. Since this is exclusive
                 # that means we can match *anything*.
-                result = ['[%s]' % ('\x00-\xff' if self.is_bytes else uniprops.UNICODE_RANGE)]
+                result = ['[%s]' % (ASCII_RANGE if self.is_bytes else UNICODE_RANGE)]
             else:
                 result = [value]
 
