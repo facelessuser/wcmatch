@@ -152,6 +152,11 @@ class TestFnMatch:
         ['[a[:alnum:]]bc', 'zbc', True, 0],
         ['[[:alnum:][:blank:]]bc', ' bc', True, 0],
 
+        [b'[[:alnum:]]bc', b'zbc', True, 0],
+        [b'[[:alnum:]]bc', b'1bc', True, 0],
+        [b'[a[:alnum:]]bc', b'zbc', True, 0],
+        [b'[[:alnum:][:blank:]]bc', b' bc', True, 0],
+
         # POSIX character classes are case sensitive
         ['[[:ALNUM:]]bc', 'zbc', False, 0],
         ['[[:AlNuM:]]bc', '1bc', False, 0],
