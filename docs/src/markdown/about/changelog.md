@@ -10,7 +10,9 @@
   referenced by users and as been marked as private.
 - **NEW**: Drop requirement for `backrefs` and update documentation to note that POSIX properties never actually enabled
   the use of Unicode properties. While the documentation stated this and it was probably intended, it was never actually
-  enabled. Currently, Wildcard match has chosen to keep with the ASCII definition for now.
+  enabled. Currently, Wildcard match has chosen to keep with the ASCII definition for now as it has been since the
+  feature was introduced. This may change in the future if there is demand for it.
+- **NEW**: Add `[:word:]` POSIX character class.
 
 ## 7.2
 
