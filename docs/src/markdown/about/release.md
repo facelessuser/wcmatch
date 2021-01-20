@@ -1,5 +1,32 @@
 # Release Notes
 
+## Upgrade to 8.0 {: #upgrade-to-\8.0}
+
+Notable changes are minor and will affect very few. This should clarify breaking changes and how to migrate if
+applicable.
+
+### `WcMatch` class Initialization Hook
+
+The [`WcMatch`](../wcmatch.md#wcmatch) class `on_init` hook was cleaned up. Prior to 8.0, it accepted both `*args` and
+`**kwargs` which is quite difficult to maintain and honestly for users to use.
+
+Moving forward, the `WcMatch` class will restrict all parameters to `**kwargs`. If you are using the `on_init` hook,
+you will simply need to change your override to accept arguments as `**kwargs`:
+
+```py3
+# Excplicitly named
+def on_init(self, key1=value, key2=value):
+
+# Or just use `**kwargs`
+def on_init(self, **kwargs):
+```
+
+Lastly, only pass your custom variables in as keyword arguments:
+
+```py3
+CustomWcmatch('.', '*.md|*.txt', flags=wcmatch.RECURSIVE, custom_key=value)
+```
+
 ## Upgrade to 7.0 {: #upgrade-to-\7.0}
 
 Notable changes will be highlighted here to help with migration to 7.0.
