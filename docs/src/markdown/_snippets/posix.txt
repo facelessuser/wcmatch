@@ -1,28 +1,24 @@
 ## POSIX Character Classes
 
 A number of POSIX style character classes are available in the form `[:alnum:]`. They must be used inside sequences:
-`[[:digit:]]`. For byte strings, the `C` locale is used, and the values will for each character class are found in the
-table below under ASCII. When used in a Unicode string, Unicode properties will be used.
+`[[:digit:]]`. The `C` locale is used, and the values for each character class are found in the table below under ASCII.
 
 
-Property   | ASCII                                             | Unicode
----------- | ------------------------------------------------- | -------
-`alnum`    | `[a-zA-Z0-9]`                                     | `[\p{L&}\p{Nd}]`
-`alpha`    | `[a-zA-Z]`                                        | `[\p{L&}]`
-`ascii`    | `[\x00-\x7F]`                                     | `[\x00-\x7F]`
-`blank`    | `[ \t]`                                           | `[\p{Zs}\t]`
-`cntrl`    | `[\x00-\x1F\x7F]`                                 | `[\p{Cc}]`
-`digit`    | `[0-9]`                                           | `[\p{Nd}]`
-`graph`    | `[\x21-\x7E]`                                     | `[^\p{Z}\p{C}]`
-`lower`    | `[a-z]`                                           | `[\p{Ll}]`
-`print`    | `[\x20-\x7E]`                                     | `[\P{C}]`
-`punct`    | ``[!\"\#$%&'()*+,\-./:;<=>?@\[\\\]^_`{}~]``       | `[\p{P}\p{S}]`
-`space`    | `[ \t\r\n\v\f]`                                   | `[\p{Z}\t\r\n\v\f]`
-`upper`    | `[A-Z]`                                           | `[\p{Lu}]`
-`xdigit`   | `[A-Fa-f0-9]`                                     | `[A-Fa-f0-9]`
-
-!!! tip "Unicode Properties"
-    If you are confused by the notation depicting Unicode properties (`\p{Cc}` etc.), please checkout this
-    [link][unicode-properties] to get more info.
+Property   | Pattern
+---------- | -------------------------------------------------
+`alnum`    | `[a-zA-Z0-9]`
+`alpha`    | `[a-zA-Z]`
+`ascii`    | `[\x00-\x7F]`
+`blank`    | `[ \t]`
+`cntrl`    | `[\x00-\x1F\x7F]`
+`digit`    | `[0-9]`
+`graph`    | `[\x21-\x7E]`
+`lower`    | `[a-z]`
+`print`    | `[\x20-\x7E]`
+`punct`    | ``[!\"\#$%&'()*+,\-./:;<=>?@\[\\\]^_`{}~]``
+`space`    | `[ \t\r\n\v\f]`
+`upper`    | `[A-Z]`
+`word`     | `[a-zA-Z0-9_]`
+`xdigit`   | `[A-Fa-f0-9]`
 
 --8<-- "links.txt"

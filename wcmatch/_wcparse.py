@@ -117,7 +117,7 @@ TILDE_SYM = (
 
 RE_ANCHOR = re.compile(r'^/+')
 RE_WIN_ANCHOR = re.compile(r'^(?:\\\\|/)+')
-RE_POSIX = re.compile(r':(alnum|alpha|ascii|blank|cntrl|digit|graph|lower|print|punct|space|upper|xdigit):\]')
+RE_POSIX = re.compile(r':(alnum|alpha|ascii|blank|cntrl|digit|graph|lower|print|punct|space|upper|word|xdigit):\]')
 
 SET_OPERATORS = frozenset(('&', '~', '|'))
 NEGATIVE_SYM = frozenset((b'!', '!'))

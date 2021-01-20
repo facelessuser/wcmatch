@@ -151,11 +151,13 @@ class TestFnMatch:
         ['[[:alnum:]]bc', '1bc', True, 0],
         ['[a[:alnum:]]bc', 'zbc', True, 0],
         ['[[:alnum:][:blank:]]bc', ' bc', True, 0],
+        ['*([[:word:]])', 'WoRD5_', True, fnmatch.E],
 
         [b'[[:alnum:]]bc', b'zbc', True, 0],
         [b'[[:alnum:]]bc', b'1bc', True, 0],
         [b'[a[:alnum:]]bc', b'zbc', True, 0],
         [b'[[:alnum:][:blank:]]bc', b' bc', True, 0],
+        [b'*([[:word:]])', b'WoRD5_', True, fnmatch.E],
 
         # POSIX character classes are case sensitive
         ['[[:ALNUM:]]bc', 'zbc', False, 0],
