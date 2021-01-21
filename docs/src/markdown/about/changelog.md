@@ -5,7 +5,7 @@
 - **NEW**: `WcMatch`'s `on_init` hook now only accepts `kwargs` and not `args`.
 - **NEW**: Cosmetic change of referring to the first `__init__` parameter as `root_dir` instead of `base`. This is to
   make it more clear when we are talking about the overall root directory that all paths are relative to vs the base
-  base path of a file which is relative to the root directory and the actual file name.
+  path of a file which is relative to the root directory and the actual file name.
 - **NEW**: Internal attribute of `WcMatch` changed from `base` to `_root_dir`. This attribute is not really meant to be
   referenced by users and as been marked as private.
 - **NEW**: Drop requirement for `backrefs` and update documentation to note that POSIX properties never actually enabled
