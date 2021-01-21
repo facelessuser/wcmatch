@@ -1,5 +1,9 @@
 # Changelog
 
+## 8.0.1
+
+- **FIX**: Small bug in `[:alpha:]` range.
+
 ## 8.0
 
 - **NEW**: `WcMatch`'s `on_init` hook now only accepts `kwargs` and not `args`.
