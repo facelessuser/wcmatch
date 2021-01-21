@@ -1,7 +1,7 @@
 ## POSIX Character Classes
 
 A number of POSIX style character classes are available in the form `[:alnum:]`. They must be used inside sequences:
-`[[:digit:]]`. The `C` locale is used, and the values for each character class are found in the table below under ASCII.
+`[[:digit:]]`. The `C` locale is used, and the values for each character class are found in the table below.
 
 
 Property   | Pattern
