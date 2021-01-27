@@ -21,6 +21,7 @@ CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFT
 IN THE SOFTWARE.
 """
 from . import _wcparse
+from . import types
 
 __all__ = (
     "CASE", "EXTMATCH", "IGNORECASE", "RAWCHARS",
@@ -90,7 +91,9 @@ def fnmatch(filename, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
     return _wcparse.compile(patterns, flags, limit).match(filename)
 
 
-def filter(filenames, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):  # noqa A001
+def filter(
+    filenames: types.StringList, patterns: types.WildcardPatterns, *, flags: int=0, limit: int=_wcparse.PATTERN_LIMIT
+) -> types.StringList: # noqa A001
     """Filter names using pattern."""
 
     matches = []

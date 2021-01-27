@@ -25,9 +25,11 @@ import functools
 import copyreg
 import bracex
 import os
+import typing
 from collections import namedtuple
 from . import util
 from . import posix
+from . import types
 
 UNICODE = 0
 BYTES = 1
@@ -268,8 +270,14 @@ class InvPlaceholder(str):
     """Placeholder for inverse pattern !(...)."""
 
 
-class WcGlob(namedtuple('WcGlob', ['pattern', 'is_magic', 'is_globstar', 'dir_only', 'is_drive'])):
+class WcGlob(typing.NamedTuple):
     """File Glob."""
+
+    pattern: typing.Union[typing.Pattern, types.Strings]
+    is_magic: bool
+    is_globstar: bool
+    dir_only: bool
+    is_drive: bool
 
 
 class PathNameException(Exception):

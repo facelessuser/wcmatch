@@ -7,6 +7,7 @@ import re
 import unicodedata
 from functools import wraps
 import warnings
+import typing
 
 PY37 = (3, 7) <= sys.version_info
 
@@ -194,7 +195,7 @@ class StringIter(object):
 class Immutable(object):
     """Immutable."""
 
-    __slots__ = tuple()
+    __slots__: tuple[typing.Any, ...] = tuple()
 
     def __init__(self, **kwargs):
         """Initialize."""

@@ -22,4 +22,4 @@ IN THE SOFTWARE.
 """
 from .__meta__ import __version_info__, __version__  # noqa: F401
 
-__all__ = tuple()
+__all__: tuple[str, ...] = tuple()

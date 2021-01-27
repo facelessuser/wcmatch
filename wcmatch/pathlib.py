@@ -181,14 +181,14 @@ class PurePath(pathlib.PurePath):
 class PurePosixPath(PurePath):
     """Pure Posix path."""
 
-    _flavour = pathlib._posix_flavour
+    _flavour = pathlib._posix_flavour  # type: ignore
     __slots__ = ()
 
 
 class PureWindowsPath(PurePath):
     """Pure Windows path."""
 
-    _flavour = pathlib._windows_flavour
+    _flavour = pathlib._windows_flavour  # type: ignore
     __slots__ = ()
 
 

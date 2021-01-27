@@ -24,8 +24,10 @@ import os
 import sys
 import re
 import functools
+import typing
 from . import _wcparse
 from . import util
+from . import types
 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
@@ -98,19 +100,35 @@ FLAG_MASK = (
     _NOABSOLUTE
 )
 
-_RE_PATHLIB_DOT_NORM = [
+_RE_PATHLIB_DOT_NORM = (
     re.compile(r'(?:((?<=^)|(?<=/))\.(?:/|$))+'),
     re.compile(br'(?:((?<=^)|(?<=/))\.(?:/|$))+')
 
-]
+)
 
-_RE_WIN_PATHLIB_DOT_NORM = [
+_RE_WIN_PATHLIB_DOT_NORM = (
     re.compile(r'(?:((?<=^)|(?<=[\\/]))\.(?:[\\/]|$))+'),
     re.compile(br'(?:((?<=^)|(?<=[\\/]))\.(?:[\\/]|$))+')
-]
+)
+
+_SPECIALS = (
+    ('.', '..'),
+    (b'.', b'..')
+)
+_EMPTY = ('', b'')
+_SEP = ('/', b'/')
+_WIN_SEP = ('\\', b'\\')
+_SEPS = (
+    (_SEP[0],),
+    (_SEP[1],)
+)
+_WIN_SEPS = (
+    (_WIN_SEP[0], _SEP[0]),
+    (_WIN_SEP[1], _SEP[1])
+)
 
 
-def _flag_transform(flags):
+def _flag_transform(flags: int) -> int:
     """Transform flags to glob defaults."""
 
     # Enabling both cancels out
@@ -134,58 +152,61 @@ def _flag_transform(flags):
 class Glob(object):
     """Glob patterns."""
 
-    def __init__(self, pattern, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
+    def __init__(
+        self, pattern: types.StringList, flags: int=0,
+        root_dir: typing.Optional[types.Strings]=None, limit: int=_wcparse.PATTERN_LIMIT
+    ) -> None:
         """Initialize the directory walker object."""
 
-        self.seen = set()
-        self.is_bytes = isinstance(pattern[0], bytes)
-        self.current = b'.' if self.is_bytes else '.'
-        self.root_dir = util.fscodec(root_dir, self.is_bytes) if root_dir is not None else self.current
-        self.nounique = bool(flags & NOUNIQUE)
-        self.mark = bool(flags & MARK)
+        self.seen: set[types.Strings] = set()
+        self.is_bytes: bool = isinstance(pattern[0], bytes)
+        self.current: types.Strings = b'.' if self.is_bytes else '.'
+        self.root_dir: types.Strings = util.fscodec(root_dir, self.is_bytes) if root_dir is not None else self.current
+        self.nounique: bool = bool(flags & NOUNIQUE)
+        self.mark: bool = bool(flags & MARK)
         # Only scan for `.` and `..` if it is specifically requested.
-        self.scandotdir = flags & SCANDOTDIR
+        self.scandotdir: bool = bool(flags & SCANDOTDIR)
         if self.mark:
             flags ^= MARK
-        self.negateall = bool(flags & NEGATEALL)
+        self.negateall: bool = bool(flags & NEGATEALL)
         if self.negateall:
             flags ^= NEGATEALL
-        self.nodir = bool(flags & NODIR)
+        self.nodir: bool = bool(flags & NODIR)
         if self.nodir:
             flags ^= NODIR
-        self.pathlib = bool(flags & _PATHLIB)
+        self.pathlib: bool = bool(flags & _PATHLIB)
         if self.pathlib:
             flags ^= _PATHLIB
         # Right to left searching is only for matching
         if flags & _RTL:  # pragma: no cover
             flags ^= _RTL
-        self.flags = _flag_transform(flags | REALPATH)
-        self.negate_flags = self.flags
+        self.flags: int = _flag_transform(flags | REALPATH)
+        self.negate_flags: int = self.flags
         if not self.scandotdir and not self.flags & NODOTDIR:
             self.flags |= NODOTDIR
-        self.raw_chars = bool(self.flags & RAWCHARS)
-        self.follow_links = bool(self.flags & FOLLOW)
-        self.dot = bool(self.flags & DOTMATCH)
-        self.unix = not bool(self.flags & FORCEWIN)
-        self.negate = bool(self.flags & NEGATE)
-        self.globstar = bool(self.flags & GLOBSTAR)
-        self.braces = bool(self.flags & BRACE)
-        self.matchbase = bool(self.flags & MATCHBASE)
-        self.case_sensitive = _wcparse.get_case(self.flags)
-        self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
-        self.empty = b'' if self.is_bytes else ''
-        self.limit = limit
-        self._parse_patterns(pattern)
-        if self.flags & FORCEWIN:
-            self.sep = b'\\' if self.is_bytes else '\\'
-            self.seps = (b'/' if self.is_bytes else '/', self.sep)
-            self.pathlib_norm = _RE_WIN_PATHLIB_DOT_NORM[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
-        else:
-            self.sep = b'/' if self.is_bytes else '/'
-            self.seps = (self.sep,)
-            self.pathlib_norm = _RE_PATHLIB_DOT_NORM[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
+        self.raw_chars: bool = bool(self.flags & RAWCHARS)
+        self.follow_links: bool = bool(self.flags & FOLLOW)
+        self.dot: bool = bool(self.flags & DOTMATCH)
+        self.unix: bool = not bool(self.flags & FORCEWIN)
+        self.negate: bool = bool(self.flags & NEGATE)
+        self.globstar: bool = bool(self.flags & GLOBSTAR)
+        self.braces: bool = bool(self.flags & BRACE)
+        self.matchbase: bool = bool(self.flags & MATCHBASE)
+        self.case_sensitive: bool = _wcparse.get_case(self.flags)
+        self.limit: int = limit
 
-    def _iter_patterns(self, patterns):
+        string_type = _wcparse.BYTES if self.is_bytes else _wcparse.UNICODE
+        self.specials: tuple[types.Strings, ...] = _SPECIALS[string_type]
+        self.empty: types.Strings = _EMPTY[string_type]
+        self.sep: types.Strings = _WIN_SEP[string_type] if self.flags & FORCEWIN else _SEP[string_type]
+        self.seps: tuple[types.Strings, ...] = _WIN_SEPS[string_type] if self.flags & FORCEWIN else _SEPS[string_type]
+        self.pathlib_norm: typing.Pattern = (
+            _RE_WIN_PATHLIB_DOT_NORM[string_type] if self.flags & FORCEWIN else _RE_PATHLIB_DOT_NORM[string_type]
+        )
+
+        self._parse_patterns(pattern)
+
+    def _iter_patterns(self, patterns: types.StringList) -> typing.Iterable[tuple[bool, str]]:
         """Iterate expanded patterns."""
 
         seen = set()
@@ -207,11 +228,11 @@ class Glob(object):
 
                 yield is_neg, expanded
 
-    def _parse_patterns(self, patterns):
+    def _parse_patterns(self, patterns: types.StringList) -> None:
         """Parse patterns."""
 
-        self.pattern = []
-        self.npatterns = []
+        self.pattern: types.Any = []
+        self.npatterns: types.Any = []
         for is_neg, p in self._iter_patterns(patterns):
             if is_neg:
                 # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
@@ -223,9 +244,7 @@ class Glob(object):
 
         if not self.pattern and self.npatterns:
             if self.negateall:
-                default = '**'
-                if self.is_bytes:
-                    default = os.fsencode(default)
+                default = b'**' if self.is_bytes else '**'
                 self.pattern.append(_wcparse.WcPathSplit(default, self.flags | GLOBSTAR).split())
 
         if self.nodir:
@@ -243,22 +262,22 @@ class Glob(object):
         ):
             self.nounique = True
 
-    def _is_hidden(self, name):
+    def _is_hidden(self, name: types.Strings) -> bool:
         """Check if is file hidden."""
 
-        return not self.dot and name[0:1] in (b'.', '.')
+        return bool(not self.dot and name[0:1] == self.specials[0])
 
-    def _is_this(self, name):
+    def _is_this(self, name: types.Strings) -> bool:
         """Check if "this" directory `.`."""
 
-        return name in (b'.', '.') or name == self.sep
+        return name == self.specials[0] or name == self.sep
 
-    def _is_parent(self, name):
+    def _is_parent(self, name: types.Strings) -> bool:
         """Check if `..`."""
 
-        return name in (b'..', '..')
+        return name == self.specials[0]
 
-    def _match_excluded(self, filename, is_dir):
+    def _match_excluded(self, filename: typing.Any, is_dir: bool) -> bool:
         """Check if file should be excluded."""
 
         if is_dir and not filename.endswith(self.sep):
@@ -272,12 +291,12 @@ class Glob(object):
 
         return matched
 
-    def _is_excluded(self, path, is_dir):
+    def _is_excluded(self, path: types.Strings, is_dir: bool) -> bool:
         """Check if file is excluded."""
 
-        return self.npatterns and self._match_excluded(path, is_dir)
+        return bool(self.npatterns and self._match_excluded(path, is_dir))
 
-    def _match_literal(self, a, b=None):
+    def _match_literal(self, a: types.Strings, b: typing.Optional[types.Strings]=None) -> bool:
         """Match two names."""
 
         return a.lower() == b if not self.case_sensitive else a == b
@@ -299,7 +318,7 @@ class Glob(object):
             matcher = target.match
         return matcher
 
-    def prepend_base(self, path):
+    def prepend_base(self, path: types.Strings) -> types.Strings:
         """Join path to base if pattern is not absolute."""
 
         if self.is_abs_pattern:
@@ -307,7 +326,9 @@ class Glob(object):
         else:
             return os.path.join(self.root_dir, path)
 
-    def _iter(self, curdir, dir_only, deep):
+    def _iter(
+        self, curdir: typing.Optional[types.Strings], dir_only: bool, deep: bool
+    ) -> typing.Iterable[tuple[types.Strings, bool, bool, bool]]:
         """Iterate the directory."""
 
         if not curdir:
@@ -438,7 +459,7 @@ class Glob(object):
                 else:
                     yield path, is_dir
 
-    def _get_starting_paths(self, curdir, dir_only):
+    def _get_starting_paths(self, curdir: types.Strings, dir_only: bool) -> list[tuple[types.Strings, bool]]:
         """
         Get the starting location.
 
@@ -459,7 +480,7 @@ class Glob(object):
             results = [(curdir, True)]
         return results
 
-    def is_unique(self, path):
+    def is_unique(self, path: types.Strings) -> bool:
         """Test if path is unique."""
 
         if self.nounique:
@@ -471,20 +492,20 @@ class Glob(object):
             unique = True
         return unique
 
-    def _pathlib_norm(self, path):
+    def _pathlib_norm(self, path: types.Strings) -> types.Strings:
         """Normalize path as `pathlib` does."""
 
         path = self.pathlib_norm.sub(self.empty, path)
         return path[:-1] if len(path) > 1 and path[-1:] in self.seps else path
 
-    def format_path(self, path, is_dir, dir_only):
+    def format_path(self, path: types.Strings, is_dir: bool, dir_only: bool) -> typing.Iterable[types.Strings]:
         """Format path."""
 
         path = os.path.join(path, self.empty) if dir_only or (self.mark and is_dir) else path
         if self.is_unique(self._pathlib_norm(path) if self.pathlib else path):
             yield path
 
-    def glob(self):
+    def glob(self) -> typing.Iterable[types.Strings]:
         """Starts off the glob iterator."""
 
         curdir = self.current
@@ -532,31 +553,45 @@ class Glob(object):
                     # Path starts with a magic pattern, let's get globbing
                     rest = pattern[:]
                     this = rest.pop(0)
-                    for match, is_dir in self._glob(curdir if not curdir == self.current else self.empty, this, rest):
+                    for match, is_dir in self._glob(
+                        curdir if not curdir == self.current else self.empty, this, rest
+                    ):
                         if not self._is_excluded(match, is_dir):
                             yield from self.format_path(match, is_dir, dir_only)
 
 
-def iglob(patterns, *, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
+def iglob(
+    patterns: types.WildcardPatterns, *,
+    flags: int=0, root_dir: typing.Optional[types.Strings]=None, limit: int=_wcparse.PATTERN_LIMIT
+) -> typing.Iterable[types.Strings]:
     """Glob."""
 
     yield from Glob(util.to_tuple(patterns), flags, root_dir, limit).glob()
 
 
-def glob(patterns, *, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
+def glob(
+    patterns: types.WildcardPatterns, *,
+    flags: int=0, root_dir: typing.Optional[types.Strings]=None, limit: int=_wcparse.PATTERN_LIMIT
+) -> types.StringList:
     """Glob."""
 
     return list(iglob(patterns, flags=flags, root_dir=root_dir, limit=limit))
 
 
-def translate(patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
+def translate(
+    patterns: types.WildcardPatterns, *,
+    flags: int=0, limit: int=_wcparse.PATTERN_LIMIT
+) -> types.Strings:
     """Translate glob pattern."""
 
     flags = _flag_transform(flags)
     return _wcparse.translate(patterns, flags, limit)
 
 
-def globmatch(filename, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
+def globmatch(
+    filename: types.Paths, patterns: types.WildcardPatterns, *,
+    flags: int=0, root_dir: typing.Optional[types.Strings]=None, limit: int=_wcparse.PATTERN_LIMIT
+) -> bool:
     """
     Check if filename matches pattern.
 
@@ -575,7 +610,10 @@ def globmatch(filename, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATT
     return _wcparse.compile(patterns, flags, limit).match(filename, root_dir=root_dir)
 
 
-def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
+def globfilter(
+    filenames: types.PathList, patterns: types.WildcardPatterns, *,
+    flags: int=0, root_dir: typing.Optional[types.Strings]=None, limit: int=_wcparse.PATTERN_LIMIT
+) -> types.PathList: # noqa A001
     """Filter names using pattern."""
 
     is_bytes = isinstance(patterns[0], bytes) if not isinstance(patterns, (bytes, str)) else isinstance(patterns, bytes)
@@ -596,13 +634,13 @@ def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=_wcparse.PA
     return matches
 
 
-def raw_escape(pattern, unix=None, raw_chars=True):
+def raw_escape(pattern: types.Strings, unix: typing.Optional[bool]=None, raw_chars: bool=True) -> types.Strings:
     """Apply raw character transform before applying escape."""
 
     return _wcparse.raw_escape(pattern, unix, raw_chars)
 
 
-def escape(pattern, unix=None):
+def escape(pattern: types.Strings, unix: typing.Optional[bool]=None) -> types.Strings:
     """Escape."""
 
     return _wcparse.escape(pattern, unix)
