@@ -1,8 +1,10 @@
 """Pathlib implementation that uses our own glob."""
 import pathlib
 import os
+import typing
 from . import glob
 from . import _wcparse
+from . import types
 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
@@ -67,63 +69,19 @@ FLAG_MASK = (
 )
 
 
-class Path(pathlib.Path):
-    """Special pathlike object (which accesses the filesystem) that uses our own glob methods."""
-
-    __slots__ = ()
-
-    def __new__(cls, *args, **kwargs):
-        """New."""
-
-        if cls is Path:
-            cls = WindowsPath if os.name == 'nt' else PosixPath
-        self = cls._from_parts(args, init=False)
-        if not self._flavour.is_supported:
-            raise NotImplementedError("Cannot instantiate {!r} on your system".format(cls.__name__))
-        self._init()
-        return self
-
-    def glob(self, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
-        """
-        Search the file system.
-
-        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
-
-        """
-
-        if self.is_dir():
-            scandotdir = flags & SCANDOTDIR
-            flags = self._translate_flags(flags | _NOABSOLUTE) | ((_PATHLIB | SCANDOTDIR) if scandotdir else _PATHLIB)
-            for filename in glob.iglob(patterns, flags=flags, root_dir=str(self), limit=limit):
-                yield self.joinpath(filename)
-
-    def rglob(self, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
-        """
-        Recursive glob.
-
-        This uses the same recursive logic that the default `pathlib` object uses.
-        Folders and files are essentially matched from right to left.
-
-        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
-
-        """
-
-        yield from self.glob(patterns, flags=flags | _EXTMATCHBASE, limit=limit)
-
-
 class PurePath(pathlib.PurePath):
     """Special pure pathlike object that uses our own glob methods."""
 
     __slots__ = ()
 
-    def __new__(cls, *args):
+    def __new__(cls, *args: typing.Any) -> "PurePath":
         """New."""
 
         if cls is PurePath:
             cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
-        return cls._from_parts(args)
+        return cls._from_parts(args)  # type: ignore
 
-    def _translate_flags(self, flags):
+    def _translate_flags(self, flags: int) -> int:
         """Translate flags for the current `pathlib` object."""
 
         flags = (flags & FLAG_MASK) | _PATHNAME
@@ -139,7 +97,7 @@ class PurePath(pathlib.PurePath):
             flags |= _FORCEUNIX
         return flags
 
-    def _translate_path(self):
+    def _translate_path(self) -> str:
         """Translate the object to a path string and ensure trailing slash for non-pure paths that are directories."""
 
         sep = ''
@@ -149,7 +107,7 @@ class PurePath(pathlib.PurePath):
 
         return name + sep
 
-    def match(self, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
+    def match(self, patterns: types.WildcardPatterns, *, flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT) -> bool:
         """
         Match patterns using `globmatch`, but also using the same right to left logic that the default `pathlib` uses.
 
@@ -162,7 +120,9 @@ class PurePath(pathlib.PurePath):
 
         return self.globmatch(patterns, flags=flags | _RTL, limit=limit)
 
-    def globmatch(self, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
+    def globmatch(
+        self, patterns: types.WildcardPatterns, *, flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT
+    ) -> bool:
         """
         Match patterns using `globmatch`, but without the right to left logic that the default `pathlib` uses.
 
@@ -176,6 +136,57 @@ class PurePath(pathlib.PurePath):
             flags=self._translate_flags(flags),
             limit=limit
         )
+
+
+class Path(pathlib.Path):
+    """Special pathlike object (which accesses the filesystem) that uses our own glob methods."""
+
+    __slots__ = ()
+
+    def __new__(cls, *args: typing.Any, **kwargs: typing.Any) -> "Path":
+        """New."""
+
+        if cls is Path:
+            cls = WindowsPath if os.name == 'nt' else PosixPath
+        self = cls._from_parts(args, init=False)  # type: ignore
+        if not self._flavour.is_supported:
+            raise NotImplementedError("Cannot instantiate {!r} on your system".format(cls.__name__))
+        self._init()
+        return self
+
+    def glob(  # type: ignore
+        self, patterns: types.WildcardPatterns, *, flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT
+    ) -> typing.Iterable["Path"]:
+        """
+        Search the file system.
+
+        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
+
+        """
+
+        if self.is_dir():
+            scandotdir = flags & SCANDOTDIR
+            flags = (
+                self._translate_flags(flags | _NOABSOLUTE) |  # type: ignore
+                ((_PATHLIB | SCANDOTDIR) if scandotdir else _PATHLIB)
+            )
+            for filename in glob.iglob(patterns, flags=flags, root_dir=str(self), limit=limit):
+                yield self.joinpath(filename)
+
+    def rglob(  # type: ignore
+        self, patterns: types.WildcardPatterns, *, flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT
+    ) -> typing.Iterable["Path"]:
+        """
+        Recursive glob.
+
+        This uses the same recursive logic that the default `pathlib` object uses.
+        Folders and files are essentially matched from right to left.
+
+        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
+
+        """
+
+        yield from self.glob(patterns, flags=flags | _EXTMATCHBASE, limit=limit)
 
 
 class PurePosixPath(PurePath):

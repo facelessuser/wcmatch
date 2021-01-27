@@ -97,13 +97,19 @@ class WcMatch:
         curdir = (bytes(os.curdir, 'ASCII') if self.is_bytes else os.curdir) if not self._directory else self._directory
         self.sep = os.fsencode(os.sep) if self.is_bytes else os.sep
         self._root_dir = curdir if curdir.endswith(self.sep) else curdir + self.sep
+
         self.file_pattern = file_pattern
         if not self.file_pattern:
             if self.is_bytes:
                 self.file_pattern = _wcparse.WcRegexp((re.compile(br'^.*$', re.DOTALL),))
             else:
                 self.file_pattern = _wcparse.WcRegexp((re.compile(r'^.*$', re.DOTALL),))
-        self.exclude_pattern = exclude_pattern if exclude_pattern is not None else (b'' if self.is_bytes else '')
+        self.exclude_pattern = exclude_pattern
+        self.check_folders = True
+        if not exclude_pattern:
+            # Disable folder checking and set pattern to something that will never match
+            self.check_folders = False
+            self.exclude_pattern = _wcparse.WcRegexp(tuple())
         self._parse_flags(flags)
         self.limit = limit
         self.on_init(**kwargs)
@@ -133,12 +139,12 @@ class WcMatch:
             if self.matchbase:
                 flags |= MATCHBASE
 
-        return _wcparse.compile(pattern, flags, self.limit) if pattern else None
+        return _wcparse.compile(pattern, flags, self.limit)
 
     def _compile(
         self, file_pattern: typing.Union[types.Strings, _wcparse.WcRegexp],
         folder_exclude_pattern: typing.Union[types.Strings, _wcparse.WcRegexp]
-    ) -> typing.Tuple[_wcparse.WcRegexp, typing.Union[_wcparse.WcRegexp, None]]:
+    ) -> typing.Tuple[_wcparse.WcRegexp, _wcparse.WcRegexp]:
         """Compile patterns."""
 
         if not isinstance(file_pattern, _wcparse.WcRegexp):
@@ -178,7 +184,7 @@ class WcMatch:
         if (
             not self.recursive or
             (
-                self.folder_exclude_check is not None and
+                self.check_folders and
                 not self.compare_directory(fullpath[self._base_len:] if self.dir_pathname else name)
             )
         ):
@@ -190,7 +196,7 @@ class WcMatch:
     def compare_directory(self, directory: types.Strings) -> bool:
         """Compare folder."""
 
-        return not self.folder_exclude_check.match(  # type: ignore
+        return not self.folder_exclude_check.match(
             directory + self.sep if self.dir_pathname else directory
         )
 

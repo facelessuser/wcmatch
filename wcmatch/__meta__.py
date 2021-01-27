@@ -80,7 +80,9 @@ class Version(namedtuple("Version", ["major", "minor", "micro", "release", "pre"
 
     """
 
-    def __new__(cls, major, minor, micro, release="final", pre=0, post=0, dev=0):
+    def __new__(
+        cls, major: int, minor: int, micro: int, release: str = "final", pre: int = 0, post: int = 0, dev: int = 0
+    ) -> "Version":
         """Validate version info."""
 
         # Ensure all parts are positive integers.
@@ -116,27 +118,27 @@ class Version(namedtuple("Version", ["major", "minor", "micro", "release", "pre"
 
         return super(Version, cls).__new__(cls, major, minor, micro, release, pre, post, dev)
 
-    def _is_pre(self):
+    def _is_pre(self) -> bool:
         """Is prerelease."""
 
         return self.pre > 0
 
-    def _is_dev(self):
+    def _is_dev(self) -> bool:
         """Is development."""
 
         return bool(self.release < "alpha")
 
-    def _is_post(self):
+    def _is_post(self) -> bool:
         """Is post."""
 
         return self.post > 0
 
-    def _get_dev_status(self):  # pragma: no cover
+    def _get_dev_status(self) -> str:  # pragma: no cover
         """Get development status string."""
 
         return DEV_STATUS[self.release]
 
-    def _get_canonical(self):
+    def _get_canonical(self) -> str:
         """Get the canonical output string."""
 
         # Assemble major, minor, micro version and append `pre`, `post`, or `dev` if needed..
@@ -154,10 +156,13 @@ class Version(namedtuple("Version", ["major", "minor", "micro", "release", "pre"
         return ver
 
 
-def parse_version(ver, pre=False):
+def parse_version(ver: str, pre: bool = False) -> Version:
     """Parse version into a comparable Version tuple."""
 
     m = RE_VER.match(ver)
+
+    if m is None:
+        raise ValueError("'{}' is not a valid version".format(ver))
 
     # Handle major, minor, micro
     major = int(m.group('major'))
@@ -167,23 +172,23 @@ def parse_version(ver, pre=False):
     # Handle pre releases
     if m.group('type'):
         release = PRE_REL_MAP[m.group('type')]
-        pre = int(m.group('pre'))
+        pre_release = int(m.group('pre'))
     else:
         release = "final"
-        pre = 0
+        pre_release = 0
 
     # Handle development releases
     dev = m.group('dev') if m.group('dev') else 0
     if m.group('dev'):
         dev = int(m.group('dev'))
-        release = '.dev-' + release if pre else '.dev'
+        release = '.dev-' + release if pre_release else '.dev'
     else:
         dev = 0
 
     # Handle post
     post = int(m.group('post')) if m.group('post') else 0
 
-    return Version(major, minor, micro, release, pre, post, dev)
+    return Version(major, minor, micro, release, pre_release, post, dev)
 
 
 __version_info__ = Version(8, 0, 1, "final")

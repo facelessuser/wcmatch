@@ -8,6 +8,7 @@ import unicodedata
 from functools import wraps
 import warnings
 import typing
+from . import types
 
 PY37 = (3, 7) <= sys.version_info
 
@@ -61,13 +62,13 @@ else:
     _PLATFORM = "linux"
 
 
-def platform():
+def platform() -> types.Strings:
     """Get platform."""
 
     return _PLATFORM
 
 
-def is_case_sensitive():
+def is_case_sensitive() -> bool:
     """Check if case sensitive."""
 
     return CASE_FS
@@ -79,7 +80,9 @@ def to_tuple(values):
     return (values,) if isinstance(values, (str, bytes)) else tuple(values)
 
 
-def norm_pattern(pattern, normalize, is_raw_chars, ignore_escape=False):
+def norm_pattern(
+    pattern: types.Strings, normalize: bool, is_raw_chars: bool, ignore_escape: bool = False
+) -> types.Strings:
     r"""
     Normalize pattern.
 
@@ -94,14 +97,14 @@ def norm_pattern(pattern, normalize, is_raw_chars, ignore_escape=False):
     if not normalize and not is_raw_chars and not ignore_escape:
         return pattern
 
-    def norm_char(token):
+    def norm_char(token) -> types.Strings:
         """Normalize slash."""
 
         if normalize and token in ('/', b'/'):
             token = br'\\' if is_bytes else r'\\'
         return token
 
-    def norm(m):
+    def norm(m: typing.Match) -> types.Strings:
         """Normalize the pattern."""
 
         if m.group(1):
@@ -126,29 +129,32 @@ def norm_pattern(pattern, normalize, is_raw_chars, ignore_escape=False):
             raise SyntaxError("Could not convert character value %s at position %d" % (value, pos))
         return char
 
-    return (RE_BNORM if is_bytes else RE_NORM).sub(norm, pattern)
+    if is_bytes:
+        return RE_BNORM.sub(norm, pattern)
+    else:
+        return RE_NORM.sub(norm, pattern)
 
 
 class StringIter(object):
     """Preprocess replace tokens."""
 
-    def __init__(self, string):
+    def __init__(self, string: str) -> None:
         """Initialize."""
 
         self._string = string
         self._index = 0
 
-    def __iter__(self):
+    def __iter__(self) -> "StringIter":
         """Iterate."""
 
         return self
 
-    def __next__(self):
+    def __next__(self) -> str:
         """Python 3 iterator compatible next."""
 
         return self.iternext()
 
-    def match(self, pattern):
+    def match(self, pattern: typing.Pattern) -> typing.Optional[typing.Match]:
         """Perform regex match at index."""
 
         m = pattern.match(self._string, self._index)
@@ -157,22 +163,22 @@ class StringIter(object):
         return m
 
     @property
-    def index(self):
+    def index(self) -> int:
         """Get current index."""
 
         return self._index
 
-    def previous(self):  # pragma: no cover
+    def previous(self) -> str:  # pragma: no cover
         """Get previous char."""
 
         return self._string[self._index - 1]
 
-    def advance(self, count):  # pragma: no cover
+    def advance(self, count: int) -> None:  # pragma: no cover
         """Advanced the index."""
 
         self._index += count
 
-    def rewind(self, count):
+    def rewind(self, count: int) -> None:
         """Rewind index."""
 
         if count > self._index:  # pragma: no cover
@@ -180,7 +186,7 @@ class StringIter(object):
 
         self._index -= count
 
-    def iternext(self):
+    def iternext(self) -> str:
         """Iterate through characters of the string."""
 
         try:
@@ -197,19 +203,19 @@ class Immutable(object):
 
     __slots__: typing.Tuple[typing.Any, ...] = tuple()
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: typing.Any) -> None:
         """Initialize."""
 
         for k, v in kwargs.items():
             super(Immutable, self).__setattr__(k, v)
 
-    def __setattr__(self, name, value):  # pragma: no cover
+    def __setattr__(self, name: str, value: typing.Any) -> None:  # pragma: no cover
         """Prevent mutability."""
 
         raise AttributeError('Class is immutable!')
 
 
-def is_hidden(path):
+def is_hidden(path: types.Strings) -> bool:
     """Check if file is hidden."""
 
     hidden = False
@@ -221,24 +227,29 @@ def is_hidden(path):
         # On Windows, look for `FILE_ATTRIBUTE_HIDDEN`
         FILE_ATTRIBUTE_HIDDEN = 0x2
         results = os.lstat(path)
-        hidden = bool(results.st_file_attributes & FILE_ATTRIBUTE_HIDDEN)
+        hidden = bool(results.st_file_attributes & FILE_ATTRIBUTE_HIDDEN)  # type: ignore
     elif _PLATFORM == "osx":  # pragma: no cover
         # On macOS, look for `UF_HIDDEN`
         results = os.lstat(path)
-        hidden = bool(results.st_flags & stat.UF_HIDDEN)
+        hidden = bool(results.st_flags & stat.UF_HIDDEN)  # type: ignore
     return hidden
 
 
-def deprecated(message, stacklevel=2):  # pragma: no cover
+RT = typing.TypeVar('RT')
+
+
+def deprecated(
+    message: str, stacklevel: int = 2
+) -> typing.Callable[[typing.Callable[[typing.Any], RT]], typing.Callable[[typing.Any], RT]]:  # pragma: no cover
     """
     Raise a `DeprecationWarning` when wrapped function/method is called.
 
     Borrowed from https://stackoverflow.com/a/48632082/866026
     """
 
-    def _decorator(func):
+    def _decorator(func) -> typing.Callable[..., RT]:
         @wraps(func)
-        def _func(*args, **kwargs):
+        def _func(*args: typing.Any, **kwargs: typing.Any) -> RT:
             warnings.warn(
                 "'{}' is deprecated. {}".format(func.__name__, message),
                 category=DeprecationWarning,
@@ -249,7 +260,7 @@ def deprecated(message, stacklevel=2):  # pragma: no cover
     return _decorator
 
 
-def warn_deprecated(message, stacklevel=2):  # pragma: no cover
+def warn_deprecated(message: str, stacklevel: int = 2) -> None:  # pragma: no cover
     """Warn deprecated."""
 
     warnings.warn(
@@ -259,7 +270,7 @@ def warn_deprecated(message, stacklevel=2):  # pragma: no cover
     )
 
 
-def fscodec(path, encode=False):
+def fscodec(path: types.Paths, encode: bool = False) -> types.Strings:
     """
     Provide common interface when using to translate path-like files.
 
