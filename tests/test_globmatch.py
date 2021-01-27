@@ -1526,19 +1526,65 @@ class TestGlobMatchSpecial(unittest.TestCase):
             glob.globmatch(pathlib.Path('markdown'), 'markdown', flags=glob.REALPATH, root_dir=pathlib.Path('docs/src'))
         )
 
-    def test_match_root_dir_pathlib_bytes(self):
-        """Test root directory with `globmatch` using `pathlib`."""
+    def test_match_pathlib_str_bytes(self):
+        """Test that mismatch type of `pathlib` and `bytes` asserts."""
 
         from wcmatch import pathlib
 
-        self.assertFalse(glob.globmatch(pathlib.Path('markdown'), b'markdown', flags=glob.REALPATH))
-        self.assertTrue(
+        with self.assertRaises(TypeError):
+            glob.globmatch(pathlib.Path('markdown'), b'markdown')
+
+    def test_match_str_bytes(self):
+        """Test that mismatch type of `str` and `bytes` asserts."""
+
+        with self.assertRaises(TypeError):
+            glob.globmatch('markdown', b'markdown')
+
+    def test_match_bytes_pathlib_str_realpath(self):
+        """Test that mismatch type of `pathlib` and bytes asserts."""
+
+        from wcmatch import pathlib
+
+        with self.assertRaises(TypeError):
             glob.globmatch(
                 pathlib.Path('markdown'),
-                b'markdown', flags=glob.REALPATH,
-                root_dir=pathlib.Path('docs/src')
+                b'markdown', flags=glob.REALPATH
             )
-        )
+
+    def test_match_bytes_root_dir_pathlib_realpath(self):
+        """Test that mismatch type of root directory `pathlib` and `bytes` asserts."""
+
+        from wcmatch import pathlib
+
+        with self.assertRaises(TypeError):
+            glob.globmatch(
+                b'markdown',
+                b'markdown',
+                flags=glob.REALPATH,
+                root_dir=pathlib.Path('.')
+            )
+
+    def test_match_bytes_root_dir_str_realpath(self):
+        """Test that mismatch type of root directory `pathlib` and `bytes` asserts."""
+
+        with self.assertRaises(TypeError):
+            glob.globmatch(
+                b'markdown',
+                b'markdown',
+                flags=glob.REALPATH,
+                root_dir='.'
+            )
+
+    def test_match_str_root_dir_bytes_realpath(self):
+        """Test that mismatch type of root directory of `bytes` and `str` asserts."""
+
+        with self.assertRaises(TypeError):
+            glob.globmatch(
+                'markdown',
+                'markdown',
+                flags=glob.REALPATH,
+                root_dir=b'.'
+            )
 
     def test_filter_root_dir_pathlib(self):
         """Test root directory with `globfilter`."""
@@ -1559,14 +1605,13 @@ class TestGlobMatchSpecial(unittest.TestCase):
 
         from wcmatch import pathlib
 
-        results = glob.globfilter(
-            [pathlib.Path('markdown')],
-            b'markdown',
-            flags=glob.REALPATH,
-            root_dir=pathlib.Path('docs/src')
-        )
-
-        self.assertTrue(all([isinstance(result, pathlib.Path) for result in results]))
+        with self.assertRaises(TypeError):
+            glob.globfilter(
+                [pathlib.Path('markdown')],
+                b'markdown',
+                flags=glob.REALPATH,
+                root_dir=pathlib.Path('docs/src')
+            )
 
 
 @skip_unless_symlink

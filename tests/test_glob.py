@@ -1127,11 +1127,6 @@ class TestCWD(_TestGlob):
 
         self.assert_equal(glob.glob('EF', root_dir=pathlib.Path(self.tempdir)), ['EF'])
 
-    def test_cwd_root_dir_pathlike_bytes(self):
-        """Test root level glob when we switch directory via `root_dir` with a path-like object."""
-
-        self.assert_equal(glob.glob(b'EF', root_dir=pathlib.Path(self.tempdir)), [b'EF'])
-
 
 class TestGlobCornerCase(_TestGlob):
     """
@@ -1463,3 +1458,25 @@ class TestExpansionLimit(unittest.TestCase):
 
         with self.assertRaises(_wcparse.PatternLimitException):
             list(glob.iglob('{1..11}', flags=glob.BRACE, limit=10))
+
+
+class TestInputTypes(unittest.TestCase):
+    """Test input types."""
+
+    def test_cwd_root_dir_pathlike_bytes_str(self):
+        """Test root level glob when we switch directory via `root_dir` with a path-like object."""
+
+        with self.assertRaises(TypeError):
+            glob.glob(b'docs/*', root_dir=pathlib.Path('.'))
+
+    def test_cwd_root_dir_bytes_str(self):
+        """Test root level glob when we switch directory via `root_dir` with a path-like object."""
+
+        with self.assertRaises(TypeError):
+            glob.glob(b'docs/*', root_dir='.')
+
+    def test_cwd_root_dir_str_bytes(self):
+        """Test root level glob when we switch directory via `root_dir` with a path-like object."""
+
+        with self.assertRaises(TypeError):
+            glob.glob('docs/*', root_dir=b'.')
