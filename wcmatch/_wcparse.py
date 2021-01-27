@@ -1837,6 +1837,20 @@ def _match_pattern(filename, include, exclude, real, path, follow, root_dir=None
             root = root_dir if root_dir else '.'
             ptype = UNICODE
 
+        if type(filename) != type(root):
+            raise TypeError(
+                "The filename and root directory should be of the same type, not {} and {}".format(
+                    type(filename), type(root_dir)
+                )
+            )
+
+        if include and type(include[0].pattern) != type(filename):
+            raise TypeError(
+                "The filename and pattern should be of the same type, not {} and {}".format(
+                    type(filename), type(include[0].pattern)
+                )
+            )
+
         mount = RE_WIN_MOUNT[ptype] if util.platform() == "windows" else RE_MOUNT[ptype]
 
         if not mount.match(filename):

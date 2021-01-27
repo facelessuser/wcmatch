@@ -140,7 +140,7 @@ class Glob(object):
         self.seen = set()
         self.is_bytes = isinstance(pattern[0], bytes)
         self.current = b'.' if self.is_bytes else '.'
-        self.root_dir = util.fscodec(root_dir, self.is_bytes) if root_dir is not None else self.current
+        self.root_dir = os.fspath(root_dir) if root_dir is not None else self.current
         self.nounique = bool(flags & NOUNIQUE)
         self.mark = bool(flags & MARK)
         # Only scan for `.` and `..` if it is specifically requested.
@@ -174,16 +174,29 @@ class Glob(object):
         self.case_sensitive = _wcparse.get_case(self.flags)
         self.specials = (b'.', b'..') if self.is_bytes else ('.', '..')
         self.empty = b'' if self.is_bytes else ''
+        self.stars = b'**' if self.is_bytes else '**'
         self.limit = limit
-        self._parse_patterns(pattern)
         if self.flags & FORCEWIN:
             self.sep = b'\\' if self.is_bytes else '\\'
             self.seps = (b'/' if self.is_bytes else '/', self.sep)
-            self.pathlib_norm = _RE_WIN_PATHLIB_DOT_NORM[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
+            self.re_pathlib_norm = _RE_WIN_PATHLIB_DOT_NORM[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
+            self.re_no_dir = _wcparse.RE_WIN_NO_DIR[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
         else:
             self.sep = b'/' if self.is_bytes else '/'
             self.seps = (self.sep,)
-            self.pathlib_norm = _RE_PATHLIB_DOT_NORM[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
+            self.re_pathlib_norm = _RE_PATHLIB_DOT_NORM[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
+            self.re_no_dir = _wcparse.RE_NO_DIR[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
+        self._parse_patterns(pattern)
+
+        if (
+            (self.is_bytes and not isinstance(self.root_dir, bytes)) or
+            (not self.is_bytes and not isinstance(self.root_dir, str))
+        ):
+            raise TypeError(
+                'Pattern and root_dir should be of the same type, not {} and {}'.format(
+                    type(pattern[0]), type(self.root_dir)
+                )
+            )
 
     def _iter_patterns(self, patterns):
         """Iterate expanded patterns."""
@@ -223,15 +236,11 @@ class Glob(object):
 
         if not self.pattern and self.npatterns:
             if self.negateall:
-                default = '**'
-                if self.is_bytes:
-                    default = os.fsencode(default)
+                default = self.stars
                 self.pattern.append(_wcparse.WcPathSplit(default, self.flags | GLOBSTAR).split())
 
         if self.nodir:
-            ptype = _wcparse.BYTES if self.is_bytes else _wcparse.UNICODE
-            nodir = _wcparse.RE_WIN_NO_DIR[ptype] if self.flags & FORCEWIN else _wcparse.RE_NO_DIR[ptype]
-            self.npatterns.append(nodir)
+            self.npatterns.append(self.re_no_dir)
 
         # A single positive pattern will not find multiples of the same file
         # disable unique mode so that we won't waste time or memory computing unique returns.
@@ -246,17 +255,17 @@ class Glob(object):
     def _is_hidden(self, name):
         """Check if is file hidden."""
 
-        return not self.dot and name[0:1] in (b'.', '.')
+        return not self.dot and name[0:1] == self.specials[0]
 
     def _is_this(self, name):
         """Check if "this" directory `.`."""
 
-        return name in (b'.', '.') or name == self.sep
+        return name == self.specials[0] or name == self.sep
 
     def _is_parent(self, name):
         """Check if `..`."""
 
-        return name in (b'..', '..')
+        return name == self.specials[1]
 
     def _match_excluded(self, filename, is_dir):
         """Check if file should be excluded."""
@@ -474,7 +483,7 @@ class Glob(object):
     def _pathlib_norm(self, path):
         """Normalize path as `pathlib` does."""
 
-        path = self.pathlib_norm.sub(self.empty, path)
+        path = self.re_pathlib_norm.sub(self.empty, path)
         return path[:-1] if len(path) > 1 and path[-1:] in self.seps else path
 
     def format_path(self, path, is_dir, dir_only):
@@ -564,12 +573,11 @@ def globmatch(filename, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATT
     but if `case_sensitive` is set, respect that instead.
     """
 
-    is_bytes = isinstance(patterns[0], bytes) if not isinstance(patterns, (bytes, str)) else isinstance(patterns, bytes)
     if root_dir is not None:
-        root_dir = util.fscodec(root_dir, is_bytes)
+        root_dir = os.fspath(root_dir)
 
     flags = _flag_transform(flags)
-    filename = util.fscodec(filename, is_bytes)
+    filename = os.fspath(filename)
     if not _wcparse.is_unix_style(flags):
         filename = _wcparse.norm_slash(filename, flags)
     return _wcparse.compile(patterns, flags, limit).match(filename, root_dir=root_dir)
@@ -578,9 +586,8 @@ def globmatch(filename, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATT
 def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
     """Filter names using pattern."""
 
-    is_bytes = isinstance(patterns[0], bytes) if not isinstance(patterns, (bytes, str)) else isinstance(patterns, bytes)
     if root_dir is not None:
-        root_dir = util.fscodec(root_dir, is_bytes)
+        root_dir = os.fspath(root_dir)
 
     matches = []
     flags = _flag_transform(flags)
@@ -588,7 +595,7 @@ def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=_wcparse.PA
     obj = _wcparse.compile(patterns, flags, limit)
 
     for filename in filenames:
-        temp = util.fscodec(filename, is_bytes)
+        temp = os.fspath(filename)
         if not unix:
             temp = _wcparse.norm_slash(temp, flags)
         if obj.match(temp, root_dir):
