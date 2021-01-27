@@ -231,8 +231,8 @@ class Glob(object):
     def _parse_patterns(self, patterns: types.StringList) -> None:
         """Parse patterns."""
 
-        self.pattern: types.Any = []
-        self.npatterns: types.Any = []
+        self.pattern: list[list[_wcparse.WcGlob]] = []
+        self.npatterns: list[typing.Pattern] = []
         for is_neg, p in self._iter_patterns(patterns):
             if is_neg:
                 # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
@@ -301,22 +301,23 @@ class Glob(object):
 
         return a.lower() == b if not self.case_sensitive else a == b
 
-    def _get_matcher(self, target):
+    def _get_matcher(
+        self, target: typing.Union[types.Strings, typing.Pattern, None]
+    ) -> typing.Union[None, types.Strings, typing.Callable[[types.Strings], bool]]:
         """Get deep match."""
 
         if target is None:
-            matcher = None
+            return None
         elif isinstance(target, (str, bytes)):
             # Plain text match
             if not self.case_sensitive:
                 match = target.lower()
             else:
                 match = target
-            matcher = functools.partial(self._match_literal, b=match)
+            return functools.partial(self._match_literal, b=match)
         else:
             # File match pattern
-            matcher = target.match
-        return matcher
+            return target.match
 
     def prepend_base(self, path: types.Strings) -> types.Strings:
         """Join path to base if pattern is not absolute."""
@@ -366,7 +367,10 @@ class Glob(object):
         except OSError:  # pragma: no cover
             pass
 
-    def _glob_dir(self, curdir, matcher, dir_only=False, deep=False):
+    def _glob_dir(
+        self, curdir: types.Strings, matcher: typing.Union[None, types.Strings, typing.Callable[[types.Strings], bool]],
+        dir_only: bool = False, deep: bool = False
+    ) -> typing.Iterable[tuple[types.Strings, bool]]:
         """Recursive directory glob."""
 
         files = list(self._iter(curdir, dir_only, deep))
@@ -384,7 +388,9 @@ class Glob(object):
             if deep and not hidden and is_dir and follow:
                 yield from self._glob_dir(path, matcher, dir_only, deep)
 
-    def _glob(self, curdir, this, rest):
+    def _glob(
+        self, curdir: types.Strings, this: _wcparse.WcGlob, rest: list[_wcparse.WcGlob]
+    ) -> typing.Iterable[tuple[types.Strings, bool]]:
         """
         Handle glob flow.
 
@@ -408,11 +414,11 @@ class Glob(object):
 
             # Acquire the pattern after the `globstars` if available.
             # If not, mark that the `globstar` is the end.
-            this = rest.pop(0) if rest else None
-            globstar_end = this is None
-            if this:
-                dir_only = this.dir_only
-                target = this.pattern
+            obj = rest.pop(0) if rest else None
+            globstar_end = obj is None
+            if obj:
+                dir_only = obj.dir_only
+                target = obj.pattern
 
             if globstar_end:
                 target = None
@@ -420,7 +426,7 @@ class Glob(object):
             # We match `**/next` during a deep glob, so what ever comes back,
             # we will send back through `_glob` with pattern after `next` (`**/next/after`).
             # So grab `after` if available.
-            this = rest.pop(0) if rest else None
+            obj = rest.pop(0) if rest else None
 
             # Deep searching is the unique case where we
             # might feed in a `None` for the next pattern to match.
@@ -438,8 +444,8 @@ class Glob(object):
 
             # Search
             for path, is_dir in self._glob_dir(curdir, matcher, dir_only, deep=True):
-                if this:
-                    yield from self._glob(path, this, rest[:])
+                if obj:
+                    yield from self._glob(path, obj, rest[:])
                 else:
                     yield path, is_dir
 
@@ -451,11 +457,11 @@ class Glob(object):
         else:
             # Directory: search current directory against pattern
             # and feed the results back through with the next pattern.
-            this = rest.pop(0) if rest else None
+            obj = rest.pop(0) if rest else None
             matcher = self._get_matcher(target)
             for path, is_dir in self._glob_dir(curdir, matcher, True):
-                if this:
-                    yield from self._glob(path, this, rest[:])
+                if obj:
+                    yield from self._glob(path, obj, rest[:])
                 else:
                     yield path, is_dir
 
