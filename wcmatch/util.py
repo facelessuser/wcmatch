@@ -195,7 +195,7 @@ class StringIter(object):
 class Immutable(object):
     """Immutable."""
 
-    __slots__: tuple[typing.Any, ...] = tuple()
+    __slots__: typing.Tuple[typing.Any, ...] = tuple()
 
     def __init__(self, **kwargs):
         """Initialize."""

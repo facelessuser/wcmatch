@@ -1,11 +1,15 @@
 """Types."""
-from typing import Union, AnyStr
+import sys
+import typing
 import os
 
-Strings = Union[AnyStr]
-StringList = list[Strings]
-WildcardPatterns = Union[Strings, StringList]
+PY39 = (3, 7) <= sys.version_info
+
+
+Strings = typing.Union[typing.AnyStr]
+StringList = typing.List[Strings]
+WildcardPatterns = typing.Union[Strings, StringList]
 PathLikes = os.PathLike
-PathLikeList = list[PathLikes]
-Paths = Union[str, bytes, PathLikes]
-PathList = list[Paths]
+PathLikeList = typing.List[PathLikes]
+Paths = typing.Union[str, bytes, PathLikes]
+PathList = typing.List[Paths]

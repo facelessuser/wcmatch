@@ -158,7 +158,7 @@ class Glob(object):
     ) -> None:
         """Initialize the directory walker object."""
 
-        self.seen: set[types.Strings] = set()
+        self.seen: typing.Set[types.Strings] = set()
         self.is_bytes: bool = isinstance(pattern[0], bytes)
         self.current: types.Strings = b'.' if self.is_bytes else '.'
         self.root_dir: types.Strings = util.fscodec(root_dir, self.is_bytes) if root_dir is not None else self.current
@@ -196,17 +196,19 @@ class Glob(object):
         self.limit: int = limit
 
         string_type = _wcparse.BYTES if self.is_bytes else _wcparse.UNICODE
-        self.specials: tuple[types.Strings, ...] = _SPECIALS[string_type]
+        self.specials: typing.Tuple[types.Strings, ...] = _SPECIALS[string_type]
         self.empty: types.Strings = _EMPTY[string_type]
         self.sep: types.Strings = _WIN_SEP[string_type] if self.flags & FORCEWIN else _SEP[string_type]
-        self.seps: tuple[types.Strings, ...] = _WIN_SEPS[string_type] if self.flags & FORCEWIN else _SEPS[string_type]
+        self.seps: typing.Tuple[types.Strings, ...] = (
+            _WIN_SEPS[string_type] if self.flags & FORCEWIN else _SEPS[string_type]
+        )
         self.pathlib_norm: typing.Pattern = (
             _RE_WIN_PATHLIB_DOT_NORM[string_type] if self.flags & FORCEWIN else _RE_PATHLIB_DOT_NORM[string_type]
         )
 
         self._parse_patterns(pattern)
 
-    def _iter_patterns(self, patterns: types.StringList) -> typing.Iterable[tuple[bool, str]]:
+    def _iter_patterns(self, patterns: types.StringList) -> typing.Iterable[typing.Tuple[bool, str]]:
         """Iterate expanded patterns."""
 
         seen = set()
@@ -231,8 +233,8 @@ class Glob(object):
     def _parse_patterns(self, patterns: types.StringList) -> None:
         """Parse patterns."""
 
-        self.pattern: list[list[_wcparse.WcGlob]] = []
-        self.npatterns: list[typing.Pattern] = []
+        self.pattern: typing.List[typing.List[_wcparse.WcGlob]] = []
+        self.npatterns: typing.List[typing.Pattern] = []
         for is_neg, p in self._iter_patterns(patterns):
             if is_neg:
                 # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
@@ -329,7 +331,7 @@ class Glob(object):
 
     def _iter(
         self, curdir: typing.Optional[types.Strings], dir_only: bool, deep: bool
-    ) -> typing.Iterable[tuple[types.Strings, bool, bool, bool]]:
+    ) -> typing.Iterable[typing.Tuple[types.Strings, bool, bool, bool]]:
         """Iterate the directory."""
 
         if not curdir:
@@ -370,7 +372,7 @@ class Glob(object):
     def _glob_dir(
         self, curdir: types.Strings, matcher: typing.Union[None, types.Strings, typing.Callable[[types.Strings], bool]],
         dir_only: bool = False, deep: bool = False
-    ) -> typing.Iterable[tuple[types.Strings, bool]]:
+    ) -> typing.Iterable[typing.Tuple[types.Strings, bool]]:
         """Recursive directory glob."""
 
         files = list(self._iter(curdir, dir_only, deep))
@@ -389,8 +391,8 @@ class Glob(object):
                 yield from self._glob_dir(path, matcher, dir_only, deep)
 
     def _glob(
-        self, curdir: types.Strings, this: _wcparse.WcGlob, rest: list[_wcparse.WcGlob]
-    ) -> typing.Iterable[tuple[types.Strings, bool]]:
+        self, curdir: types.Strings, this: _wcparse.WcGlob, rest: typing.List[_wcparse.WcGlob]
+    ) -> typing.Iterable[typing.Tuple[types.Strings, bool]]:
         """
         Handle glob flow.
 
@@ -465,7 +467,9 @@ class Glob(object):
                 else:
                     yield path, is_dir
 
-    def _get_starting_paths(self, curdir: types.Strings, dir_only: bool) -> list[tuple[types.Strings, bool]]:
+    def _get_starting_paths(
+        self, curdir: types.Strings, dir_only: bool
+    ) -> typing.List[typing.Tuple[types.Strings, bool]]:
         """
         Get the starting location.
 
