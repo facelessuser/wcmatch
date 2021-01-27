@@ -26,7 +26,6 @@ import copyreg
 import bracex
 import os
 import typing
-from collections import namedtuple
 from . import util
 from . import posix
 from . import types

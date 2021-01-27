@@ -1,6 +1,5 @@
 """Types."""
-from typing import Union, Any, Iterable, AnyStr
-import pathlib
+from typing import Union, AnyStr
 import os
 
 Strings = Union[AnyStr]

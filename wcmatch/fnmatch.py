@@ -92,7 +92,8 @@ def fnmatch(filename, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
 
 
 def filter(
-    filenames: types.StringList, patterns: types.WildcardPatterns, *, flags: int=0, limit: int=_wcparse.PATTERN_LIMIT
+    filenames: types.StringList, patterns: types.WildcardPatterns, *,
+    flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT
 ) -> types.StringList: # noqa A001
     """Filter names using pattern."""
 

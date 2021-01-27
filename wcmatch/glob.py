@@ -153,8 +153,8 @@ class Glob(object):
     """Glob patterns."""
 
     def __init__(
-        self, pattern: types.StringList, flags: int=0,
-        root_dir: typing.Optional[types.Strings]=None, limit: int=_wcparse.PATTERN_LIMIT
+        self, pattern: types.StringList, flags: int = 0,
+        root_dir: typing.Optional[types.Strings] = None, limit: int = _wcparse.PATTERN_LIMIT
     ) -> None:
         """Initialize the directory walker object."""
 
@@ -296,7 +296,7 @@ class Glob(object):
 
         return bool(self.npatterns and self._match_excluded(path, is_dir))
 
-    def _match_literal(self, a: types.Strings, b: typing.Optional[types.Strings]=None) -> bool:
+    def _match_literal(self, a: types.Strings, b: typing.Optional[types.Strings] = None) -> bool:
         """Match two names."""
 
         return a.lower() == b if not self.case_sensitive else a == b
@@ -562,7 +562,7 @@ class Glob(object):
 
 def iglob(
     patterns: types.WildcardPatterns, *,
-    flags: int=0, root_dir: typing.Optional[types.Strings]=None, limit: int=_wcparse.PATTERN_LIMIT
+    flags: int = 0, root_dir: typing.Optional[types.Strings] = None, limit: int = _wcparse.PATTERN_LIMIT
 ) -> typing.Iterable[types.Strings]:
     """Glob."""
 
@@ -571,7 +571,7 @@ def iglob(
 
 def glob(
     patterns: types.WildcardPatterns, *,
-    flags: int=0, root_dir: typing.Optional[types.Strings]=None, limit: int=_wcparse.PATTERN_LIMIT
+    flags: int = 0, root_dir: typing.Optional[types.Strings] = None, limit: int = _wcparse.PATTERN_LIMIT
 ) -> types.StringList:
     """Glob."""
 
@@ -580,7 +580,7 @@ def glob(
 
 def translate(
     patterns: types.WildcardPatterns, *,
-    flags: int=0, limit: int=_wcparse.PATTERN_LIMIT
+    flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT
 ) -> types.Strings:
     """Translate glob pattern."""
 
@@ -590,7 +590,7 @@ def translate(
 
 def globmatch(
     filename: types.Paths, patterns: types.WildcardPatterns, *,
-    flags: int=0, root_dir: typing.Optional[types.Strings]=None, limit: int=_wcparse.PATTERN_LIMIT
+    flags: int = 0, root_dir: typing.Optional[types.Strings] = None, limit: int = _wcparse.PATTERN_LIMIT
 ) -> bool:
     """
     Check if filename matches pattern.
@@ -612,7 +612,7 @@ def globmatch(
 
 def globfilter(
     filenames: types.PathList, patterns: types.WildcardPatterns, *,
-    flags: int=0, root_dir: typing.Optional[types.Strings]=None, limit: int=_wcparse.PATTERN_LIMIT
+    flags: int = 0, root_dir: typing.Optional[types.Strings] = None, limit: int = _wcparse.PATTERN_LIMIT
 ) -> types.PathList: # noqa A001
     """Filter names using pattern."""
 
@@ -634,13 +634,13 @@ def globfilter(
     return matches
 
 
-def raw_escape(pattern: types.Strings, unix: typing.Optional[bool]=None, raw_chars: bool=True) -> types.Strings:
+def raw_escape(pattern: types.Strings, unix: typing.Optional[bool] = None, raw_chars: bool = True) -> types.Strings:
     """Apply raw character transform before applying escape."""
 
     return _wcparse.raw_escape(pattern, unix, raw_chars)
 
 
-def escape(pattern: types.Strings, unix: typing.Optional[bool]=None) -> types.Strings:
+def escape(pattern: types.Strings, unix: typing.Optional[bool] = None) -> types.Strings:
     """Escape."""
 
     return _wcparse.escape(pattern, unix)
