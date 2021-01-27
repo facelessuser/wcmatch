@@ -22,8 +22,10 @@ IN THE SOFTWARE.
 """
 import os
 import re
+import typing
 from . import _wcparse
 from . import util
+from . import types
 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME", "PATHNAME",
@@ -81,34 +83,33 @@ FLAG_MASK = (
 class WcMatch:
     """Finds files by wildcard."""
 
-    def __init__(self, root_dir, file_pattern=None, exclude_pattern=None, flags=0, limit=_wcparse.PATHNAME, **kwargs):
+    def __init__(
+        self, root_dir: types.Strings, file_pattern: typing.Optional[types.Strings] = None,
+        exclude_pattern: typing.Optional[types.Strings] = None, flags: int = 0, limit: int = _wcparse.PATHNAME,
+        **kwargs: typing.Any
+    ) -> None:
         """Initialize the directory walker object."""
 
         self._abort = False
         self._skipped = 0
-        self._directory = _wcparse.norm_slash(root_dir, 0)
+        self._directory: types.Strings = _wcparse.norm_slash(root_dir, 0)
         self.is_bytes = isinstance(self._directory, bytes)
-        if not self._directory:
-            if self.is_bytes:
-                curdir = bytes(os.curdir, 'ASCII')
-            else:
-                curdir = os.curdir
-        else:
-            curdir = self._directory
+        curdir = (bytes(os.curdir, 'ASCII') if self.is_bytes else os.curdir) if not self._directory else self._directory
         self.sep = os.fsencode(os.sep) if self.is_bytes else os.sep
         self._root_dir = curdir if curdir.endswith(self.sep) else curdir + self.sep
         self.file_pattern = file_pattern
         if not self.file_pattern:
-            self.file_pattern = _wcparse.WcRegexp(
-                (re.compile(br'^.*$', re.DOTALL),) if self.is_bytes else (re.compile(r'^.*$', re.DOTALL),)
-            )
+            if self.is_bytes:
+                self.file_pattern = _wcparse.WcRegexp((re.compile(br'^.*$', re.DOTALL),))
+            else:
+                self.file_pattern = _wcparse.WcRegexp((re.compile(r'^.*$', re.DOTALL),))
         self.exclude_pattern = exclude_pattern if exclude_pattern is not None else (b'' if self.is_bytes else '')
         self._parse_flags(flags)
         self.limit = limit
         self.on_init(**kwargs)
         self.file_check, self.folder_exclude_check = self._compile(self.file_pattern, self.exclude_pattern)
 
-    def _parse_flags(self, flags):
+    def _parse_flags(self, flags: int) -> None:
         """Parse flags."""
 
         self.flags = flags & FLAG_MASK
@@ -123,7 +124,7 @@ class WcMatch:
             self.flags |= _FORCEWIN
         self.flags = self.flags & (_wcparse.FLAG_MASK ^ MATCHBASE)
 
-    def _compile_wildcard(self, pattern, pathname=False):
+    def _compile_wildcard(self, pattern: types.Strings, pathname: bool = False) -> typing.Optional[_wcparse.WcRegexp]:
         """Compile or format the wildcard inclusion/exclusion pattern."""
 
         flags = self.flags
@@ -134,7 +135,10 @@ class WcMatch:
 
         return _wcparse.compile(pattern, flags, self.limit) if pattern else None
 
-    def _compile(self, file_pattern, folder_exclude_pattern):
+    def _compile(
+        self, file_pattern: typing.Union[types.Strings, _wcparse.WcRegexp],
+        folder_exclude_pattern: typing.Union[types.Strings, _wcparse.WcRegexp]
+    ) -> typing.Tuple[_wcparse.WcRegexp, typing.Union[_wcparse.WcRegexp, None]]:
         """Compile patterns."""
 
         if not isinstance(file_pattern, _wcparse.WcRegexp):
@@ -145,7 +149,7 @@ class WcMatch:
 
         return file_pattern, folder_exclude_pattern
 
-    def _valid_file(self, base, name):
+    def _valid_file(self, base: types.Strings, name: types.Strings) -> bool:
         """Return whether a file can be searched."""
 
         valid = False
@@ -156,17 +160,17 @@ class WcMatch:
             valid = False
         return self.on_validate_file(base, name) if valid else valid
 
-    def compare_file(self, filename):
+    def compare_file(self, filename: types.Strings) -> bool:
         """Compare filename."""
 
         return self.file_check.match(filename)
 
-    def on_validate_file(self, base, name):
+    def on_validate_file(self, base: types.Strings, name: types.Strings) -> bool:
         """Validate file override."""
 
         return True
 
-    def _valid_folder(self, base, name):
+    def _valid_folder(self, base: types.Strings, name: types.Strings) -> bool:
         """Return whether a folder can be searched."""
 
         valid = True
@@ -183,58 +187,60 @@ class WcMatch:
             valid = False
         return self.on_validate_directory(base, name) if valid else valid
 
-    def compare_directory(self, directory):
+    def compare_directory(self, directory: types.Strings) -> bool:
         """Compare folder."""
 
-        return not self.folder_exclude_check.match(directory + self.sep if self.dir_pathname else directory)
+        return not self.folder_exclude_check.match(  # type: ignore
+            directory + self.sep if self.dir_pathname else directory
+        )
 
-    def on_init(self, **kwargs):
+    def on_init(self, **kwargs: typing.Any) -> None:
         """Handle custom initialization."""
 
-    def on_validate_directory(self, base, name):
+    def on_validate_directory(self, base: types.Strings, name: types.Strings) -> bool:
         """Validate folder override."""
 
         return True
 
-    def on_skip(self, base, name):
+    def on_skip(self, base: types.Strings, name: types.Strings) -> typing.Optional[typing.Any]:
         """On skip."""
 
         return None
 
-    def on_error(self, base, name):
+    def on_error(self, base: types.Strings, name: types.Strings) -> typing.Optional[typing.Any]:
         """On error."""
 
         return None
 
-    def on_match(self, base, name):
+    def on_match(self, base: types.Strings, name: types.Strings) -> types.Strings:
         """On match."""
 
         return os.path.join(base, name)
 
-    def on_reset(self):
+    def on_reset(self) -> None:
         """On reset."""
 
-    def get_skipped(self):
+    def get_skipped(self) -> int:
         """Get number of skipped files."""
 
         return self._skipped
 
-    def kill(self):
+    def kill(self) -> None:
         """Abort process."""
 
         self._abort = True
 
-    def is_aborted(self):
+    def is_aborted(self) -> bool:
         """Check if process has been aborted."""
 
         return self._abort
 
-    def reset(self):
+    def reset(self) -> None:
         """Revive class from a killed state."""
 
         self._abort = False
 
-    def _walk(self):
+    def _walk(self) -> typing.Iterable[typing.Any]:
         """Start search for valid files."""
 
         self._base_len = len(self._root_dir)
@@ -280,12 +286,12 @@ class WcMatch:
                     if self.is_aborted():
                         break
 
-    def match(self):
+    def match(self) -> typing.List[typing.Any]:
         """Run the directory walker."""
 
         return list(self.imatch())
 
-    def imatch(self):
+    def imatch(self) -> typing.Iterable[typing.Any]:
         """Run the directory walker as iterator."""
 
         self.on_reset()

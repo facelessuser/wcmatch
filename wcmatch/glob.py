@@ -159,47 +159,47 @@ class Glob(object):
         """Initialize the directory walker object."""
 
         self.seen: typing.Set[types.Strings] = set()
-        self.is_bytes: bool = isinstance(pattern[0], bytes)
-        self.current: types.Strings = b'.' if self.is_bytes else '.'
-        self.root_dir: types.Strings = util.fscodec(root_dir, self.is_bytes) if root_dir is not None else self.current
-        self.nounique: bool = bool(flags & NOUNIQUE)
-        self.mark: bool = bool(flags & MARK)
+        self.is_bytes = isinstance(pattern[0], bytes)
+        self.current = b'.' if self.is_bytes else '.'
+        self.root_dir = util.fscodec(root_dir, self.is_bytes) if root_dir is not None else self.current
+        self.nounique = bool(flags & NOUNIQUE)
+        self.mark = bool(flags & MARK)
         # Only scan for `.` and `..` if it is specifically requested.
-        self.scandotdir: bool = bool(flags & SCANDOTDIR)
+        self.scandotdir = bool(flags & SCANDOTDIR)
         if self.mark:
             flags ^= MARK
-        self.negateall: bool = bool(flags & NEGATEALL)
+        self.negateall = bool(flags & NEGATEALL)
         if self.negateall:
             flags ^= NEGATEALL
-        self.nodir: bool = bool(flags & NODIR)
+        self.nodir = bool(flags & NODIR)
         if self.nodir:
             flags ^= NODIR
-        self.pathlib: bool = bool(flags & _PATHLIB)
+        self.pathlib = bool(flags & _PATHLIB)
         if self.pathlib:
             flags ^= _PATHLIB
         # Right to left searching is only for matching
         if flags & _RTL:  # pragma: no cover
             flags ^= _RTL
-        self.flags: int = _flag_transform(flags | REALPATH)
-        self.negate_flags: int = self.flags
+        self.flags = _flag_transform(flags | REALPATH)
+        self.negate_flags = self.flags
         if not self.scandotdir and not self.flags & NODOTDIR:
             self.flags |= NODOTDIR
-        self.raw_chars: bool = bool(self.flags & RAWCHARS)
-        self.follow_links: bool = bool(self.flags & FOLLOW)
-        self.dot: bool = bool(self.flags & DOTMATCH)
-        self.unix: bool = not bool(self.flags & FORCEWIN)
-        self.negate: bool = bool(self.flags & NEGATE)
-        self.globstar: bool = bool(self.flags & GLOBSTAR)
-        self.braces: bool = bool(self.flags & BRACE)
-        self.matchbase: bool = bool(self.flags & MATCHBASE)
-        self.case_sensitive: bool = _wcparse.get_case(self.flags)
-        self.limit: int = limit
+        self.raw_chars = bool(self.flags & RAWCHARS)
+        self.follow_links = bool(self.flags & FOLLOW)
+        self.dot = bool(self.flags & DOTMATCH)
+        self.unix = not bool(self.flags & FORCEWIN)
+        self.negate = bool(self.flags & NEGATE)
+        self.globstar = bool(self.flags & GLOBSTAR)
+        self.braces = bool(self.flags & BRACE)
+        self.matchbase = bool(self.flags & MATCHBASE)
+        self.case_sensitive = _wcparse.get_case(self.flags)
+        self.limit = limit
 
         string_type = _wcparse.BYTES if self.is_bytes else _wcparse.UNICODE
-        self.specials: typing.Tuple[types.Strings, ...] = _SPECIALS[string_type]
-        self.empty: types.Strings = _EMPTY[string_type]
-        self.sep: types.Strings = _WIN_SEP[string_type] if self.flags & FORCEWIN else _SEP[string_type]
-        self.seps: typing.Tuple[types.Strings, ...] = (
+        self.specials = _SPECIALS[string_type]
+        self.empty = _EMPTY[string_type]
+        self.sep = _WIN_SEP[string_type] if self.flags & FORCEWIN else _SEP[string_type]
+        self.seps = (
             _WIN_SEPS[string_type] if self.flags & FORCEWIN else _SEPS[string_type]
         )
         self.pathlib_norm: typing.Pattern = (
@@ -591,7 +591,7 @@ def glob(
 def translate(
     patterns: types.WildcardPatterns, *,
     flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT
-) -> types.Strings:
+) -> typing.Tuple[typing.List[types.Strings], typing.List[types.Strings]]:
     """Translate glob pattern."""
 
     flags = _flag_transform(flags)

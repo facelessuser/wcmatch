@@ -20,6 +20,7 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABI
 CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
 """
+import typing
 from . import _wcparse
 from . import types
 
@@ -60,7 +61,7 @@ FLAG_MASK = (
 )
 
 
-def _flag_transform(flags):
+def _flag_transform(flags: int):
     """Transform flags to glob defaults."""
 
     # Enabling both cancels out
@@ -70,14 +71,20 @@ def _flag_transform(flags):
     return (flags & FLAG_MASK)
 
 
-def translate(patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
+def translate(
+    patterns: types.WildcardPatterns, *,
+    flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT
+) -> typing.Tuple[typing.List[types.Strings], typing.List[types.Strings]]:
     """Translate `fnmatch` pattern."""
 
     flags = _flag_transform(flags)
     return _wcparse.translate(patterns, flags, limit)
 
 
-def fnmatch(filename, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
+def fnmatch(
+    filename: types.Strings, patterns: types.WildcardPatterns, *,
+    flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT
+) -> bool:
     """
     Check if filename matches pattern.
 
