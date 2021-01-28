@@ -7,6 +7,7 @@ import re
 import unicodedata
 from functools import wraps
 import warnings
+from typing import Tuple, Any, Union, Match, Pattern, Optional, AnyStr, Sequence
 
 PY37 = (3, 7) <= sys.version_info
 
@@ -60,19 +61,19 @@ else:
     _PLATFORM = "linux"
 
 
-def platform():
+def platform() -> str:
     """Get platform."""
 
     return _PLATFORM
 
 
-def is_case_sensitive():
+def is_case_sensitive() -> bool:
     """Check if case sensitive."""
 
     return CASE_FS
 
 
-def to_tuple(values):
+def to_tuple(values: Union[AnyStr, Sequence[AnyStr]]) -> Tuple[AnyStr, ...]:
     """Combine values."""
 
     return (values,) if isinstance(values, (str, bytes)) else tuple(values)
@@ -131,23 +132,23 @@ def norm_pattern(pattern, normalize, is_raw_chars, ignore_escape=False):
 class StringIter(object):
     """Preprocess replace tokens."""
 
-    def __init__(self, string):
+    def __init__(self, string: str) -> None:
         """Initialize."""
 
         self._string = string
         self._index = 0
 
-    def __iter__(self):
+    def __iter__(self) -> "StringIter":
         """Iterate."""
 
         return self
 
-    def __next__(self):
+    def __next__(self) -> str:
         """Python 3 iterator compatible next."""
 
         return self.iternext()
 
-    def match(self, pattern):
+    def match(self, pattern: Pattern[str]) -> Optional[Match[str]]:
         """Perform regex match at index."""
 
         m = pattern.match(self._string, self._index)
@@ -156,22 +157,22 @@ class StringIter(object):
         return m
 
     @property
-    def index(self):
+    def index(self) -> int:
         """Get current index."""
 
         return self._index
 
-    def previous(self):  # pragma: no cover
+    def previous(self) -> str:  # pragma: no cover
         """Get previous char."""
 
         return self._string[self._index - 1]
 
-    def advance(self, count):  # pragma: no cover
+    def advance(self, count: int) -> None:  # pragma: no cover
         """Advanced the index."""
 
         self._index += count
 
-    def rewind(self, count):
+    def rewind(self, count: int) -> None:
         """Rewind index."""
 
         if count > self._index:  # pragma: no cover
@@ -179,7 +180,7 @@ class StringIter(object):
 
         self._index -= count
 
-    def iternext(self):
+    def iternext(self) -> str:
         """Iterate through characters of the string."""
 
         try:
@@ -194,21 +195,21 @@ class StringIter(object):
 class Immutable(object):
     """Immutable."""
 
-    __slots__ = tuple()
+    __slots__: Tuple[Any, ...] = tuple()
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize."""
 
         for k, v in kwargs.items():
             super(Immutable, self).__setattr__(k, v)
 
-    def __setattr__(self, name, value):  # pragma: no cover
+    def __setattr__(self, name: str, value: Any) -> None:  # pragma: no cover
         """Prevent mutability."""
 
         raise AttributeError('Class is immutable!')
 
 
-def is_hidden(path):
+def is_hidden(path: Union[bytes, str]) -> bool:
     """Check if file is hidden."""
 
     hidden = False
@@ -220,11 +221,11 @@ def is_hidden(path):
         # On Windows, look for `FILE_ATTRIBUTE_HIDDEN`
         FILE_ATTRIBUTE_HIDDEN = 0x2
         results = os.lstat(path)
-        hidden = bool(results.st_file_attributes & FILE_ATTRIBUTE_HIDDEN)
+        hidden = bool(results.st_file_attributes & FILE_ATTRIBUTE_HIDDEN)  # type: ignore
     elif _PLATFORM == "osx":  # pragma: no cover
         # On macOS, look for `UF_HIDDEN`
         results = os.lstat(path)
-        hidden = bool(results.st_flags & stat.UF_HIDDEN)
+        hidden = bool(results.st_flags & stat.UF_HIDDEN)  # type: ignore
     return hidden
 
 
@@ -248,7 +249,7 @@ def deprecated(message, stacklevel=2):  # pragma: no cover
     return _decorator
 
 
-def warn_deprecated(message, stacklevel=2):  # pragma: no cover
+def warn_deprecated(message: str, stacklevel: int = 2) -> None:  # pragma: no cover
     """Warn deprecated."""
 
     warnings.warn(

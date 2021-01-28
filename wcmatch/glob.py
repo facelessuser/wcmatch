@@ -26,6 +26,7 @@ import re
 import functools
 from . import _wcparse
 from . import util
+from typing import AnyStr, List, Tuple, Union, Sequence, Optional, Iterable
 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
@@ -110,7 +111,7 @@ _RE_WIN_PATHLIB_DOT_NORM = [
 ]
 
 
-def _flag_transform(flags):
+def _flag_transform(flags: int) -> int:
     """Transform flags to glob defaults."""
 
     # Enabling both cancels out
@@ -546,26 +547,37 @@ class Glob(object):
                             yield from self.format_path(match, is_dir, dir_only)
 
 
-def iglob(patterns, *, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
+def iglob(
+    patterns: Union[AnyStr, Sequence[AnyStr]], *,
+    flags: int = 0, root_dir: Optional[Union[AnyStr, os.PathLike[AnyStr]]] = None, limit: int = _wcparse.PATTERN_LIMIT
+) -> Iterable[AnyStr]:
     """Glob."""
 
     yield from Glob(util.to_tuple(patterns), flags, root_dir, limit).glob()
 
 
-def glob(patterns, *, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
+def glob(
+    patterns: Union[AnyStr, Sequence[AnyStr]], *,
+    flags: int = 0, root_dir: Optional[Union[AnyStr, os.PathLike[AnyStr]]] = None, limit: int = _wcparse.PATTERN_LIMIT
+) -> List[AnyStr]:
     """Glob."""
 
     return list(iglob(patterns, flags=flags, root_dir=root_dir, limit=limit))
 
 
-def translate(patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
+def translate(
+    patterns: Union[AnyStr, Sequence[AnyStr]], *, flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT
+) -> Tuple[List[AnyStr], List[AnyStr]]:
     """Translate glob pattern."""
 
     flags = _flag_transform(flags)
     return _wcparse.translate(patterns, flags, limit)
 
 
-def globmatch(filename, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
+def globmatch(
+    filename: Union[AnyStr, os.PathLike[AnyStr]], patterns: Union[AnyStr, Sequence[AnyStr]], *,
+    flags: int = 0, root_dir: Optional[Union[AnyStr, os.PathLike[AnyStr]]] = None, limit: int = _wcparse.PATTERN_LIMIT
+) -> bool:
     """
     Check if filename matches pattern.
 
@@ -583,7 +595,10 @@ def globmatch(filename, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATT
     return _wcparse.compile(patterns, flags, limit).match(filename, root_dir=root_dir)
 
 
-def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATTERN_LIMIT):
+def globfilter(
+    filenames: Sequence[Union[AnyStr, os.PathLike[AnyStr]]], patterns: Union[AnyStr, Sequence[AnyStr]], *,
+    flags: int = 0, root_dir: Optional[Union[AnyStr, os.PathLike[AnyStr]]] = None, limit: int = _wcparse.PATTERN_LIMIT
+) -> List[Union[AnyStr, os.PathLike[AnyStr]]]:
     """Filter names using pattern."""
 
     if root_dir is not None:
@@ -603,13 +618,13 @@ def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=_wcparse.PA
     return matches
 
 
-def raw_escape(pattern, unix=None, raw_chars=True):
+def raw_escape(pattern: AnyStr, unix: Optional[bool] = None, raw_chars: Optional[bool] = True) -> AnyStr:
     """Apply raw character transform before applying escape."""
 
     return _wcparse.raw_escape(pattern, unix, raw_chars)
 
 
-def escape(pattern, unix=None):
+def escape(pattern: AnyStr, unix: Optional[bool] = None) -> AnyStr:
     """Escape."""
 
     return _wcparse.escape(pattern, unix)

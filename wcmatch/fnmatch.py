@@ -21,6 +21,7 @@ CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFT
 IN THE SOFTWARE.
 """
 from . import _wcparse
+from typing import AnyStr, List, Tuple, Union, Sequence
 
 __all__ = (
     "CASE", "EXTMATCH", "IGNORECASE", "RAWCHARS",
@@ -59,7 +60,7 @@ FLAG_MASK = (
 )
 
 
-def _flag_transform(flags):
+def _flag_transform(flags: int) -> int:
     """Transform flags to glob defaults."""
 
     # Enabling both cancels out
@@ -69,14 +70,18 @@ def _flag_transform(flags):
     return (flags & FLAG_MASK)
 
 
-def translate(patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
+def translate(
+    patterns: Union[AnyStr, Sequence[AnyStr]], *, flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT
+) -> Tuple[List[AnyStr], List[AnyStr]]:
     """Translate `fnmatch` pattern."""
 
     flags = _flag_transform(flags)
     return _wcparse.translate(patterns, flags, limit)
 
 
-def fnmatch(filename, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
+def fnmatch(
+    filename: AnyStr, patterns: Union[AnyStr, Sequence[AnyStr]], *, flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT
+) -> bool:
     """
     Check if filename matches pattern.
 
@@ -90,7 +95,10 @@ def fnmatch(filename, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
     return _wcparse.compile(patterns, flags, limit).match(filename)
 
 
-def filter(filenames, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):  # noqa A001
+def filter(  # noqa A001
+    filenames: Sequence[AnyStr], patterns: Union[AnyStr, Sequence[AnyStr]], *,
+    flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT
+) -> List[AnyStr]:
     """Filter names using pattern."""
 
     matches = []

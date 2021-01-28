@@ -1,6 +1,7 @@
 """Pathlib implementation that uses our own glob."""
 import pathlib
 import os
+from typing import Union, Iterable, Sequence
 from . import glob
 from . import _wcparse
 
@@ -67,6 +68,77 @@ FLAG_MASK = (
 )
 
 
+class PurePath(pathlib.PurePath):
+    """Special pure pathlike object that uses our own glob methods."""
+
+    __slots__ = ()
+
+    def __new__(cls, *args):
+        """New."""
+
+        if cls is PurePath:
+            cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
+        return cls._from_parts(args)
+
+    def _translate_flags(self, flags: int) -> int:
+        """Translate flags for the current `pathlib` object."""
+
+        flags = (flags & FLAG_MASK) | _PATHNAME
+        if flags & REALPATH:
+            flags |= _FORCEWIN if os.name == 'nt' else _FORCEUNIX
+        if isinstance(self, PureWindowsPath):
+            if flags & _FORCEUNIX:
+                raise ValueError("Windows pathlike objects cannot be forced to behave like a Posix path")
+            flags |= _FORCEWIN
+        elif isinstance(self, PurePosixPath):
+            if flags & _FORCEWIN:
+                raise ValueError("Posix pathlike objects cannot be forced to behave like a Windows path")
+            flags |= _FORCEUNIX
+        return flags
+
+    def _translate_path(self) -> str:
+        """Translate the object to a path string and ensure trailing slash for non-pure paths that are directories."""
+
+        sep = ''
+        name = str(self)
+        if isinstance(self, Path) and name and self.is_dir():
+            sep = self._flavour.sep
+
+        return name + sep
+
+    def match(
+        self, patterns: Union[str, Sequence[str]], *, flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT
+    ) -> bool:
+        """
+        Match patterns using `globmatch`, but also using the same right to left logic that the default `pathlib` uses.
+
+        This uses the same right to left logic that the default `pathlib` object uses.
+        Folders and files are essentially matched from right to left.
+
+        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
+
+        """
+
+        return self.globmatch(patterns, flags=flags | _RTL, limit=limit)
+
+    def globmatch(
+        self, patterns: Union[str, Sequence[str]], *, flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT
+    ) -> bool:
+        """
+        Match patterns using `globmatch`, but without the right to left logic that the default `pathlib` uses.
+
+        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
+
+        """
+
+        return glob.globmatch(
+            self._translate_path(),
+            patterns,
+            flags=self._translate_flags(flags),
+            limit=limit
+        )
+
+
 class Path(pathlib.Path):
     """Special pathlike object (which accesses the filesystem) that uses our own glob methods."""
 
@@ -83,7 +155,9 @@ class Path(pathlib.Path):
         self._init()
         return self
 
-    def glob(self, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
+    def glob(  # type: ignore
+        self, patterns: Union[str, Sequence[str]], *, flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT
+    ) -> Iterable["Path"]:
         """
         Search the file system.
 
@@ -93,11 +167,16 @@ class Path(pathlib.Path):
 
         if self.is_dir():
             scandotdir = flags & SCANDOTDIR
-            flags = self._translate_flags(flags | _NOABSOLUTE) | ((_PATHLIB | SCANDOTDIR) if scandotdir else _PATHLIB)
+            flags = (
+                self._translate_flags(flags | _NOABSOLUTE) |  # type: ignore
+                ((_PATHLIB | SCANDOTDIR) if scandotdir else _PATHLIB)
+            )
             for filename in glob.iglob(patterns, flags=flags, root_dir=str(self), limit=limit):
                 yield self.joinpath(filename)
 
-    def rglob(self, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
+    def rglob(  # type: ignore
+        self, patterns: Union[str, Sequence[str]], *, flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT
+    ) -> Iterable["Path"]:
         """
         Recursive glob.
 
@@ -111,84 +190,17 @@ class Path(pathlib.Path):
         yield from self.glob(patterns, flags=flags | _EXTMATCHBASE, limit=limit)
 
 
-class PurePath(pathlib.PurePath):
-    """Special pure pathlike object that uses our own glob methods."""
-
-    __slots__ = ()
-
-    def __new__(cls, *args):
-        """New."""
-
-        if cls is PurePath:
-            cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
-        return cls._from_parts(args)
-
-    def _translate_flags(self, flags):
-        """Translate flags for the current `pathlib` object."""
-
-        flags = (flags & FLAG_MASK) | _PATHNAME
-        if flags & REALPATH:
-            flags |= _FORCEWIN if os.name == 'nt' else _FORCEUNIX
-        if isinstance(self, PureWindowsPath):
-            if flags & _FORCEUNIX:
-                raise ValueError("Windows pathlike objects cannot be forced to behave like a Posix path")
-            flags |= _FORCEWIN
-        elif isinstance(self, PurePosixPath):
-            if flags & _FORCEWIN:
-                raise ValueError("Posix pathlike objects cannot be forced to behave like a Windows path")
-            flags |= _FORCEUNIX
-        return flags
-
-    def _translate_path(self):
-        """Translate the object to a path string and ensure trailing slash for non-pure paths that are directories."""
-
-        sep = ''
-        name = str(self)
-        if isinstance(self, Path) and name and self.is_dir():
-            sep = self._flavour.sep
-
-        return name + sep
-
-    def match(self, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
-        """
-        Match patterns using `globmatch`, but also using the same right to left logic that the default `pathlib` uses.
-
-        This uses the same right to left logic that the default `pathlib` object uses.
-        Folders and files are essentially matched from right to left.
-
-        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
-
-        """
-
-        return self.globmatch(patterns, flags=flags | _RTL, limit=limit)
-
-    def globmatch(self, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
-        """
-        Match patterns using `globmatch`, but without the right to left logic that the default `pathlib` uses.
-
-        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
-
-        """
-
-        return glob.globmatch(
-            self._translate_path(),
-            patterns,
-            flags=self._translate_flags(flags),
-            limit=limit
-        )
-
-
 class PurePosixPath(PurePath):
     """Pure Posix path."""
 
-    _flavour = pathlib._posix_flavour
+    _flavour = pathlib._posix_flavour  # type: ignore
     __slots__ = ()
 
 
 class PureWindowsPath(PurePath):
     """Pure Windows path."""
 
-    _flavour = pathlib._windows_flavour
+    _flavour = pathlib._windows_flavour  # type: ignore
     __slots__ = ()
 
 
