@@ -118,7 +118,7 @@ class WcMatch:
         self.file_check = value
 
     @exclude_pattern.setter
-    def exclude_pattern(self):  # pragma: no cover
+    def exclude_pattern(self, value):  # pragma: no cover
         """DO NOT USE: only provided for Rummage backwards compatibility, and will be remove in the future."""
 
         self.folder_exclude_check = value
@@ -126,9 +126,7 @@ class WcMatch:
     def _add_sep(self, path, check=False):
         """Add separator."""
 
-        if not check or not path.endswith(self._sep):
-            return path + self._sep
-        return path
+        return (path + self._sep) if not check or not path.endswith(self._sep) else path
 
     def _get_cwd(self):
         """Get current working directory."""
