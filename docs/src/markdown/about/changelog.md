@@ -6,6 +6,7 @@
   Wildcard Match will accept. Don't try to convert paths via `__str__` or `__bytes__`.
 - **FIX**: Better checking of types to ensure consistent failure if the path, pattern, or root directory of are not all
   of type `str` or `bytes`.
+- **FIX**: Some internal fixes and refactoring.
 
 ## 8.0.1
 

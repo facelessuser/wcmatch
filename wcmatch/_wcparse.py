@@ -1914,7 +1914,7 @@ class WcRegexp(util.Immutable):
     def __len__(self):
         """Length."""
 
-        return len(self._include) + len(self._exclude)
+        return len(self._include) + (len(self._exclude) if self._exclude is not None else 0)
 
     def __eq__(self, other):
         """Equal."""

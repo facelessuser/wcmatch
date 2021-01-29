@@ -86,27 +86,59 @@ class WcMatch:
 
         self._abort = False
         self._skipped = 0
+        self._parse_flags(flags)
         self._directory = _wcparse.norm_slash(root_dir, 0)
         self.is_bytes = isinstance(self._directory, bytes)
-        if not self._directory:
-            if self.is_bytes:
-                curdir = bytes(os.curdir, 'ASCII')
-            else:
-                curdir = os.curdir
-        else:
-            curdir = self._directory
-        self.sep = os.fsencode(os.sep) if self.is_bytes else os.sep
-        self._root_dir = curdir if curdir.endswith(self.sep) else curdir + self.sep
-        self.file_pattern = file_pattern
-        if not self.file_pattern:
-            self.file_pattern = _wcparse.WcRegexp(
-                (re.compile(br'^.*$', re.DOTALL),) if self.is_bytes else (re.compile(r'^.*$', re.DOTALL),)
-            )
-        self.exclude_pattern = exclude_pattern if exclude_pattern is not None else (b'' if self.is_bytes else '')
-        self._parse_flags(flags)
+        self._sep = os.fsencode(os.sep) if self.is_bytes else os.sep
+        self._root_dir = self._add_sep(self._get_cwd(), True)
+        self._file_pattern = file_pattern if file_pattern else self._directory[0:0]
+        self._exclude_pattern = exclude_pattern if exclude_pattern else self._directory[0:0]
         self.limit = limit
+        self.file_check = None
+        self.folder_exclude_check = None
         self.on_init(**kwargs)
-        self.file_check, self.folder_exclude_check = self._compile(self.file_pattern, self.exclude_pattern)
+        self._compile(self._file_pattern, self._exclude_pattern)
+
+    @property
+    def file_pattern(self):  # pragma: no cover
+        """DO NOT USE: only provided for Rummage backwards compatibility, and will be remove in the future."""
+
+        return _wcparse.WcRegexp(tuple()) if not self._file_pattern else self._file_pattern
+
+    @property
+    def exclude_pattern(self):  # pragma: no cover
+        """DO NOT USE: only provided for Rummage backwards compatibility, and will be remove in the future."""
+
+        return _wcparse.WcRegexp(tuple()) if not self._exclude_pattern else self._exclude_pattern
+
+    @file_pattern.setter
+    def file_pattern(self, value):  # pragma: no cover
+        """DO NOT USE: only provided for Rummage backwards compatibility, and will be remove in the future."""
+
+        self.file_check = value
+
+    @exclude_pattern.setter
+    def exclude_pattern(self):  # pragma: no cover
+        """DO NOT USE: only provided for Rummage backwards compatibility, and will be remove in the future."""
+
+        self.folder_exclude_check = value
+
+    def _add_sep(self, path, check=False):
+        """Add separator."""
+
+        if not check or not path.endswith(self._sep):
+            return path + self._sep
+        return path
+
+    def _get_cwd(self):
+        """Get current working directory."""
+
+        if self._directory:
+            return self._directory
+        elif self.is_bytes:
+            return bytes(os.curdir, 'ASCII')
+        else:
+            return os.curdir
 
     def _parse_flags(self, flags):
         """Parse flags."""
@@ -137,13 +169,19 @@ class WcMatch:
     def _compile(self, file_pattern, folder_exclude_pattern):
         """Compile patterns."""
 
-        if not isinstance(file_pattern, _wcparse.WcRegexp):
-            file_pattern = self._compile_wildcard(file_pattern, self.file_pathname)
+        if not isinstance(self.file_check, _wcparse.WcRegexp):
+            if not file_pattern:
+                self.file_check = _wcparse.WcRegexp(
+                    (re.compile(br'^.*$' if isinstance(file_pattern, bytes) else r'^.*$', re.DOTALL),)
+                )
+            else:
+                self.file_check = self._compile_wildcard(file_pattern, self.file_pathname)
 
-        if not isinstance(folder_exclude_pattern, _wcparse.WcRegexp):
-            folder_exclude_pattern = self._compile_wildcard(folder_exclude_pattern, self.dir_pathname)
-
-        return file_pattern, folder_exclude_pattern
+        if not isinstance(self.folder_exclude_check, _wcparse.WcRegexp):
+            if not folder_exclude_pattern:
+                self.folder_exclude_check = _wcparse.WcRegexp(tuple())
+            else:
+                self.folder_exclude_check = self._compile_wildcard(folder_exclude_pattern, self.dir_pathname)
 
     def _valid_file(self, base, name):
         """Return whether a file can be searched."""
@@ -174,7 +212,7 @@ class WcMatch:
         if (
             not self.recursive or
             (
-                self.folder_exclude_check is not None and
+                len(self.folder_exclude_check) and
                 not self.compare_directory(fullpath[self._base_len:] if self.dir_pathname else name)
             )
         ):
@@ -186,7 +224,7 @@ class WcMatch:
     def compare_directory(self, directory):
         """Compare folder."""
 
-        return not self.folder_exclude_check.match(directory + self.sep if self.dir_pathname else directory)
+        return not self.folder_exclude_check.match(self._add_sep(directory) if self.dir_pathname else directory)
 
     def on_init(self, **kwargs):
         """Handle custom initialization."""
