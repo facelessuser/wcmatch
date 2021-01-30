@@ -84,7 +84,8 @@ class _Mixin:  # pragma: no cover
 
     This is only a temporary solution to transition Rummage to a new way of overriding `glob`
     style patterns with regular expressions (which is a niche need and not publicly supported).
-    It is advised to stick to the public, documented API. Anything else you use at your own risk.
+    It is advised to stick to the public, documented API. Anything else you use, you use at your
+    own risk.
 
     Wildcard Match was originally written inside Rummage and moved out at a later point to be its
     own library. The regular expression override of file patterns was something that didn't make
@@ -93,7 +94,7 @@ class _Mixin:  # pragma: no cover
     `WcMatch` worked.
 
     NEW WAY:
-    We've provided an cleaner easier way to do this moving forward, and if we ever made the knowledge
+    We've provided a cleaner easier way to do this moving forward, and if we ever made the knowledge
     of this public, this is the way we'd do it. If either `file_check` or `folder_exclude_check` is
     initialized prior to us compiling the checks, we will skip compilation. This would happen in
     `on_init`. Un-compiled patterns are stored in `pattern_file` and `pattern_folder_exclude`.
