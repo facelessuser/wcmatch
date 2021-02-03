@@ -1800,7 +1800,8 @@ class TestIsMagic(unittest.TestCase):
         self.assertTrue(glob.is_magic("test[", flags=flags))
         self.assertTrue(glob.is_magic("test]", flags=flags))
         self.assertTrue(glob.is_magic("test?", flags=flags))
-        self.assertTrue(glob.is_magic("test\\", flags=flags))
+        self.assertTrue(glob.is_magic(r"te\\st", flags=flags))
+        self.assertTrue(glob.is_magic(r"te\st", flags=flags))
         self.assertTrue(glob.is_magic("test!", flags=flags))
         self.assertTrue(glob.is_magic("test|", flags=flags))
         self.assertTrue(glob.is_magic("test(", flags=flags))
@@ -1828,7 +1829,8 @@ class TestIsMagic(unittest.TestCase):
         self.assertTrue(glob.is_magic(b"test[", flags=flags))
         self.assertTrue(glob.is_magic(b"test]", flags=flags))
         self.assertTrue(glob.is_magic(b"test?", flags=flags))
-        self.assertTrue(glob.is_magic(b"test\\", flags=flags))
+        self.assertTrue(glob.is_magic(rb"te\\st", flags=flags))
+        self.assertTrue(glob.is_magic(rb"te\st", flags=flags))
         self.assertTrue(glob.is_magic(b"test!", flags=flags))
         self.assertTrue(glob.is_magic(b"test|", flags=flags))
         self.assertTrue(glob.is_magic(b"test(", flags=flags))
@@ -1857,7 +1859,7 @@ class TestIsMagic(unittest.TestCase):
 
         self.assertTrue(glob.is_magic('//?/UNC/server/*[]!|(){}|~-/', flags=flags | glob.BRACE))
         self.assertTrue(glob.is_magic('//?/UNC/server/*[]!(){}|~-/', flags=flags | glob.SPLIT))
-        self.assertTrue(glob.is_magic('\\\\server\\mount\\', flags=flags))
+        self.assertTrue(glob.is_magic(r'\\\\server\\mount\\', flags=flags))
 
 
 class TestExpansionLimit(unittest.TestCase):

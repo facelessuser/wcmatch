@@ -118,7 +118,7 @@ def escape(pattern):
 
 
 def is_magic(pattern, *, flags=0):
-    """Check if the path is likely to be magic."""
+    """Check if the pattern is likely to be magic."""
 
     flags = _flag_transform(flags)
     return _wcparse.is_magic(pattern, flags)

@@ -424,10 +424,8 @@ def is_magic(pattern, flags=0):
 
     if ptype == BYTES:
         slash = b'\\'
-        double_slash = b'\\\\'
     else:
         slash = '\\'
-        double_slash = '\\\\'
 
     magic = set()
     magic_drive = set() if unix else set(slash)
@@ -448,8 +446,6 @@ def is_magic(pattern, flags=0):
             magic |= MAGIC_MINUS_NEGATE[ptype]
         else:
             magic |= MAGIC_NEGATE[ptype]
-
-    pattern = pattern.replace(slash, double_slash)
 
     length = 0
     if ((unix is None and util.platform() == "windows") or unix is False):
