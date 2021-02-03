@@ -2,6 +2,8 @@
 """Tests for `fnmatch`."""
 import unittest
 import re
+import sys
+import os
 import pytest
 import wcmatch.fnmatch as fnmatch
 from unittest import mock
@@ -582,6 +584,122 @@ class TestIsMagic(unittest.TestCase):
 
         self.assertFalse(fnmatch.is_magic("test-~", flags=flags))
         self.assertFalse(fnmatch.is_magic("test!~", flags=flags | fnmatch.MINUSNEGATE))
+
+
+class TestFnMatchEscapes(unittest.TestCase):
+    """Test escaping."""
+
+    def check_escape(self, arg, expected, raw=False, unix=None, raw_chars=True):
+        """Verify escapes."""
+
+        flags = 0
+        if unix is False:
+            flags = fnmatch.FORCEWIN
+        elif unix is True:
+            flags = fnmatch.FORCEUNIX
+
+        if raw:
+            self.assertEqual(fnmatch.raw_escape(arg, raw_chars=raw_chars), expected)
+            self.assertEqual(fnmatch.raw_escape(os.fsencode(arg), raw_chars=raw_chars), os.fsencode(expected))
+            file = (util.norm_pattern(arg, False, True) if raw_chars else arg).replace('\\\\', '\\')
+            self.assertTrue(
+                fnmatch.fnmatch(
+                    file,
+                    fnmatch.raw_escape(arg, raw_chars=raw_chars),
+                    flags=flags
+                )
+            )
+        else:
+            self.assertEqual(fnmatch.escape(arg), expected)
+            self.assertEqual(fnmatch.escape(os.fsencode(arg)), os.fsencode(expected))
+            self.assertTrue(
+                fnmatch.fnmatch(
+                    arg,
+                    fnmatch.escape(arg),
+                    flags=flags
+                )
+            )
+
+    def test_escape(self):
+        """Test path escapes."""
+
+        check = self.check_escape
+        check('abc', 'abc')
+        check('[', r'\[')
+        check('?', r'\?')
+        check('*', r'\*')
+        check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_\]\]')
+        check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_\]\]/')
+
+    def test_raw_escape(self):
+        """Test path escapes."""
+
+        check = self.check_escape
+        check(r'abc', 'abc', raw=True)
+        check(r'[', r'\[', raw=True)
+        check(r'?', r'\?', raw=True)
+        check(r'*', r'\*', raw=True)
+        check(r'[[_/*?*/_]]', r'\[\[_/\*\?\*/_\]\]', raw=True)
+        check(r'/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_\]\]/', raw=True)
+        check(r'\x3f', r'\?', raw=True)
+        # `fnmatch` doesn't care about drives
+        check(r'\\\\[^what]\\name\\temp', r'\\\\\[^what\]\\name\\temp', raw=True, unix=False)
+        check('//[^what]/name/temp', r'//\[^what\]/name/temp', raw=True, unix=False)
+
+    def test_raw_escape_no_raw_chars(self):
+        """Test path escapes with no raw character translations."""
+
+        check = self.check_escape
+        check(r'abc', 'abc', raw=True, raw_chars=False)
+        check(r'[', r'\[', raw=True, raw_chars=False)
+        check(r'?', r'\?', raw=True, raw_chars=False)
+        check(r'*', r'\*', raw=True, raw_chars=False)
+        check(r'[[_/*?*/_]]', r'\[\[_/\*\?\*/_\]\]', raw=True, raw_chars=False)
+        check(r'/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_\]\]/', raw=True, raw_chars=False)
+        check(r'\x3f', r'\\x3f', raw=True, raw_chars=False)
+        # `fnmatch` doesn't care about drives
+        check(r'\\\\[^what]\\name\\temp', r'\\\\\[^what\]\\name\\temp', raw=True, raw_chars=False, unix=False)
+        check('//[^what]/name/temp', r'//\[^what\]/name/temp', raw=True, raw_chars=False, unix=False)
+
+    @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
+    def test_escape_windows(self):
+        """Test windows escapes."""
+
+        check = self.check_escape
+        # `fnmatch` doesn't care about drives
+        check('a:\\?', r'a:\\\?')
+        check('b:\\*', r'b:\\\*')
+        check('\\\\?\\c:\\?', r'\\\\\?\\c:\\\?')
+        check('\\\\*\\*\\*', r'\\\\\*\\\*\\\*')
+        check('//?/c:/?', r'//\?/c:/\?')
+        check('//*/*/*', r'//\*/\*/\*')
+        check('//[^what]/name/temp', r'//\[^what\]/name/temp')
+
+    def test_escape_forced_windows(self):
+        """Test forced windows escapes."""
+
+        check = self.check_escape
+        # `fnmatch` doesn't care about drives
+        check('a:\\?', r'a:\\\?', unix=False)
+        check('b:\\*', r'b:\\\*', unix=False)
+        check('\\\\?\\c:\\?', r'\\\\\?\\c:\\\?', unix=True)
+        check('\\\\*\\*\\*', r'\\\\\*\\\*\\\*', unix=True)
+        check('//?/c:/?', r'//\?/c:/\?', unix=True)
+        check('//*/*/*', r'//\*/\*/\*', unix=True)
+        check('//[^what]/name/temp', r'//\[^what\]/name/temp', unix=True)
+
+    def test_escape_forced_unix(self):
+        """Test forced windows Unix."""
+
+        check = self.check_escape
+        # `fnmatch` doesn't care about drives
+        check('a:\\?', r'a:\\\?', unix=True)
+        check('b:\\*', r'b:\\\*', unix=True)
+        check('\\\\?\\c:\\?', r'\\\\\?\\c:\\\?', unix=True)
+        check('\\\\*\\*\\*', r'\\\\\*\\\*\\\*', unix=True)
+        check('//?/c:/?', r'//\?/c:/\?', unix=True)
+        check('//*/*/*', r'//\*/\*/\*', unix=True)
+        check('//[^what]/name/temp', r'//\[^what\]/name/temp', unix=True)
 
 
 class TestExpansionLimit(unittest.TestCase):

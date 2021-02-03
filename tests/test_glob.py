@@ -1287,7 +1287,7 @@ class TestGlobEscapes(unittest.TestCase):
         check('\\\\*\\*\\*', r'\\\\\*\\\*\\\*', unix=True)
         check('//?/c:/?', r'//\?/c:/\?', unix=True)
         check('//*/*/*', r'//\*/\*/\*', unix=True)
-        check('//[^what]/name/temp', r'//\[\^what\]/name/temp', unix=True)
+        check('//[^what]/name/temp', r'//\[^what\]/name/temp', unix=True)
 
 
 @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")

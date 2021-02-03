@@ -173,7 +173,7 @@ def escape(pattern):
 
 This escapes special glob meta characters so they will be treated as literal characters. It escapes using backslashes.
 It will conservatively escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `{`, `}`. and `\` regardless of what feature
-is or is not enabled. Its intended use is escaping filenames or filename parts for use in patterns.
+is or is not enabled. Its intended use is escaping a filename for use in a pattern.
 
 ```pycon3
 >>> from wcmatch import fnmatch
