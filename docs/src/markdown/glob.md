@@ -503,9 +503,9 @@ is or is not enabled. Its intended use is escaping paths or path parts for use i
 True
 ```
 
-`escape` can also handle Windows style with `/` or `\` path separators. It is usually recommended to use `/` as Windows
-backslashes are only supported via a special escape, so `\` is expanded to an escaped back slash (represented in a raw
-string as `#!py3 r'\\'` or a normal string as `#!py3 '\\\\'`).
+`escape` can also handle Windows style paths with `/` or `\` path separators. It is usually recommended to use `/` as
+Windows backslashes are only supported via a special escape, but `\` will be expanded to an escaped backslash
+(represented in a raw string as `#!py3 r'\\'` or a normal string as `#!py3 '\\\\'`).
 
 ```pycon3
 >>> from wmcatch import glob

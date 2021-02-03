@@ -105,13 +105,13 @@ def filter(filenames, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):  # no
     return matches
 
 
-def raw_escape(pattern, unix=None, raw_chars=True):
+def raw_escape(pattern, raw_chars=True):
     """Apply raw character transform before applying escape."""
 
     return _wcparse.raw_escape(pattern, unix, raw_chars)
 
 
-def escape(pattern, unix=None):
+def escape(pattern):
     """Escape."""
 
     return _wcparse.escape(pattern, unix)
