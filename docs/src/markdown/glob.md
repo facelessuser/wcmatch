@@ -519,10 +519,10 @@ True
 True
 ```
 
-On a Windows system, meta characters are not processed in drives/mounts except pattern expansion characters such `{`,
-`}`, and `|` when using [`BRACE`](#brace) and/or [`SPLIT`](#split). These pattern expansion happens in an earlier step
-and are handled a bit differently. These characters are the only ones that need to be escaped in Windows drives and will
-be properly escaped by `escape`.
+On a Windows system, meta characters are not processed in drives/UNC mounts except for pattern expansion characters.
+`{`, `}`, and `|`, when using [`BRACE`](#brace) and/or [`SPLIT`](#split), are the only meta characters that can affect
+drives/UNC mounts; therefore, they are the only characters that need to be escaped. `escape`, when it detects or is
+informed that it is processing a Windows path, will properly find and handle these drives/UNC mounts.
 
 ```pycon3
 >>> from wmcatch import glob
@@ -576,7 +576,7 @@ But when in a GUI interface, if a user inputs the same, it's like getting a raw 
 ```
 
 `raw_escape` will take a raw string in the above format and resolve character escapes and escape the path as if it was
-a normal string.  Notice to do this, we must treat literal Window's path backslashes as an escaped backslash.
+a normal string.  Notice to do this, we must treat literal Windows' path backslashes as an escaped backslash.
 
 ```pycon3
 >>> glob.escape('folder\\El Ni\u00f1o', unix=False)
@@ -615,6 +615,58 @@ escaping will be used.
     drives manually in their match patterns as well.
 
     `raw_chars` option was added.
+
+### `glob.is_magic` {: #is_magic}
+
+```py3
+def is_magic(pattern, *, flags=0):
+    """Check if the pattern is likely to be magic."""
+```
+
+This checks a given `pattern` to see if "magic" symbols are present or not. The check is based on the enabled features
+via `flags`.
+
+```pycon3
+>>> glob.is_magic('test')
+False
+>>> glob.is_magic('[test]ing?')
+True
+```
+
+Wildcard Match treats `\` as special/magic as it is used to escape characters. In general, even though Wildcard Match
+will treat an escaped backslash as a directory separator on Windows, it is recommend to use `/` for directory
+separators. If you just want to check a Windows path for magic characters, you can covert separators to `/`. And if you
+are on Linux/Unix and for some reason chose to use `\` in your file name, it will also be considered magic.
+
+When `is_magic` is called, the system it is called on is detected automatically and/or inferred from flags such as
+[`FORCEUNIX`](#forceunix) or [`FORCEWIN`](#forcewin). If the pattern is checked against a Windows system, UNC server/mount
+names will be detected and treated differently. Wildcard Match cannot detect and glob all possible connected server
+names, so they are treated differently and cannot contain magic except in three cases:
+
+1. The drive is using backslashes as backslashes are treated as magic.
+2. [`BRACE`](#brace) is enabled and either `{` or `}` are found in the drive name.
+3. [`SPLIT`](#split) is enabled and `|` is found in the drive name.
+
+```pycon3
+>>> glob.is_magic('//?/UNC/server/mount{}/', flags=glob.FORCEWIN)
+False
+>>> glob.is_magic('//?/UNC/server/mount{}/', flags=glob.FORCEWIN | glob.BRACE)
+True
+```
+
+The table below illustrates which symbols are searched for based on the given feature, the first row being the base
+symbols that are checked. In the case of [`NEGATE`](#negate), if [`MINUSNEGATE`](#minusnegate) is also enabled,
+[`MINUSNEGATE`](#minusnegate)'s symbols will be searched instead of [`NEGATE`](#negate)'s symbols.
+
+Features                      | Symbols
+----------------------------- | -------
+                              | `?*[]\`
+[`EXTMATCH`](#extmatch)       | `()`
+[`BRACE`](#brace)             | `{}`
+[`NEGATE`](#negate)           | `!`
+[`MINUSNEGATE`](#minusnegate) | `-`
+[`SPLIT`](#split)             | `|`
+[`GLOBTILDE`](#globtilde)     | `~`
 
 ## Flags
 

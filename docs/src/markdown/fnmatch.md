@@ -238,6 +238,35 @@ Outside of the treatment of `\`, `raw_escape` will function just like [`escape`]
 !!! new "New 8.1"
     A `raw_escape` variant for `fnmatch` was made available in 8.1.
 
+### `fnmatch.is_magic` {: #is_magic}
+
+```py3
+def is_magic(pattern, *, flags=0):
+    """Check if the pattern is likely to be magic."""
+```
+
+This checks a given `pattern` to see if it is "magic" or not. The check is based on the enabled features via `flags`.
+
+```pycon3
+>>> fnmatch.is_magic('test')
+False
+>>> fnmatch.is_magic('[test]ing?')
+True
+```
+
+The table below illustrates which symbols are searched for based on the given feature, the first row being the base
+symbols that are checked. In the case of [`NEGATE`](#negate), if [`MINUSNEGATE`](#minusnegate) is also enabled,
+[`MINUSNEGATE`](#minusnegate)'s symbols will be searched instead of [`NEGATE`](#negate)'s symbols.
+
+Features                      | Symbols
+----------------------------- | -------
+                              | `?*[]\`
+[`EXTMATCH`](#extmatch)       | `()`
+[`BRACE`](#brace)             | `{}`
+[`NEGATE`](#negate)           | `!`
+[`MINUSNEGATE`](#minusnegate) | `-`
+[`SPLIT`](#split)             | `|`
+
 ## Flags
 
 #### `fnmatch.CASE, fnmatch.C` {: #case}
