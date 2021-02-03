@@ -420,10 +420,17 @@ def is_magic(pattern, flags=0):
     unix = is_unix_style(flags)
 
     ptype = BYTES if isinstance(pattern, bytes) else UNICODE
-    drive_pat = RE_WIN_DRIVE_MAGIC[ptype]
+    drive_pat = RE_WIN_DRIVE[ptype]
+
+    if ptype == BYTES:
+        slash = b'\\'
+        double_slash = b'\\\\'
+    else:
+        slash = '\\'
+        double_slash = '\\\\'
 
     magic = set()
-    magic_drive = set()
+    magic_drive = set() if unix else set(slash)
 
     magic |= MAGIC_DEF[ptype]
     if flags & BRACE:
@@ -441,6 +448,8 @@ def is_magic(pattern, flags=0):
             magic |= MAGIC_MINUS_NEGATE[ptype]
         else:
             magic |= MAGIC_NEGATE[ptype]
+
+    pattern = pattern.replace(slash, double_slash)
 
     length = 0
     if ((unix is None and util.platform() == "windows") or unix is False):

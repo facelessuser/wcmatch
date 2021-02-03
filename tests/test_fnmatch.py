@@ -481,6 +481,109 @@ class TestFnMatchTranslate(unittest.TestCase):
         self.assertTrue(len(fnmatch.translate(b'!test', flags=fnmatch.N | fnmatch.A)[0]) == 1)
 
 
+class TestIsMagic(unittest.TestCase):
+    """Test "is magic" logic."""
+
+    def test_default(self):
+        """Test default magic."""
+
+        self.assertTrue(fnmatch.is_magic("test*"))
+        self.assertTrue(fnmatch.is_magic("test["))
+        self.assertTrue(fnmatch.is_magic("test]"))
+        self.assertTrue(fnmatch.is_magic("test?"))
+        self.assertTrue(fnmatch.is_magic("test\\"))
+
+        self.assertFalse(fnmatch.is_magic("test~!()-/|{}"))
+
+    def test_extmatch(self):
+        """Test extended match magic."""
+
+        self.assertTrue(fnmatch.is_magic("test*", flags=fnmatch.EXTMATCH))
+        self.assertTrue(fnmatch.is_magic("test[", flags=fnmatch.EXTMATCH))
+        self.assertTrue(fnmatch.is_magic("test]", flags=fnmatch.EXTMATCH))
+        self.assertTrue(fnmatch.is_magic("test?", flags=fnmatch.EXTMATCH))
+        self.assertTrue(fnmatch.is_magic("test\\", flags=fnmatch.EXTMATCH))
+        self.assertTrue(fnmatch.is_magic("test(", flags=fnmatch.EXTMATCH))
+        self.assertTrue(fnmatch.is_magic("test)", flags=fnmatch.EXTMATCH))
+
+        self.assertFalse(fnmatch.is_magic("test~!-/|{}", flags=fnmatch.EXTMATCH))
+
+    def test_negate(self):
+        """Test negate magic."""
+
+        self.assertTrue(fnmatch.is_magic("test*", flags=fnmatch.NEGATE))
+        self.assertTrue(fnmatch.is_magic("test[", flags=fnmatch.NEGATE))
+        self.assertTrue(fnmatch.is_magic("test]", flags=fnmatch.NEGATE))
+        self.assertTrue(fnmatch.is_magic("test?", flags=fnmatch.NEGATE))
+        self.assertTrue(fnmatch.is_magic("test\\", flags=fnmatch.NEGATE))
+        self.assertTrue(fnmatch.is_magic("test!", flags=fnmatch.NEGATE))
+
+        self.assertFalse(fnmatch.is_magic("test~()-/|{}", flags=fnmatch.NEGATE))
+
+    def test_minusnegate(self):
+        """Test minus negate magic."""
+
+        self.assertTrue(fnmatch.is_magic("test*", flags=fnmatch.NEGATE | fnmatch.MINUSNEGATE))
+        self.assertTrue(fnmatch.is_magic("test[", flags=fnmatch.NEGATE | fnmatch.MINUSNEGATE))
+        self.assertTrue(fnmatch.is_magic("test]", flags=fnmatch.NEGATE | fnmatch.MINUSNEGATE))
+        self.assertTrue(fnmatch.is_magic("test?", flags=fnmatch.NEGATE | fnmatch.MINUSNEGATE))
+        self.assertTrue(fnmatch.is_magic("test\\", flags=fnmatch.NEGATE | fnmatch.MINUSNEGATE))
+        self.assertTrue(fnmatch.is_magic("test-", flags=fnmatch.NEGATE | fnmatch.MINUSNEGATE))
+
+        self.assertFalse(fnmatch.is_magic("test~()!/|{}", flags=fnmatch.NEGATE | fnmatch.MINUSNEGATE))
+
+    def test_brace(self):
+        """Test brace magic."""
+
+        self.assertTrue(fnmatch.is_magic("test*", flags=fnmatch.BRACE))
+        self.assertTrue(fnmatch.is_magic("test[", flags=fnmatch.BRACE))
+        self.assertTrue(fnmatch.is_magic("test]", flags=fnmatch.BRACE))
+        self.assertTrue(fnmatch.is_magic("test?", flags=fnmatch.BRACE))
+        self.assertTrue(fnmatch.is_magic("test\\", flags=fnmatch.BRACE))
+        self.assertTrue(fnmatch.is_magic("test{", flags=fnmatch.BRACE))
+        self.assertTrue(fnmatch.is_magic("test}", flags=fnmatch.BRACE))
+
+        self.assertFalse(fnmatch.is_magic("test~!-/|", flags=fnmatch.BRACE))
+
+    def test_split(self):
+        """Test split magic."""
+
+        self.assertTrue(fnmatch.is_magic("test*", flags=fnmatch.SPLIT))
+        self.assertTrue(fnmatch.is_magic("test[", flags=fnmatch.SPLIT))
+        self.assertTrue(fnmatch.is_magic("test]", flags=fnmatch.SPLIT))
+        self.assertTrue(fnmatch.is_magic("test?", flags=fnmatch.SPLIT))
+        self.assertTrue(fnmatch.is_magic("test\\", flags=fnmatch.SPLIT))
+        self.assertTrue(fnmatch.is_magic("test|", flags=fnmatch.SPLIT))
+
+        self.assertFalse(fnmatch.is_magic("test~()-!/", flags=fnmatch.SPLIT))
+
+    def test_all(self):
+        """Test tilde magic."""
+
+        flags = (
+            fnmatch.EXTMATCH |
+            fnmatch.NEGATE |
+            fnmatch.BRACE |
+            fnmatch.SPLIT
+        )
+
+        self.assertTrue(fnmatch.is_magic("test*", flags=flags))
+        self.assertTrue(fnmatch.is_magic("test[", flags=flags))
+        self.assertTrue(fnmatch.is_magic("test]", flags=flags))
+        self.assertTrue(fnmatch.is_magic("test?", flags=flags))
+        self.assertTrue(fnmatch.is_magic("test\\", flags=flags))
+        self.assertTrue(fnmatch.is_magic("test!", flags=flags))
+        self.assertTrue(fnmatch.is_magic("test|", flags=flags))
+        self.assertTrue(fnmatch.is_magic("test(", flags=flags))
+        self.assertTrue(fnmatch.is_magic("test)", flags=flags))
+        self.assertTrue(fnmatch.is_magic("test{", flags=flags))
+        self.assertTrue(fnmatch.is_magic("test}", flags=flags))
+        self.assertTrue(fnmatch.is_magic("test-", flags=flags | fnmatch.MINUSNEGATE))
+
+        self.assertFalse(fnmatch.is_magic("test-~", flags=flags))
+        self.assertFalse(fnmatch.is_magic("test!~", flags=flags | fnmatch.MINUSNEGATE))
+
+
 class TestExpansionLimit(unittest.TestCase):
     """Test expansion limits."""
 
