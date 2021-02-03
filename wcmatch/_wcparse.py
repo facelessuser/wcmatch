@@ -314,19 +314,19 @@ class PatternLimitException(Exception):
     """Pattern limit exception."""
 
 
-def raw_escape(pattern, unix=None, raw_chars=True):
+def raw_escape(pattern, unix=None, raw_chars=True, pathname=False):
     """Apply raw character transform before applying escape."""
 
-    return _escape(util.norm_pattern(pattern, False, raw_chars, True), unix, True)
+    return _escape(util.norm_pattern(pattern, False, raw_chars, True), unix, True, pathname=pathname)
 
 
-def escape(pattern, unix=None):
+def escape(pattern, unix=None, pathname=False):
     """Normal escape."""
 
-    return _escape(pattern, unix)
+    return _escape(pattern, unix, pathname=pathname)
 
 
-def _escape(pattern, unix=None, raw=False):
+def _escape(pattern, unix=None, raw=False, pathname=False):
     """Escape."""
 
     if isinstance(pattern, bytes):
@@ -354,7 +354,7 @@ def _escape(pattern, unix=None, raw=False):
     # So we shouldn't escape them as we'll just have to
     # detect and undo it later.
     length = 0
-    if ((unix is None and util.platform() == "windows") or unix is False):
+    if pathname and ((unix is None and util.platform() == "windows") or unix is False):
         m = drive_pat.match(pattern)
         if m:
             # Replace splitting magic chars
