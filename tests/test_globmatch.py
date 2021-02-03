@@ -1813,6 +1813,34 @@ class TestIsMagic(unittest.TestCase):
         self.assertFalse(glob.is_magic("test-", flags=flags))
         self.assertFalse(glob.is_magic("test!", flags=flags | glob.MINUSNEGATE))
 
+    def test_all_bytes(self):
+        """Test tilde magic."""
+
+        flags = (
+            glob.EXTGLOB |
+            glob.NEGATE |
+            glob.BRACE |
+            glob.SPLIT |
+            glob.GLOBTILDE
+        )
+
+        self.assertTrue(glob.is_magic(b"test*", flags=flags))
+        self.assertTrue(glob.is_magic(b"test[", flags=flags))
+        self.assertTrue(glob.is_magic(b"test]", flags=flags))
+        self.assertTrue(glob.is_magic(b"test?", flags=flags))
+        self.assertTrue(glob.is_magic(b"test\\", flags=flags))
+        self.assertTrue(glob.is_magic(b"test!", flags=flags))
+        self.assertTrue(glob.is_magic(b"test|", flags=flags))
+        self.assertTrue(glob.is_magic(b"test(", flags=flags))
+        self.assertTrue(glob.is_magic(b"test)", flags=flags))
+        self.assertTrue(glob.is_magic(b"test{", flags=flags))
+        self.assertTrue(glob.is_magic(b"test}", flags=flags))
+        self.assertTrue(glob.is_magic(b"test~", flags=flags))
+        self.assertTrue(glob.is_magic(b"test-", flags=flags | glob.MINUSNEGATE))
+
+        self.assertFalse(glob.is_magic(b"test-", flags=flags))
+        self.assertFalse(glob.is_magic(b"test!", flags=flags | glob.MINUSNEGATE))
+
     def test_win_path(self):
         """Test windows path."""
 

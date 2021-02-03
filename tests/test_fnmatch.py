@@ -585,6 +585,32 @@ class TestIsMagic(unittest.TestCase):
         self.assertFalse(fnmatch.is_magic("test-~", flags=flags))
         self.assertFalse(fnmatch.is_magic("test!~", flags=flags | fnmatch.MINUSNEGATE))
 
+    def test_all_bytes(self):
+        """Test tilde magic."""
+
+        flags = (
+            fnmatch.EXTMATCH |
+            fnmatch.NEGATE |
+            fnmatch.BRACE |
+            fnmatch.SPLIT
+        )
+
+        self.assertTrue(fnmatch.is_magic(b"test*", flags=flags))
+        self.assertTrue(fnmatch.is_magic(b"test[", flags=flags))
+        self.assertTrue(fnmatch.is_magic(b"test]", flags=flags))
+        self.assertTrue(fnmatch.is_magic(b"test?", flags=flags))
+        self.assertTrue(fnmatch.is_magic(b"test\\", flags=flags))
+        self.assertTrue(fnmatch.is_magic(b"test!", flags=flags))
+        self.assertTrue(fnmatch.is_magic(b"test|", flags=flags))
+        self.assertTrue(fnmatch.is_magic(b"test(", flags=flags))
+        self.assertTrue(fnmatch.is_magic(b"test)", flags=flags))
+        self.assertTrue(fnmatch.is_magic(b"test{", flags=flags))
+        self.assertTrue(fnmatch.is_magic(b"test}", flags=flags))
+        self.assertTrue(fnmatch.is_magic(b"test-", flags=flags | fnmatch.MINUSNEGATE))
+
+        self.assertFalse(fnmatch.is_magic(b"test-~", flags=flags))
+        self.assertFalse(fnmatch.is_magic(b"test!~", flags=flags | fnmatch.MINUSNEGATE))
+
 
 class TestFnMatchEscapes(unittest.TestCase):
     """Test escaping."""
