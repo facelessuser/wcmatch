@@ -108,13 +108,13 @@ def filter(filenames, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):  # no
 def raw_escape(pattern, raw_chars=True):
     """Apply raw character transform before applying escape."""
 
-    return _wcparse.raw_escape(pattern, unix, raw_chars)
+    return _wcparse.raw_escape(pattern, raw_chars=raw_chars)
 
 
 def escape(pattern):
     """Escape."""
 
-    return _wcparse.escape(pattern, unix)
+    return _wcparse.escape(pattern)
 
 
 def is_magic(pattern, *, flags=0):
