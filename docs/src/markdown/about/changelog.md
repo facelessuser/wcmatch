@@ -1,7 +1,8 @@
 # Changelog
 
-## 8.0.2
+## 8.1.dev
 
+- **NEW**: Add `is_magic` function to the `glob` library.
 - **FIX**: Use `os.fspath` to convert path-like objects to string, whatever the preferred return for `os.path` is what
   Wildcard Match will accept. Don't try to convert paths via `__str__` or `__bytes__`.
 - **FIX**: Better checking of types to ensure consistent failure if the path, pattern, or root directory of are not all

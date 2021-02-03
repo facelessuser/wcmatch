@@ -37,6 +37,7 @@ configurability
 deMorgan
 deduping
 deprecations
+dev
 falsy
 filename
 filenames
