@@ -550,6 +550,19 @@ escaping will be used.
 
 #### `glob.raw_escape` {: #raw_escape}
 
+!!! warning "Deprecated 8.1"
+    In 8.1, `raw_escape` has been deprecated. The same can be accomplished simply by using `codecs` and then using the
+    normal [`escape`](#escape):
+
+    ```pycon3
+    >>> string = r"translate\\raw strings\\\u00c3\xc3\303\N{LATIN CAPITAL LETTER A WITH TILDE}"
+    >>> translated = codecs.decode(string, 'unicode_escape')
+    >>> glob.escape(translated)
+    'translate\\\\raw strings\\\\ÃÃÃÃ'
+    >>> glob.raw_escape(string)
+    'translate\\\\raw strings\\\\ÃÃÃÃ'
+    ```
+
 ```py3
 def raw_escape(pattern, unix=None, raw_chars=True):
 ```

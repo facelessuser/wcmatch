@@ -603,6 +603,7 @@ def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=_wcparse.PA
     return matches
 
 
+@util.deprecated("This function will be removed in 9.0.")
 def raw_escape(pattern, unix=None, raw_chars=True):
     """Apply raw character transform before applying escape."""
 

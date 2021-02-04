@@ -186,58 +186,6 @@ True
 !!! new "New 8.1"
     An `escape` variant for `fnmatch` was made available in 8.1.
 
-#### `glob.raw_escape` {: #raw_escape}
-
-```py3
-def raw_escape(pattern, raw_chars=True):
-```
-
-`raw_escape` is kind of a niche function and 99% of the time, it is recommended to use [`escape`](#escape).
-
-The big difference between `raw_escape` and [`escape`](#escape) is how `\` are handled. `raw_escape` is mainly for
-filenames provided to Python via an interface that doesn't process Python strings like they normally are, for instance
-an input in a GUI.
-
-To illustrate, you may have an interface to input path names, but may want to take advantage of Python Unicode
-references. Normally, on a python command line, you can do this:
-
-```pycon3
->>> 'El Ni\u00f1o'
-'El Niño'
-```
-
-But when in a GUI interface, if a user inputs the same, it's like getting a raw string.
-
-```pycon3
->>> r'El Ni\u00f1o'
-'El Ni\\u00f1o'
-```
-
-`raw_escape` will take a raw string in the above format and resolve character escapes and escape the filename as if it
-was a normal string. Backslashes aren't normally used in filenames, but if we wanted to use them, we must treat literal
-backslashes as an escaped backslash.
-
-```pycon3
->>> fnmatch.escape('folder\\El Ni\u00f1o', unix=False)
-'folder\\\\El Niño'
->>> fnmatch.raw_escape(r'folder\\El Ni\u00f1o')
-'folder\\\\El Niño'
-```
-
-Handling of raw character references can be turned off if desired:
-
-```pycon3
->>> glob.raw_escape(r'my\\file-\x31.txt', unix=False)
-'my\\\\file\\-1.txt'
->>> glob.raw_escape(r'my\\file-\x31.txt', unix=False, raw_chars=False)
-'my\\\\file\\-\\\\x31.txt'
-```
-
-Outside of the treatment of `\`, `raw_escape` will function just like [`escape`](#escape):
-
-!!! new "New 8.1"
-    A `raw_escape` variant for `fnmatch` was made available in 8.1.
-
 ### `fnmatch.is_magic` {: #is_magic}
 
 ```py3
