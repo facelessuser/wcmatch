@@ -23,16 +23,16 @@ theme:
     - navigation.tabs
 
 nav:
-  - Wildcard Match:
+  - Home:
       - Introduction: index.md
   - Fnmatch:
-      - API: fnmatch.md
+      - Usage: fnmatch.md
   - Glob:
-      - API: glob.md
+      - Usage: glob.md
   - Pathlib:
-      - API: pathlib.md
+      - Usage: pathlib.md
   - Wcmatch:
-      - API: wcmatch.md
+      - Usage: wcmatch.md
   - About:
       - Contributing &amp; Support: about/contributing.md
       - Changelog: about/changelog.md
