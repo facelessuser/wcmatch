@@ -1697,6 +1697,171 @@ class TestTilde(unittest.TestCase):
         self.assertNotEqual(len(files), len(gfiles))
 
 
+class TestIsMagic(unittest.TestCase):
+    """Test "is magic" logic."""
+
+    def test_default(self):
+        """Test default magic."""
+
+        self.assertTrue(glob.is_magic("test*"))
+        self.assertTrue(glob.is_magic("test["))
+        self.assertTrue(glob.is_magic("test]"))
+        self.assertTrue(glob.is_magic("test?"))
+        self.assertTrue(glob.is_magic("test\\"))
+
+        self.assertFalse(glob.is_magic("test~!()-/|{}"))
+
+    def test_extmatch(self):
+        """Test extended match magic."""
+
+        self.assertTrue(glob.is_magic("test*", flags=glob.EXTGLOB))
+        self.assertTrue(glob.is_magic("test[", flags=glob.EXTGLOB))
+        self.assertTrue(glob.is_magic("test]", flags=glob.EXTGLOB))
+        self.assertTrue(glob.is_magic("test?", flags=glob.EXTGLOB))
+        self.assertTrue(glob.is_magic("test\\", flags=glob.EXTGLOB))
+        self.assertTrue(glob.is_magic("test(", flags=glob.EXTGLOB))
+        self.assertTrue(glob.is_magic("test)", flags=glob.EXTGLOB))
+
+        self.assertFalse(glob.is_magic("test~!-/|{}", flags=glob.EXTGLOB))
+
+    def test_negate(self):
+        """Test negate magic."""
+
+        self.assertTrue(glob.is_magic("test*", flags=glob.NEGATE))
+        self.assertTrue(glob.is_magic("test[", flags=glob.NEGATE))
+        self.assertTrue(glob.is_magic("test]", flags=glob.NEGATE))
+        self.assertTrue(glob.is_magic("test?", flags=glob.NEGATE))
+        self.assertTrue(glob.is_magic("test\\", flags=glob.NEGATE))
+        self.assertTrue(glob.is_magic("test!", flags=glob.NEGATE))
+
+        self.assertFalse(glob.is_magic("test~()-/|{}", flags=glob.NEGATE))
+
+    def test_minusnegate(self):
+        """Test minus negate magic."""
+
+        self.assertTrue(glob.is_magic("test*", flags=glob.NEGATE | glob.MINUSNEGATE))
+        self.assertTrue(glob.is_magic("test[", flags=glob.NEGATE | glob.MINUSNEGATE))
+        self.assertTrue(glob.is_magic("test]", flags=glob.NEGATE | glob.MINUSNEGATE))
+        self.assertTrue(glob.is_magic("test?", flags=glob.NEGATE | glob.MINUSNEGATE))
+        self.assertTrue(glob.is_magic("test\\", flags=glob.NEGATE | glob.MINUSNEGATE))
+        self.assertTrue(glob.is_magic("test-", flags=glob.NEGATE | glob.MINUSNEGATE))
+
+        self.assertFalse(glob.is_magic("test~()!/|{}", flags=glob.NEGATE | glob.MINUSNEGATE))
+
+    def test_brace(self):
+        """Test brace magic."""
+
+        self.assertTrue(glob.is_magic("test*", flags=glob.BRACE))
+        self.assertTrue(glob.is_magic("test[", flags=glob.BRACE))
+        self.assertTrue(glob.is_magic("test]", flags=glob.BRACE))
+        self.assertTrue(glob.is_magic("test?", flags=glob.BRACE))
+        self.assertTrue(glob.is_magic("test\\", flags=glob.BRACE))
+        self.assertTrue(glob.is_magic("test{", flags=glob.BRACE))
+        self.assertTrue(glob.is_magic("test}", flags=glob.BRACE))
+
+        self.assertFalse(glob.is_magic("test~!-/|", flags=glob.BRACE))
+
+    def test_split(self):
+        """Test split magic."""
+
+        self.assertTrue(glob.is_magic("test*", flags=glob.SPLIT))
+        self.assertTrue(glob.is_magic("test[", flags=glob.SPLIT))
+        self.assertTrue(glob.is_magic("test]", flags=glob.SPLIT))
+        self.assertTrue(glob.is_magic("test?", flags=glob.SPLIT))
+        self.assertTrue(glob.is_magic("test\\", flags=glob.SPLIT))
+        self.assertTrue(glob.is_magic("test|", flags=glob.SPLIT))
+
+        self.assertFalse(glob.is_magic("test~()-!/", flags=glob.SPLIT))
+
+    def test_tilde(self):
+        """Test tilde magic."""
+
+        self.assertTrue(glob.is_magic("test*", flags=glob.GLOBTILDE))
+        self.assertTrue(glob.is_magic("test[", flags=glob.GLOBTILDE))
+        self.assertTrue(glob.is_magic("test]", flags=glob.GLOBTILDE))
+        self.assertTrue(glob.is_magic("test?", flags=glob.GLOBTILDE))
+        self.assertTrue(glob.is_magic("test\\", flags=glob.GLOBTILDE))
+        self.assertTrue(glob.is_magic("test~", flags=glob.GLOBTILDE))
+
+        self.assertFalse(glob.is_magic("test|()-!/", flags=glob.GLOBTILDE))
+
+    def test_all(self):
+        """Test tilde magic."""
+
+        flags = (
+            glob.EXTGLOB |
+            glob.NEGATE |
+            glob.BRACE |
+            glob.SPLIT |
+            glob.GLOBTILDE
+        )
+
+        self.assertTrue(glob.is_magic("test*", flags=flags))
+        self.assertTrue(glob.is_magic("test[", flags=flags))
+        self.assertTrue(glob.is_magic("test]", flags=flags))
+        self.assertTrue(glob.is_magic("test?", flags=flags))
+        self.assertTrue(glob.is_magic(r"te\\st", flags=flags))
+        self.assertTrue(glob.is_magic(r"te\st", flags=flags))
+        self.assertTrue(glob.is_magic("test!", flags=flags))
+        self.assertTrue(glob.is_magic("test|", flags=flags))
+        self.assertTrue(glob.is_magic("test(", flags=flags))
+        self.assertTrue(glob.is_magic("test)", flags=flags))
+        self.assertTrue(glob.is_magic("test{", flags=flags))
+        self.assertTrue(glob.is_magic("test}", flags=flags))
+        self.assertTrue(glob.is_magic("test~", flags=flags))
+        self.assertTrue(glob.is_magic("test-", flags=flags | glob.MINUSNEGATE))
+
+        self.assertFalse(glob.is_magic("test-", flags=flags))
+        self.assertFalse(glob.is_magic("test!", flags=flags | glob.MINUSNEGATE))
+
+    def test_all_bytes(self):
+        """Test tilde magic."""
+
+        flags = (
+            glob.EXTGLOB |
+            glob.NEGATE |
+            glob.BRACE |
+            glob.SPLIT |
+            glob.GLOBTILDE
+        )
+
+        self.assertTrue(glob.is_magic(b"test*", flags=flags))
+        self.assertTrue(glob.is_magic(b"test[", flags=flags))
+        self.assertTrue(glob.is_magic(b"test]", flags=flags))
+        self.assertTrue(glob.is_magic(b"test?", flags=flags))
+        self.assertTrue(glob.is_magic(rb"te\\st", flags=flags))
+        self.assertTrue(glob.is_magic(rb"te\st", flags=flags))
+        self.assertTrue(glob.is_magic(b"test!", flags=flags))
+        self.assertTrue(glob.is_magic(b"test|", flags=flags))
+        self.assertTrue(glob.is_magic(b"test(", flags=flags))
+        self.assertTrue(glob.is_magic(b"test)", flags=flags))
+        self.assertTrue(glob.is_magic(b"test{", flags=flags))
+        self.assertTrue(glob.is_magic(b"test}", flags=flags))
+        self.assertTrue(glob.is_magic(b"test~", flags=flags))
+        self.assertTrue(glob.is_magic(b"test-", flags=flags | glob.MINUSNEGATE))
+
+        self.assertFalse(glob.is_magic(b"test-", flags=flags))
+        self.assertFalse(glob.is_magic(b"test!", flags=flags | glob.MINUSNEGATE))
+
+    def test_win_path(self):
+        """Test windows path."""
+
+        flags = (
+            glob.EXTGLOB |
+            glob.NEGATE |
+            glob.FORCEWIN |
+            glob.GLOBTILDE
+        )
+
+        self.assertFalse(glob.is_magic('//?/UNC/server/*[]!|(){}~-/', flags=flags))
+        self.assertFalse(glob.is_magic('//?/UNC/server/*[]!|()~-/', flags=flags | glob.BRACE))
+        self.assertFalse(glob.is_magic('//?/UNC/server/*[]!(){}~-/', flags=flags | glob.SPLIT))
+
+        self.assertTrue(glob.is_magic('//?/UNC/server/*[]!|(){}|~-/', flags=flags | glob.BRACE))
+        self.assertTrue(glob.is_magic('//?/UNC/server/*[]!(){}|~-/', flags=flags | glob.SPLIT))
+        self.assertTrue(glob.is_magic(r'\\\\server\\mount\\', flags=flags))
+
+
 class TestExpansionLimit(unittest.TestCase):
     """Test expansion limits."""
 

@@ -74,12 +74,42 @@ RE_WIN_DRIVE = (
 )
 
 RE_MAGIC_ESCAPE = (
-    re.compile(r'([-!~*?()\[\]|^{}]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))'),
-    re.compile(br'([-!~*?()\[\]|^{}]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
+    re.compile(r'([-!~*?()\[\]|{}]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))'),
+    re.compile(br'([-!~*?()\[\]|{}]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
 )
+
+MAGIC_DEF = (
+    frozenset("*?[]\\"),
+    frozenset(b"*?[]\\")
+)
+MAGIC_SPLIT = (
+    frozenset("|"),
+    frozenset(b"|")
+)
+MAGIC_NEGATE = (
+    frozenset('!'),
+    frozenset(b'!')
+)
+MAGIC_MINUS_NEGATE = (
+    frozenset('-'),
+    frozenset(b'-')
+)
+MAGIC_TILDE = (
+    frozenset('~'),
+    frozenset(b'~')
+)
+MAGIC_EXTMATCH = (
+    frozenset('()'),
+    frozenset(b'()')
+)
+MAGIC_BRACE = (
+    frozenset("{}"),
+    frozenset(b"{}")
+)
+
 RE_MAGIC = (
-    re.compile(r'([-!~*?(\[|^{\\])'),
-    re.compile(br'([-!~*?(\[|^{\\])')
+    re.compile(r'([-!~*?(\[|{\\])'),
+    re.compile(br'([-!~*?(\[|{\\])')
 )
 RE_WIN_DRIVE_MAGIC = (
     re.compile(r'([{}|]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))'),
@@ -284,19 +314,19 @@ class PatternLimitException(Exception):
     """Pattern limit exception."""
 
 
-def raw_escape(pattern, unix=None, raw_chars=True):
+def raw_escape(pattern, unix=None, raw_chars=True, pathname=False):
     """Apply raw character transform before applying escape."""
 
-    return _escape(util.norm_pattern(pattern, False, raw_chars, True), unix, True)
+    return _escape(util.norm_pattern(pattern, False, raw_chars, True), unix, True, pathname=pathname)
 
 
-def escape(pattern, unix=None):
+def escape(pattern, unix=None, pathname=False):
     """Normal escape."""
 
-    return _escape(pattern, unix)
+    return _escape(pattern, unix, pathname=pathname)
 
 
-def _escape(pattern, unix=None, raw=False):
+def _escape(pattern, unix=None, raw=False, pathname=False):
     """Escape."""
 
     if isinstance(pattern, bytes):
@@ -324,7 +354,7 @@ def _escape(pattern, unix=None, raw=False):
     # So we shouldn't escape them as we'll just have to
     # detect and undo it later.
     length = 0
-    if ((unix is None and util.platform() == "windows") or unix is False):
+    if pathname and ((unix is None and util.platform() == "windows") or unix is False):
         m = drive_pat.match(pattern)
         if m:
             # Replace splitting magic chars
@@ -381,6 +411,55 @@ def _get_win_drive(pattern, regex=False, case_sensitive=False):
         root_specified = True
 
     return root_specified, drive, slash, end
+
+
+def is_magic(pattern, flags=0):
+    """Check if pattern is magic."""
+
+    magical = False
+    unix = is_unix_style(flags)
+
+    ptype = BYTES if isinstance(pattern, bytes) else UNICODE
+    drive_pat = RE_WIN_DRIVE[ptype]
+
+    if ptype == BYTES:
+        slash = b'\\'
+    else:
+        slash = '\\'
+
+    magic = set()
+    magic_drive = set() if unix else set(slash)
+
+    magic |= MAGIC_DEF[ptype]
+    if flags & BRACE:
+        magic |= MAGIC_BRACE[ptype]
+        magic_drive |= MAGIC_BRACE[ptype]
+    if flags & SPLIT:
+        magic |= MAGIC_SPLIT[ptype]
+        magic_drive |= MAGIC_SPLIT[ptype]
+    if flags & GLOBTILDE:
+        magic |= MAGIC_TILDE[ptype]
+    if flags & EXTMATCH:
+        magic |= MAGIC_EXTMATCH[ptype]
+    if flags & NEGATE:
+        if flags & MINUSNEGATE:
+            magic |= MAGIC_MINUS_NEGATE[ptype]
+        else:
+            magic |= MAGIC_NEGATE[ptype]
+
+    length = 0
+    if ((unix is None and util.platform() == "windows") or unix is False):
+        m = drive_pat.match(pattern)
+        if m:
+            drive = m.group(0)
+            length = len(drive)
+            if set(drive) & magic_drive:
+                magical = True
+
+    if not magical and set(pattern[length:]) & magic:
+        magical = True
+
+    return magical
 
 
 def is_negative(pattern, flags):

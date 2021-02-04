@@ -27,7 +27,7 @@ __all__ = (
     "NEGATE", "MINUSNEGATE", "DOTMATCH", "BRACE", "SPLIT",
     "NEGATEALL", "FORCEWIN", "FORCEUNIX",
     "C", "I", "R", "N", "M", "D", "E", "S", "B", "A", "W", "U",
-    "translate", "fnmatch", "filter"
+    "translate", "fnmatch", "filter", "escape", "raw_escape", "is_magic"
 )
 
 C = CASE = _wcparse.CASE
@@ -103,3 +103,22 @@ def filter(filenames, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):  # no
         if obj.match(_wcparse.norm_slash(filename, flags) if not unix else filename):
             matches.append(filename)
     return matches
+
+
+def raw_escape(pattern, raw_chars=True):
+    """Apply raw character transform before applying escape."""
+
+    return _wcparse.raw_escape(pattern, raw_chars=raw_chars)
+
+
+def escape(pattern):
+    """Escape."""
+
+    return _wcparse.escape(pattern)
+
+
+def is_magic(pattern, *, flags=0):
+    """Check if the pattern is likely to be magic."""
+
+    flags = _flag_transform(flags)
+    return _wcparse.is_magic(pattern, flags)

@@ -492,8 +492,8 @@ def escape(pattern, unix=None):
 ```
 
 This escapes special glob meta characters so they will be treated as literal characters. It escapes using backslashes.
-It will escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `^`, `{`, `}`. and `\`. Its intended use is escaping paths
-  or path parts for use in patterns.
+It will conservatively escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `{`, `}`. and `\` regardless of what feature
+is or is not enabled. Its intended use is escaping paths or path parts for use in patterns.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -503,10 +503,9 @@ It will escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `^`, `{`, `}`. and `
 True
 ```
 
-Raw strings can be used as well, but if you wish to use raw strings that represent a Python string (where `\` are
-actually denoted by `\\`), then you may wish to use [`raw_escape`](#raw_escape).
-
-`escape` can also handle Windows style with `/` or `\\` path separators:
+`escape` can also handle Windows style paths with `/` or `\` path separators. It is usually recommended to use `/` as
+Windows backslashes are only supported via a special escape, but `\` will be expanded to an escaped backslash
+(represented in a raw string as `#!py3 r'\\'` or a normal string as `#!py3 '\\\\'`).
 
 ```pycon3
 >>> from wmcatch import glob
@@ -520,10 +519,10 @@ True
 True
 ```
 
-On a Windows system, meta characters are not processed in drives/mounts except pattern expansion characters such `{`,
-`}`, and `|` when using [`BRACE`](#brace) and/or [`SPLIT`](#split). These pattern expansion happens in an earlier step
-and are handled a bit differently. These characters are the only ones that need to be escaped in Windows drives and will
-be properly escaped by `escape`.
+On a Windows system, meta characters are not processed in drives/UNC mounts except for pattern expansion characters.
+`{`, `}`, and `|`, when using [`BRACE`](#brace) and/or [`SPLIT`](#split), are the only meta characters that can affect
+drives/UNC mounts; therefore, they are the only characters that need to be escaped. `escape`, when it detects or is
+informed that it is processing a Windows path, will properly find and handle these drives/UNC mounts.
 
 ```pycon3
 >>> from wmcatch import glob
@@ -555,25 +554,38 @@ escaping will be used.
 def raw_escape(pattern, unix=None, raw_chars=True):
 ```
 
-This is like [`escape`](#escape) except it will escape paths provided as raw strings. Or more specifically, strings
-whose content is a representation of a Python string. Simply using Python raw strings does not mean you need to use
-`raw_escape` as `escape` can handle raw strings well enough:
+`raw_escape` is kind of a niche function and 99% of the time, it is recommended to use [`escape`](#escape).
+
+The big difference between `raw_escape` and [`escape`](#escape) is how `\` are handled. `raw_escape` is mainly for paths
+provided to Python via an interface that doesn't process Python strings like they normally are, for instance an input
+in a GUI.
+
+To illustrate, you may have an interface to input path names, but may want to take advantage of Python Unicode
+references. Normally, on a python command line, you can do this:
 
 ```pycon3
->>> glob.escape(r'my\file-[work].txt', unix=False)
-'my\\\\file\\-\\[work\\].txt'
+>>> 'folder\\El Ni\u00f1o'
+'folder\\El Niño'
 ```
 
-But if you are accepting an input from a source that is giving you a representation of a Python string (where `\` is
-represented by two `\`), then `raw_escape` is what you want:
+But when in a GUI interface, if a user inputs the same, it's like getting a raw string.
 
 ```pycon3
->>> glob.raw_escape(r'my\\file-[work].txt', unix=False)
-'my\\\\file\\-\\[work\\].txt'
+>>> r'folder\\El Ni\u00f1o'
+'folder\\\\El Ni\\u00f1o'
 ```
 
-By default `raw_escape` always translates Python character back references into actual characters, but if this is not
-needed, a new option called `raw_chars` (`True` by default) has been added so this behavior can be disabled:
+`raw_escape` will take a raw string in the above format and resolve character escapes and escape the path as if it was
+a normal string.  Notice to do this, we must treat literal Windows' path backslashes as an escaped backslash.
+
+```pycon3
+>>> glob.escape('folder\\El Ni\u00f1o', unix=False)
+'folder\\\\El Niño'
+>>> glob.raw_escape(r'folder\\El Ni\u00f1o')
+'folder\\\\El Niño'
+```
+
+Handling of raw character references can be turned off if desired:
 
 ```pycon3
 >>> glob.raw_escape(r'my\\file-\x31.txt', unix=False)
@@ -582,19 +594,7 @@ needed, a new option called `raw_chars` (`True` by default) has been added so th
 'my\\\\file\\-\\\\x31.txt'
 ```
 
-It also handles Windows style paths with `/` or `\\` path separators:
-
-```pycon3
->>> from wcmatch import glob
->>> glob.raw_escape(r'some\\path?\\\x2a\x2afile\x2a\x2a{}.txt', unix=False)
-'some\\\\path\\?\\\\\\*\\*file\\*\\*\\{\\}.txt'
->>> glob.globmatch('some\\path?\\**file**{}.txt', glob.raw_escape(r'some\\path?\\\x2a\x2afile\x2a\x2a{}.txt', unix=False), flags=glob.RAWCHARS | glob.FORCEWIN)
-True
->>> glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt', unix=False)
-'some/path\\?/\\*\\*file\\*\\*\\{\\}.txt'
->>> glob.globmatch('some\\path?\\**file**{}.txt', glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt', unix=False), flags=glob.RAWCHARS | glob.FORCEWIN)
-True
-```
+Outside of the treatment of `\`, `raw_escape` will function just like [`escape`](#escape):
 
 `raw_escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since
 [`globmatch`](#globmatch) allows you to match Unix style paths on a Windows system, and vice versa, you can force
@@ -615,6 +615,58 @@ escaping will be used.
     drives manually in their match patterns as well.
 
     `raw_chars` option was added.
+
+### `glob.is_magic` {: #is_magic}
+
+```py3
+def is_magic(pattern, *, flags=0):
+    """Check if the pattern is likely to be magic."""
+```
+
+This checks a given `pattern` to see if "magic" symbols are present or not. The check is based on the enabled features
+via `flags`.
+
+```pycon3
+>>> glob.is_magic('test')
+False
+>>> glob.is_magic('[test]ing?')
+True
+```
+
+Wildcard Match treats `\` as special/magic as it is used to escape characters. In general, even though Wildcard Match
+will treat an escaped backslash as a directory separator on Windows, it is recommend to use `/` for directory
+separators. If you just want to check a Windows path for magic characters, you can covert separators to `/`. And if you
+are on Linux/Unix and for some reason chose to use `\` in your file name, it will also be considered magic.
+
+When `is_magic` is called, the system it is called on is detected automatically and/or inferred from flags such as
+[`FORCEUNIX`](#forceunix) or [`FORCEWIN`](#forcewin). If the pattern is checked against a Windows system, UNC server/mount
+names will be detected and treated differently. Wildcard Match cannot detect and glob all possible connected server
+names, so they are treated differently and cannot contain magic except in three cases:
+
+1. The drive is using backslashes as backslashes are treated as magic.
+2. [`BRACE`](#brace) is enabled and either `{` or `}` are found in the drive name.
+3. [`SPLIT`](#split) is enabled and `|` is found in the drive name.
+
+```pycon3
+>>> glob.is_magic('//?/UNC/server/mount{}/', flags=glob.FORCEWIN)
+False
+>>> glob.is_magic('//?/UNC/server/mount{}/', flags=glob.FORCEWIN | glob.BRACE)
+True
+```
+
+The table below illustrates which symbols are searched for based on the given feature, the first row being the base
+symbols that are checked. In the case of [`NEGATE`](#negate), if [`MINUSNEGATE`](#minusnegate) is also enabled,
+[`MINUSNEGATE`](#minusnegate)'s symbols will be searched instead of [`NEGATE`](#negate)'s symbols.
+
+Features                      | Symbols
+----------------------------- | -------
+                              | `?*[]\`
+[`EXTMATCH`](#extmatch)       | `()`
+[`BRACE`](#brace)             | `{}`
+[`NEGATE`](#negate)           | `!`
+[`MINUSNEGATE`](#minusnegate) | `-`
+[`SPLIT`](#split)             | `|`
+[`GLOBTILDE`](#globtilde)     | `~`
 
 ## Flags
 

@@ -33,7 +33,7 @@ __all__ = (
     "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX", "GLOBTILDE",
     "NODOTDIR", "SCANDOTDIR",
     "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T", "Q", "Z", "SD",
-    "iglob", "glob", "globmatch", "globfilter", "escape", "raw_escape"
+    "iglob", "glob", "globmatch", "globfilter", "escape", "raw_escape", "is_magic"
 )
 
 # We don't use `util.platform` only because we mock it in tests,
@@ -606,10 +606,17 @@ def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=_wcparse.PA
 def raw_escape(pattern, unix=None, raw_chars=True):
     """Apply raw character transform before applying escape."""
 
-    return _wcparse.raw_escape(pattern, unix, raw_chars)
+    return _wcparse.raw_escape(pattern, unix, raw_chars, pathname=True)
 
 
 def escape(pattern, unix=None):
     """Escape."""
 
-    return _wcparse.escape(pattern, unix)
+    return _wcparse.escape(pattern, unix, pathname=True)
+
+
+def is_magic(pattern, *, flags=0):
+    """Check if the pattern is likely to be magic."""
+
+    flags = _flag_transform(flags)
+    return _wcparse.is_magic(pattern, flags)
