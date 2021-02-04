@@ -3,8 +3,10 @@
 ## 8.1.dev
 
 - **NEW**: Add `is_magic` function to the `glob` and `fnamtch` library.
-- **NEW**: `fnmatch` now has `escape` and `raw_escape` available via its API. `fnmatch` variants use filename logic
-  instead of path logic.
+- **NEW**: `fnmatch` now has `escape` available via its API. The `fnmatch` variant uses filename logic instead of path
+  logic.
+- **NEW**: Deprecate `raw_escape` in `glob` as it is very niche and the same can be accomplished simply by using
+  `#!py3 codecs.decode(string, 'unicode_escape')` and then using `escape`.
 - **FIX**: Use `os.fspath` to convert path-like objects to string, whatever the preferred return for `os.path` is what
   Wildcard Match will accept. Don't try to convert paths via `__str__` or `__bytes__`.
 - **FIX**: Better checking of types to ensure consistent failure if the path, pattern, or root directory of are not all

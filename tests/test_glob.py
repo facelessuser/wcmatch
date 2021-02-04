@@ -1208,6 +1208,17 @@ class TestGlobEscapes(unittest.TestCase):
                 )
             )
 
+    def test_raw_escape_deprecation(self):
+        """Test raw escape deprecation."""
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+
+            glob.raw_escape(r'test\\test')
+
+            self.assertTrue(len(w) == 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
+
     def test_escape(self):
         """Test path escapes."""
 
