@@ -214,7 +214,7 @@ But when in a GUI interface, if a user inputs the same, it's like getting a raw 
 ```
 
 `raw_escape` will take a raw string in the above format and resolve character escapes and escape the filename as if it
-was a normal string.  Though backslashes aren't normally used in filenames, notice to do this, we must treat literal
+was a normal string. Backslashes aren't normally used in filenames, but if we wanted to use them, we must treat literal
 backslashes as an escaped backslash.
 
 ```pycon3
@@ -254,18 +254,21 @@ False
 True
 ```
 
-The table below illustrates which symbols are searched for based on the given feature, the first row being the base
-symbols that are checked. In the case of [`NEGATE`](#negate), if [`MINUSNEGATE`](#minusnegate) is also enabled,
+The table below illustrates which symbols are searched for based on the given feature. Each feature adds to the
+"default". In the case of [`NEGATE`](#negate), if [`MINUSNEGATE`](#minusnegate) is also enabled,
 [`MINUSNEGATE`](#minusnegate)'s symbols will be searched instead of [`NEGATE`](#negate)'s symbols.
 
 Features                      | Symbols
 ----------------------------- | -------
-                              | `?*[]\`
+Default                       | `?*[]\`
 [`EXTMATCH`](#extmatch)       | `()`
 [`BRACE`](#brace)             | `{}`
 [`NEGATE`](#negate)           | `!`
 [`MINUSNEGATE`](#minusnegate) | `-`
 [`SPLIT`](#split)             | `|`
+
+!!! new "New 8.1"
+    Added `is_magic` in 8.1.
 
 ## Flags
 

@@ -633,10 +633,11 @@ False
 True
 ```
 
-Wildcard Match treats `\` as special/magic as it is used to escape characters. In general, even though Wildcard Match
-will treat an escaped backslash as a directory separator on Windows, it is recommend to use `/` for directory
-separators. If you just want to check a Windows path for magic characters, you can covert separators to `/`. And if you
-are on Linux/Unix and for some reason chose to use `\` in your file name, it will also be considered magic.
+!!! tip
+    Since Wildcard Match uses `\` to escape characters, they are treated as "magic". It is generally, recommended to use
+    `/` as a path separator in glob patterns, even in Windows, but if you don't, such patterns will always be flagged as
+    "magic". Also, if testing a Windows path to see if it has special characters, it may be wise to translate separators
+    to `/`.
 
 When `is_magic` is called, the system it is called on is detected automatically and/or inferred from flags such as
 [`FORCEUNIX`](#forceunix) or [`FORCEWIN`](#forcewin). If the pattern is checked against a Windows system, UNC server/mount
@@ -654,19 +655,22 @@ False
 True
 ```
 
-The table below illustrates which symbols are searched for based on the given feature, the first row being the base
-symbols that are checked. In the case of [`NEGATE`](#negate), if [`MINUSNEGATE`](#minusnegate) is also enabled,
+The table below illustrates which symbols are searched for based on the given feature. Each feature adds to the
+"default". In the case of [`NEGATE`](#negate), if [`MINUSNEGATE`](#minusnegate) is also enabled,
 [`MINUSNEGATE`](#minusnegate)'s symbols will be searched instead of [`NEGATE`](#negate)'s symbols.
 
 Features                      | Symbols
 ----------------------------- | -------
-                              | `?*[]\`
+Default                       | `?*[]\`
 [`EXTMATCH`](#extmatch)       | `()`
 [`BRACE`](#brace)             | `{}`
 [`NEGATE`](#negate)           | `!`
 [`MINUSNEGATE`](#minusnegate) | `-`
 [`SPLIT`](#split)             | `|`
 [`GLOBTILDE`](#globtilde)     | `~`
+
+!!! new "New 8.1"
+    Added `is_magic` in 8.1.
 
 ## Flags
 
