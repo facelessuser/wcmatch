@@ -519,10 +519,11 @@ True
 True
 ```
 
-On a Windows system, meta characters are not processed in drives/UNC mounts except for pattern expansion characters.
-`{`, `}`, and `|`, when using [`BRACE`](#brace) and/or [`SPLIT`](#split), are the only meta characters that can affect
-drives/UNC mounts; therefore, they are the only characters that need to be escaped. `escape`, when it detects or is
-informed that it is processing a Windows path, will properly find and handle these drives/UNC mounts.
+On a Windows system, meta characters are not processed in drives or UNC sharepoints except for pattern expansion meta
+characters. `{`, `}` when using [`BRACE`](#brace) and `|` when [`SPLIT`](#split), are the only meta characters that can
+affect drives and UNC sharepoints; therefore, they are the only characters that need to be escaped. `escape`, when it
+detects or is informed that it is processing a Windows path, `escape` will properly find and handle drives and UNC
+sharepoints.
 
 ```pycon3
 >>> from wmcatch import glob
@@ -653,11 +654,11 @@ True
     to `/`.
 
 When `is_magic` is called, the system it is called on is detected automatically and/or inferred from flags such as
-[`FORCEUNIX`](#forceunix) or [`FORCEWIN`](#forcewin). If the pattern is checked against a Windows system, UNC server/mount
-names will be detected and treated differently. Wildcard Match cannot detect and glob all possible connected server
-names, so they are treated differently and cannot contain magic except in three cases:
+[`FORCEUNIX`](#forceunix) or [`FORCEWIN`](#forcewin). If the pattern is checked against a Windows system, UNC
+sharepoints will be detected and treated differently. Wildcard Match cannot detect and glob all possible connected
+sharepoints, so they are treated differently and cannot contain magic except in three cases:
 
-1. The drive is using backslashes as backslashes are treated as magic.
+1. The drive or sharepoint is using backslashes as backslashes are treated as magic.
 2. [`BRACE`](#brace) is enabled and either `{` or `}` are found in the drive name.
 3. [`SPLIT`](#split) is enabled and `|` is found in the drive name.
 
@@ -691,7 +692,7 @@ Default                       | `?*[]\`
 
 `CASE` forces case sensitivity. `CASE` has higher priority than [`IGNORECASE`](#ignorecase).
 
-On Windows, drive letters (`C:`) and UNC host/share (`//host/share`) portions of a path will still be treated case
+On Windows, drive letters (`C:`) and UNC sharepoints (`//host/share`) portions of a path will still be treated case
 insensitively, but the rest of the path will have case sensitive logic applied.
 
 #### `glob.IGNORECASE, glob.I` {: #ignorecase}

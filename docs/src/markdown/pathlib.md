@@ -376,7 +376,7 @@ the same.
 
 `CASE` forces case sensitivity. `CASE` has higher priority than [`IGNORECASE`](#ignorecase).
 
-On Windows, drive letters (`C:`) and UNC host/share (`//host/share`) portions of a path will still be treated case
+On Windows, drive letters (`C:`) and UNC sharepoints (`//host/share`) portions of a path will still be treated case
 insensitively, but the rest of the path will have case sensitive logic applied.
 
 #### `pathlib.IGNORECASE, pathlib.I` {: #ignorecase}
