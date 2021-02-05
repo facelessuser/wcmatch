@@ -64,6 +64,8 @@ prerelease
 prereleases
 recursing
 regex
+sharepoint
+sharepoints
 sortable
 subclass
 subclassed

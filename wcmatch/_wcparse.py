@@ -413,14 +413,8 @@ def _get_win_drive(pattern, regex=False, case_sensitive=False):
     return root_specified, drive, slash, end
 
 
-def is_magic(pattern, flags=0):
-    """Check if pattern is magic."""
-
-    magical = False
-    unix = is_unix_style(flags)
-
-    ptype = BYTES if isinstance(pattern, bytes) else UNICODE
-    drive_pat = RE_WIN_DRIVE[ptype]
+def _get_magic_symbols(ptype, unix, flags):
+    """Get magic symbols."""
 
     if ptype == BYTES:
         slash = b'\\'
@@ -447,17 +441,38 @@ def is_magic(pattern, flags=0):
         else:
             magic |= MAGIC_NEGATE[ptype]
 
+    return magic, magic_drive
+
+
+def is_magic(pattern, flags=0):
+    """Check if pattern is magic."""
+
+    magical = False
+    unix = is_unix_style(flags)
+
+    ptype = BYTES if isinstance(pattern, bytes) else UNICODE
+    drive_pat = RE_WIN_DRIVE[ptype]
+
+    magic, magic_drive = _get_magic_symbols(ptype, unix, flags)
+    is_path = flags & PATHNAME
+
     length = 0
-    if ((unix is None and util.platform() == "windows") or unix is False):
+    if is_path and ((unix is None and util.platform() == "windows") or unix is False):
         m = drive_pat.match(pattern)
         if m:
             drive = m.group(0)
             length = len(drive)
-            if set(drive) & magic_drive:
-                magical = True
+            for c in magic_drive:
+                if c in drive:
+                    magical = True
+                    break
 
-    if not magical and set(pattern[length:]) & magic:
-        magical = True
+    if not magical:
+        pattern = pattern[length:]
+        for c in magic:
+            if c in pattern:
+                magical = True
+                break
 
     return magical
 
@@ -724,13 +739,16 @@ class WcPathSplit(object):
             self.sep = '/'
         # Once split, Windows file names will never have `\\` in them,
         # so we can use the Unix magic detect
-        self.re_magic = RE_MAGIC[BYTES if self.is_bytes else UNICODE]
-        self.magic = False
+        ptype = BYTES if self.is_bytes else UNICODE
+        self.magic_symbols = _get_magic_symbols(ptype, self.unix, self.flags)[0]
 
     def is_magic(self, name):
         """Check if name contains magic characters."""
 
-        return self.re_magic.search(name) is not None
+        for c in self.magic_symbols:
+            if c in name:
+                return True
+        return False
 
     def _sequence(self, i):
         """Handle character group."""
