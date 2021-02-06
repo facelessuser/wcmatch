@@ -29,8 +29,7 @@ A quick overview of Wildcard Match's Features:
 - Allows for a much more configurable experience when matching or globbing with many more features.
 - Adds support for `**` in glob.
 - Adds support for escaping characters with `\`.
-- Add support for POSIX style character classes inside sequences: `[[:alnum:]]`, etc. The `C` locale is used for byte
-  strings and Unicode properties for Unicode strings.
+- Add support for POSIX style character classes inside sequences: `[[:alnum:]]`, etc. The `C` locale is used.
 - Adds support for brace expansion: `a{b,{c,d}}` --> `ab ac ad`.
 - Adds support for expanding `~` or `~username` to the appropriate user path.
 - Adds support for extended match patterns: `@(...)`, `+(...)`, `*(...)`, `?(...)`, and `!(...)`.
