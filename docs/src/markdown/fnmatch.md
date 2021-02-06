@@ -171,9 +171,8 @@ we wrap the entire group to be captured: `#!py3 '+(a)'` --> `#!py3 r'((a)+)'`.
 def escape(pattern):
 ```
 
-This escapes special glob meta characters so they will be treated as literal characters. It escapes using backslashes.
-It will conservatively escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `{`, `}`. and `\` regardless of what feature
-is or is not enabled. Its intended use is escaping a filename for use in a pattern.
+The `escape` function will conservatively escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `{`, `}`. and `\` with
+backslashes, regardless of what feature is or is not enabled. It is meant to escape filenames.
 
 ```pycon3
 >>> from wcmatch import fnmatch
@@ -193,7 +192,11 @@ def is_magic(pattern, *, flags=0):
     """Check if the pattern is likely to be magic."""
 ```
 
-This checks a given `pattern` to see if it is "magic" or not. The check is based on the enabled features via `flags`.
+This checks a given filename or `pattern` to see if it is "magic" or not. The check is based on the enabled features via
+`flags`. Filenames or patterns are expected to be/target full names. This variant of `is_magic` is meant to be run on
+filenames or patterns for file names only. If you need to check patterns with full paths, particularly Windows paths
+that include drive names or UNC sharepoints (which require special logic), it is recommended to use the
+[`glob.escape`](./glob.md#escape) function.
 
 ```pycon3
 >>> fnmatch.is_magic('test')
