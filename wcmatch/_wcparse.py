@@ -662,9 +662,7 @@ def compile(patterns, flags, limit=PATTERN_LIMIT):  # noqa A001
 
     if patterns and negative and not positive:
         if flags & NEGATEALL:
-            default = '**'
-            if isinstance(patterns[0], bytes):
-                default = os.fsencode(default)
+            default = b'**' if isinstance(patterns[0], bytes) else '**'
             positive.append(_compile(default, flags | (GLOBSTAR if flags & PATHNAME else 0)))
 
     if patterns and flags & NODIR:
