@@ -491,9 +491,9 @@ we wrap the entire group to be captured: `#!py3 '+(a)'` --> `#!py3 r'((a)+)'`.
 def escape(pattern, unix=None):
 ```
 
-This escapes special glob meta characters so they will be treated as literal characters. It escapes using backslashes.
-It will conservatively escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `{`, `}`. and `\` regardless of what feature
-is or is not enabled. Its intended use is escaping paths or path parts for use in patterns.
+The `escape` function will conservatively escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `{`, `}`. and `\` with
+backslashes, regardless of what feature is or is not enabled. It is meant to escape path parts (filenames, Windows
+drives, UNC sharepoints) or full paths.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -520,10 +520,10 @@ True
 ```
 
 On a Windows system, meta characters are not processed in drives or UNC sharepoints except for pattern expansion meta
-characters. `{`, `}` when using [`BRACE`](#brace) and `|` when [`SPLIT`](#split), are the only meta characters that can
-affect drives and UNC sharepoints; therefore, they are the only characters that need to be escaped. `escape`, when it
-detects or is informed that it is processing a Windows path, `escape` will properly find and handle drives and UNC
-sharepoints.
+characters. `{` and `}` (when using [`BRACE`](#brace)) and `|` (when using [`SPLIT`](#split)) are the only meta
+characters that can affect drives and UNC sharepoints; therefore, they are the only characters that need to be escaped.
+`escape`, when it detects or is informed that it is processing a Windows path, `escape` will properly find and handle
+drives and UNC sharepoints.
 
 ```pycon3
 >>> from wmcatch import glob
@@ -637,8 +637,10 @@ def is_magic(pattern, *, flags=0):
     """Check if the pattern is likely to be magic."""
 ```
 
-This checks a given `pattern` to see if "magic" symbols are present or not. The check is based on the enabled features
-via `flags`.
+This checks a given path or `pattern` or to see if "magic" symbols are present or not. The check is based on the enabled
+features via `flags`. Paths and patterns are expected to be/target full paths, full filenames, full drive names, or full
+UNC sharepoints. If `is_magic` is run on a Windows path it will always flag it as "magic" unless you convert the
+directory separators to `/` as `\` is a "magic" symbol.
 
 ```pycon3
 >>> glob.is_magic('test')
@@ -647,20 +649,14 @@ False
 True
 ```
 
-!!! tip
-    Since Wildcard Match uses `\` to escape characters, they are treated as "magic". It is generally, recommended to use
-    `/` as a path separator in glob patterns, even in Windows, but if you don't, such patterns will always be flagged as
-    "magic". Also, if testing a Windows path to see if it has special characters, it may be wise to translate separators
-    to `/`.
-
 When `is_magic` is called, the system it is called on is detected automatically and/or inferred from flags such as
 [`FORCEUNIX`](#forceunix) or [`FORCEWIN`](#forcewin). If the pattern is checked against a Windows system, UNC
 sharepoints will be detected and treated differently. Wildcard Match cannot detect and glob all possible connected
 sharepoints, so they are treated differently and cannot contain magic except in three cases:
 
 1. The drive or sharepoint is using backslashes as backslashes are treated as magic.
-2. [`BRACE`](#brace) is enabled and either `{` or `}` are found in the drive name.
-3. [`SPLIT`](#split) is enabled and `|` is found in the drive name.
+2. [`BRACE`](#brace) is enabled and either `{` or `}` are found in the drive name or UNC sharepoint.
+3. [`SPLIT`](#split) is enabled and `|` is found in the drive name or UNC sharepoint.
 
 ```pycon3
 >>> glob.is_magic('//?/UNC/server/mount{}/', flags=glob.FORCEWIN)
