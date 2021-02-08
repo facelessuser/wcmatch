@@ -13,6 +13,9 @@
 - **FIX**: Better checking of types to ensure consistent failure if the path, pattern, or root directory of are not all
   of type `str` or `bytes`.
 - **FIX**: Some internal fixes and refactoring.
+- **FIX**: Refactor code to take advantage of `bracex`'s ability to abort parsing on extremely large pattern expansions.
+  Patterns like `{1..10000000}` will now abort dramatically quicker. Require `bracex` 2.1.1 which aborts much quicker.
+- **FIX**: Fix some corner cases where limit would not abort correctly.
 
 ## 8.0.1
 

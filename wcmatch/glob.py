@@ -202,23 +202,36 @@ class Glob(object):
         """Iterate expanded patterns."""
 
         seen = set()
-        for p in patterns:
-            p = util.norm_pattern(p, not self.unix, self.raw_chars)
-            for count, expanded in enumerate(_wcparse.expand(p, self.flags), 1):
-                if 0 < self.limit < count:
-                    raise _wcparse.PatternLimitException(
-                        "Pattern limit exceeded the limit of {:d}".format(self.limit)
-                    )
-                # Filter out duplicate patterns. If `NOUNIQUE` is enabled,
-                # we only want to filter on negative patterns as they are
-                # only filters.
-                is_neg = _wcparse.is_negative(expanded, self.flags)
-                if not self.nounique or is_neg:
-                    if expanded in seen:
-                        continue
-                    seen.add(expanded)
+        try:
+            current_limit = self.limit
+            total = 0
+            for p in patterns:
+                p = util.norm_pattern(p, not self.unix, self.raw_chars)
+                count = 0
+                for count, expanded in enumerate(_wcparse.expand(p, self.flags, current_limit), 1):
+                    total += 1
+                    if 0 < self.limit < total:
+                        raise _wcparse.PatternLimitException(
+                            "Pattern limit exceeded the limit of {:d}".format(self.limit)
+                        )
+                    # Filter out duplicate patterns. If `NOUNIQUE` is enabled,
+                    # we only want to filter on negative patterns as they are
+                    # only filters.
+                    is_neg = _wcparse.is_negative(expanded, self.flags)
+                    if not self.nounique or is_neg:
+                        if expanded in seen:
+                            continue
+                        seen.add(expanded)
 
-                yield is_neg, expanded
+                    yield is_neg, expanded
+                if self.limit:
+                    current_limit -= count
+                    if current_limit < 1:
+                        current_limit = 1
+        except _wcparse.bracex.ExpansionLimitException:
+            raise _wcparse.PatternLimitException(
+                "Pattern limit exceeded the limit of {:d}".format(self.limit)
+            )
 
     def _parse_patterns(self, patterns):
         """Parse patterns."""

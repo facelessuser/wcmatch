@@ -1470,6 +1470,36 @@ class TestExpansionLimit(unittest.TestCase):
         with self.assertRaises(_wcparse.PatternLimitException):
             list(glob.iglob('{1..11}', flags=glob.BRACE, limit=10))
 
+    def test_limit_split(self):
+        """Test split limit."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            list(glob.iglob('|'.join(['a'] * 11), flags=glob.SPLIT, limit=10))
+
+    def test_limit_brace_glob(self):
+        """Test limit with brace and split."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            list(
+                glob.iglob(
+                    '{{{},{}}}'.format('|'.join(['a'] * 6), '|'.join(['a'] * 5)),
+                    flags=glob.SPLIT | _wcparse.BRACE,
+                    limit=10
+                )
+            )
+
+    def test_limit_wrap(self):
+        """Test limit that wraps internally."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            list(
+                glob.iglob(
+                    ['|'.join(['a'] * 10), '|'.join(['a'] * 5)],
+                    flags=glob.SPLIT | _wcparse.BRACE,
+                    limit=10
+                )
+            )
+
 
 class TestInputTypes(unittest.TestCase):
     """Test input types."""
