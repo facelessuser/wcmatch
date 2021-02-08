@@ -620,13 +620,13 @@ def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=_wcparse.PA
 def raw_escape(pattern, unix=None, raw_chars=True):
     """Apply raw character transform before applying escape."""
 
-    return _wcparse.raw_escape(pattern, unix, raw_chars, pathname=True)
+    return _wcparse.escape(util.norm_pattern(pattern, False, raw_chars, True), unix=unix, pathname=True, raw=True)
 
 
 def escape(pattern, unix=None):
     """Escape."""
 
-    return _wcparse.escape(pattern, unix, pathname=True)
+    return _wcparse.escape(pattern, unix=unix)
 
 
 def is_magic(pattern, *, flags=0):
