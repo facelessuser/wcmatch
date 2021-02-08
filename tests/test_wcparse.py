@@ -37,7 +37,8 @@ class TestWcparse(unittest.TestCase):
 
         results = _wcparse.expand(
             'test@(this{|that,|other})|*.py',
-            _wcparse.BRACE | _wcparse.SPLIT | _wcparse.EXTMATCH
+            _wcparse.BRACE | _wcparse.SPLIT | _wcparse.EXTMATCH,
+            0
         )
         self.assertEqual(sorted(results), sorted(['test@(this|that)', 'test@(this|other)', '*.py', '*.py']))
 
@@ -76,6 +77,33 @@ class TestWcparse(unittest.TestCase):
         with self.assertRaises(_wcparse.PatternLimitException):
             _wcparse.compile(
                 '{{{},{}}}'.format('|'.join(['a'] * 6), '|'.join(['a'] * 5)),
+                _wcparse.SPLIT | _wcparse.BRACE, 10
+            )
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            _wcparse.compile(
+                ['|'.join(['a'] * 10), '|'.join(['a'] * 5)],
+                _wcparse.SPLIT | _wcparse.BRACE, 10
+            )
+
+    def test_expansion_limt_translation(self):
+        """Test expansion limit."""
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            _wcparse.translate('{1..11}', _wcparse.BRACE, 10)
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            _wcparse.translate('|'.join(['a'] * 11), _wcparse.SPLIT, 10)
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            _wcparse.translate(
+                '{{{},{}}}'.format('|'.join(['a'] * 6), '|'.join(['a'] * 5)),
+                _wcparse.SPLIT | _wcparse.BRACE, 10
+            )
+
+        with self.assertRaises(_wcparse.PatternLimitException):
+            _wcparse.translate(
+                ['|'.join(['a'] * 10), '|'.join(['a'] * 5)],
                 _wcparse.SPLIT | _wcparse.BRACE, 10
             )
 

@@ -503,14 +503,16 @@ def tilde_pos(pattern, flags):
     return pos
 
 
-def expand_braces(patterns, flags):
+def expand_braces(patterns, flags, limit):
     """Expand braces."""
 
     if flags & BRACE:
         for p in ([patterns] if isinstance(patterns, (str, bytes)) else patterns):
             try:
                 # Turn off limit as we are handling it ourselves.
-                yield from bracex.iexpand(p, keep_escapes=True, limit=0)
+                yield from bracex.iexpand(p, keep_escapes=True, limit=limit)
+            except bracex.ExpansionLimitException:
+                raise
             except Exception:  # pragma: no cover
                 # We will probably never hit this as `bracex`
                 # doesn't throw any specific exceptions and
@@ -538,10 +540,10 @@ def expand_tilde(pattern, is_unix, flags):
     return pattern
 
 
-def expand(pattern, flags):
+def expand(pattern, flags, limit):
     """Expand and normalize."""
 
-    for expanded in expand_braces(pattern, flags):
+    for expanded in expand_braces(pattern, flags, limit):
         for splitted in split(expanded, flags):
             yield expand_tilde(splitted, is_unix_style(flags), flags)
 
@@ -609,14 +611,25 @@ def translate(patterns, flags, limit=PATTERN_LIMIT):
     is_unix = is_unix_style(flags)
     seen = set()
 
-    for pattern in patterns:
-        pattern = util.norm_pattern(pattern, not is_unix, flags & RAWCHARS)
-        for count, expanded in enumerate(expand(pattern, flags), 1):
-            if 0 < limit < count:
-                raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
-            if expanded not in seen:
-                seen.add(expanded)
-                (negative if is_negative(expanded, flags) else positive).append(WcParse(expanded, flags).parse())
+    try:
+        current_limit = limit
+        total = 0
+        for pattern in patterns:
+            pattern = util.norm_pattern(pattern, not is_unix, flags & RAWCHARS)
+            count = 0
+            for count, expanded in enumerate(expand(pattern, flags, current_limit), 1):
+                total += 1
+                if 0 < limit < total:
+                    raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
+                if expanded not in seen:
+                    seen.add(expanded)
+                    (negative if is_negative(expanded, flags) else positive).append(WcParse(expanded, flags).parse())
+            if limit:
+                current_limit -= count
+                if current_limit < 1:
+                    current_limit = 1
+    except bracex.ExpansionLimitException:
+        raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
 
     if patterns and negative and not positive:
         if flags & NEGATEALL:
@@ -651,14 +664,25 @@ def compile(patterns, flags, limit=PATTERN_LIMIT):  # noqa A001
     is_unix = is_unix_style(flags)
     seen = set()
 
-    for pattern in patterns:
-        pattern = util.norm_pattern(pattern, not is_unix, flags & RAWCHARS)
-        for count, expanded in enumerate(expand(pattern, flags), 1):
-            if 0 < limit < count:
-                raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
-            if expanded not in seen:
-                seen.add(expanded)
-                (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
+    try:
+        current_limit = limit
+        total = 0
+        for pattern in patterns:
+            pattern = util.norm_pattern(pattern, not is_unix, flags & RAWCHARS)
+            count = 0
+            for count, expanded in enumerate(expand(pattern, flags, current_limit), 1):
+                total += 1
+                if 0 < limit < total:
+                    raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
+                if expanded not in seen:
+                    seen.add(expanded)
+                    (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
+            if limit:
+                current_limit -= count
+                if current_limit < 1:
+                    current_limit = 1
+    except bracex.ExpansionLimitException:
+        raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
 
     if patterns and negative and not positive:
         if flags & NEGATEALL:
