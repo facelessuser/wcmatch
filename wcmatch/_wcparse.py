@@ -314,20 +314,15 @@ class PatternLimitException(Exception):
     """Pattern limit exception."""
 
 
-def raw_escape(pattern, unix=None, raw_chars=True, pathname=False):
-    """Apply raw character transform before applying escape."""
+def escape(pattern, unix=None, pathname=True, raw=False):
+    """
+    Escape.
 
-    return _escape(util.norm_pattern(pattern, False, raw_chars, True), unix, True, pathname=pathname)
+    `unix`: use Unix style path logic.
+    `pathname`: Use path logic.
+    `raw`: Handle raw strings (deprecated)
 
-
-def escape(pattern, unix=None, pathname=False):
-    """Normal escape."""
-
-    return _escape(pattern, unix, pathname=pathname)
-
-
-def _escape(pattern, unix=None, raw=False, pathname=False):
-    """Escape."""
+    """
 
     if isinstance(pattern, bytes):
         drive_pat = RE_WIN_DRIVE[BYTES]
