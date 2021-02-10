@@ -1128,6 +1128,27 @@ class TestCWD(_TestGlob):
         self.assert_equal(glob.glob('EF', root_dir=pathlib.Path(self.tempdir)), ['EF'])
 
 
+class TestCase(_TestGlob):
+    """Test files in the current working directory."""
+
+    @classmethod
+    def setup_fs(cls):
+        """Setup file system."""
+
+        cls.mktemp('a')
+        cls.mktemp('A')
+
+    def test_case(self):
+        """Test case."""
+
+        # Python actually just assumes Windows is case insensitive and everything else isn't.
+        # By default, we assume what Python assumes, but let's check to be sure before we assert.
+        if len(os.listdir(self.tempdir)) == 1:
+            pytest.skip("Skipped")
+        else:
+            assert len(glob.glob('*', root_dir=self.tempdir)) == 2
+
+
 class TestGlobCornerCase(_TestGlob):
     """
     Some tests that need a very specific file set to test against for corner cases.
