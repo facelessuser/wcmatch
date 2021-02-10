@@ -1,5 +1,10 @@
 # Changelog
 
+## 8.1.1
+
+- **FIX**: When tracking unique glob paths, the unique cache had inverted logic for case sensitive vs case insensitive
+  comparison. (#164)
+
 ## 8.1
 
 - **NEW**: Add `is_magic` function to the `glob` and `fnamtch` library.

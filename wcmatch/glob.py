@@ -488,7 +488,7 @@ class Glob(object):
             return True
 
         unique = False
-        if (path.lower() if self.case_sensitive else path) not in self.seen:
+        if (path.lower() if not self.case_sensitive else path) not in self.seen:
             self.seen.add(path)
             unique = True
         return unique
