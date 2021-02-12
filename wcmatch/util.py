@@ -10,6 +10,9 @@ import warnings
 
 PY37 = (3, 7) <= sys.version_info
 
+UNICODE = 0
+BYTES = 1
+
 CASE_FS = os.path.normcase('A') != os.path.normcase('a')
 
 RE_NORM = re.compile(
