@@ -122,7 +122,7 @@ def norm_pattern(pattern, normalize, is_raw_chars, ignore_escape=False):
         else:
             value = m.group(6) if is_bytes else m.group(7)
             pos = m.start(6) if is_bytes else m.start(7)
-            raise SyntaxError("Could not convert character value %s at position %d" % (value, pos))
+            raise SyntaxError("Could not convert character value {} at position {:d}".format(value, pos))
         return char
 
     return (RE_BNORM if is_bytes else RE_NORM).sub(norm, pattern)
