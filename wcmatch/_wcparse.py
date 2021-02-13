@@ -22,15 +22,11 @@ IN THE SOFTWARE.
 """
 import re
 import functools
-import copyreg
 import bracex
 import os
-from collections import namedtuple
 from . import util
 from . import posix
-
-UNICODE = 0
-BYTES = 1
+from . _wcmatch import WcRegexp
 
 UNICODE_RANGE = '\u0000-\U0010ffff'
 ASCII_RANGE = '\x00-\xff'
@@ -114,14 +110,6 @@ RE_MAGIC = (
 RE_WIN_DRIVE_MAGIC = (
     re.compile(r'([{}|]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))'),
     re.compile(br'([{}|]|(?<!\\)(?:(?:[\\]{2})*)\\(?!\\))')
-)
-RE_WIN_MOUNT = (
-    re.compile(r'\\|[a-z]:(?:\\|$)', re.I),
-    re.compile(br'\\|[a-z]:(?:\\|$)', re.I)
-)
-RE_MOUNT = (
-    re.compile(r'/'),
-    re.compile(br'/')
 )
 RE_NO_DIR = (
     re.compile(r'^(?:.*?(?:/\.{1,2}/*|/)|\.{1,2}/*)$'),
@@ -298,10 +286,6 @@ class InvPlaceholder(str):
     """Placeholder for inverse pattern !(...)."""
 
 
-class WcGlob(namedtuple('WcGlob', ['pattern', 'is_magic', 'is_globstar', 'dir_only', 'is_drive'])):
-    """File Glob."""
-
-
 class PathNameException(Exception):
     """Path name exception."""
 
@@ -325,17 +309,17 @@ def escape(pattern, unix=None, pathname=True, raw=False):
     """
 
     if isinstance(pattern, bytes):
-        drive_pat = RE_WIN_DRIVE[BYTES]
-        magic = RE_MAGIC_ESCAPE[BYTES]
-        drive_magic = RE_WIN_DRIVE_MAGIC[BYTES]
+        drive_pat = RE_WIN_DRIVE[util.BYTES]
+        magic = RE_MAGIC_ESCAPE[util.BYTES]
+        drive_magic = RE_WIN_DRIVE_MAGIC[util.BYTES]
         replace = br'\\\1'
         slash = b'\\'
         double_slash = b'\\\\'
         drive = b''
     else:
-        drive_pat = RE_WIN_DRIVE[UNICODE]
-        magic = RE_MAGIC_ESCAPE[UNICODE]
-        drive_magic = RE_WIN_DRIVE_MAGIC[UNICODE]
+        drive_pat = RE_WIN_DRIVE[util.UNICODE]
+        magic = RE_MAGIC_ESCAPE[util.UNICODE]
+        drive_magic = RE_WIN_DRIVE_MAGIC[util.UNICODE]
         replace = r'\\\1'
         slash = '\\'
         double_slash = '\\\\'
@@ -411,7 +395,7 @@ def _get_win_drive(pattern, regex=False, case_sensitive=False):
 def _get_magic_symbols(ptype, unix, flags):
     """Get magic symbols."""
 
-    if ptype == BYTES:
+    if ptype == util.BYTES:
         slash = b'\\'
     else:
         slash = '\\'
@@ -445,7 +429,7 @@ def is_magic(pattern, flags=0):
     magical = False
     unix = is_unix_style(flags)
 
-    ptype = BYTES if isinstance(pattern, bytes) else UNICODE
+    ptype = util.BYTES if isinstance(pattern, bytes) else util.UNICODE
     drive_pat = RE_WIN_DRIVE[ptype]
 
     magic, magic_drive = _get_magic_symbols(ptype, unix, flags)
@@ -524,7 +508,7 @@ def expand_tilde(pattern, is_unix, flags):
     pos = tilde_pos(pattern, flags)
 
     if pos > -1:
-        string_type = BYTES if isinstance(pattern, bytes) else UNICODE
+        string_type = util.BYTES if isinstance(pattern, bytes) else util.UNICODE
         tilde = TILDE_SYM[string_type]
         re_tilde = RE_WIN_TILDE[string_type] if not is_unix else RE_TILDE[string_type]
         m = re_tilde.match(pattern, pos)
@@ -632,7 +616,7 @@ def translate(patterns, flags, limit=PATTERN_LIMIT):
             positive.append(WcParse(default, flags | (GLOBSTAR if flags & PATHNAME else 0)).parse())
 
     if patterns and flags & NODIR:
-        index = BYTES if isinstance(patterns[0], bytes) else UNICODE
+        index = util.BYTES if isinstance(patterns[0], bytes) else util.UNICODE
         exclude = _NO_NIX_DIR[index] if is_unix else _NO_WIN_DIR[index]
         negative.append(exclude)
 
@@ -685,7 +669,7 @@ def compile(patterns, flags, limit=PATTERN_LIMIT):  # noqa A001
             positive.append(_compile(default, flags | (GLOBSTAR if flags & PATHNAME else 0)))
 
     if patterns and flags & NODIR:
-        ptype = BYTES if isinstance(patterns[0], bytes) else UNICODE
+        ptype = util.BYTES if isinstance(patterns[0], bytes) else util.UNICODE
         negative.append(RE_NO_DIR[ptype] if is_unix else RE_WIN_NO_DIR[ptype])
 
     return WcRegexp(tuple(positive), tuple(negative), flags & REALPATH, flags & PATHNAME, flags & FOLLOW)
@@ -696,256 +680,6 @@ def _compile(pattern, flags):
     """Compile the pattern to regex."""
 
     return re.compile(WcParse(pattern, flags & FLAG_MASK).parse())
-
-
-class WcPathSplit(object):
-    """
-    Split glob pattern on "magic" file and directories.
-
-    Glob pattern return a list of patterns broken down at the directory
-    boundary. Each piece will either be a literal file part or a magic part.
-    Each part will will contain info regarding whether they are
-    a directory pattern or a file pattern and whether the part
-    is "magic", etc.: `["pattern", is_magic, is_globstar, dir_only, is_drive]`.
-
-    Example:
-        `"**/this/is_literal/*magic?/@(magic|part)"`
-
-        Would  become:
-
-        ```
-        [
-            ["**", True, True, False, False],
-            ["this", False, False, True, False],
-            ["is_literal", False, False, True, False],
-            ["*magic?", True, False, True, False],
-            ["@(magic|part)", True, False, False, False]
-        ]
-        ```
-
-    """
-
-    def __init__(self, pattern, flags):
-        """Initialize."""
-
-        self.unix = is_unix_style(flags)
-        self.flags = flags
-        self.pattern = pattern
-        self.no_abs = bool(flags & _NOABSOLUTE)
-        self.globstar = bool(flags & GLOBSTAR)
-        self.matchbase = bool(flags & MATCHBASE)
-        self.extmatchbase = bool(flags & _EXTMATCHBASE)
-        self.tilde = bool(flags & GLOBTILDE)
-        if is_negative(self.pattern, flags):  # pragma: no cover
-            # This isn't really used, but we'll keep it around
-            # in case we find a reason to directly send inverse patterns
-            # Through here.
-            self.pattern = self.pattern[0:1]
-        if flags & NEGATE:
-            flags ^= NEGATE
-        self.flags = flags
-        self.is_bytes = isinstance(pattern, bytes)
-        self.extend = bool(flags & EXTMATCH)
-        if not self.unix:
-            self.win_drive_detect = True
-            self.bslash_abort = True
-            self.sep = '\\'
-        else:
-            self.win_drive_detect = False
-            self.bslash_abort = False
-            self.sep = '/'
-        # Once split, Windows file names will never have `\\` in them,
-        # so we can use the Unix magic detect
-        ptype = BYTES if self.is_bytes else UNICODE
-        self.magic_symbols = _get_magic_symbols(ptype, self.unix, self.flags)[0]
-
-    def is_magic(self, name):
-        """Check if name contains magic characters."""
-
-        for c in self.magic_symbols:
-            if c in name:
-                return True
-        return False
-
-    def _sequence(self, i):
-        """Handle character group."""
-
-        c = next(i)
-        if c == '!':
-            c = next(i)
-        if c in ('^', '-', '['):
-            c = next(i)
-
-        while c != ']':
-            if c == '\\':
-                # Handle escapes
-                subindex = i.index
-                try:
-                    self._references(i, True)
-                except PathNameException:
-                    raise StopIteration
-                except StopIteration:
-                    i.rewind(i.index - subindex)
-            elif c == '/':
-                raise StopIteration
-            c = next(i)
-
-    def _references(self, i, sequence=False):
-        """Handle references."""
-
-        value = ''
-
-        c = next(i)
-        if c == '\\':
-            # \\
-            if sequence and self.bslash_abort:
-                raise PathNameException
-            value = c
-        elif c == '/':
-            # \/
-            if sequence:
-                raise PathNameException
-            i.rewind(1)
-        else:
-            # \a, \b, \c, etc.
-            pass
-        return value
-
-    def parse_extend(self, c, i):
-        """Parse extended pattern lists."""
-
-        # Start list parsing
-        success = True
-        index = i.index
-        list_type = c
-        try:
-            c = next(i)
-            if c != '(':
-                raise StopIteration
-            while c != ')':
-                c = next(i)
-
-                if self.extend and c in EXT_TYPES and self.parse_extend(c, i):
-                    continue
-
-                if c == '\\':
-                    try:
-                        self._references(i)
-                    except StopIteration:
-                        pass
-                elif c == '[':
-                    index = i.index
-                    try:
-                        self._sequence(i)
-                    except StopIteration:
-                        i.rewind(i.index - index)
-
-        except StopIteration:
-            success = False
-            c = list_type
-            i.rewind(i.index - index)
-
-        return success
-
-    def store(self, value, l, dir_only):
-        """Group patterns by literals and potential magic patterns."""
-
-        if l and value in (b'', ''):
-            return
-
-        globstar = value in (b'**', '**') and self.globstar
-        magic = self.is_magic(value)
-        if magic:
-            value = _compile(value, self.flags)
-        if globstar and l and l[-1].is_globstar:
-            l[-1] = WcGlob(value, magic, globstar, dir_only, False)
-        else:
-            l.append(WcGlob(value, magic, globstar, dir_only, False))
-
-    def split(self):
-        """Start parsing the pattern."""
-
-        split_index = []
-        parts = []
-        start = -1
-
-        pattern = self.pattern.decode('latin-1') if self.is_bytes else self.pattern
-
-        i = util.StringIter(pattern)
-        iter(i)
-
-        # Detect and store away windows drive as a literal
-        if self.win_drive_detect:
-            root_specified, drive, slash, end = _get_win_drive(pattern)
-            if drive is not None:
-                if self.is_bytes:
-                    drive = drive.encode('latin-1')
-                parts.append(WcGlob(drive, False, False, True, True))
-                start = end - 1
-                i.advance(start)
-            elif drive is None and root_specified:
-                parts.append(WcGlob(b'\\' if self.is_bytes else '\\', False, False, True, True))
-                start = 1
-                i.advance(2)
-        elif not self.win_drive_detect and pattern.startswith('/'):
-            parts.append(WcGlob(b'/' if self.is_bytes else '/', False, False, True, True))
-            start = 0
-            i.advance(1)
-
-        for c in i:
-            if self.extend and c in EXT_TYPES and self.parse_extend(c, i):
-                continue
-
-            if c == '\\':
-                index = i.index
-                value = ''
-                try:
-                    value = self._references(i)
-                    if self.bslash_abort and value == '\\':
-                        split_index.append((i.index - 2, 1))
-                except StopIteration:
-                    i.rewind(i.index - index)
-                    if self.bslash_abort:
-                        split_index.append((i.index - 1, 0))
-            elif c == '/':
-                split_index.append((i.index - 1, 0))
-            elif c == '[':
-                index = i.index
-                try:
-                    self._sequence(i)
-                except StopIteration:
-                    i.rewind(i.index - index)
-
-        for split, offset in split_index:
-            if self.is_bytes:
-                value = pattern[start + 1:split].encode('latin-1')
-            else:
-                value = pattern[start + 1:split]
-            self.store(value, parts, True)
-            start = split + offset
-
-        if start < len(pattern):
-            if self.is_bytes:
-                value = pattern[start + 1:].encode('latin-1')
-            else:
-                value = pattern[start + 1:]
-            if value:
-                self.store(value, parts, False)
-
-        if len(pattern) == 0:
-            parts.append(WcGlob(pattern.encode('latin-1') if self.is_bytes else pattern, False, False, False, False))
-
-        if (
-            (self.extmatchbase and not parts[0].is_drive) or
-            (self.matchbase and len(parts) == 1 and not parts[0].dir_only)
-        ):
-            self.globstar = True
-            parts.insert(0, WcGlob(b'**' if self.is_bytes else '**', True, True, True, False))
-
-        if self.no_abs and parts and parts[0].is_drive:
-            raise ValueError('The pattern must be a relative path pattern')
-
-        return parts
 
 
 class WcSplit(object):
@@ -1853,223 +1587,3 @@ class WcParse(object):
             pattern = pattern.encode('latin-1')
 
         return pattern
-
-
-def _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root):
-    """
-    Match path against the pattern.
-
-    Since `globstar` doesn't match symlinks (unless `FOLLOW` is enabled), we must look for symlinks.
-    If we identify a symlink in a `globstar` match, we know this result should not actually match.
-
-    We only check for the symlink if we know we are looking at a directory.
-    And we only call `lstat` if we can't find it in the cache.
-
-    We know it's a directory if:
-
-    1. If the base is a directory, all parts are directories.
-    2. If we are not the last part of the `globstar`, the part is a directory.
-    3. If the base is a file, but the part is not at the end, it is a directory.
-
-    """
-
-    matched = False
-
-    end = len(filename)
-    base = None
-    m = pattern.fullmatch(filename)
-    if m:
-        matched = True
-        # Lets look at the captured `globstar` groups and see if that part of the path
-        # contains symlinks.
-        if not follow:
-            last = len(m.groups())
-            for i, star in enumerate(m.groups(), 1):
-                if star:
-                    at_end = m.end(i) == end
-                    parts = star.strip(sep).split(sep)
-                    if base is None:
-                        base = os.path.join(root, filename[:m.start(i)])
-                    for part in parts:
-                        base = os.path.join(base, part)
-                        if is_dir or i != last or not at_end:
-                            is_link = symlinks.get(base, None)
-                            if is_link is not None:
-                                matched = not is_link
-                            else:
-                                is_link = os.path.islink(base)
-                                symlinks[base] = is_link
-                                matched = not is_link
-                            if not matched:
-                                break
-                if not matched:
-                    break
-    return matched
-
-
-def _match_real(filename, include, exclude, follow, symlinks, root):
-    """Match real filename includes and excludes."""
-
-    sep = '\\' if util.platform() == "windows" else '/'
-    if isinstance(filename, bytes):
-        sep = os.fsencode(sep)
-
-    is_dir = filename.endswith(sep)
-    try:
-        is_file_dir = os.path.isdir(os.path.join(root, filename))
-    except OSError:  # pragma: no cover
-        is_file_dir = False
-
-    if not is_dir and is_file_dir:
-        is_dir = True
-        filename += sep
-
-    matched = False
-    for pattern in include:
-        if _fs_match(pattern, filename, is_dir, sep, follow, symlinks, root):
-            matched = True
-            break
-
-    if matched:
-        if exclude:
-            for pattern in exclude:
-                if _fs_match(pattern, filename, is_dir, sep, True, symlinks, root):
-                    matched = False
-                    break
-
-    return matched
-
-
-def _match_pattern(filename, include, exclude, real, path, follow, root_dir=None):
-    """Match includes and excludes."""
-
-    if real:
-        if isinstance(filename, bytes):
-            root = root_dir if root_dir else b'.'
-            ptype = BYTES
-        else:
-            root = root_dir if root_dir else '.'
-            ptype = UNICODE
-
-        if type(filename) != type(root):
-            raise TypeError(
-                "The filename and root directory should be of the same type, not {} and {}".format(
-                    type(filename), type(root_dir)
-                )
-            )
-
-        if include and type(include[0].pattern) != type(filename):
-            raise TypeError(
-                "The filename and pattern should be of the same type, not {} and {}".format(
-                    type(filename), type(include[0].pattern)
-                )
-            )
-
-        mount = RE_WIN_MOUNT[ptype] if util.platform() == "windows" else RE_MOUNT[ptype]
-
-        if not mount.match(filename):
-            exists = os.path.lexists(os.path.join(root, filename))
-        else:
-            exists = os.path.lexists(filename)
-
-        if exists:
-            symlinks = {}
-            return _match_real(filename, include, exclude, follow, symlinks, root)
-        else:
-            return False
-
-    matched = False
-    for pattern in include:
-        if pattern.fullmatch(filename):
-            matched = True
-            break
-
-    if matched:
-        matched = True
-        if exclude:
-            for pattern in exclude:
-                if pattern.fullmatch(filename):
-                    matched = False
-                    break
-    return matched
-
-
-class WcRegexp(util.Immutable):
-    """File name match object."""
-
-    __slots__ = ("_include", "_exclude", "_real", "_path", "_follow", "_hash")
-
-    def __init__(self, include, exclude=None, real=False, path=False, follow=False):
-        """Initialization."""
-
-        super(WcRegexp, self).__init__(
-            _include=include,
-            _exclude=exclude,
-            _real=real,
-            _path=path,
-            _follow=follow,
-            _hash=hash(
-                (
-                    type(self),
-                    type(include), include,
-                    type(exclude), exclude,
-                    type(real), real,
-                    type(path), path,
-                    type(follow), follow
-                )
-            )
-        )
-
-    def __hash__(self):
-        """Hash."""
-
-        return self._hash
-
-    def __len__(self):
-        """Length."""
-
-        return len(self._include) + (len(self._exclude) if self._exclude is not None else 0)
-
-    def __eq__(self, other):
-        """Equal."""
-
-        return (
-            isinstance(other, WcRegexp) and
-            self._include == other._include and
-            self._exclude == other._exclude and
-            self._real == other._real and
-            self._path == other._path and
-            self._follow == other._follow
-        )
-
-    def __ne__(self, other):
-        """Equal."""
-
-        return (
-            not isinstance(other, WcRegexp) or
-            self._include != other._include or
-            self._exclude != other._exclude or
-            self._real != other._real or
-            self._path != other._path or
-            self._follow != other._follow
-        )
-
-    def match(self, filename, root_dir=None):
-        """Match filename."""
-
-        return _match_pattern(
-            filename,
-            self._include,
-            self._exclude,
-            self._real,
-            self._path,
-            self._follow,
-            root_dir=root_dir
-        )
-
-
-def _pickle(p):
-    return WcRegexp, (p._include, p._exclude, p._real, p._path, p._follow)
-
-
-copyreg.pickle(WcRegexp, _pickle)

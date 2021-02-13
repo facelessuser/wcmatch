@@ -24,6 +24,7 @@ import os
 import sys
 import re
 import functools
+from collections import namedtuple
 from . import _wcparse
 from . import util
 
@@ -131,6 +132,260 @@ def _flag_transform(flags):
     return flags
 
 
+class _GlobPart(namedtuple('_GlobPart', ['pattern', 'is_magic', 'is_globstar', 'dir_only', 'is_drive'])):
+    """File Glob."""
+
+
+class _GlobSplit(object):
+    """
+    Split glob pattern on "magic" file and directories.
+
+    Glob pattern return a list of patterns broken down at the directory
+    boundary. Each piece will either be a literal file part or a magic part.
+    Each part will will contain info regarding whether they are
+    a directory pattern or a file pattern and whether the part
+    is "magic", etc.: `["pattern", is_magic, is_globstar, dir_only, is_drive]`.
+
+    Example:
+        `"**/this/is_literal/*magic?/@(magic|part)"`
+
+        Would  become:
+
+        ```
+        [
+            ["**", True, True, False, False],
+            ["this", False, False, True, False],
+            ["is_literal", False, False, True, False],
+            ["*magic?", True, False, True, False],
+            ["@(magic|part)", True, False, False, False]
+        ]
+        ```
+
+    """
+
+    def __init__(self, pattern, flags):
+        """Initialize."""
+
+        self.unix = _wcparse.is_unix_style(flags)
+        self.flags = flags
+        self.pattern = pattern
+        self.no_abs = bool(flags & _wcparse._NOABSOLUTE)
+        self.globstar = bool(flags & GLOBSTAR)
+        self.matchbase = bool(flags & MATCHBASE)
+        self.extmatchbase = bool(flags & _wcparse._EXTMATCHBASE)
+        self.tilde = bool(flags & GLOBTILDE)
+        if _wcparse.is_negative(self.pattern, flags):  # pragma: no cover
+            # This isn't really used, but we'll keep it around
+            # in case we find a reason to directly send inverse patterns
+            # Through here.
+            self.pattern = self.pattern[0:1]
+        if flags & NEGATE:
+            flags ^= NEGATE
+        self.flags = flags
+        self.is_bytes = isinstance(pattern, bytes)
+        self.extend = bool(flags & EXTMATCH)
+        if not self.unix:
+            self.win_drive_detect = True
+            self.bslash_abort = True
+            self.sep = '\\'
+        else:
+            self.win_drive_detect = False
+            self.bslash_abort = False
+            self.sep = '/'
+        # Once split, Windows file names will never have `\\` in them,
+        # so we can use the Unix magic detect
+        ptype = util.BYTES if self.is_bytes else util.UNICODE
+        self.magic_symbols = _wcparse._get_magic_symbols(ptype, self.unix, self.flags)[0]
+
+    def is_magic(self, name):
+        """Check if name contains magic characters."""
+
+        for c in self.magic_symbols:
+            if c in name:
+                return True
+        return False
+
+    def _sequence(self, i):
+        """Handle character group."""
+
+        c = next(i)
+        if c == '!':
+            c = next(i)
+        if c in ('^', '-', '['):
+            c = next(i)
+
+        while c != ']':
+            if c == '\\':
+                # Handle escapes
+                subindex = i.index
+                try:
+                    self._references(i, True)
+                except _wcparse.PathNameException:
+                    raise StopIteration
+                except StopIteration:
+                    i.rewind(i.index - subindex)
+            elif c == '/':
+                raise StopIteration
+            c = next(i)
+
+    def _references(self, i, sequence=False):
+        """Handle references."""
+
+        value = ''
+
+        c = next(i)
+        if c == '\\':
+            # \\
+            if sequence and self.bslash_abort:
+                raise _wcparse.PathNameException
+            value = c
+        elif c == '/':
+            # \/
+            if sequence:
+                raise _wcparse.PathNameException
+            i.rewind(1)
+        else:
+            # \a, \b, \c, etc.
+            pass
+        return value
+
+    def parse_extend(self, c, i):
+        """Parse extended pattern lists."""
+
+        # Start list parsing
+        success = True
+        index = i.index
+        list_type = c
+        try:
+            c = next(i)
+            if c != '(':
+                raise StopIteration
+            while c != ')':
+                c = next(i)
+
+                if self.extend and c in _wcparse.EXT_TYPES and self.parse_extend(c, i):
+                    continue
+
+                if c == '\\':
+                    try:
+                        self._references(i)
+                    except StopIteration:
+                        pass
+                elif c == '[':
+                    index = i.index
+                    try:
+                        self._sequence(i)
+                    except StopIteration:
+                        i.rewind(i.index - index)
+
+        except StopIteration:
+            success = False
+            c = list_type
+            i.rewind(i.index - index)
+
+        return success
+
+    def store(self, value, l, dir_only):
+        """Group patterns by literals and potential magic patterns."""
+
+        if l and value in (b'', ''):
+            return
+
+        globstar = value in (b'**', '**') and self.globstar
+        magic = self.is_magic(value)
+        if magic:
+            value = _wcparse._compile(value, self.flags)
+        if globstar and l and l[-1].is_globstar:
+            l[-1] = _GlobPart(value, magic, globstar, dir_only, False)
+        else:
+            l.append(_GlobPart(value, magic, globstar, dir_only, False))
+
+    def split(self):
+        """Start parsing the pattern."""
+
+        split_index = []
+        parts = []
+        start = -1
+
+        pattern = self.pattern.decode('latin-1') if self.is_bytes else self.pattern
+
+        i = util.StringIter(pattern)
+        iter(i)
+
+        # Detect and store away windows drive as a literal
+        if self.win_drive_detect:
+            root_specified, drive, slash, end = _wcparse._get_win_drive(pattern)
+            if drive is not None:
+                if self.is_bytes:
+                    drive = drive.encode('latin-1')
+                parts.append(_GlobPart(drive, False, False, True, True))
+                start = end - 1
+                i.advance(start)
+            elif drive is None and root_specified:
+                parts.append(_GlobPart(b'\\' if self.is_bytes else '\\', False, False, True, True))
+                start = 1
+                i.advance(2)
+        elif not self.win_drive_detect and pattern.startswith('/'):
+            parts.append(_GlobPart(b'/' if self.is_bytes else '/', False, False, True, True))
+            start = 0
+            i.advance(1)
+
+        for c in i:
+            if self.extend and c in _wcparse.EXT_TYPES and self.parse_extend(c, i):
+                continue
+
+            if c == '\\':
+                index = i.index
+                value = ''
+                try:
+                    value = self._references(i)
+                    if self.bslash_abort and value == '\\':
+                        split_index.append((i.index - 2, 1))
+                except StopIteration:
+                    i.rewind(i.index - index)
+                    if self.bslash_abort:
+                        split_index.append((i.index - 1, 0))
+            elif c == '/':
+                split_index.append((i.index - 1, 0))
+            elif c == '[':
+                index = i.index
+                try:
+                    self._sequence(i)
+                except StopIteration:
+                    i.rewind(i.index - index)
+
+        for split, offset in split_index:
+            if self.is_bytes:
+                value = pattern[start + 1:split].encode('latin-1')
+            else:
+                value = pattern[start + 1:split]
+            self.store(value, parts, True)
+            start = split + offset
+
+        if start < len(pattern):
+            if self.is_bytes:
+                value = pattern[start + 1:].encode('latin-1')
+            else:
+                value = pattern[start + 1:]
+            if value:
+                self.store(value, parts, False)
+
+        if len(pattern) == 0:
+            parts.append(_GlobPart(pattern.encode('latin-1') if self.is_bytes else pattern, False, False, False, False))
+
+        if (
+            (self.extmatchbase and not parts[0].is_drive) or
+            (self.matchbase and len(parts) == 1 and not parts[0].dir_only)
+        ):
+            self.globstar = True
+            parts.insert(0, _GlobPart(b'**' if self.is_bytes else '**', True, True, True, False))
+
+        if self.no_abs and parts and parts[0].is_drive:
+            raise ValueError('The pattern must be a relative path pattern')
+
+        return parts
+
+
 class Glob(object):
     """Glob patterns."""
 
@@ -179,13 +434,13 @@ class Glob(object):
         if self.flags & FORCEWIN:
             self.sep = b'\\' if self.is_bytes else '\\'
             self.seps = (b'/' if self.is_bytes else '/', self.sep)
-            self.re_pathlib_norm = _RE_WIN_PATHLIB_DOT_NORM[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
-            self.re_no_dir = _wcparse.RE_WIN_NO_DIR[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
+            self.re_pathlib_norm = _RE_WIN_PATHLIB_DOT_NORM[util.BYTES if self.is_bytes else util.UNICODE]
+            self.re_no_dir = _wcparse.RE_WIN_NO_DIR[util.BYTES if self.is_bytes else util.UNICODE]
         else:
             self.sep = b'/' if self.is_bytes else '/'
             self.seps = (self.sep,)
-            self.re_pathlib_norm = _RE_PATHLIB_DOT_NORM[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
-            self.re_no_dir = _wcparse.RE_NO_DIR[_wcparse.BYTES if self.is_bytes else _wcparse.UNICODE]
+            self.re_pathlib_norm = _RE_PATHLIB_DOT_NORM[util.BYTES if self.is_bytes else util.UNICODE]
+            self.re_no_dir = _wcparse.RE_NO_DIR[util.BYTES if self.is_bytes else util.UNICODE]
         self._parse_patterns(pattern)
 
         if (
@@ -245,12 +500,12 @@ class Glob(object):
                 # and then the exclude, but glob will already know it wants to include the file.
                 self.npatterns.append(_wcparse._compile(p, self.negate_flags))
             else:
-                self.pattern.append(_wcparse.WcPathSplit(p, self.flags).split())
+                self.pattern.append(_GlobSplit(p, self.flags).split())
 
         if not self.pattern and self.npatterns:
             if self.negateall:
                 default = self.stars
-                self.pattern.append(_wcparse.WcPathSplit(default, self.flags | GLOBSTAR).split())
+                self.pattern.append(_GlobSplit(default, self.flags | GLOBSTAR).split())
 
         if self.nodir:
             self.npatterns.append(self.re_no_dir)
