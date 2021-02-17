@@ -248,7 +248,8 @@ class TestGlobFilter:
         ['a****c**?**??*****', ['abcdecdhjk'], 0, ['abcdecdhjk']],
         ['[-abc]', ['-'], 0, ['-']],
         ['[abc-]', ['-'], 0, ['-']],
-        ['\\', ['\\'], 0, ['\\']],
+        ['\\', [], 0, ['\\']],
+        ['\\\\', ['\\'], 0, ['\\']],
         ['[\\\\]', (['\\'] if util.is_case_sensitive() else []), 0, ['\\']],
         ['[\\\\]', ['\\'], glob.U, ['\\']],
         ['[\\\\]', [], glob.W, ['\\']],
@@ -531,8 +532,8 @@ class TestGlobFilter:
                 'a/b/c/', 'd/e/f/', 'a/e/c/'
             ]
         ),
-        ['**\\', [] if util.is_case_sensitive() else ['a/b/c/', 'd/e/f/', 'a/e/c/']],
-        ['**\\', [], glob.U],
+        ['**\\', ['a/b/c/', 'd/e/f/', 'a/e/c/']],
+        ['**\\', ['a/b/c/', 'd/e/f/', 'a/e/c/'], glob.U],
         ['**\\', ['a/b/c/', 'd/e/f/', 'a/e/c/'], glob.W],
 
         # Invalid `extglob` groups
@@ -544,8 +545,8 @@ class TestGlobFilter:
         ['@([test', ['@([test'] if util.is_case_sensitive() else ['@([test', '@([test\\']],
         ['@([test', ['@([test'], glob.U],
         ['@([test', ['@([test', '@([test\\'], glob.W],
-        ['@([test\\', ['@([test\\']],
-        ['@(test\\', ['@(test\\']],
+        ['@([test\\', ['@([test'] if util.is_case_sensitive() else ['@([test', '@([test\\']],
+        ['@(test\\', []],
         ['@(test[)', ['test[']],
 
         # Dot tests
@@ -593,10 +594,10 @@ class TestGlobFilter:
         ),
         ['./', ['./']],
         ['../', ['../']],
-        ['..\\', [] if util.is_case_sensitive() else ['../']],
+        ['..\\', ['../']],
         ['./', ['./'], glob.Z],
         ['../', ['../'], glob.Z],
-        ['..\\', [] if util.is_case_sensitive() else ['../'], glob.Z],
+        ['..\\', ['../'], glob.Z],
 
         # Inverse dot tests
         GlobFiles(
@@ -660,7 +661,8 @@ class TestGlobFilter:
 
         # Force Unix/Linux
         ['test/test', ['test/test'], glob.U],
-        ['test\\/test', ['test\\/test'], glob.U],
+        ['test\\/test', ['test/test'], glob.U],
+        [r'test\\/test', ['test\\/test'], glob.U],
         ['@(test/test)', [], glob.U],
         [r'@(test\/test)', [], glob.U],
         ['test[/]test', [], glob.U],
@@ -682,7 +684,8 @@ class TestGlobFilter:
         ['test/test', ['test/test', 'test\\/test'], glob.W | glob.C],
         ['test\\/test', ['test/test', 'test\\/test'], glob.W | glob.C],
         ['TEST/test', ['test/test'], glob.U | glob.I],
-        ['test\\/TEST', ['test\\/test'], glob.U | glob.I],
+        ['test\\/TEST', ['test/test'], glob.U | glob.I],
+        [r'test\\/TEST', ['test\\/test'], glob.U | glob.I],
         ['TEST/test', [], glob.U],
         ['test\\/TEST', [], glob.U],
 
@@ -1177,7 +1180,7 @@ class TestGlobMatchSpecial(unittest.TestCase):
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na[/]med\\/file/test.py',
-                '**/na[/]med\\/file/*.py',
+                '**/na[/]med\\\\/file/*.py',
                 flags=flags
             )
         )
@@ -1191,7 +1194,7 @@ class TestGlobMatchSpecial(unittest.TestCase):
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na[\\/]med\\/file/test.py',
-                r'**/na[\/]med\/file/*.py',
+                r'**/na[\\/]med\\/file/*.py',
                 flags=flags | glob.R
             )
         )

@@ -731,8 +731,6 @@ class WcSplit(object):
             # \/
             if sequence and self.pathname:
                 raise PathNameException
-            elif self.pathname:
-                i.rewind(1)
         else:
             # \a, \b, \c, etc.
             pass
@@ -1081,10 +1079,9 @@ class WcParse(object):
             if sequence and self.pathname:
                 raise PathNameException
             if self.pathname:
-                value = r'\\'
+                value = r'\\' if self.bslash_abort else '/'
                 if self.in_list:
                     value = self._restrict_extended_slash() + value
-                i.rewind(1)
             else:
                 value = re.escape(c)
         elif c == '.':
@@ -1136,10 +1133,7 @@ class WcParse(object):
                             # Store pattern accordingly
                             raise StopIteration
                         except StopIteration:
-                            # Ran out of characters so assume backslash
-                            if self.sep != '\\' or not self.pathname:
-                                is_current = False
-                                is_previous = False
+                            # Escapes nothing, ignore
                             raise StopIteration
                     elif c == '/':
                         raise StopIteration
@@ -1206,11 +1200,8 @@ class WcParse(object):
                             value = globstar
                             self.matchbase = False
                         except StopIteration:
-                            # Ran out of characters so assume backslash
-                            # count as a double star
-                            if self.sep == '\\':
-                                value = globstar
-                                self.matchbase = False
+                            # Escapes nothing, ignore and assume double star
+                            value = globstar
                     elif c == '/' and not self.bslash_abort:
                         value = globstar
                         self.matchbase = False
@@ -1499,9 +1490,8 @@ class WcParse(object):
                 except DotException:
                     continue
                 except StopIteration:
+                    # Escapes nothing, ignore
                     i.rewind(i.index - index)
-                    current.append(re.escape(c))
-                    self.matchbase = False
             elif c == '[':
                 index = i.index
                 try:

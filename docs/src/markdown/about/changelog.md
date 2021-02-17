@@ -1,5 +1,12 @@
 # Changelog
 
+## 8.1.2
+
+- **FIX**: On Linux/Unix systems, a backslash should not be assumed literal if it is followed by a forward slash.
+  Backslash is magic on all systems, and an escaped forward slash is still counted as a forward slash.
+- **FIX**: A trailing backslash that is not escaped via another backslash should not be assumed as a path separator.
+  Since it is escaping nothing, it will be ignored. Literal backslashes on any system must be escaped.
+
 ## 8.1.1
 
 - **FIX**: When tracking unique glob paths, the unique cache had inverted logic for case sensitive vs case insensitive

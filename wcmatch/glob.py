@@ -243,7 +243,7 @@ class _GlobSplit(object):
             # \/
             if sequence:
                 raise _wcparse.PathNameException
-            i.rewind(1)
+            value = '\\' if self.bslash_abort else '/'
         else:
             # \a, \b, \c, etc.
             pass
@@ -339,7 +339,7 @@ class _GlobSplit(object):
                 value = ''
                 try:
                     value = self._references(i)
-                    if self.bslash_abort and value == '\\':
+                    if (self.bslash_abort and value == '\\') or value == '/':
                         split_index.append((i.index - 2, 1))
                 except StopIteration:
                     i.rewind(i.index - index)
