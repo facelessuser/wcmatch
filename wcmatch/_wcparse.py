@@ -1560,6 +1560,10 @@ class WcParse(object):
             self.path_gstar_dot1 = gstar
             self.globstar_capture = globstar_capture
 
+        # We have an escape, but it escapes nothing
+        if p == '\\':
+            p = ''
+
         if p:
             self.root(p, result)
 

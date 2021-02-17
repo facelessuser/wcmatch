@@ -546,7 +546,7 @@ class TestGlobFilter:
         ['@([test', ['@([test'], glob.U],
         ['@([test', ['@([test', '@([test\\'], glob.W],
         ['@([test\\', ['@([test'] if util.is_case_sensitive() else ['@([test', '@([test\\']],
-        ['@(test\\', []],
+        ['@(test\\', [] if util.is_case_sensitive() else ['@(test\\']],
         ['@(test[)', ['test[']],
 
         # Dot tests
