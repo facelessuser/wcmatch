@@ -96,28 +96,21 @@ def norm_pattern(pattern, normalize, is_raw_chars, ignore_escape=False):
     if not normalize and not is_raw_chars and not ignore_escape:
         return pattern
 
-    def norm_char(token):
-        """Normalize slash."""
-
-        if normalize and token in ('/', b'/'):
-            token = br'\\' if is_bytes else r'\\'
-        return token
-
     def norm(m):
         """Normalize the pattern."""
 
         if m.group(1):
             char = m.group(1)
             if normalize:
-                char = br'\\\\' if is_bytes else r'\\\\' if len(char) > 1 else norm_char(char)
+                char = br'\\\\' if is_bytes else r'\\\\' if len(char) > 1 else char
         elif m.group(2):
-            char = norm_char(BACK_SLASH_TRANSLATION[m.group(2)] if is_raw_chars else m.group(2))
+            char = BACK_SLASH_TRANSLATION[m.group(2)] if is_raw_chars else m.group(2)
         elif is_raw_chars and m.group(4):
-            char = norm_char(bytes([int(m.group(4), 8) & 0xFF]) if is_bytes else chr(int(m.group(4), 8)))
+            char = bytes([int(m.group(4), 8) & 0xFF]) if is_bytes else chr(int(m.group(4), 8))
         elif is_raw_chars and m.group(3):
-            char = norm_char(bytes([int(m.group(3)[2:], 16)]) if is_bytes else chr(int(m.group(3)[2:], 16)))
+            char = bytes([int(m.group(3)[2:], 16)]) if is_bytes else chr(int(m.group(3)[2:], 16))
         elif is_raw_chars and not is_bytes and m.group(5):
-            char = norm_char(unicodedata.lookup(m.group(5)[3:-1]))
+            char = unicodedata.lookup(m.group(5)[3:-1])
         elif not is_raw_chars or m.group(5 if is_bytes else 6):
             char = m.group(0)
             if ignore_escape:

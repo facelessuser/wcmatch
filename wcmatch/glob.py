@@ -846,8 +846,6 @@ def globmatch(filename, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATT
 
     flags = _flag_transform(flags)
     filename = os.fspath(filename)
-    if not _wcparse.is_unix_style(flags):
-        filename = _wcparse.norm_slash(filename, flags)
     return _wcparse.compile(patterns, flags, limit).match(filename, root_dir=root_dir)
 
 
@@ -859,13 +857,10 @@ def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=_wcparse.PA
 
     matches = []
     flags = _flag_transform(flags)
-    unix = _wcparse.is_unix_style(flags)
     obj = _wcparse.compile(patterns, flags, limit)
 
     for filename in filenames:
         temp = os.fspath(filename)
-        if not unix:
-            temp = _wcparse.norm_slash(temp, flags)
         if obj.match(temp, root_dir):
             matches.append(filename)
     return matches

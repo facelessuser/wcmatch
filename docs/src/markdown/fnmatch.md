@@ -31,9 +31,9 @@ Pattern           | Meaning
 `!(pattern_list)` | The pattern matches if the input string cannot be matched with any of the patterns in the `pattern_list`. Requires the [`EXTMATCH`](#extmatch) flag.
 `{}`              | Bash style brace expansions.  This is applied to patterns before anything else. Requires the [`BRACE`](#brace) flag.
 
-- Slashes are generally treated as normal characters, but on windows they will be normalized: `/` will become `\\`.
-  There is no need to explicitly use `\\` in patterns on Windows, but if you do, it will be handled.  This applies to
-  matching patterns and the filenames the patterns are applied to.
+- Slashes are generally treated as normal characters, but on windows they are normalized. `/` will match both `/` and
+  `\\` or `/`. There is no need to explicitly use `\\` in patterns on Windows, but if you do, they must be escaped to
+  specify a literal `\\`. If a backslash is escaped, it will match all valid windows separators, just like `/` does.
 - By default, `.` is *not* matched by `*`, `?`, and `[]`. See the [`DOTMATCH`](#dotmatch) flag to match `.` at
   the start of a filename without a literal `.`.
 

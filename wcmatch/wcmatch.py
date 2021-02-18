@@ -141,7 +141,7 @@ class WcMatch(_Mixin):
         self._abort = False
         self._skipped = 0
         self._parse_flags(flags)
-        self._directory = _wcparse.norm_slash(root_dir, 0)
+        self._directory = self._norm_slash(root_dir)
         self._sep = os.fsencode(os.sep) if self.is_bytes else os.sep
         self._root_dir = self._add_sep(self._get_cwd(), True)
         self.limit = limit
@@ -151,6 +151,14 @@ class WcMatch(_Mixin):
         self.folder_exclude_check = None
         self.on_init(**kwargs)
         self._compile(self.pattern_file, self.pattern_folder_exclude)
+
+    def _norm_slash(self, name):
+        """Normalize path slashes."""
+
+        if self.is_bytes:
+            return name.replace(b'/', b"\\") if not util.is_case_sensitive() else name
+        else:
+            return name.replace('/', "\\") if not util.is_case_sensitive() else name
 
     def _add_sep(self, path, check=False):
         """Add separator."""

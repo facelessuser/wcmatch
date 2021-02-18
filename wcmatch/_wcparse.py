@@ -212,9 +212,9 @@ _QMARK = r'.'
 # Star
 _STAR = r'.*?'
 # For paths, allow trailing /
-_PATH_TRAIL = r'[{}]*?'
+_PATH_TRAIL = r'{}*?'
 # Disallow . and .. (usually applied right after path separator when needed)
-_NO_DIR = r'(?!(?:\.{{1,2}})(?:$|{sep}))'
+_NO_DIR = r'(?!(?:\.{{1,2}})(?:$|[{sep}]))'
 # Star for `PATHNAME`
 _PATH_STAR = r'[^{sep}]*?'
 # Star when at start of filename during `DOTMATCH`
@@ -224,9 +224,9 @@ _PATH_STAR_DOTMATCH = _NO_DIR + _PATH_STAR
 # Disallow . and .. and don't allow match to start with a dot.
 _PATH_STAR_NO_DOTMATCH = _NO_DIR + r'(?:(?!\.){})?'.format(_PATH_STAR)
 # `GLOBSTAR` during `DOTMATCH`. Avoid directory match /./ or /../
-_PATH_GSTAR_DOTMATCH = r'(?:(?!(?:{sep}|^)(?:\.{{1,2}})($|{sep})).)*?'
+_PATH_GSTAR_DOTMATCH = r'(?:(?!(?:[{sep}]|^)(?:\.{{1,2}})($|[{sep}])).)*?'
 # `GLOBSTAR` with `DOTMATCH` disabled. Don't allow a dot to follow /
-_PATH_GSTAR_NO_DOTMATCH = r'(?:(?!(?:{sep}|^)\.).)*?'
+_PATH_GSTAR_NO_DOTMATCH = r'(?:(?!(?:[{sep}]|^)\.).)*?'
 # Special right to left matching
 _PATH_GSTAR_RTL_MATCH = r'.*?'
 # Next char cannot be a dot
@@ -239,7 +239,7 @@ _PATH_NO_SLASH = r'(?![{sep}])'
 _ONE_OR_MORE = r'+'
 # End of pattern
 _EOP = r'$'
-_PATH_EOP = r'(?:$|{sep})'
+_PATH_EOP = r'(?:$|[{sep}])'
 # Divider between `globstar`. Can match start or end of pattern
 # in addition to slashes.
 _GLOBSTAR_DIV = r'(?:^|$|{})+'
@@ -386,7 +386,7 @@ def _get_win_drive(pattern, regex=False, case_sensitive=False):
                     drive = '\\\\{}{}'.format('\\'.join(part), '\\' if slash else '')
                 else:
                     drive = r'[\\/]{2}' + r'[\\/]'.join([escape_drive(p, case_sensitive) for p in part])
-    elif pattern.startswith('\\\\'):
+    elif pattern.startswith(('\\\\', '/')):
         root_specified = True
 
     return root_specified, drive, slash, end
@@ -525,15 +525,6 @@ def expand(pattern, flags, limit):
     for expanded in expand_braces(pattern, flags, limit):
         for splitted in split(expanded, flags):
             yield expand_tilde(splitted, is_unix_style(flags), flags)
-
-
-def norm_slash(name, flags):
-    """Normalize path slashes."""
-
-    if isinstance(name, str):
-        return name.replace('/', "\\") if not is_case_sensitive(flags) else name
-    else:
-        return name.replace(b'/', b"\\") if not is_case_sensitive(flags) else name
 
 
 def is_case_sensitive(flags):
@@ -841,13 +832,14 @@ class WcParse(object):
             self.win_drive_detect = self.pathname
             self.char_avoid = (ord('\\'), ord('/'), ord('.'))
             self.bslash_abort = self.pathname
-            self.sep = '\\'
+            sep = {"sep": re.escape('\\/')}
         else:
             self.win_drive_detect = False
             self.char_avoid = (ord('/'), ord('.'))
             self.bslash_abort = False
-            self.sep = '/'
-        sep = {"sep": re.escape(self.sep)}
+            sep = {"sep": re.escape('/')}
+        self.bare_sep = sep['sep']
+        self.sep = '[{}]'.format(self.bare_sep)
         self.path_eop = _PATH_EOP.format(**sep)
         self.no_dir = _NO_DIR.format(**sep)
         self.seq_path = _PATH_NO_SLASH.format(**sep)
@@ -1007,16 +999,12 @@ class WcParse(object):
 
             if c == '\\':
                 # Handle escapes
-                subindex = i.index
                 try:
                     value = self._references(i, True)
                 except DotException:
                     value = re.escape(next(i))
                 except PathNameException:
                     raise StopIteration
-                except StopIteration:
-                    i.rewind(i.index - subindex)
-                    value = r'\\'
             elif c == '/':
                 if self.pathname:
                     raise StopIteration
@@ -1070,20 +1058,24 @@ class WcParse(object):
             value = r'\\'
             if self.bslash_abort:
                 if not self.in_list:
-                    value = self.get_path_sep() + _ONE_OR_MORE
+                    value = self.sep + _ONE_OR_MORE
                     self.set_start_dir()
                 else:
-                    value = self._restrict_extended_slash() + value
+                    value = self._restrict_extended_slash() + self.sep
+            elif not self.unix:
+                value = self.sep if not sequence else self.bare_sep
         elif c == '/':
             # \/
             if sequence and self.pathname:
                 raise PathNameException
             if self.pathname:
-                value = r'\\' if self.bslash_abort else '/'
-                if self.in_list:
-                    value = self._restrict_extended_slash() + value
+                if not self.in_list:
+                    value = self.sep + _ONE_OR_MORE
+                    self.set_start_dir()
+                else:
+                    value = self._restrict_extended_slash() + self.sep
             else:
-                value = re.escape(c)
+                value = self.sep if not sequence else self.bare_sep
         elif c == '.':
             # Let dots be handled special
             i.rewind(1)
@@ -1202,7 +1194,7 @@ class WcParse(object):
                         except StopIteration:
                             # Escapes nothing, ignore and assume double star
                             value = globstar
-                    elif c == '/' and not self.bslash_abort:
+                    elif c == '/':
                         value = globstar
                         self.matchbase = False
 
@@ -1226,7 +1218,7 @@ class WcParse(object):
 
         self.reset_dir_track()
         if value == globstar:
-            sep = _GLOBSTAR_DIV.format(self.get_path_sep())
+            sep = _GLOBSTAR_DIV.format(self.sep)
             # Check if the last entry was a `globstar`
             # If so, don't bother adding another.
             if current[-1] != sep:
@@ -1235,7 +1227,7 @@ class WcParse(object):
                     current[-1] = value
                 else:
                     # Replace the last path separator
-                    current[-1] = _NEED_SEP.format(self.get_path_sep())
+                    current[-1] = _NEED_SEP.format(self.sep)
                     current.append(value)
                 self.consume_path_sep(i)
                 current.append(sep)
@@ -1318,7 +1310,7 @@ class WcParse(object):
                 elif c == '/':
                     if self.pathname:
                         extended.append(self._restrict_extended_slash())
-                    extended.append(re.escape(c))
+                    extended.append(self.sep)
                 elif c == "|":
                     self.clean_up_inverse(extended, temp_inv_nest and self.inv_nest)
                     extended.append(c)
@@ -1398,20 +1390,18 @@ class WcParse(object):
 
         return success
 
-    def get_path_sep(self):
-        """Get path separator."""
-
-        return re.escape(self.sep)
-
     def consume_path_sep(self, i):
-        """Consume any consecutive path separators are they count as one."""
+        """Consume any consecutive path separators as they count as one."""
 
         try:
             if self.bslash_abort:
                 count = -1
                 c = '\\'
-                while c == '\\':
-                    count += 1
+                while c in ('\\', '/'):
+                    if c != '/' or count % 2:
+                        count += 1
+                    else:
+                        count += 2
                     c = next(i)
                 i.rewind(1)
                 # Rewind one more if we have an odd number (escape): \\\*
@@ -1437,7 +1427,7 @@ class WcParse(object):
             if drive is not None:
                 current.append(drive)
                 if slash:
-                    current.append(self.get_path_sep() + _ONE_OR_MORE)
+                    current.append(self.sep + _ONE_OR_MORE)
                 i.advance(end)
                 self.consume_path_sep(i)
             elif drive is None and root_specified:
@@ -1473,11 +1463,11 @@ class WcParse(object):
                 if self.pathname:
                     self.set_start_dir()
                     self.clean_up_inverse(current)
-                    current.append(self.get_path_sep() + _ONE_OR_MORE)
+                    current.append(self.sep + _ONE_OR_MORE)
                     self.consume_path_sep(i)
                     self.matchbase = False
                 else:
-                    current.append(re.escape(c))
+                    current.append(self.sep)
             elif c == '\\':
                 index = i.index
                 try:
@@ -1507,7 +1497,7 @@ class WcParse(object):
         self.clean_up_inverse(current)
 
         if self.pathname:
-            current.append(_PATH_TRAIL.format(self.get_path_sep()))
+            current.append(_PATH_TRAIL.format(self.sep))
 
     def parse(self):
         """Parse pattern list."""

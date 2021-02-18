@@ -2,8 +2,12 @@
 
 ## 8.1.2
 
+- **FIX**: `fnmatch.translate` no longer requires user to normalize their Windows paths for comparison. Previously,
+  portions of the `translate` regex handled both `/` and `\\`, while other portions did not. This inconsistent handling
+  forced users to normalize paths for reliable matching. Now all of the generated regex should handle both `/` and `\\`.
 - **FIX**: On Linux/Unix systems, a backslash should not be assumed literal if it is followed by a forward slash.
-  Backslash is magic on all systems, and an escaped forward slash is still counted as a forward slash.
+  Backslash is magic on all systems, and an escaped forward slash is still counted as a forward slash, not a backslash
+  and forward slash.
 - **FIX**: A trailing backslash that is not escaped via another backslash should not be assumed as a path separator.
   Since it is escaping nothing, it will be ignored. Literal backslashes on any system must be escaped.
 
