@@ -250,6 +250,8 @@ class TestGlobFilter:
         ['[abc-]', ['-'], 0, ['-']],
         ['\\', [], 0, ['\\']],
         ['\\\\', ['\\'], 0, ['\\']],
+        ['/', ['\\'], glob.W, ['\\']],
+        ['/', ['/'], glob.U, ['/']],
         ['[\\\\]', (['\\'] if util.is_case_sensitive() else []), 0, ['\\']],
         ['[\\\\]', ['\\'], glob.U, ['\\']],
         ['[\\\\]', [], glob.W, ['\\']],
@@ -535,6 +537,9 @@ class TestGlobFilter:
         ['**\\', ['a/b/c/', 'd/e/f/', 'a/e/c/']],
         ['**\\', ['a/b/c/', 'd/e/f/', 'a/e/c/'], glob.U],
         ['**\\', ['a/b/c/', 'd/e/f/', 'a/e/c/'], glob.W],
+        [r'**\\', [] if util.is_case_sensitive() else ['a/b/c/', 'd/e/f/', 'a/e/c/']],
+        [r'**\\', [], glob.U],
+        [r'**\\', ['a/b/c/', 'd/e/f/', 'a/e/c/'], glob.W],
 
         # Invalid `extglob` groups
         GlobFiles(
