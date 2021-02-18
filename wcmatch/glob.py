@@ -340,8 +340,6 @@ class _GlobSplit(object):
                         split_index.append((i.index - 2, 1))
                 except StopIteration:
                     i.rewind(i.index - index)
-                    if self.bslash_abort:
-                        split_index.append((i.index - 1, 0))
             elif c == '/':
                 split_index.append((i.index - 1, 0))
             elif c == '[':

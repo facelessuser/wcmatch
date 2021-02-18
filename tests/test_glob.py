@@ -567,6 +567,14 @@ class Testglob(_TestGlob):
         [
             ('*\\',),
             [
+                ("a",), ("aab",), ("aaa",), ("ZZZ",), ("EF",)
+            ] if not can_symlink() else [
+                ("a",), ("aab",), ("aaa",), ("ZZZ",), ("EF",), ('sym1',), ('sym2',), ('sym3',)
+            ]
+        ],
+        [
+            (r'*\\',),
+            [
                 ('aab', ''), ('aaa', ''), ('a', '')
             ] if not can_symlink() else [
                 ('aab', ''), ('aaa', ''), ('a', ''), ('sym3', '')
@@ -1166,8 +1174,10 @@ class TestGlobCornerCase(_TestGlob):
         [(r'a[\/]b',), [('a[', ']b')]],
 
         Options(skip=util.is_case_sensitive()),
-        [('a[\\',), [('a[', '')]],
-        [('@(a[\\',), [('@(a[', '')]],
+        [('a[\\',), [('a[',)]],
+        [('@(a[\\',), [('@(a[',)]],
+        [(r'a[\\',), [('a[', '')]],
+        [(r'@(a[\\',), [('@(a[', '')]],
         Options(skip=False)
     ]
 
