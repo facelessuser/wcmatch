@@ -598,6 +598,7 @@ class TestGlobFilter:
         ['./', ['./'], glob.Z],
         ['../', ['../'], glob.Z],
         ['..\\', ['../'], glob.Z],
+        [r'.\\', ['./'], glob.W | glob.Z],
 
         # Inverse dot tests
         GlobFiles(

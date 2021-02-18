@@ -698,13 +698,10 @@ class WcSplit(object):
         while c != ']':
             if c == '\\':
                 # Handle escapes
-                subindex = i.index
                 try:
                     self._references(i, True)
                 except PathNameException:
                     raise StopIteration
-                except StopIteration:
-                    i.rewind(i.index - subindex)
             elif c == '/':
                 if self.pathname:
                     raise StopIteration
@@ -1121,11 +1118,6 @@ class WcParse(object):
                                 is_previous = False
                                 raise StopIteration
                         except PathNameException:
-                            # Looks like escape was a valid slash
-                            # Store pattern accordingly
-                            raise StopIteration
-                        except StopIteration:
-                            # Escapes nothing, ignore
                             raise StopIteration
                     elif c == '/':
                         raise StopIteration

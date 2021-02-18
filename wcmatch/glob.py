@@ -217,13 +217,10 @@ class _GlobSplit(object):
         while c != ']':
             if c == '\\':
                 # Handle escapes
-                subindex = i.index
                 try:
                     self._references(i, True)
                 except _wcparse.PathNameException:
                     raise StopIteration
-                except StopIteration:
-                    i.rewind(i.index - subindex)
             elif c == '/':
                 raise StopIteration
             c = next(i)
@@ -243,7 +240,7 @@ class _GlobSplit(object):
             # \/
             if sequence:
                 raise _wcparse.PathNameException
-            value = '\\' if self.bslash_abort else '/'
+            value = c
         else:
             # \a, \b, \c, etc.
             pass
