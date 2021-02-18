@@ -26,6 +26,7 @@ import re
 import functools
 from collections import namedtuple
 from . import _wcparse
+from . import _wcmatch
 from . import util
 
 __all__ = (
@@ -41,7 +42,7 @@ __all__ = (
 # and `scandir` will not work with bytes on the wrong system.
 WIN = sys.platform.startswith('win')
 # Right half can return an empty set if not supported
-SUPPORT_DIR_FD = _wcparse.SUPPORT_DIR_FD
+SUPPORT_DIR_FD = _wcmatch.SUPPORT_DIR_FD
 
 C = CASE = _wcparse.CASE
 I = IGNORECASE = _wcparse.IGNORECASE
@@ -604,7 +605,7 @@ class Glob(object):
             elif self.dir_fd is not None:
                 fd = scandir = os.open(
                     os.path.join(self.root_dir, curdir) if curdir else self.root_dir,
-                    _wcparse.DIR_FLAGS,
+                    _wcmatch.DIR_FLAGS,
                     dir_fd=self.dir_fd
                 )
             else:

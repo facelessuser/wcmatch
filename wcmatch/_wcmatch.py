@@ -1,8 +1,14 @@
 """Handle path matching."""
 import re
 import os
+import stat
 import copyreg
 from . import util
+
+# `O_DIRECTORY` may not always be defined
+DIR_FLAGS = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
+# Right half can return an empty set if not supported
+SUPPORT_DIR_FD = {os.open, os.stat} <= os.supports_dir_fd and os.scandir in os.supports_fd
 
 
 RE_WIN_MOUNT = (
@@ -18,7 +24,7 @@ RE_MOUNT = (
 class _Match:
     """Match the given pattern."""
 
-    def __init__(self, filename, include, exclude, real, path, follow, root_dir=None):
+    def __init__(self, filename, include, exclude, real, path, follow):
         """Initialize."""
 
         self.filename = filename
@@ -29,9 +35,8 @@ class _Match:
         self.follow = follow
         self.is_bytes = isinstance(self.filename, bytes)
         self.ptype = util.BYTES if self.is_bytes else util.UNICODE
-        self.root_dir = root_dir
 
-    def _fs_match(self, pattern, filename, is_dir, sep, follow, symlinks, root):
+    def _fs_match(self, pattern, filename, is_dir, sep, follow, symlinks, root, dir_fd):
         """
         Match path against the pattern.
 
@@ -60,29 +65,40 @@ class _Match:
             # contains symlinks.
             if not follow:
                 last = len(m.groups())
-                for i, star in enumerate(m.groups(), 1):
-                    if star:
-                        at_end = m.end(i) == end
-                        parts = star.strip(sep).split(sep)
-                        if base is None:
-                            base = os.path.join(root, filename[:m.start(i)])
-                        for part in parts:
-                            base = os.path.join(base, part)
-                            if is_dir or i != last or not at_end:
-                                is_link = symlinks.get(base, None)
-                                if is_link is not None:
+                try:
+                    for i, star in enumerate(m.groups(), 1):
+                        if star:
+                            at_end = m.end(i) == end
+                            parts = star.strip(sep).split(sep)
+                            if base is None:
+                                base = os.path.join(root, filename[:m.start(i)])
+                            for part in parts:
+                                base = os.path.join(base, part)
+                                key = (dir_fd, base)
+                                if is_dir or i != last or not at_end:
+                                    is_link = symlinks.get(key, None)
+                                    if is_link is None:
+                                        if dir_fd is None:
+                                            is_link = os.path.islink(base)
+                                            symlinks[key] = is_link
+                                        else:
+                                            try:
+                                                st = os.lstat(base, dir_fd=dir_fd)
+                                            except (OSError, ValueError):  # pragma: no cover
+                                                is_link = False
+                                            else:
+                                                is_link = stat.S_ISLNK(st.st_mode)
+                                            symlinks[key] = is_link
                                     matched = not is_link
-                                else:
-                                    is_link = os.path.islink(base)
-                                    symlinks[base] = is_link
-                                    matched = not is_link
-                                if not matched:
-                                    break
-                    if not matched:
-                        break
+                                    if not matched:
+                                        break
+                        if not matched:
+                            break
+                except OSError:  # pragma: no cover
+                    matched = False
         return matched
 
-    def _match_real(self, symlinks, root):
+    def _match_real(self, symlinks, root, dir_fd):
         """Match real filename includes and excludes."""
 
         sep = '\\' if util.platform() == "windows" else '/'
@@ -91,9 +107,17 @@ class _Match:
 
         is_dir = self.filename.endswith(sep)
         try:
-            is_file_dir = os.path.isdir(os.path.join(root, self.filename))
+            if dir_fd is None:
+                is_file_dir = os.path.isdir(os.path.join(root, self.filename))
+            else:
+                try:
+                    st = os.stat(os.path.join(root, self.filename), dir_fd=dir_fd)
+                except (OSError, ValueError):  # pragma: no cover
+                    is_file_dir = False
+                else:
+                    is_file_dir = stat.S_ISDIR(st.st_mode)
         except OSError:  # pragma: no cover
-            is_file_dir = False
+            return False
 
         if not is_dir and is_file_dir:
             is_dir = True
@@ -103,29 +127,32 @@ class _Match:
 
         matched = False
         for pattern in self.include:
-            if self._fs_match(pattern, filename, is_dir, sep, self.follow, symlinks, root):
+            if self._fs_match(pattern, filename, is_dir, sep, self.follow, symlinks, root, dir_fd):
                 matched = True
                 break
 
         if matched:
             if self.exclude:
                 for pattern in self.exclude:
-                    if self._fs_match(pattern, filename, is_dir, sep, True, symlinks, root):
+                    if self._fs_match(pattern, filename, is_dir, sep, True, symlinks, root, dir_fd):
                         matched = False
                         break
 
         return matched
 
-    def match(self):
+    def match(self, root_dir=None, dir_fd=None):
         """Match."""
 
         if self.real:
-            root = self.root_dir if self.root_dir else (b'.' if self.is_bytes else '.')
+            root = root_dir if root_dir else (b'.' if self.is_bytes else '.')
+
+            if dir_fd is not None and not SUPPORT_DIR_FD:
+                dir_fd = None
 
             if not isinstance(self.filename, type(root)):
                 raise TypeError(
                     "The filename and root directory should be of the same type, not {} and {}".format(
-                        type(self.filename), type(self.root_dir)
+                        type(self.filename), type(root_dir)
                     )
                 )
 
@@ -136,16 +163,25 @@ class _Match:
                     )
                 )
 
-            mount = RE_WIN_MOUNT[self.ptype] if util.platform() == "windows" else RE_MOUNT[self.ptype]
+            is_abs = (
+                RE_WIN_MOUNT if util.platform() == "windows" else RE_MOUNT
+            )[self.ptype].match(self.filename) is not None
 
-            if not mount.match(self.filename):
+            if is_abs:
+                exists = os.path.lexists(self.filename)
+            elif dir_fd is None:
                 exists = os.path.lexists(os.path.join(root, self.filename))
             else:
-                exists = os.path.lexists(self.filename)
+                try:
+                    os.lstat(os.path.join(root, self.filename), dir_fd=dir_fd)
+                except (OSError, ValueError):  # pragma: no cover
+                    exists = False
+                else:
+                    exists = True
 
             if exists:
                 symlinks = {}
-                return self._match_real(symlinks, root)
+                return self._match_real(symlinks, root, dir_fd)
             else:
                 return False
 
@@ -225,7 +261,7 @@ class WcRegexp(util.Immutable):
             self._follow != other._follow
         )
 
-    def match(self, filename, root_dir=None):
+    def match(self, filename, root_dir=None, dir_fd=None):
         """Match filename."""
 
         return _Match(
@@ -234,9 +270,11 @@ class WcRegexp(util.Immutable):
             self._exclude,
             self._real,
             self._path,
-            self._follow,
-            root_dir=root_dir
-        ).match()
+            self._follow
+        ).match(
+            root_dir=root_dir,
+            dir_fd=dir_fd
+        )
 
 
 def _pickle(p):
