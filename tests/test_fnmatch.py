@@ -442,7 +442,7 @@ class TestFnMatchTranslate(unittest.TestCase):
         self.assertEqual(p2, [])
 
         p1, p2 = fnmatch.translate('test[\\', flags=flags)
-        self.assertEqual(p1, [r'^(?s:test\[\\)$'])
+        self.assertEqual(p1, [r'^(?s:test\[)$'])
         self.assertEqual(p2, [])
 
         p1, p2 = fnmatch.translate(r'test\44test', flags=flags | fnmatch.R)

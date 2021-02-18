@@ -85,8 +85,6 @@ def fnmatch(filename, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
     """
 
     flags = _flag_transform(flags)
-    if not _wcparse.is_unix_style(flags):
-        filename = _wcparse.norm_slash(filename, flags)
     return _wcparse.compile(patterns, flags, limit).match(filename)
 
 
@@ -96,11 +94,10 @@ def filter(filenames, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):  # no
     matches = []
 
     flags = _flag_transform(flags)
-    unix = _wcparse.is_unix_style(flags)
     obj = _wcparse.compile(patterns, flags, limit)
 
     for filename in filenames:
-        if obj.match(_wcparse.norm_slash(filename, flags) if not unix else filename):
+        if obj.match(filename):
             matches.append(filename)
     return matches
 

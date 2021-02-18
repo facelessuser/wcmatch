@@ -217,13 +217,10 @@ class _GlobSplit(object):
         while c != ']':
             if c == '\\':
                 # Handle escapes
-                subindex = i.index
                 try:
                     self._references(i, True)
                 except _wcparse.PathNameException:
                     raise StopIteration
-                except StopIteration:
-                    i.rewind(i.index - subindex)
             elif c == '/':
                 raise StopIteration
             c = next(i)
@@ -243,7 +240,7 @@ class _GlobSplit(object):
             # \/
             if sequence:
                 raise _wcparse.PathNameException
-            i.rewind(1)
+            value = c
         else:
             # \a, \b, \c, etc.
             pass
@@ -339,12 +336,10 @@ class _GlobSplit(object):
                 value = ''
                 try:
                     value = self._references(i)
-                    if self.bslash_abort and value == '\\':
+                    if (self.bslash_abort and value == '\\') or value == '/':
                         split_index.append((i.index - 2, 1))
                 except StopIteration:
                     i.rewind(i.index - index)
-                    if self.bslash_abort:
-                        split_index.append((i.index - 1, 0))
             elif c == '/':
                 split_index.append((i.index - 1, 0))
             elif c == '[':
@@ -846,8 +841,6 @@ def globmatch(filename, patterns, *, flags=0, root_dir=None, limit=_wcparse.PATT
 
     flags = _flag_transform(flags)
     filename = os.fspath(filename)
-    if not _wcparse.is_unix_style(flags):
-        filename = _wcparse.norm_slash(filename, flags)
     return _wcparse.compile(patterns, flags, limit).match(filename, root_dir=root_dir)
 
 
@@ -859,13 +852,10 @@ def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=_wcparse.PA
 
     matches = []
     flags = _flag_transform(flags)
-    unix = _wcparse.is_unix_style(flags)
     obj = _wcparse.compile(patterns, flags, limit)
 
     for filename in filenames:
         temp = os.fspath(filename)
-        if not unix:
-            temp = _wcparse.norm_slash(temp, flags)
         if obj.match(temp, root_dir):
             matches.append(filename)
     return matches
