@@ -138,9 +138,9 @@ lists contain the regular expressions used for matching the given patterns. It s
 matched if it matches at least one inclusion pattern and matches **none** of the exclusion patterns.
 
 ```pycon3
->>> from wcmatch import translate
+>>> from wcmatch import fnmatch
 >>> fnmatch.translate(r'*.{a,{b,c}}', flags=fnmatch.BRACE)
-(['^(?s:(?=.).*?\\.a)$', '^(?s:(?=.).*?\\.b)$', '^(?s:(?=.).*?\\.c)$'], [])
+(['^(?s:(?=.)(?![.]).*?\\.a)$', '^(?s:(?=.)(?![.]).*?\\.b)$', '^(?s:(?=.)(?![.]).*?\\.c)$'], [])
 >>> fnmatch.translate(r'**|!*.{a,{b,c}}', flags=fnmatch.BRACE | fnmatch.NEGATE | fnmatch.SPLIT)
 (['^(?s:(?=.)(?![.]).*?)$'], ['^(?s:(?=.).*?\\.a)$', '^(?s:(?=.).*?\\.b)$', '^(?s:(?=.).*?\\.c)$'])
 ```
