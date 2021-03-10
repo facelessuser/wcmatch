@@ -22,6 +22,7 @@ import shutil
 import sys
 import unittest
 import warnings
+import getpass
 
 # Below is general helper stuff that Python uses in `unittests`.  As these
 # not meant for users, and could change without notice, include them
@@ -1475,8 +1476,7 @@ class TestTilde(unittest.TestCase):
     def test_tilde_user(self):
         """Test tilde user cases."""
 
-        user = os.path.basename(os.path.expanduser('~'))
-
+        user = getpass.getuser()
         files = os.listdir(os.path.expanduser('~{}'.format(user)))
         self.assertEqual(len(glob.glob('~{}/*'.format(user), flags=glob.T | glob.D)), len(files))
 
