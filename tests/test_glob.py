@@ -1476,7 +1476,11 @@ class TestTilde(unittest.TestCase):
     def test_tilde_user(self):
         """Test tilde user cases."""
 
-        user = getpass.getuser()
+        try:
+            user = getpass.getuser()
+        except ModuleNotFoundError:
+            user = os.path.basename(os.path.expanduser('~'))
+
         files = os.listdir(os.path.expanduser('~{}'.format(user)))
         self.assertEqual(len(glob.glob('~{}/*'.format(user), flags=glob.T | glob.D)), len(files))
 
