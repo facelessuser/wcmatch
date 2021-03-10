@@ -36,9 +36,9 @@ Pattern           | Meaning
 - Slashes are generally treated special in glob related methods. Slashes are not matched in `[]`, `*`, `?`, or extended
   patterns like `*(...)`. Slashes can be matched by `**` if [`GLOBSTAR`](#globstar) is set.
 
-- Slashes are on Windows are normalized. `/` will match both `/` and `\\` or `/`. There is no need to explicitly use
-  `\\` in patterns on Windows, but if you do, they must be escaped to specify a literal `\\`. If a backslash is escaped,
-  it will match all valid windows separators, just like `/` does.
+- Slashes on Windows are normalized. `/` will match both `/` and `\\`. There is no need to explicitly use `\\` in
+  patterns on Windows, but if you do, they must be escaped to specify a literal `\\`. If a backslash is escaped, it will
+  match all valid windows separators, just like `/` does.
 
 - On Windows, drives are treated special and must come at the beginning of the pattern and cannot be matched with `*`,
   `[]`, `?`, or even extended match patterns like `+(...)`.
