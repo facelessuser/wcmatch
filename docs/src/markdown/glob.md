@@ -309,12 +309,9 @@ def globmatch(filename, patterns, *, flags=0, root_dir=None, limit=1000):
 directory.  It also allows configuring the [max pattern limit](#multi-pattern-limits). It will return a boolean
 indicating whether the file path was matched by the pattern(s).
 
-!!! warning "Path-like Input Support"
-    Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
-
 ```pycon3
 >>> from wcmatch import glob
->>> glob.globmatch('some/path/test.txt', r'**/*/@(*.txt|*.py)')
+>>> glob.globmatch('some/path/test.txt', r'**/*/@(*.txt|*.py)', flags=glob.EXTGLOB)
 True
 ```
 

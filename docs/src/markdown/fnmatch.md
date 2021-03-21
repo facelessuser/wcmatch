@@ -307,7 +307,7 @@ pattern which will perform much better: `@(ab|ac|ad)`.
 
 `SPLIT` is used to take a string of multiple patterns that are delimited by `|` and split them into separate patterns.
 This is provided to help with some interfaces that might need a way to define multiple patterns in one input. It pairs
-really well with [`EXTGLOB`](#extmatch) and takes into account sequences (`[]`) and extended patterns (`*(...)`)
+really well with [`EXTMATCH`](#extmatch) and takes into account sequences (`[]`) and extended patterns (`*(...)`)
 and will not parse `|` within them.  You can also escape the delimiters if needed: `\|`.
 
 While `SPLIT` is not as powerful as [`BRACE`](#brace), it's syntax is very easy to use, and when paired with
