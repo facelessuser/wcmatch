@@ -1,5 +1,9 @@
 # Changelog
 
+## 8.2
+
+- **NEW**: Add support for `dir_fd` in glob patterns.
+
 ## 8.1.2
 
 - **FIX**: `fnmatch.translate` no longer requires user to normalize their Windows paths for comparison. Previously,
@@ -23,7 +27,6 @@
   logic.
 - **NEW**: Deprecate `raw_escape` in `glob` as it is very niche and the same can be accomplished simply by using
   `#!py3 codecs.decode(string, 'unicode_escape')` and then using `escape`.
-- **NEW**: Add support for `dir_fd` in glob patterns.
 - **FIX**: Use `os.fspath` to convert path-like objects to string/bytes, whatever the return from `__fspath__` is what
   Wildcard Match will accept. Don't try to convert paths via `__str__` or `__bytes__` as not all path-like objects may
   implement both.
@@ -337,5 +340,3 @@ Check out [Release Notes](./release.md#upgrade-to-7.0) to learn more about upgra
 ## 1.0
 
 - Initial release
-
---8<-- "refs.txt"
