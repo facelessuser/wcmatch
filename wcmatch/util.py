@@ -9,6 +9,7 @@ from functools import wraps
 import warnings
 
 PY37 = (3, 7) <= sys.version_info
+PY310 = (3, 10) <= sys.version_info
 
 UNICODE = 0
 BYTES = 1
