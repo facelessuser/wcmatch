@@ -3,6 +3,7 @@ import pathlib
 import os
 from . import glob
 from . import _wcparse
+from . import util
 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
@@ -77,10 +78,14 @@ class Path(pathlib.Path):
 
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
-        self = cls._from_parts(args, init=False)
+        if util.PY310:  # pragma: no cover
+            self = cls._from_parts(args)
+        else:
+            self = cls._from_parts(args, init=False)
         if not self._flavour.is_supported:
             raise NotImplementedError("Cannot instantiate {!r} on your system".format(cls.__name__))
-        self._init()
+        if not util.PY310:
+            self._init()
         return self
 
     def glob(self, patterns, *, flags=0, limit=_wcparse.PATTERN_LIMIT):
