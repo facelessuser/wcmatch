@@ -283,6 +283,13 @@ Additionally, you can use `dir_fd` and specify a root directory with a directory
 ['markdown', 'dictionary']
 ```
 
+!!! warning "Support for Directory Descriptors"
+    Directory descriptors may not be supported on all systems. You can check whether or not `dir_fd` is supported for a
+    your platform referencing the attribute `#!py3 glob.SUPPORT_DIR_FD` which will be `#!py3 True` if it is supported.
+
+    Additionally, the `#!py3 os.O_DIRECTORY` may not be defined on some systems. You can likely just use
+    `#!py3 os.O_RDONLY`.
+
 !!! new "New 5.1"
     `root_dir` was added in 5.1.0.
 
@@ -432,6 +439,13 @@ False
 >>> glob.globmatch('markdown', 'markdown', flags=glob.REALPATH, dir_fd=dir_fd)
 True
 ```
+
+!!! warning "Support for Directory Descriptors"
+    Directory descriptors may not be supported on all systems. You can check whether or not `dir_fd` is supported for a
+    your platform referencing the attribute `#!py3 glob.SUPPORT_DIR_FD` which will be `#!py3 True` if it is supported.
+
+    Additionally, the `#!py3 os.O_DIRECTORY` may not be defined on some systems. You can likely just use
+    `#!py3 os.O_RDONLY`.
 
 !!! new "New 5.1"
     - `root_dir` was added in 5.1.0.

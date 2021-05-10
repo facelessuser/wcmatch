@@ -41,7 +41,7 @@ __all__ = (
 # We don't use `util.platform` only because we mock it in tests,
 # and `scandir` will not work with bytes on the wrong system.
 WIN = sys.platform.startswith('win')
-# Right half can return an empty set if not supported
+
 SUPPORT_DIR_FD = _wcmatch.SUPPORT_DIR_FD
 
 C = CASE = _wcparse.CASE
