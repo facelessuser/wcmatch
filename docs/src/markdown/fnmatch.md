@@ -37,7 +37,7 @@ Pattern           | Meaning
 - By default, `.` is *not* matched by `*`, `?`, and `[]`. See the [`DOTMATCH`](#dotmatch) flag to match `.` at
   the start of a filename without a literal `.`.
 
---8<-- "posix.txt"
+--8<-- "posix.md"
 
 ## Multi-Pattern Limits
 

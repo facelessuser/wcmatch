@@ -20,5 +20,3 @@ Property   | Pattern
 `upper`    | `[A-Z]`
 `word`     | `[a-zA-Z0-9_]`
 `xdigit`   | `[A-Fa-f0-9]`
-
---8<-- "links.txt"

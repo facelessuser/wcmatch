@@ -150,7 +150,7 @@ Pattern           | Meaning
 
         [`NODOTDIR`](#nodotdir) was added in 7.0.
 
---8<-- "posix.txt"
+--8<-- "posix.md"
 
 ## Multi-Pattern Limits
 

@@ -42,8 +42,8 @@ A quick overview of Wildcard Match's Features:
 
 Installation is easy with pip:
 
-```bash
-pip install wcmatch
+```console
+$ pip install wcmatch
 ```
 
 ## Libraries
