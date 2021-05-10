@@ -339,7 +339,3 @@ When using `FORCEUNIX`, the names are assumed to be case sensitive, but you can 
 to use case insensitivity.
 
 If `FORCEUNIX` is used along side [`FORCEWIN`](#forcewin), both will be ignored.
-
---8<--
-refs.txt
---8<--

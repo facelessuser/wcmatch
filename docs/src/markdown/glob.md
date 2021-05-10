@@ -167,12 +167,12 @@ no limit.
 #### `glob.glob` {: #glob}
 
 ```py3
-def glob(patterns, *, flags=0, root_dir=None, limit=1000):
+def glob(patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000):
 ```
 
-`glob` takes a pattern (or list of patterns), flags, and an option root directory (string or path-like object). It also
-allows configuring the [max pattern limit](#multi-pattern-limits). When executed it will crawl the file system returning
-matching files.
+`glob` takes a pattern (or list of patterns), flags, and an optional root directory (string or path-like object) and/or
+directory file descriptor. It also allows configuring the [max pattern limit](#multi-pattern-limits). When executed it
+will crawl the file system returning matching files.
 
 !!! warning "Path-like Input Support"
     Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
@@ -273,16 +273,36 @@ change the root path without using `os.chdir`.
 ['dictionary', 'markdown']
 ```
 
+Additionally, you can use `dir_fd` and specify a root directory with a directory file descriptor.
+
+```pycon3
+>>> import os
+>>> from wcmatch import glob
+>>> dir_fd = os.open('docs/src', os.O_RDONLY | os.O_DIRECTORY)
+>>> glob.glob('*', dir_fd=dir_fd)
+['markdown', 'dictionary']
+```
+
+!!! warning "Support for Directory Descriptors"
+    Directory descriptors may not be supported on all systems. You can check whether or not `dir_fd` is supported for a
+    your platform referencing the attribute `#!py3 glob.SUPPORT_DIR_FD` which will be `#!py3 True` if it is supported.
+
+    Additionally, the `#!py3 os.O_DIRECTORY` may not be defined on some systems. You can likely just use
+    `#!py3 os.O_RDONLY`.
+
 !!! new "New 5.1"
     `root_dir` was added in 5.1.0.
 
 !!! new "New 6.0"
     `limit` was added in 6.0.
 
+!!! new "New 8.2"
+    `dir_fd` parameter was added in 8.2.
+
 #### `glob.iglob` {: #iglob}
 
 ```py3
-def iglob(patterns, *, flags=0, root_dir=None, limit=1000):
+def iglob(patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000):
 ```
 
 `iglob` is just like [`glob`](#glob) except it returns an iterator.
@@ -299,15 +319,18 @@ def iglob(patterns, *, flags=0, root_dir=None, limit=1000):
 !!! new "New 6.0"
     `limit` was added in 6.0.
 
+!!! new "New 8.2"
+    `dir_fd` parameter was added in 8.2.
+
 #### `glob.globmatch` {: #globmatch}
 
 ```py3
-def globmatch(filename, patterns, *, flags=0, root_dir=None, limit=1000):
+def globmatch(filename, patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000):
 ```
 
 `globmatch` takes a file name (string or path-like object), a pattern (or list of patterns), flags, and an optional root
-directory.  It also allows configuring the [max pattern limit](#multi-pattern-limits). It will return a boolean
-indicating whether the file path was matched by the pattern(s).
+directory and/or file descriptor.  It also allows configuring the [max pattern limit](#multi-pattern-limits). It will
+return a boolean indicating whether the file path was matched by the pattern(s).
 
 ```pycon3
 >>> from wcmatch import glob
@@ -405,6 +428,25 @@ False
 True
 ```
 
+Additionally, you could also provide a root directory using a file descriptor.
+
+```pycon3
+>>> import os
+>>> from wcmatch import glob
+>>> dir_fd = os.open('docs/src', os.O_RDONLY | os.O_DIRECTORY)
+>>> glob.globmatch('markdown', 'markdown', flags=glob.REALPATH)
+False
+>>> glob.globmatch('markdown', 'markdown', flags=glob.REALPATH, dir_fd=dir_fd)
+True
+```
+
+!!! warning "Support for Directory Descriptors"
+    Directory descriptors may not be supported on all systems. You can check whether or not `dir_fd` is supported for a
+    your platform referencing the attribute `#!py3 glob.SUPPORT_DIR_FD` which will be `#!py3 True` if it is supported.
+
+    Additionally, the `#!py3 os.O_DIRECTORY` may not be defined on some systems. You can likely just use
+    `#!py3 os.O_RDONLY`.
+
 !!! new "New 5.1"
     - `root_dir` was added in 5.1.0.
     - path-like object support for file path inputs was added in 5.1.0
@@ -412,16 +454,19 @@ True
 !!! new "New 6.0"
     `limit` was added in 6.0.
 
+!!! new "New 8.2"
+    `dir_fd` parameter was added in 8.2.
+
 #### `glob.globfilter` {: #globfilter}
 
 ```py3
-def globfilter(filenames, patterns, *, flags=0, root_dir=None, limit=1000):
+def globfilter(filenames, patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000):
 ```
 
-`globfilter` takes a list of file paths (strings or path-like objects), a pattern (or list of patterns), and flags. It
-also allows configuring the [max pattern limit](#multi-pattern-limits). It returns a list of all files paths that
-matched the pattern(s). The same logic used for [`globmatch`](#globmatch) is used for `globfilter`, albeit more
-efficient for processing multiple files.
+`globfilter` takes a list of file paths (strings or path-like objects), a pattern (or list of patterns), flags, and an
+optional root directory and/or directory file descriptor. It also allows configuring the
+[max pattern limit](#multi-pattern-limits). It returns a list of all files paths that matched the pattern(s). The same
+logic used for [`globmatch`](#globmatch) is used for `globfilter`, albeit more efficient for processing multiple files.
 
 !!! warning "Path-like Input Support"
     Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
@@ -443,6 +488,9 @@ be matched by `GLOBSTAR`. See [`globmatch`](#globmatch) for examples.
 
 !!! new "New 6.0"
     `limit` was added in 6.0.
+
+!!! new "New 8.2"
+    `dir_fd` parameter was added in 8.2.
 
 #### `glob.translate` {: #translate}
 
@@ -1033,7 +1081,3 @@ When using `FORCEUNIX`, the paths are assumed to be case sensitive, but you can 
 use case insensitivity.
 
 If `FORCEUNIX` is used along side [`FORCEWIN`](#forcewin), both will be ignored.
-
---8<--
-refs.txt
---8<--

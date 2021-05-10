@@ -442,7 +442,3 @@ directory pattern matches with `**`.
 >>> wcmatch.WcMatch('.', '*.md|*.txt', '**/markdown', flags=wcmatch.DIRPATHNAME | wcmatch.GLOBSTAR | wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
 ```
-
---8<--
-refs.txt
---8<--

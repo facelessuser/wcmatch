@@ -1,5 +1,9 @@
 # Changelog
 
+## 8.2
+
+- **NEW**: Add support for `dir_fd` in glob patterns.
+
 ## 8.1.2
 
 - **FIX**: `fnmatch.translate` no longer requires user to normalize their Windows paths for comparison. Previously,
@@ -336,5 +340,3 @@ Check out [Release Notes](./release.md#upgrade-to-7.0) to learn more about upgra
 ## 1.0
 
 - Initial release
-
---8<-- "refs.txt"

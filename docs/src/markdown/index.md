@@ -52,7 +52,3 @@ pip install wcmatch
 - [`glob`](./glob.md): A file system searching and file path matching library.
 - [`pathlib`](./pathlib.md): A implementation of Python's `pathlib` that uses our own `glob` implementation.
 - [`wcmatch`](./wcmatch.md): An alternative file search library built on `fnmatch` and `globmatch`.
-
---8<--
-refs.txt
---8<--

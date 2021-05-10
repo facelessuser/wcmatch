@@ -660,7 +660,3 @@ will they retain trailing slashes.
 >>> list(pathlib.Path('.').glob('*'))
 [WindowsPath('appveyor.yml'), WindowsPath('docs'), WindowsPath('LICENSE.md'), WindowsPath('MANIFEST.in'), WindowsPath('mkdocs.yml'), WindowsPath('README.md'), WindowsPath('requirements'), WindowsPath('setup.cfg'), WindowsPath('setup.py'), WindowsPath('site'), WindowsPath('tests'), WindowsPath('tox.ini'), WindowsPath('wcmatch')]
 ```
-
---8<--
-refs.txt
---8<--
