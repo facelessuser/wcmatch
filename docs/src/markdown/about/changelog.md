@@ -3,6 +3,7 @@
 ## 8.2
 
 - **NEW**: Add support for `dir_fd` in glob patterns.
+- **FIX**: Small fix for Python 3.10 Beta 1 and `pathlib`.
 
 ## 8.1.2
 
