@@ -78,7 +78,7 @@ class Path(pathlib.Path):
 
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
-        if util.PY310:  # pragma: no cover
+        if util.PY310:
             self = cls._from_parts(args)
         else:
             self = cls._from_parts(args, init=False)
