@@ -1543,9 +1543,15 @@ class TestTilde(unittest.TestCase):
     def test_tilde_user(self):
         """Test tilde user cases."""
 
-        try:
-            user = getpass.getuser()
-        except ModuleNotFoundError:
+        # Accommodate non-Windows user behavior
+        user = None
+        if not sys.platform.startswith('win'):
+            try:
+                user = getpass.getuser()
+            except ModuleNotFoundError:
+                pass
+
+        if user is None:
             user = os.path.basename(os.path.expanduser('~'))
 
         files = os.listdir(os.path.expanduser('~{}'.format(user)))
