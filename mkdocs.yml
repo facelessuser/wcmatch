@@ -1,7 +1,7 @@
 site_name: Wildcard Match Documentation
 site_url: https://facelessuser.github.io/wcmatch
 repo_url: https://github.com/facelessuser/wcmatch
-edit_uri: tree/master/docs/src/markdown
+edit_uri: tree/main/docs/src/markdown
 site_description: A wildcard file name matching library
 copyright: |
   Copyright &copy; 2014 - 2021 <a href="https://github.com/facelessuser" target="_blank" rel="noopener">Isaac Muse</a>
