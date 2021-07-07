@@ -30,7 +30,7 @@ is found where Wildcard Match seems to deviate in an illogical way, we'd love to
 
 A quick overview of Wildcard Match's Features:
 
-- Provides an interface comparable to Python's builtin in `fnamtch`, `glob`, and `pathlib`.
+- Provides an interface comparable to Python's builtin in `fnmatch`, `glob`, and `pathlib`.
 - Allows for a much more configurable experience when matching or globbing with many more features.
 - Adds support for `**` in glob.
 - Adds support for escaping characters with `\`.
