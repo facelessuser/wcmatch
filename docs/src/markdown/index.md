@@ -24,7 +24,7 @@ about it in the [issue tracker][issues].
 
 A quick overview of Wildcard Match's Features:
 
-- Provides an interface comparable to Python's builtin in [`fnamtch`][fnmatch], [`glob`][glob], and
+- Provides an interface comparable to Python's builtin in [`fnmatch`][fnmatch], [`glob`][glob], and
   [`pathlib`][pathlib].
 - Allows for a much more configurable experience when matching or globbing with many more features.
 - Adds support for `**` in glob.

@@ -23,7 +23,7 @@
 
 ## 8.1
 
-- **NEW**: Add `is_magic` function to the `glob` and `fnamtch` library.
+- **NEW**: Add `is_magic` function to the `glob` and `fnmatch` library.
 - **NEW**: `fnmatch` now has `escape` available via its API. The `fnmatch` variant uses filename logic instead of path
   logic.
 - **NEW**: Deprecate `raw_escape` in `glob` as it is very niche and the same can be accomplished simply by using

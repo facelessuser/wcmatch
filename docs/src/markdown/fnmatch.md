@@ -81,9 +81,9 @@ to filter other patterns, not match anything by themselves.
 
 ```pycon3
 >>> from wcmatch import fnmatch
->>> fnmatch.fnmatch('test.py', r'*|!*.py', flags=fnmatch.NEGATE | fnamtch.SPLIT)
+>>> fnmatch.fnmatch('test.py', r'*|!*.py', flags=fnmatch.NEGATE | fnmatch.SPLIT)
 False
->>> fnmatch.fnmatch('test.txt', r'*|!*.py', flags=fnmatch.NEGATE | fnamtch.SPLIT)
+>>> fnmatch.fnmatch('test.txt', r'*|!*.py', flags=fnmatch.NEGATE | fnmatch.SPLIT)
 True
 >>> fnmatch.fnmatch('test.txt', [r'*.txt', r'!avoid.txt'], flags=fnmatch.NEGATE)
 True
@@ -98,9 +98,9 @@ pattern were given: `*` and `!*.md`.
 
 ```pycon3
 >>> from wcmatch import fnmatch
->>> fnmatch.fnmatch('test.py', r'!*.py', flags=fnmatch.NEGATE | fnamtch.NEGATEALL)
+>>> fnmatch.fnmatch('test.py', r'!*.py', flags=fnmatch.NEGATE | fnmatch.NEGATEALL)
 False
->>> fnmatch.fnmatch('test.txt', r'!*.py', flags=fnmatch.NEGATE | fnamtch.NEGATEALL)
+>>> fnmatch.fnmatch('test.txt', r'!*.py', flags=fnmatch.NEGATE | fnmatch.NEGATEALL)
 True
 ```
 
