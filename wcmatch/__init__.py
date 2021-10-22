@@ -21,5 +21,3 @@ CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFT
 IN THE SOFTWARE.
 """
 from .__meta__ import __version_info__, __version__  # noqa: F401
-
-__all__ = tuple()

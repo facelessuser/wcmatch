@@ -27,6 +27,8 @@ import os
 from . import util
 from . import posix
 from . _wcmatch import WcRegexp
+from typing import List, Tuple, AnyStr, Iterable, Pattern, Generic, Optional, Set, Sequence, cast
+from .types import WcPattern
 
 UNICODE_RANGE = '\u0000-\U0010ffff'
 ASCII_RANGE = '\x00-\xff'
@@ -298,7 +300,18 @@ class PatternLimitException(Exception):
     """Pattern limit exception."""
 
 
-def escape(pattern, unix=None, pathname=True, raw=False):
+def to_str_sequence(patterns: WcPattern[AnyStr]) -> Sequence[AnyStr]:
+    """Return a simple string sequence."""
+
+    if isinstance(patterns, (str, bytes)):
+        return [patterns]
+    if not isinstance(patterns, Sequence):
+        return list(patterns)
+    else:
+        return cast(Sequence[AnyStr], patterns)
+
+
+def escape(pattern: AnyStr, unix: Optional[bool] = None, pathname: bool = True, raw: bool = False) -> AnyStr:
     """
     Escape.
 
@@ -309,17 +322,17 @@ def escape(pattern, unix=None, pathname=True, raw=False):
     """
 
     if isinstance(pattern, bytes):
-        drive_pat = RE_WIN_DRIVE[util.BYTES]
-        magic = RE_MAGIC_ESCAPE[util.BYTES]
-        drive_magic = RE_WIN_DRIVE_MAGIC[util.BYTES]
+        drive_pat = cast(Pattern[AnyStr], RE_WIN_DRIVE[util.BYTES])
+        magic = cast(Pattern[AnyStr], RE_MAGIC_ESCAPE[util.BYTES])
+        drive_magic = cast(Pattern[AnyStr], RE_WIN_DRIVE_MAGIC[util.BYTES])
         replace = br'\\\1'
         slash = b'\\'
         double_slash = b'\\\\'
         drive = b''
     else:
-        drive_pat = RE_WIN_DRIVE[util.UNICODE]
-        magic = RE_MAGIC_ESCAPE[util.UNICODE]
-        drive_magic = RE_WIN_DRIVE_MAGIC[util.UNICODE]
+        drive_pat = cast(Pattern[AnyStr], RE_WIN_DRIVE[util.UNICODE])
+        magic = cast(Pattern[AnyStr], RE_MAGIC_ESCAPE[util.UNICODE])
+        drive_magic = cast(Pattern[AnyStr], RE_WIN_DRIVE_MAGIC[util.UNICODE])
         replace = r'\\\1'
         slash = '\\'
         double_slash = '\\\\'
@@ -345,7 +358,11 @@ def escape(pattern, unix=None, pathname=True, raw=False):
     return drive + magic.sub(replace, pattern)
 
 
-def _get_win_drive(pattern, regex=False, case_sensitive=False):
+def _get_win_drive(
+    pattern: str,
+    regex: bool = False,
+    case_sensitive: bool = False
+) -> Tuple[bool, Optional[str], bool, int]:
     """Get Windows drive."""
 
     drive = None
@@ -392,47 +409,56 @@ def _get_win_drive(pattern, regex=False, case_sensitive=False):
     return root_specified, drive, slash, end
 
 
-def _get_magic_symbols(ptype, unix, flags):
+def _get_magic_symbols(pattern: AnyStr, unix: bool, flags: int) -> Tuple[Set[AnyStr], Set[AnyStr]]:
     """Get magic symbols."""
 
-    if ptype == util.BYTES:
-        slash = b'\\'
+    if isinstance(pattern, bytes):
+        ptype = util.BYTES
+        slash = b'\\'  # type: AnyStr
     else:
+        ptype = util.UNICODE
         slash = '\\'
 
-    magic = set()
-    magic_drive = set() if unix else set(slash)
+    magic = set()  # type: Set[AnyStr]
+    if unix:
+        magic_drive = set()  # type: Set[AnyStr]
+    else:
+        magic_drive = set([slash])
 
-    magic |= MAGIC_DEF[ptype]
+    magic |= cast(Set[AnyStr], MAGIC_DEF[ptype])
     if flags & BRACE:
-        magic |= MAGIC_BRACE[ptype]
-        magic_drive |= MAGIC_BRACE[ptype]
+        magic |= cast(Set[AnyStr], MAGIC_BRACE[ptype])
+        magic_drive |= cast(Set[AnyStr], MAGIC_BRACE[ptype])
     if flags & SPLIT:
-        magic |= MAGIC_SPLIT[ptype]
-        magic_drive |= MAGIC_SPLIT[ptype]
+        magic |= cast(Set[AnyStr], MAGIC_SPLIT[ptype])
+        magic_drive |= cast(Set[AnyStr], MAGIC_SPLIT[ptype])
     if flags & GLOBTILDE:
-        magic |= MAGIC_TILDE[ptype]
+        magic |= cast(Set[AnyStr], MAGIC_TILDE[ptype])
     if flags & EXTMATCH:
-        magic |= MAGIC_EXTMATCH[ptype]
+        magic |= cast(Set[AnyStr], MAGIC_EXTMATCH[ptype])
     if flags & NEGATE:
         if flags & MINUSNEGATE:
-            magic |= MAGIC_MINUS_NEGATE[ptype]
+            magic |= cast(Set[AnyStr], MAGIC_MINUS_NEGATE[ptype])
         else:
-            magic |= MAGIC_NEGATE[ptype]
+            magic |= cast(Set[AnyStr], MAGIC_NEGATE[ptype])
 
     return magic, magic_drive
 
 
-def is_magic(pattern, flags=0):
+def is_magic(pattern: AnyStr, flags: int = 0) -> bool:
     """Check if pattern is magic."""
 
     magical = False
     unix = is_unix_style(flags)
 
-    ptype = util.BYTES if isinstance(pattern, bytes) else util.UNICODE
-    drive_pat = RE_WIN_DRIVE[ptype]
+    if isinstance(pattern, bytes):
+        ptype = util.BYTES
+    else:
+        ptype = util.UNICODE
 
-    magic, magic_drive = _get_magic_symbols(ptype, unix, flags)
+    drive_pat = cast(Pattern[AnyStr], RE_WIN_DRIVE[ptype])
+
+    magic, magic_drive = _get_magic_symbols(pattern, unix, flags)
     is_path = flags & PATHNAME
 
     length = 0
@@ -456,18 +482,18 @@ def is_magic(pattern, flags=0):
     return magical
 
 
-def is_negative(pattern, flags):
+def is_negative(pattern: AnyStr, flags: int) -> bool:
     """Check if negative pattern."""
 
     if flags & MINUSNEGATE:
-        return flags & NEGATE and pattern[0:1] in MINUS_NEGATIVE_SYM
+        return bool(flags & NEGATE and pattern[0:1] in MINUS_NEGATIVE_SYM)
     elif flags & EXTMATCH:
-        return flags & NEGATE and pattern[0:1] in NEGATIVE_SYM and pattern[1:2] not in ROUND_BRACKET
+        return bool(flags & NEGATE and pattern[0:1] in NEGATIVE_SYM and pattern[1:2] not in ROUND_BRACKET)
     else:
-        return flags & NEGATE and pattern[0:1] in NEGATIVE_SYM
+        return bool(flags & NEGATE and pattern[0:1] in NEGATIVE_SYM)
 
 
-def tilde_pos(pattern, flags):
+def tilde_pos(pattern: AnyStr, flags: int) -> int:
     """Is user folder."""
 
     pos = -1
@@ -482,7 +508,7 @@ def tilde_pos(pattern, flags):
     return pos
 
 
-def expand_braces(patterns, flags, limit):
+def expand_braces(patterns: AnyStr, flags: int, limit: int) -> Iterable[AnyStr]:
     """Expand braces."""
 
     if flags & BRACE:
@@ -502,24 +528,24 @@ def expand_braces(patterns, flags, limit):
             yield p
 
 
-def expand_tilde(pattern, is_unix, flags):
+def expand_tilde(pattern: AnyStr, is_unix: bool, flags: int) -> AnyStr:
     """Expand tilde."""
 
     pos = tilde_pos(pattern, flags)
 
     if pos > -1:
         string_type = util.BYTES if isinstance(pattern, bytes) else util.UNICODE
-        tilde = TILDE_SYM[string_type]
-        re_tilde = RE_WIN_TILDE[string_type] if not is_unix else RE_TILDE[string_type]
+        tilde = cast(AnyStr, TILDE_SYM[string_type])
+        re_tilde = cast(Pattern[AnyStr], RE_WIN_TILDE[string_type] if not is_unix else RE_TILDE[string_type])
         m = re_tilde.match(pattern, pos)
         if m:
             expanded = os.path.expanduser(m.group(0))
             if not expanded.startswith(tilde) and os.path.exists(expanded):
-                pattern = (pattern[0] if pos else pattern[0:0]) + escape(expanded, is_unix) + pattern[m.end(0):]
+                pattern = (pattern[0:1] if pos else pattern[0:0]) + escape(expanded, is_unix) + pattern[m.end(0):]
     return pattern
 
 
-def expand(pattern, flags, limit):
+def expand(pattern: AnyStr, flags: int, limit: int) -> Iterable[AnyStr]:
     """Expand and normalize."""
 
     for expanded in expand_braces(pattern, flags, limit):
@@ -527,7 +553,7 @@ def expand(pattern, flags, limit):
             yield expand_tilde(splitted, is_unix_style(flags), flags)
 
 
-def is_case_sensitive(flags):
+def is_case_sensitive(flags: int) -> bool:
     """Is case sensitive."""
 
     if bool(flags & FORCEWIN):
@@ -539,7 +565,7 @@ def is_case_sensitive(flags):
     return case_sensitive
 
 
-def get_case(flags):
+def get_case(flags: int) -> bool:
     """Parse flags for case sensitivity settings."""
 
     if not bool(flags & CASE_FLAGS):
@@ -551,13 +577,13 @@ def get_case(flags):
     return case_sensitive
 
 
-def escape_drive(drive, case):
+def escape_drive(drive: str, case: bool) -> str:
     """Escape drive."""
 
     return '(?i:{})'.format(re.escape(drive)) if case else re.escape(drive)
 
 
-def is_unix_style(flags):
+def is_unix_style(flags: int) -> bool:
     """Check if we should use Unix style."""
 
     return (
@@ -569,13 +595,15 @@ def is_unix_style(flags):
     )
 
 
-def translate(patterns, flags, limit=PATTERN_LIMIT):
+def translate(
+    patterns: Sequence[AnyStr],
+    flags: int,
+    limit: int = PATTERN_LIMIT
+) -> Tuple[List[AnyStr], List[AnyStr]]:
     """Translate patterns."""
 
-    positive = []
-    negative = []
-    if isinstance(patterns, (str, bytes)):
-        patterns = [patterns]
+    positive = []  # type: List[AnyStr]
+    negative = []  # type: List[AnyStr]
 
     flags = (flags | _TRANSLATE) & FLAG_MASK
     is_unix = is_unix_style(flags)
@@ -585,7 +613,7 @@ def translate(patterns, flags, limit=PATTERN_LIMIT):
         current_limit = limit
         total = 0
         for pattern in patterns:
-            pattern = util.norm_pattern(pattern, not is_unix, flags & RAWCHARS)
+            pattern = util.norm_pattern(pattern, not is_unix, bool(flags & RAWCHARS))
             count = 0
             for count, expanded in enumerate(expand(pattern, flags, current_limit), 1):
                 total += 1
@@ -601,20 +629,22 @@ def translate(patterns, flags, limit=PATTERN_LIMIT):
     except bracex.ExpansionLimitException:
         raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
 
-    if patterns and negative and not positive:
+    if patterns is not None and negative and not positive:
         if flags & NEGATEALL:
             default = b'**' if isinstance(patterns[0], bytes) else '**'
-            positive.append(WcParse(default, flags | (GLOBSTAR if flags & PATHNAME else 0)).parse())
+            positive.append(
+                WcParse(default, flags | (GLOBSTAR if flags & PATHNAME else 0)).parse()
+            )
 
     if patterns and flags & NODIR:
         index = util.BYTES if isinstance(patterns[0], bytes) else util.UNICODE
-        exclude = _NO_NIX_DIR[index] if is_unix else _NO_WIN_DIR[index]
+        exclude = cast(AnyStr, _NO_NIX_DIR[index] if is_unix else _NO_WIN_DIR[index])
         negative.append(exclude)
 
     return positive, negative
 
 
-def split(pattern, flags):
+def split(pattern: AnyStr, flags: int) -> Iterable[AnyStr]:
     """Split patterns."""
 
     if flags & SPLIT:
@@ -623,13 +653,15 @@ def split(pattern, flags):
         yield pattern
 
 
-def compile(patterns, flags, limit=PATTERN_LIMIT):  # noqa A001
+def compile(  # noqa: A001
+    patterns: Sequence[AnyStr],
+    flags: int,
+    limit: int = PATTERN_LIMIT
+) -> WcRegexp[AnyStr]:
     """Compile patterns."""
 
-    positive = []
-    negative = []
-    if isinstance(patterns, (str, bytes)):
-        patterns = [patterns]
+    positive = []  # type: List[Pattern[AnyStr]]
+    negative = []  # type: List[Pattern[AnyStr]]
 
     is_unix = is_unix_style(flags)
     seen = set()
@@ -638,7 +670,7 @@ def compile(patterns, flags, limit=PATTERN_LIMIT):  # noqa A001
         current_limit = limit
         total = 0
         for pattern in patterns:
-            pattern = util.norm_pattern(pattern, not is_unix, flags & RAWCHARS)
+            pattern = util.norm_pattern(pattern, not is_unix, bool(flags & RAWCHARS))
             count = 0
             for count, expanded in enumerate(expand(pattern, flags, current_limit), 1):
                 total += 1
@@ -654,39 +686,41 @@ def compile(patterns, flags, limit=PATTERN_LIMIT):  # noqa A001
     except bracex.ExpansionLimitException:
         raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
 
-    if patterns and negative and not positive:
+    if patterns is not None and negative and not positive:
         if flags & NEGATEALL:
             default = b'**' if isinstance(patterns[0], bytes) else '**'
             positive.append(_compile(default, flags | (GLOBSTAR if flags & PATHNAME else 0)))
 
-    if patterns and flags & NODIR:
+    if patterns is not None and flags & NODIR:
         ptype = util.BYTES if isinstance(patterns[0], bytes) else util.UNICODE
-        negative.append(RE_NO_DIR[ptype] if is_unix else RE_WIN_NO_DIR[ptype])
+        negative.append(cast(Pattern[AnyStr], RE_NO_DIR[ptype] if is_unix else RE_WIN_NO_DIR[ptype]))
 
-    return WcRegexp(tuple(positive), tuple(negative), flags & REALPATH, flags & PATHNAME, flags & FOLLOW)
+    return WcRegexp(
+        tuple(positive), tuple(negative),
+        bool(flags & REALPATH), bool(flags & PATHNAME), bool(flags & FOLLOW)
+    )
 
 
 @functools.lru_cache(maxsize=256, typed=True)
-def _compile(pattern, flags):
+def _compile(pattern: AnyStr, flags: int) -> Pattern[AnyStr]:
     """Compile the pattern to regex."""
 
     return re.compile(WcParse(pattern, flags & FLAG_MASK).parse())
 
 
-class WcSplit(object):
+class WcSplit(Generic[AnyStr]):
     """Class that splits patterns on |."""
 
-    def __init__(self, pattern, flags):
+    def __init__(self, pattern: AnyStr, flags: int) -> None:
         """Initialize."""
 
-        self.pattern = pattern
-        self.is_bytes = isinstance(pattern, bytes)
+        self.pattern = pattern  # type: AnyStr
         self.pathname = bool(flags & PATHNAME)
         self.extend = bool(flags & EXTMATCH)
         self.unix = is_unix_style(flags)
         self.bslash_abort = not self.unix
 
-    def _sequence(self, i):
+    def _sequence(self, i: util.StringIter) -> None:
         """Handle character group."""
 
         c = next(i)
@@ -707,7 +741,7 @@ class WcSplit(object):
                     raise StopIteration
             c = next(i)
 
-    def _references(self, i, sequence=False):
+    def _references(self, i: util.StringIter, sequence: bool = False) -> None:
         """Handle references."""
 
         c = next(i)
@@ -723,7 +757,7 @@ class WcSplit(object):
             # \a, \b, \c, etc.
             pass
 
-    def parse_extend(self, c, i):
+    def parse_extend(self, c: str, i: util.StringIter) -> bool:
         """Parse extended pattern lists."""
 
         # Start list parsing
@@ -759,14 +793,12 @@ class WcSplit(object):
 
         return success
 
-    def split(self):
-        """Start parsing the pattern."""
-
-        pattern = self.pattern.decode('latin-1') if self.is_bytes else self.pattern
+    def _split(self, pattern: str) -> Iterable[str]:
+        """Split the pattern."""
 
         start = -1
         i = util.StringIter(pattern)
-        iter(i)
+
         for c in i:
             if self.extend and c in EXT_TYPES and self.parse_extend(c, i):
                 continue
@@ -774,7 +806,7 @@ class WcSplit(object):
             if c == '|':
                 split = i.index - 1
                 p = pattern[start + 1:split]
-                yield p.encode('latin-1') if self.is_bytes else p
+                yield p
                 start = split
             elif c == '\\':
                 index = i.index
@@ -790,17 +822,25 @@ class WcSplit(object):
                     i.rewind(i.index - index)
 
         if start < len(pattern):
-            p = pattern[start + 1:]
-            yield p.encode('latin-1') if self.is_bytes else p
+            yield pattern[start + 1:]
+
+    def split(self) -> Iterable[AnyStr]:
+        """Split the pattern."""
+
+        if isinstance(self.pattern, bytes):
+            for p in self._split(self.pattern.decode('latin-1')):
+                yield p.encode('latin-1')
+        else:
+            yield from self._split(self.pattern)
 
 
-class WcParse(object):
+class WcParse(Generic[AnyStr]):
     """Parse the wildcard pattern."""
 
-    def __init__(self, pattern, flags=0):
+    def __init__(self, pattern: AnyStr, flags: int = 0) -> None:
         """Initialize."""
 
-        self.pattern = pattern
+        self.pattern = pattern  # type: AnyStr
         self.no_abs = bool(flags & _NOABSOLUTE)
         self.braces = bool(flags & BRACE)
         self.is_bytes = isinstance(pattern, bytes)
@@ -827,7 +867,7 @@ class WcParse(object):
         self.unix = is_unix_style(self.flags)
         if not self.unix:
             self.win_drive_detect = self.pathname
-            self.char_avoid = (ord('\\'), ord('/'), ord('.'))
+            self.char_avoid = (ord('\\'), ord('/'), ord('.'))  # type: Tuple[int, ...]
             self.bslash_abort = self.pathname
             sep = {"sep": re.escape('\\/')}
         else:
@@ -851,25 +891,25 @@ class WcParse(object):
         else:
             self.need_char = _NEED_CHAR
 
-    def set_after_start(self):
+    def set_after_start(self) -> None:
         """Set tracker for character after the start of a directory."""
 
         self.after_start = True
         self.dir_start = False
 
-    def set_start_dir(self):
+    def set_start_dir(self) -> None:
         """Set directory start."""
 
         self.dir_start = True
         self.after_start = False
 
-    def reset_dir_track(self):
+    def reset_dir_track(self) -> None:
         """Reset directory tracker."""
 
         self.dir_start = False
         self.after_start = False
 
-    def update_dir_state(self):
+    def update_dir_state(self) -> None:
         """
         Update the directory state.
 
@@ -883,12 +923,12 @@ class WcParse(object):
         elif not self.dir_start and self.after_start:
             self.reset_dir_track()
 
-    def _restrict_extended_slash(self):
+    def _restrict_extended_slash(self) -> str:
         """Restrict extended slash."""
 
         return self.seq_path if self.pathname else ''
 
-    def _restrict_sequence(self):
+    def _restrict_sequence(self) -> str:
         """Restrict sequence."""
 
         if self.pathname:
@@ -901,7 +941,7 @@ class WcParse(object):
 
         return value
 
-    def _sequence_range_check(self, result, last):
+    def _sequence_range_check(self, result: List[str], last: str) -> bool:
         """
         If range backwards, remove it.
 
@@ -926,7 +966,7 @@ class WcParse(object):
             result.append(last)
         return removed
 
-    def _handle_posix(self, i, result, end_range):
+    def _handle_posix(self, i: util.StringIter, result: List[str], end_range: int) -> bool:
         """Handle posix classes."""
 
         last_posix = False
@@ -941,7 +981,7 @@ class WcParse(object):
             result.append(posix.get_posix_property(m.group(1), self.is_bytes))
         return last_posix
 
-    def _sequence(self, i):
+    def _sequence(self, i: util.StringIter) -> str:
         """Handle character group."""
 
         result = ['[']
@@ -1043,7 +1083,7 @@ class WcParse(object):
 
         return ''.join(result)
 
-    def _references(self, i, sequence=False):
+    def _references(self, i: util.StringIter, sequence: bool = False) -> str:
         """Handle references."""
 
         value = ''
@@ -1083,7 +1123,7 @@ class WcParse(object):
 
         return value
 
-    def _handle_dot(self, i, current):
+    def _handle_dot(self, i: util.StringIter, current: List[str]) -> None:
         """Handle dot."""
 
         is_current = True
@@ -1133,7 +1173,7 @@ class WcParse(object):
         else:
             current.append(re.escape('.'))
 
-    def _handle_star(self, i, current):
+    def _handle_star(self, i: util.StringIter, current: List[str]) -> None:
         """Handle star."""
 
         if self.pathname:
@@ -1227,7 +1267,7 @@ class WcParse(object):
         else:
             current.append(value)
 
-    def clean_up_inverse(self, current, nested=False):
+    def clean_up_inverse(self, current: List[str], nested: bool = False) -> None:
         """
         Clean up current.
 
@@ -1258,7 +1298,7 @@ class WcParse(object):
             index -= 1
         self.inv_ext = 0
 
-    def parse_extend(self, c, i, current, reset_dot=False):
+    def parse_extend(self, c: str, i: util.StringIter, current: List[str], reset_dot: bool = False) -> bool:
         """Parse extended pattern lists."""
 
         # Save state
@@ -1277,7 +1317,7 @@ class WcParse(object):
         success = True
         index = i.index
         list_type = c
-        extended = []
+        extended = []  # type: List[str]
 
         try:
             c = next(i)
@@ -1382,7 +1422,7 @@ class WcParse(object):
 
         return success
 
-    def consume_path_sep(self, i):
+    def consume_path_sep(self, i: util.StringIter) -> None:
         """Consume any consecutive path separators as they count as one."""
 
         try:
@@ -1407,12 +1447,12 @@ class WcParse(object):
         except StopIteration:
             pass
 
-    def root(self, pattern, current):
+    def root(self, pattern: str, current: List[str]) -> None:
         """Start parsing the pattern."""
 
         self.set_after_start()
         i = util.StringIter(pattern)
-        iter(i)
+
         root_specified = False
         if self.win_drive_detect:
             root_specified, drive, slash, end = _get_win_drive(pattern, True, self.case_sensitive)
@@ -1491,20 +1531,17 @@ class WcParse(object):
         if self.pathname:
             current.append(_PATH_TRAIL.format(self.sep))
 
-    def parse(self):
-        """Parse pattern list."""
+    def _parse(self, p: str) -> str:
+        """Parse pattern."""
 
         result = ['']
         prepend = ['']
-        self.negative = False
 
-        p = self.pattern
+        self.negative = False
 
         if is_negative(p, self.flags):
             self.negative = True
             p = p[1:]
-
-        p = p.decode('latin-1') if self.is_bytes else p
 
         if self.negative:
             # TODO: Do we prevent `NODOTDIR` for negative patterns?
@@ -1559,7 +1596,14 @@ class WcParse(object):
             # Strip out unnecessary regex comments
             pattern = pattern.replace('(?#)', '')
 
-        if self.is_bytes:
-            pattern = pattern.encode('latin-1')
+        return pattern
+
+    def parse(self) -> AnyStr:
+        """Parse pattern list."""
+
+        if isinstance(self.pattern, bytes):
+            pattern = self._parse(self.pattern.decode('latin-1')).encode('latin-1')
+        else:
+            pattern = self._parse(self.pattern)
 
         return pattern

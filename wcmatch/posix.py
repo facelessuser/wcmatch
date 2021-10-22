@@ -62,7 +62,7 @@ ascii_posix_properties = {
 }
 
 
-def get_posix_property(value, limit_ascii=False):
+def get_posix_property(value: str, limit_ascii: bool = False) -> str:
     """Retrieve the POSIX category."""
 
     try:
