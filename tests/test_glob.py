@@ -1728,3 +1728,8 @@ class TestInputTypes(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             glob.glob('docs/*', root_dir=b'.')
+
+    def test_cwd_root_dir_empty(self):
+        """Test empty patterns with current working directory."""
+
+        self.assertEqual(glob.glob([], root_dir='.'), [])

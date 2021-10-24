@@ -158,3 +158,9 @@ class TestWcparse(unittest.TestCase):
             _wcparse.RE_WIN_DRIVE[0].match('//?/GLOBAL/UNC/server/mount/temp').group(0),
             '//?/GLOBAL/UNC/server/mount/'
         )
+
+    def test_bad_root_dir(self):
+        """Test bad root directory."""
+
+        with self.assertRaises(TypeError):
+            _wcparse.compile(['string'], _wcparse.PATHNAME | _wcparse.REALPATH, 0).match('string', b'rdir', None)

@@ -863,7 +863,7 @@ def iglob(
 ) -> Iterator[AnyStr]:
     """Glob."""
 
-    if not patterns:
+    if not isinstance(patterns, (str, bytes)) and not patterns:
         return
 
     yield from Glob(patterns, flags, root_dir, dir_fd, limit).glob()
