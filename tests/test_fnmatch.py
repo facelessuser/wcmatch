@@ -708,3 +708,22 @@ class TestExpansionLimit(unittest.TestCase):
 
         with self.assertRaises(_wcparse.PatternLimitException):
             fnmatch.translate('{1..11}', flags=fnmatch.BRACE, limit=10)
+
+
+class TestTypes(unittest.TestCase):
+    """Test basic sequences."""
+
+    def test_match_set(self):
+        """Test `set` matching."""
+
+        self.assertTrue(fnmatch.fnmatch('a', set(['a'])))
+
+    def test_match_tuple(self):
+        """Test `tuple` matching."""
+
+        self.assertTrue(fnmatch.fnmatch('a', tuple(['a'])))
+
+    def test_match_list(self):
+        """Test `list` matching."""
+
+        self.assertTrue(fnmatch.fnmatch('a', ['a']))

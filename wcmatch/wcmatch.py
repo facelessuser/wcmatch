@@ -23,7 +23,10 @@ IN THE SOFTWARE.
 import os
 import re
 from . import _wcparse
+from . import _wcmatch
 from . import util
+from typing import Optional, Any, Iterator, List, Generic, AnyStr
+
 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME", "PATHNAME",
@@ -78,104 +81,62 @@ FLAG_MASK = (
 )
 
 
-class _Mixin:  # pragma: no cover
-    """
-    DO NOT USE: Provide temporary methods to allow temporary, backwards compatibility for Rummage.
-
-    This is only a temporary solution to transition Rummage to a new way of overriding `glob`
-    style patterns with regular expressions (which is a niche need and not publicly supported).
-    It is advised to stick to the public, documented API. Anything else you use, you use at your
-    own risk.
-
-    Wildcard Match was originally written inside Rummage and moved out at a later point to be its
-    own library. The regular expression override of file patterns was something that didn't make
-    much sense in Wildcard match as a standalone project. The old way Rummage used to override the
-    file/folder checks was hacked in and was messy as it was based on internal knowledge of how
-    `WcMatch` worked.
-
-    NEW WAY:
-    We've provided a cleaner easier way to do this moving forward, and if we ever made the knowledge
-    of this public, this is the way we'd do it. If either `file_check` or `folder_exclude_check` is
-    initialized prior to us compiling the checks, we will skip compilation. This would happen in
-    `on_init`. Un-compiled patterns are stored in `pattern_file` and `pattern_folder_exclude`.
-
-    OLD WAY:
-    The reason we need these functions below is because the old way looked to see if `file_pattern`
-    or `exclude_pattern` already had a compiled object, and then would replace them with compiled
-    objects using the pattern that was already contained within. Rummage avoided recompiling
-    objects that were already compiled, but this was messy.
-    """
-
-    @property
-    def file_pattern(self):
-        """DO NOT USE: only provided for Rummage backwards compatibility, and will be remove in the future."""
-
-        return _wcparse.WcRegexp(tuple()) if not self.pattern_file else self.pattern_file
-
-    @property
-    def exclude_pattern(self):
-        """DO NOT USE: only provided for Rummage backwards compatibility, and will be remove in the future."""
-
-        return _wcparse.WcRegexp(tuple()) if not self.pattern_folder_exclude else self.pattern_folder_exclude
-
-    @file_pattern.setter
-    def file_pattern(self, value):
-        """DO NOT USE: only provided for Rummage backwards compatibility, and will be remove in the future."""
-
-        self.file_check = value
-
-    @exclude_pattern.setter
-    def exclude_pattern(self, value):
-        """DO NOT USE: only provided for Rummage backwards compatibility, and will be remove in the future."""
-
-        self.folder_exclude_check = value
-
-
-class WcMatch(_Mixin):
+class WcMatch(Generic[AnyStr]):
     """Finds files by wildcard."""
 
-    def __init__(self, root_dir, file_pattern=None, exclude_pattern=None, flags=0, limit=_wcparse.PATHNAME, **kwargs):
+    def __init__(
+        self,
+        root_dir: AnyStr,
+        file_pattern: Optional[AnyStr] = None,
+        exclude_pattern: Optional[AnyStr] = None,
+        flags: int = 0,
+        limit: int = _wcparse.PATHNAME,
+        **kwargs: Any
+    ):
         """Initialize the directory walker object."""
 
         self.is_bytes = isinstance(root_dir, bytes)
+        self._directory = self._norm_slash(root_dir)  # type: AnyStr
         self._abort = False
         self._skipped = 0
         self._parse_flags(flags)
-        self._directory = self._norm_slash(root_dir)
-        self._sep = os.fsencode(os.sep) if self.is_bytes else os.sep
-        self._root_dir = self._add_sep(self._get_cwd(), True)
+        self._sep = os.fsencode(os.sep) if isinstance(root_dir, bytes) else os.sep  # type: AnyStr
+        self._root_dir = self._add_sep(self._get_cwd(), True)  # type: AnyStr
         self.limit = limit
-        self.pattern_file = file_pattern if file_pattern else self._directory[0:0]
-        self.pattern_folder_exclude = exclude_pattern if exclude_pattern else self._directory[0:0]
-        self.file_check = None
-        self.folder_exclude_check = None
+        empty = os.fsencode('') if isinstance(root_dir, bytes) else ''
+        self.pattern_file = file_pattern if file_pattern is not None else empty  # type: AnyStr
+        self.pattern_folder_exclude = exclude_pattern if exclude_pattern is not None else empty  # type: AnyStr
+        self.file_check = None  # type: Optional[_wcmatch.WcRegexp[AnyStr]]
+        self.folder_exclude_check = None  # type: Optional[_wcmatch.WcRegexp[AnyStr]]
         self.on_init(**kwargs)
         self._compile(self.pattern_file, self.pattern_folder_exclude)
 
-    def _norm_slash(self, name):
+    def _norm_slash(self, name: AnyStr) -> AnyStr:
         """Normalize path slashes."""
 
-        if self.is_bytes:
-            return name.replace(b'/', b"\\") if not util.is_case_sensitive() else name
+        if util.is_case_sensitive():
+            return name
+        elif isinstance(name, bytes):
+            return name.replace(b'/', b"\\")
         else:
-            return name.replace('/', "\\") if not util.is_case_sensitive() else name
+            return name.replace('/', "\\")
 
-    def _add_sep(self, path, check=False):
+    def _add_sep(self, path: AnyStr, check: bool = False) -> AnyStr:
         """Add separator."""
 
         return (path + self._sep) if not check or not path.endswith(self._sep) else path
 
-    def _get_cwd(self):
+    def _get_cwd(self) -> AnyStr:
         """Get current working directory."""
 
         if self._directory:
             return self._directory
-        elif self.is_bytes:
+        elif isinstance(self._directory, bytes):
             return bytes(os.curdir, 'ASCII')
         else:
             return os.curdir
 
-    def _parse_flags(self, flags):
+    def _parse_flags(self, flags: int) -> None:
         """Parse flags."""
 
         self.flags = flags & FLAG_MASK
@@ -190,7 +151,7 @@ class WcMatch(_Mixin):
             self.flags |= _FORCEWIN
         self.flags = self.flags & (_wcparse.FLAG_MASK ^ MATCHBASE)
 
-    def _compile_wildcard(self, pattern, pathname=False):
+    def _compile_wildcard(self, pattern: AnyStr, pathname: bool = False) -> Optional[_wcmatch.WcRegexp[AnyStr]]:
         """Compile or format the wildcard inclusion/exclusion pattern."""
 
         flags = self.flags
@@ -199,14 +160,14 @@ class WcMatch(_Mixin):
             if self.matchbase:
                 flags |= MATCHBASE
 
-        return _wcparse.compile(pattern, flags, self.limit) if pattern else None
+        return _wcparse.compile([pattern], flags, self.limit) if pattern else None
 
-    def _compile(self, file_pattern, folder_exclude_pattern):
+    def _compile(self, file_pattern: AnyStr, folder_exclude_pattern: AnyStr) -> None:
         """Compile patterns."""
 
         if self.file_check is None:
             if not file_pattern:
-                self.file_check = _wcparse.WcRegexp(
+                self.file_check = _wcmatch.WcRegexp(
                     (re.compile(br'^.*$' if isinstance(file_pattern, bytes) else r'^.*$', re.DOTALL),)
                 )
             else:
@@ -214,11 +175,11 @@ class WcMatch(_Mixin):
 
         if self.folder_exclude_check is None:
             if not folder_exclude_pattern:
-                self.folder_exclude_check = _wcparse.WcRegexp(tuple())
+                self.folder_exclude_check = _wcmatch.WcRegexp(tuple())
             else:
                 self.folder_exclude_check = self._compile_wildcard(folder_exclude_pattern, self.dir_pathname)
 
-    def _valid_file(self, base, name):
+    def _valid_file(self, base: AnyStr, name: AnyStr) -> bool:
         """Return whether a file can be searched."""
 
         valid = False
@@ -229,17 +190,17 @@ class WcMatch(_Mixin):
             valid = False
         return self.on_validate_file(base, name) if valid else valid
 
-    def compare_file(self, filename):
+    def compare_file(self, filename: AnyStr) -> bool:
         """Compare filename."""
 
-        return self.file_check.match(filename)
+        return self.file_check.match(filename)  # type: ignore[union-attr]
 
-    def on_validate_file(self, base, name):
+    def on_validate_file(self, base: AnyStr, name: AnyStr) -> bool:
         """Validate file override."""
 
         return True
 
-    def _valid_folder(self, base, name):
+    def _valid_folder(self, base: AnyStr, name: AnyStr) -> bool:
         """Return whether a folder can be searched."""
 
         valid = True
@@ -247,7 +208,7 @@ class WcMatch(_Mixin):
         if (
             not self.recursive or
             (
-                len(self.folder_exclude_check) and
+                self.folder_exclude_check and
                 not self.compare_directory(fullpath[self._base_len:] if self.dir_pathname else name)
             )
         ):
@@ -256,58 +217,60 @@ class WcMatch(_Mixin):
             valid = False
         return self.on_validate_directory(base, name) if valid else valid
 
-    def compare_directory(self, directory):
+    def compare_directory(self, directory: AnyStr) -> bool:
         """Compare folder."""
 
-        return not self.folder_exclude_check.match(self._add_sep(directory) if self.dir_pathname else directory)
+        return not self.folder_exclude_check.match(  # type: ignore[union-attr]
+            self._add_sep(directory) if self.dir_pathname else directory
+        )
 
-    def on_init(self, **kwargs):
+    def on_init(self, **kwargs: Any) -> None:
         """Handle custom initialization."""
 
-    def on_validate_directory(self, base, name):
+    def on_validate_directory(self, base: AnyStr, name: AnyStr) -> bool:
         """Validate folder override."""
 
         return True
 
-    def on_skip(self, base, name):
+    def on_skip(self, base: AnyStr, name: AnyStr) -> Any:
         """On skip."""
 
         return None
 
-    def on_error(self, base, name):
+    def on_error(self, base: AnyStr, name: AnyStr) -> Any:
         """On error."""
 
         return None
 
-    def on_match(self, base, name):
+    def on_match(self, base: AnyStr, name: AnyStr) -> Any:
         """On match."""
 
         return os.path.join(base, name)
 
-    def on_reset(self):
+    def on_reset(self) -> None:
         """On reset."""
 
-    def get_skipped(self):
+    def get_skipped(self) -> int:
         """Get number of skipped files."""
 
         return self._skipped
 
-    def kill(self):
+    def kill(self) -> None:
         """Abort process."""
 
         self._abort = True
 
-    def is_aborted(self):
+    def is_aborted(self) -> bool:
         """Check if process has been aborted."""
 
         return self._abort
 
-    def reset(self):
+    def reset(self) -> None:
         """Revive class from a killed state."""
 
         self._abort = False
 
-    def _walk(self):
+    def _walk(self) -> Iterator[Any]:
         """Start search for valid files."""
 
         self._base_len = len(self._root_dir)
@@ -353,12 +316,12 @@ class WcMatch(_Mixin):
                     if self.is_aborted():
                         break
 
-    def match(self):
+    def match(self) -> List[Any]:
         """Run the directory walker."""
 
         return list(self.imatch())
 
-    def imatch(self):
+    def imatch(self) -> Iterator[Any]:
         """Run the directory walker as iterator."""
 
         self.on_reset()

@@ -7,6 +7,7 @@ import re
 import unicodedata
 from functools import wraps
 import warnings
+from typing import Any, Callable, Tuple, AnyStr, Match, Pattern, Optional, cast
 
 PY37 = (3, 7) <= sys.version_info
 PY310 = (3, 10) <= sys.version_info
@@ -64,25 +65,19 @@ else:
     _PLATFORM = "linux"
 
 
-def platform():
+def platform() -> str:
     """Get platform."""
 
     return _PLATFORM
 
 
-def is_case_sensitive():
+def is_case_sensitive() -> bool:
     """Check if case sensitive."""
 
     return CASE_FS
 
 
-def to_tuple(values):
-    """Combine values."""
-
-    return (values,) if isinstance(values, (str, bytes)) else tuple(values)
-
-
-def norm_pattern(pattern, normalize, is_raw_chars, ignore_escape=False):
+def norm_pattern(pattern: AnyStr, normalize: Optional[bool], is_raw_chars: bool, ignore_escape: bool = False) -> AnyStr:
     r"""
     Normalize pattern.
 
@@ -92,59 +87,68 @@ def norm_pattern(pattern, normalize, is_raw_chars, ignore_escape=False):
     - If `normalize` is enabled, take care to convert \/ to \\\\.
     """
 
-    is_bytes = isinstance(pattern, bytes)
+    if isinstance(pattern, bytes):
+        is_bytes = True
+        slash = b'\\'
+        multi_slash = slash * 4
+        pat = RE_BNORM
+    else:
+        is_bytes = False
+        slash = '\\'
+        multi_slash = slash * 4
+        pat = RE_NORM
 
     if not normalize and not is_raw_chars and not ignore_escape:
         return pattern
 
-    def norm(m):
+    def norm(m: Match[AnyStr]) -> AnyStr:
         """Normalize the pattern."""
 
         if m.group(1):
             char = m.group(1)
-            if normalize:
-                char = br'\\\\' if is_bytes else r'\\\\' if len(char) > 1 else char
+            if normalize and len(char) > 1:
+                char = multi_slash
         elif m.group(2):
-            char = BACK_SLASH_TRANSLATION[m.group(2)] if is_raw_chars else m.group(2)
+            char = cast(AnyStr, BACK_SLASH_TRANSLATION[m.group(2)] if is_raw_chars else m.group(2))
         elif is_raw_chars and m.group(4):
-            char = bytes([int(m.group(4), 8) & 0xFF]) if is_bytes else chr(int(m.group(4), 8))
+            char = cast(AnyStr, bytes([int(m.group(4), 8) & 0xFF]) if is_bytes else chr(int(m.group(4), 8)))
         elif is_raw_chars and m.group(3):
-            char = bytes([int(m.group(3)[2:], 16)]) if is_bytes else chr(int(m.group(3)[2:], 16))
+            char = cast(AnyStr, bytes([int(m.group(3)[2:], 16)]) if is_bytes else chr(int(m.group(3)[2:], 16)))
         elif is_raw_chars and not is_bytes and m.group(5):
-            char = unicodedata.lookup(m.group(5)[3:-1])
+            char = unicodedata.lookup(m.group(5)[3:-1])  # type: ignore[assignment]
         elif not is_raw_chars or m.group(5 if is_bytes else 6):
             char = m.group(0)
             if ignore_escape:
-                char = (b'\\' if is_bytes else '\\') + char
+                char = slash + char
         else:
             value = m.group(6) if is_bytes else m.group(7)
             pos = m.start(6) if is_bytes else m.start(7)
-            raise SyntaxError("Could not convert character value {} at position {:d}".format(value, pos))
+            raise SyntaxError("Could not convert character value {!r} at position {:d}".format(value, pos))
         return char
 
-    return (RE_BNORM if is_bytes else RE_NORM).sub(norm, pattern)
+    return pat.sub(norm, pattern)
 
 
-class StringIter(object):
+class StringIter:
     """Preprocess replace tokens."""
 
-    def __init__(self, string):
+    def __init__(self, string: str) -> None:
         """Initialize."""
 
         self._string = string
         self._index = 0
 
-    def __iter__(self):
+    def __iter__(self) -> "StringIter":
         """Iterate."""
 
         return self
 
-    def __next__(self):
+    def __next__(self) -> str:
         """Python 3 iterator compatible next."""
 
         return self.iternext()
 
-    def match(self, pattern):
+    def match(self, pattern: Pattern[str]) -> Optional[Match[str]]:
         """Perform regex match at index."""
 
         m = pattern.match(self._string, self._index)
@@ -153,22 +157,22 @@ class StringIter(object):
         return m
 
     @property
-    def index(self):
+    def index(self) -> int:
         """Get current index."""
 
         return self._index
 
-    def previous(self):  # pragma: no cover
+    def previous(self) -> str:  # pragma: no cover
         """Get previous char."""
 
         return self._string[self._index - 1]
 
-    def advance(self, count):  # pragma: no cover
+    def advance(self, count: int) -> None:  # pragma: no cover
         """Advanced the index."""
 
         self._index += count
 
-    def rewind(self, count):
+    def rewind(self, count: int) -> None:
         """Rewind index."""
 
         if count > self._index:  # pragma: no cover
@@ -176,7 +180,7 @@ class StringIter(object):
 
         self._index -= count
 
-    def iternext(self):
+    def iternext(self) -> str:
         """Iterate through characters of the string."""
 
         try:
@@ -188,24 +192,24 @@ class StringIter(object):
         return char
 
 
-class Immutable(object):
+class Immutable:
     """Immutable."""
 
-    __slots__ = tuple()
+    __slots__: Tuple[Any, ...] = tuple()
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize."""
 
         for k, v in kwargs.items():
             super(Immutable, self).__setattr__(k, v)
 
-    def __setattr__(self, name, value):  # pragma: no cover
+    def __setattr__(self, name: str, value: Any) -> None:  # pragma: no cover
         """Prevent mutability."""
 
         raise AttributeError('Class is immutable!')
 
 
-def is_hidden(path):
+def is_hidden(path: AnyStr) -> bool:
     """Check if file is hidden."""
 
     hidden = False
@@ -213,19 +217,19 @@ def is_hidden(path):
     if f[:1] in ('.', b'.'):
         # Count dot file as hidden on all systems
         hidden = True
-    elif _PLATFORM == 'windows':
+    elif sys.platform == 'win32':
         # On Windows, look for `FILE_ATTRIBUTE_HIDDEN`
-        FILE_ATTRIBUTE_HIDDEN = 0x2
         results = os.lstat(path)
+        FILE_ATTRIBUTE_HIDDEN = 0x2
         hidden = bool(results.st_file_attributes & FILE_ATTRIBUTE_HIDDEN)
-    elif _PLATFORM == "osx":  # pragma: no cover
+    elif sys.platform == "darwin":  # pragma: no cover
         # On macOS, look for `UF_HIDDEN`
         results = os.lstat(path)
         hidden = bool(results.st_flags & stat.UF_HIDDEN)
     return hidden
 
 
-def deprecated(message, stacklevel=2):  # pragma: no cover
+def deprecated(message: str, stacklevel: int = 2) -> Callable[..., Any]:  # pragma: no cover
     """
     Raise a `DeprecationWarning` when wrapped function/method is called.
 
@@ -236,9 +240,9 @@ def deprecated(message, stacklevel=2):  # pragma: no cover
             pass
     """
 
-    def _wrapper(func):
+    def _wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
-        def _deprecated_func(*args, **kwargs):
+        def _deprecated_func(*args: Any, **kwargs: Any) -> Any:
             warnings.warn(
                 f"'{func.__name__}' is deprecated. {message}",
                 category=DeprecationWarning,
@@ -249,7 +253,7 @@ def deprecated(message, stacklevel=2):  # pragma: no cover
     return _wrapper
 
 
-def warn_deprecated(message, stacklevel=2):  # pragma: no cover
+def warn_deprecated(message: str, stacklevel: int = 2) -> None:  # pragma: no cover
     """Warn deprecated."""
 
     warnings.warn(

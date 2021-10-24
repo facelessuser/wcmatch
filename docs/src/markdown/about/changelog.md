@@ -1,5 +1,11 @@
 # Changelog
 
+## 8.3
+
+- **NEW**: Officially support Python 3.10.
+- **NEW**: Provide type hints for API.
+- **FIX**: Gracefully handle calls with an empty pattern list.
+
 ## 8.2
 
 - **NEW**: Add support for `dir_fd` in glob patterns.

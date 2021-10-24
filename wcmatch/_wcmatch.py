@@ -4,6 +4,7 @@ import os
 import stat
 import copyreg
 from . import util
+from typing import Pattern, Tuple, AnyStr, Optional, Generic, Any, Dict, cast
 
 # `O_DIRECTORY` may not always be defined
 DIR_FLAGS = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
@@ -21,22 +22,39 @@ RE_MOUNT = (
 )
 
 
-class _Match:
+class _Match(Generic[AnyStr]):
     """Match the given pattern."""
 
-    def __init__(self, filename, include, exclude, real, path, follow):
+    def __init__(
+        self,
+        filename: AnyStr,
+        include: Tuple[Pattern[AnyStr], ...],
+        exclude: Optional[Tuple[Pattern[AnyStr], ...]],
+        real: bool,
+        path: bool,
+        follow: bool
+    ) -> None:
         """Initialize."""
 
-        self.filename = filename
-        self.include = include
-        self.exclude = exclude
+        self.filename = filename  # type: AnyStr
+        self.include = include  # type: Tuple[Pattern[AnyStr], ...]
+        self.exclude = exclude  # type: Optional[Tuple[Pattern[AnyStr], ...]]
         self.real = real
         self.path = path
         self.follow = follow
-        self.is_bytes = isinstance(self.filename, bytes)
-        self.ptype = util.BYTES if self.is_bytes else util.UNICODE
+        self.ptype = util.BYTES if isinstance(self.filename, bytes) else util.UNICODE
 
-    def _fs_match(self, pattern, filename, is_dir, sep, follow, symlinks, root, dir_fd):
+    def _fs_match(
+        self,
+        pattern: Pattern[AnyStr],
+        filename: AnyStr,
+        is_dir: bool,
+        sep: AnyStr,
+        follow: bool,
+        symlinks: Dict[Tuple[Optional[int], AnyStr], bool],
+        root: AnyStr,
+        dir_fd: Optional[int]
+    ) -> bool:
         """
         Match path against the pattern.
 
@@ -98,12 +116,19 @@ class _Match:
                     matched = False
         return matched
 
-    def _match_real(self, symlinks, root, dir_fd):
+    def _match_real(
+        self,
+        symlinks: Dict[Tuple[Optional[int], AnyStr], bool],
+        root: AnyStr,
+        dir_fd: Optional[int]
+    ) -> bool:
         """Match real filename includes and excludes."""
 
-        sep = '\\' if util.platform() == "windows" else '/'
+        temp = '\\' if util.platform() == "windows" else '/'
         if isinstance(self.filename, bytes):
-            sep = os.fsencode(sep)
+            sep = os.fsencode(temp)
+        else:
+            sep = temp
 
         is_dir = self.filename.endswith(sep)
         try:
@@ -140,11 +165,14 @@ class _Match:
 
         return matched
 
-    def match(self, root_dir=None, dir_fd=None):
+    def match(self, root_dir: Optional[AnyStr] = None, dir_fd: Optional[int] = None) -> bool:
         """Match."""
 
         if self.real:
-            root = root_dir if root_dir else (b'.' if self.is_bytes else '.')
+            if isinstance(self.filename, bytes):
+                root = root_dir if root_dir is not None else b'.'  # type: AnyStr
+            else:
+                root = root_dir if root_dir is not None else '.'
 
             if dir_fd is not None and not SUPPORT_DIR_FD:
                 dir_fd = None
@@ -163,9 +191,8 @@ class _Match:
                     )
                 )
 
-            is_abs = (
-                RE_WIN_MOUNT if util.platform() == "windows" else RE_MOUNT
-            )[self.ptype].match(self.filename) is not None
+            re_mount = cast(Pattern[AnyStr], (RE_WIN_MOUNT if util.platform() == "windows" else RE_MOUNT)[self.ptype])
+            is_abs = re_mount.match(self.filename) is not None
 
             if is_abs:
                 exists = os.path.lexists(self.filename)
@@ -180,7 +207,7 @@ class _Match:
                     exists = True
 
             if exists:
-                symlinks = {}
+                symlinks = {}  # type: Dict[Tuple[Optional[int], AnyStr], bool]
                 return self._match_real(symlinks, root, dir_fd)
             else:
                 return False
@@ -201,15 +228,29 @@ class _Match:
         return matched
 
 
-class WcRegexp(util.Immutable):
+class WcRegexp(util.Immutable, Generic[AnyStr]):
     """File name match object."""
+
+    _include: Tuple[Pattern[AnyStr], ...]
+    _exclude: Optional[Tuple[Pattern[AnyStr], ...]]
+    _real: bool
+    _path: bool
+    _follow: bool
+    _hash: int
 
     __slots__ = ("_include", "_exclude", "_real", "_path", "_follow", "_hash")
 
-    def __init__(self, include, exclude=None, real=False, path=False, follow=False):
+    def __init__(
+        self,
+        include: Tuple[Pattern[AnyStr], ...],
+        exclude: Optional[Tuple[Pattern[AnyStr], ...]] = None,
+        real: bool = False,
+        path: bool = False,
+        follow: bool = False
+    ):
         """Initialization."""
 
-        super(WcRegexp, self).__init__(
+        super().__init__(
             _include=include,
             _exclude=exclude,
             _real=real,
@@ -227,17 +268,17 @@ class WcRegexp(util.Immutable):
             )
         )
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         """Hash."""
 
         return self._hash
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Length."""
 
         return len(self._include) + (len(self._exclude) if self._exclude is not None else 0)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         """Equal."""
 
         return (
@@ -249,7 +290,7 @@ class WcRegexp(util.Immutable):
             self._follow == other._follow
         )
 
-    def __ne__(self, other):
+    def __ne__(self, other: Any) -> bool:
         """Equal."""
 
         return (
@@ -261,7 +302,7 @@ class WcRegexp(util.Immutable):
             self._follow != other._follow
         )
 
-    def match(self, filename, root_dir=None, dir_fd=None):
+    def match(self, filename: AnyStr, root_dir: Optional[AnyStr] = None, dir_fd: Optional[int] = None) -> bool:
         """Match filename."""
 
         return _Match(
@@ -277,7 +318,7 @@ class WcRegexp(util.Immutable):
         )
 
 
-def _pickle(p):
+def _pickle(p):  # type: ignore[no-untyped-def]
     return WcRegexp, (p._include, p._exclude, p._real, p._path, p._follow)
 
 

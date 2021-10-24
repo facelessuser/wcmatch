@@ -996,6 +996,12 @@ class TestGlobMatchSpecial(unittest.TestCase):
             self.assertTrue(glob.globmatch(x + '(a|B', x + '(a|B', flags=flags))
             self.assertFalse(glob.globmatch(x + '(a|B', 'B', flags=flags))
 
+    def test_empty_pattern_lists(self):
+        """Test empty pattern lists."""
+
+        self.assertFalse(glob.globmatch('test', []))
+        self.assertEqual(glob.globfilter(['test'], []), [])
+
     def test_windows_drives(self):
         """Test windows drives."""
 
