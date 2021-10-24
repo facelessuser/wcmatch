@@ -23,6 +23,9 @@ import sys
 import unittest
 import warnings
 import getpass
+from collections.abc import MutableMapping
+
+PY310 = (3, 10) <= sys.version_info
 
 # Below is general helper stuff that Python uses in `unittests`.  As these
 # not meant for users, and could change without notice, include them
@@ -32,6 +35,87 @@ TESTFN = '@test'
 # Disambiguate `TESTFN` for parallel testing, while letting it remain a valid
 # module name.
 TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
+
+
+class EnvironmentVarGuard(MutableMapping):
+    """
+    Class to help protect the environment variable properly.  Can be used as a context manager.
+
+    Directly ripped from Python support tools so that we can actually try and test `~user` expansion.
+
+    Taken from: https://github.com/python/cpython/blob/main/Lib/test/support/os_helper.py.
+    """
+
+    def __init__(self):
+        """Initialize."""
+
+        self._environ = os.environ
+        self._changed = {}
+
+    def __getitem__(self, envvar):
+        """Get item."""
+
+        return self._environ[envvar]
+
+    def __setitem__(self, envvar, value):
+        """Set item."""
+
+        # Remember the initial value on the first access
+        if envvar not in self._changed:
+            self._changed[envvar] = self._environ.get(envvar)
+        self._environ[envvar] = value
+
+    def __delitem__(self, envvar):
+        """Delete item."""
+
+        # Remember the initial value on the first access
+        if envvar not in self._changed:
+            self._changed[envvar] = self._environ.get(envvar)
+        if envvar in self._environ:
+            del self._environ[envvar]
+
+    def keys(self):
+        """Get keys."""
+        return self._environ.keys()
+
+    def __iter__(self):
+        """Iterate."""
+
+        return iter(self._environ)
+
+    def __len__(self):
+        """Get length."""
+        return len(self._environ)
+
+    def set(self, envvar, value):  # noqa: A003
+        """Set variable."""
+
+        self[envvar] = value
+
+    def unset(self, envvar):
+        """Unset variable."""
+
+        del self[envvar]
+
+    def copy(self):
+        """Copy environment."""
+
+        # We do what `os.environ.copy()` does.
+        return dict(self)
+
+    def __enter__(self):
+        """Enter."""
+        return self
+
+    def __exit__(self, *ignore_exc):
+        """Exit."""
+        for (k, v) in self._changed.items():
+            if v is None:
+                if k in self._environ:
+                    del self._environ[k]
+            else:
+                self._environ[k] = v
+        os.environ = self._environ
 
 
 @contextlib.contextmanager
@@ -1543,19 +1627,34 @@ class TestTilde(unittest.TestCase):
     def test_tilde_user(self):
         """Test tilde user cases."""
 
-        # Accommodate non-Windows user behavior
-        user = None
-        if not sys.platform.startswith('win'):
-            try:
-                user = getpass.getuser()
-            except ModuleNotFoundError:
-                pass
+        if sys.platform.startswith('win') and PY310:
+            # In CI, and maybe on other systems, we cannot be sure we'll be able to get the user.
+            # So fake it by using our own user name with the current `USERPROFILE` path.
+            with EnvironmentVarGuard() as env:
+                userpath = os.environ.get('USERPROFILE')
+                env.clear()
+                user = 'test_user'
+                env['USERPROFILE'] = userpath
+                env['USERNAME'] = 'test_user'
 
-        if user is None:
-            user = os.path.basename(os.path.expanduser('~'))
+                files = os.listdir(userpath)
+                self.assertEqual(len(glob.glob('~{}/*'.format(user), flags=glob.T | glob.D)), len(files))
+        else:
+            # Accommodate non-Windows user behavior
+            user = None
+            if not sys.platform.startswith('win'):
+                try:
+                    user = getpass.getuser()
+                except ModuleNotFoundError:
+                    pass
 
-        files = os.listdir(os.path.expanduser('~{}'.format(user)))
-        self.assertEqual(len(glob.glob('~{}/*'.format(user), flags=glob.T | glob.D)), len(files))
+            if user is None:
+                # Last ditch effort to get a user.
+                user = os.path.basename(os.path.expanduser('~'))
+
+            userpath = os.path.expanduser('~{}'.format(user))
+            files = os.listdir(userpath)
+            self.assertEqual(len(glob.glob('~{}/*'.format(user), flags=glob.T | glob.D)), len(files))
 
     def test_tilde_disabled(self):
         """Test when tilde is disabled."""

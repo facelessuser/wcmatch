@@ -305,7 +305,7 @@ def to_str_sequence(patterns: WcPattern[AnyStr]) -> Sequence[AnyStr]:
 
     if isinstance(patterns, (str, bytes)):
         return [patterns]
-    if not isinstance(patterns, Sequence):
+    elif not isinstance(patterns, Sequence):
         return list(patterns)
     else:
         return cast(Sequence[AnyStr], patterns)
