@@ -33,7 +33,6 @@ from typing import (
     Optional, Iterator, Iterable, List, AnyStr, Union, Generic,
     Tuple, Pattern, Callable, Any, Set, Sequence, cast
 )
-from .types import WcPath, WcPattern
 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
@@ -392,9 +391,9 @@ class Glob(Generic[AnyStr]):
 
     def __init__(
         self,
-        pattern: WcPattern[AnyStr],
+        pattern: Union[str, bytes, Sequence[AnyStr]],
         flags: int = 0,
-        root_dir: Optional[WcPath[AnyStr]] = None,
+        root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
         dir_fd: Optional[int] = None,
         limit: int = _wcparse.PATTERN_LIMIT
     ) -> None:
@@ -854,10 +853,10 @@ class Glob(Generic[AnyStr]):
 
 
 def iglob(
-    patterns: WcPattern[AnyStr],
+    patterns: Union[str, bytes, Sequence[AnyStr]],
     *,
     flags: int = 0,
-    root_dir: Optional[WcPath[AnyStr]] = None,
+    root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
     dir_fd: Optional[int] = None,
     limit: int = _wcparse.PATTERN_LIMIT
 ) -> Iterator[AnyStr]:
@@ -870,10 +869,10 @@ def iglob(
 
 
 def glob(
-    patterns: WcPattern[AnyStr],
+    patterns: Union[str, bytes, Sequence[AnyStr]],
     *,
     flags: int = 0,
-    root_dir: Optional[WcPath[AnyStr]] = None,
+    root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
     dir_fd: Optional[int] = None,
     limit: int = _wcparse.PATTERN_LIMIT
 ) -> List[AnyStr]:
@@ -883,7 +882,7 @@ def glob(
 
 
 def translate(
-    patterns: WcPattern[AnyStr],
+    patterns: Union[str, bytes, Sequence[AnyStr]],
     *,
     flags: int = 0,
     limit: int = _wcparse.PATTERN_LIMIT
@@ -895,11 +894,11 @@ def translate(
 
 
 def globmatch(
-    filename: WcPath[AnyStr],
-    patterns: WcPattern[AnyStr],
+    filename: Union[AnyStr, 'os.PathLike[AnyStr]'],
+    patterns: Union[str, bytes, Sequence[AnyStr]],
     *,
     flags: int = 0,
-    root_dir: Optional[WcPath[AnyStr]] = None,
+    root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
     dir_fd: Optional[int] = None,
     limit: int = _wcparse.PATTERN_LIMIT
 ) -> bool:
@@ -931,14 +930,14 @@ def globmatch(
 
 
 def globfilter(
-    filenames: Iterable[WcPath[AnyStr]],
-    patterns: WcPattern[AnyStr],
+    filenames: Iterable[Union[AnyStr, 'os.PathLike[AnyStr]']],
+    patterns: Union[str, bytes, Sequence[AnyStr]],
     *,
     flags: int = 0,
-    root_dir: Optional[WcPath[AnyStr]] = None,
+    root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
     dir_fd: Optional[int] = None,
     limit: int = _wcparse.PATTERN_LIMIT
-) -> List[WcPath[AnyStr]]:
+) -> List[Union[AnyStr, 'os.PathLike[AnyStr]']]:
     """Filter names using pattern."""
 
     pats = _wcparse.to_str_sequence(patterns)
@@ -956,7 +955,7 @@ def globfilter(
             "Pattern type of '{}' does not match the resolved type of '{}' of the root dir".format(ptype, type(rdir))
         )
 
-    matches = []  # type: List[WcPath[AnyStr]]
+    matches = []  # type: List[Union[AnyStr, 'os.PathLike[AnyStr]']]
     flags = _flag_transform(flags)
     obj = _wcparse.compile(pats, flags, limit)
 

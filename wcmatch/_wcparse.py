@@ -27,8 +27,7 @@ import os
 from . import util
 from . import posix
 from . _wcmatch import WcRegexp
-from typing import List, Tuple, AnyStr, Iterable, Pattern, Generic, Optional, Set, Sequence, cast
-from .types import WcPattern
+from typing import List, Tuple, AnyStr, Iterable, Pattern, Generic, Optional, Set, Sequence, Union, cast
 
 UNICODE_RANGE = '\u0000-\U0010ffff'
 ASCII_RANGE = '\x00-\xff'
@@ -300,15 +299,13 @@ class PatternLimitException(Exception):
     """Pattern limit exception."""
 
 
-def to_str_sequence(patterns: WcPattern[AnyStr]) -> Sequence[AnyStr]:
+def to_str_sequence(patterns: Union[str, bytes, Sequence[AnyStr]]) -> Sequence[AnyStr]:
     """Return a simple string sequence."""
 
     if isinstance(patterns, (str, bytes)):
-        return [patterns]
-    elif not isinstance(patterns, Sequence):
-        return list(patterns)
+        return cast(Sequence[AnyStr], [patterns])
     else:
-        return cast(Sequence[AnyStr], patterns)
+        return patterns
 
 
 def escape(pattern: AnyStr, unix: Optional[bool] = None, pathname: bool = True, raw: bool = False) -> AnyStr:

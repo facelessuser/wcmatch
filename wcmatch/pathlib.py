@@ -4,8 +4,7 @@ import os
 from . import glob
 from . import _wcparse
 from . import util
-from typing import Iterable, Any, cast
-from .types import WcPattern
+from typing import Iterable, Any, Union, Sequence, cast
 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
@@ -108,7 +107,13 @@ class PurePath(pathlib.PurePath):
 
         return name + sep
 
-    def match(self, patterns: WcPattern[str], *, flags: int = 0, limit: int = _wcparse.PATTERN_LIMIT) -> bool:
+    def match(
+        self,
+        patterns: Union[str, Sequence[str]],
+        *,
+        flags: int = 0,
+        limit: int = _wcparse.PATTERN_LIMIT
+    ) -> bool:
         """
         Match patterns using `globmatch`, but also using the same right to left logic that the default `pathlib` uses.
 
@@ -123,7 +128,7 @@ class PurePath(pathlib.PurePath):
 
     def globmatch(
         self,
-        patterns: WcPattern[str],
+        patterns: Union[str, Sequence[str]],
         *,
         flags: int = 0,
         limit: int = _wcparse.PATTERN_LIMIT
@@ -165,7 +170,7 @@ class Path(pathlib.Path):
 
     def glob(  # type: ignore[override]
         self,
-        patterns: WcPattern[str],
+        patterns: Union[str, Sequence[str]],
         *,
         flags: int = 0,
         limit: int = _wcparse.PATTERN_LIMIT
@@ -187,7 +192,7 @@ class Path(pathlib.Path):
 
     def rglob(  # type: ignore[override]
         self,
-        patterns: WcPattern[str],
+        patterns: Union[str, Sequence[str]],
         *,
         flags: int = 0,
         limit: int = _wcparse.PATTERN_LIMIT

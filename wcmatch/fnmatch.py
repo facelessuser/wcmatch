@@ -21,8 +21,7 @@ CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFT
 IN THE SOFTWARE.
 """
 from . import _wcparse
-from typing import Tuple, List, AnyStr, Iterable
-from .types import WcPattern
+from typing import Tuple, List, AnyStr, Iterable, Union, Sequence
 
 __all__ = (
     "CASE", "EXTMATCH", "IGNORECASE", "RAWCHARS",
@@ -72,7 +71,7 @@ def _flag_transform(flags: int) -> int:
 
 
 def translate(
-    patterns: WcPattern[AnyStr],
+    patterns: Union[str, bytes, Sequence[AnyStr]],
     *,
     flags: int = 0,
     limit: int = _wcparse.PATTERN_LIMIT
@@ -85,7 +84,7 @@ def translate(
 
 def fnmatch(
     filename: AnyStr,
-    patterns: WcPattern[AnyStr],
+    patterns: Union[str, bytes, Sequence[AnyStr]],
     *,
     flags: int = 0,
     limit: int = _wcparse.PATTERN_LIMIT
@@ -103,7 +102,7 @@ def fnmatch(
 
 def filter(  # noqa A001
     filenames: Iterable[AnyStr],
-    patterns: WcPattern[AnyStr],
+    patterns: Union[str, bytes, Sequence[AnyStr]],
     *,
     flags: int = 0,
     limit: int = _wcparse.PATTERN_LIMIT
