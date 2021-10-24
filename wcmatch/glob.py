@@ -618,9 +618,9 @@ class Glob(Generic[AnyStr]):
         try:
             fd = None  # type: Optional[int]
             if self.is_abs_pattern and curdir:
-                scandir = curdir  # type: AnyStr
+                scandir = curdir  # type: Union[AnyStr, int]
             elif self.dir_fd is not None:
-                fd = os.open(
+                fd = scandir = os.open(
                     os.path.join(self.root_dir, curdir) if curdir else self.root_dir,
                     _wcmatch.DIR_FLAGS,
                     dir_fd=self.dir_fd
@@ -633,36 +633,20 @@ class Glob(Generic[AnyStr]):
                 yield special, True, True, False
 
             try:
-                if sys.version_info > (3, 6):
-                    with os.scandir(cast(Union[AnyStr, int], fd if fd is not None else scandir)) as scan:
-                        for f in scan:
-                            try:
-                                hidden = self._is_hidden(f.name)  # type: ignore[arg-type]
-                                is_dir = f.is_dir()
-                                if is_dir:
-                                    is_link = f.is_symlink()
-                                else:
-                                    # We don't care if a file is a link
-                                    is_link = False
-                                if (not dir_only or is_dir):
-                                    yield f.name, is_dir, hidden, is_link  # type: ignore[misc]
-                            except OSError:  # pragma: no cover
-                                pass
-                else:
-                    with os.scandir(scandir) as scan:
-                        for f in scan:
-                            try:
-                                hidden = self._is_hidden(f.name)
-                                is_dir = f.is_dir()
-                                if is_dir:
-                                    is_link = f.is_symlink()
-                                else:
-                                    # We don't care if a file is a link
-                                    is_link = False
-                                if (not dir_only or is_dir):
-                                    yield f.name, is_dir, hidden, is_link
-                            except OSError:  # pragma: no cover
-                                pass
+                with os.scandir(scandir) as scan:  # type: ignore[type-var]
+                    for f in scan:
+                        try:
+                            hidden = self._is_hidden(f.name)  # type: ignore[arg-type]
+                            is_dir = f.is_dir()
+                            if is_dir:
+                                is_link = f.is_symlink()
+                            else:
+                                # We don't care if a file is a link
+                                is_link = False
+                            if (not dir_only or is_dir):
+                                yield f.name, is_dir, hidden, is_link  # type: ignore[misc]
+                        except OSError:  # pragma: no cover
+                            pass
             finally:
                 if fd is not None:
                     os.close(fd)
