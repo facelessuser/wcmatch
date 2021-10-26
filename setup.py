@@ -3,22 +3,19 @@
 """Setup package."""
 from setuptools import setup, find_packages
 import os
-import imp
-import traceback
 
 
 def get_version():
     """Get version and version_info without importing the entire module."""
 
-    path = os.path.join(os.path.dirname(__file__), 'wcmatch')
-    fp, pathname, desc = imp.find_module('__meta__', [path])
-    try:
-        vi = imp.load_module('__meta__', fp, pathname, desc).__version_info__
-        return vi._get_canonical(), vi._get_dev_status()
-    except Exception:
-        print(traceback.format_exc())
-    finally:
-        fp.close()
+    import importlib.util
+
+    path = os.path.join(os.path.dirname(__file__), 'wcmatch', '__meta__.py')
+    spec = importlib.util.spec_from_file_location("__meta__", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    vi = module.__version_info__
+    return vi._get_canonical(), vi._get_dev_status()
 
 
 def get_requirements(req):
@@ -54,6 +51,7 @@ setup(
     author_email='Isaac.Muse@gmail.com',
     url='https://github.com/facelessuser/wcmatch',
     packages=find_packages(exclude=['tests', 'tools']),
+    package_data={"wcmatch": ["py.typed"]},
     install_requires=get_requirements("requirements/setup.txt"),
     license='MIT License',
     classifiers=[
@@ -67,6 +65,7 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
-        'Topic :: Software Development :: Libraries :: Python Modules'
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Typing :: Typed'
     ]
 )
