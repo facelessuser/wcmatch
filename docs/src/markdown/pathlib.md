@@ -530,7 +530,8 @@ normalizes directories. When comparing the results to a non-`pathlib` glob, the 
 #### `pathlib.EXTGLOB, pathlib.E` {: #extglob}
 
 `EXTGLOB` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`,
-etc. See the [syntax overview](#syntax) for more information.
+etc. Pattern lists allow for multiple patterns within them separated by `|`. See the globbing
+[syntax overview](glob.md#syntax) for more information.
 
 Alternatively `EXTMATCH` will also be accepted for consistency with the other provided libraries. Both flags are exactly
 the same and are provided as a convenience in case the user finds one more intuitive than the other since `EXTGLOB` is
