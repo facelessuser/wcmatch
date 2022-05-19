@@ -115,7 +115,7 @@ def norm_pattern(pattern: AnyStr, normalize: Optional[bool], is_raw_chars: bool,
         elif is_raw_chars and m.group(3):
             char = cast(AnyStr, bytes([int(m.group(3)[2:], 16)]) if is_bytes else chr(int(m.group(3)[2:], 16)))
         elif is_raw_chars and not is_bytes and m.group(5):
-            char = unicodedata.lookup(m.group(5)[3:-1])  # type: ignore[assignment]
+            char = unicodedata.lookup(m.group(5)[3:-1])
         elif not is_raw_chars or m.group(5 if is_bytes else 6):
             char = m.group(0)
             if ignore_escape:
