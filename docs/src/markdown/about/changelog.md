@@ -1,5 +1,9 @@
 # Changelog
 
+## 8.4
+
+- **NEW**: Drop support for Python 3.6.
+
 ## 8.3
 
 - **NEW**: Officially support Python 3.10.
