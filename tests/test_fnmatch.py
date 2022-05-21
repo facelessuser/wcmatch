@@ -467,6 +467,16 @@ class TestFnMatchTranslate(unittest.TestCase):
 
         self.assertTrue(fnmatch.fnmatch('name', '!test', flags=fnmatch.N | fnmatch.A))
         self.assertTrue(fnmatch.fnmatch(b'name', b'!test', flags=fnmatch.N | fnmatch.A))
+        self.assertFalse(fnmatch.fnmatch('test', '!test', flags=fnmatch.N | fnmatch.A))
+        self.assertFalse(fnmatch.fnmatch(b'test', b'!test', flags=fnmatch.N | fnmatch.A))
+
+    def test_default_compile_exclude(self):
+        """Test default with exclusion keyword."""
+
+        self.assertTrue(fnmatch.fnmatch('name', '*', exclude='test', flags=fnmatch.A))
+        self.assertTrue(fnmatch.fnmatch(b'name', b'*', exclude=b'test', flags=fnmatch.A))
+        self.assertFalse(fnmatch.fnmatch('test', '*', exclude='test', flags=fnmatch.A))
+        self.assertFalse(fnmatch.fnmatch(b'test', b'*', exclude=b'test', flags=fnmatch.A))
 
     def test_default_translate(self):
         """Test default with exclusion in translation."""

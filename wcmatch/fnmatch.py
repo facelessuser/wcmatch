@@ -21,7 +21,7 @@ CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFT
 IN THE SOFTWARE.
 """
 from . import _wcparse
-from typing import Tuple, List, AnyStr, Iterable, Union, Sequence
+from typing import Tuple, List, AnyStr, Iterable, Union, Sequence, Optional
 
 __all__ = (
     "CASE", "EXTMATCH", "IGNORECASE", "RAWCHARS",
@@ -74,12 +74,18 @@ def translate(
     patterns: Union[str, bytes, Sequence[AnyStr]],
     *,
     flags: int = 0,
-    limit: int = _wcparse.PATTERN_LIMIT
+    limit: int = _wcparse.PATTERN_LIMIT,
+    exclude: Optional[Union[str, bytes, Sequence[AnyStr]]] = None
 ) -> Tuple[List[AnyStr], List[AnyStr]]:
     """Translate `fnmatch` pattern."""
 
     flags = _flag_transform(flags)
-    return _wcparse.translate(_wcparse.to_str_sequence(patterns), flags, limit)
+    return _wcparse.translate(
+        _wcparse.to_str_sequence(patterns),
+        flags,
+        limit,
+        exclude=_wcparse.to_str_sequence(exclude) if exclude is not None else exclude
+    )
 
 
 def fnmatch(
@@ -87,7 +93,8 @@ def fnmatch(
     patterns: Union[str, bytes, Sequence[AnyStr]],
     *,
     flags: int = 0,
-    limit: int = _wcparse.PATTERN_LIMIT
+    limit: int = _wcparse.PATTERN_LIMIT,
+    exclude: Optional[Union[str, bytes, Sequence[AnyStr]]] = None
 ) -> bool:
     """
     Check if filename matches pattern.
@@ -97,7 +104,14 @@ def fnmatch(
     """
 
     flags = _flag_transform(flags)
-    return bool(_wcparse.compile(_wcparse.to_str_sequence(patterns), flags, limit).match(filename))
+    return bool(
+        _wcparse.compile(
+            _wcparse.to_str_sequence(patterns),
+            flags,
+            limit,
+            exclude=_wcparse.to_str_sequence(exclude) if exclude is not None else exclude
+        ).match(filename)
+    )
 
 
 def filter(  # noqa A001
@@ -105,14 +119,20 @@ def filter(  # noqa A001
     patterns: Union[str, bytes, Sequence[AnyStr]],
     *,
     flags: int = 0,
-    limit: int = _wcparse.PATTERN_LIMIT
+    limit: int = _wcparse.PATTERN_LIMIT,
+    exclude: Optional[Union[str, bytes, Sequence[AnyStr]]] = None
 ) -> List[AnyStr]:
     """Filter names using pattern."""
 
     matches = []
 
     flags = _flag_transform(flags)
-    obj = _wcparse.compile(_wcparse.to_str_sequence(patterns), flags, limit)
+    obj = _wcparse.compile(
+        _wcparse.to_str_sequence(patterns),
+        flags,
+        limit,
+        exclude=_wcparse.to_str_sequence(exclude) if exclude is not None else exclude
+    )
 
     for filename in filenames:
         if obj.match(filename):

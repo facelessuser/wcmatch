@@ -4,7 +4,7 @@ import os
 from . import glob
 from . import _wcparse
 from . import util
-from typing import Iterable, Any, Union, Sequence, cast
+from typing import Iterable, Any, Union, Sequence, Optional, cast
 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
@@ -112,7 +112,8 @@ class PurePath(pathlib.PurePath):
         patterns: Union[str, Sequence[str]],
         *,
         flags: int = 0,
-        limit: int = _wcparse.PATTERN_LIMIT
+        limit: int = _wcparse.PATTERN_LIMIT,
+        exclude: Optional[Union[str, Sequence[str]]] = None
     ) -> bool:
         """
         Match patterns using `globmatch`, but also using the same right to left logic that the default `pathlib` uses.
@@ -124,14 +125,15 @@ class PurePath(pathlib.PurePath):
 
         """
 
-        return self.globmatch(patterns, flags=flags | _RTL, limit=limit)
+        return self.globmatch(patterns, flags=flags | _RTL, limit=limit, exclude=exclude)
 
     def globmatch(
         self,
         patterns: Union[str, Sequence[str]],
         *,
         flags: int = 0,
-        limit: int = _wcparse.PATTERN_LIMIT
+        limit: int = _wcparse.PATTERN_LIMIT,
+        exclude: Optional[Union[str, Sequence[str]]] = None
     ) -> bool:
         """
         Match patterns using `globmatch`, but without the right to left logic that the default `pathlib` uses.
@@ -144,7 +146,8 @@ class PurePath(pathlib.PurePath):
             self._translate_path(),
             patterns,
             flags=self._translate_flags(flags),
-            limit=limit
+            limit=limit,
+            exclude=exclude
         )
 
 
@@ -173,7 +176,8 @@ class Path(pathlib.Path):
         patterns: Union[str, Sequence[str]],
         *,
         flags: int = 0,
-        limit: int = _wcparse.PATTERN_LIMIT
+        limit: int = _wcparse.PATTERN_LIMIT,
+        exclude: Optional[Union[str, Sequence[str]]] = None
     ) -> Iterable['Path']:
         """
         Search the file system.
@@ -187,7 +191,7 @@ class Path(pathlib.Path):
             flags = self._translate_flags(  # type: ignore[attr-defined]
                 flags | _NOABSOLUTE
             ) | ((_PATHLIB | SCANDOTDIR) if scandotdir else _PATHLIB)
-            for filename in glob.iglob(patterns, flags=flags, root_dir=str(self), limit=limit):
+            for filename in glob.iglob(patterns, flags=flags, root_dir=str(self), limit=limit, exclude=exclude):
                 yield self.joinpath(filename)
 
     def rglob(  # type: ignore[override]
@@ -195,7 +199,8 @@ class Path(pathlib.Path):
         patterns: Union[str, Sequence[str]],
         *,
         flags: int = 0,
-        limit: int = _wcparse.PATTERN_LIMIT
+        limit: int = _wcparse.PATTERN_LIMIT,
+        exclude: Optional[Union[str, Sequence[str]]] = None
     ) -> Iterable['Path']:
         """
         Recursive glob.
@@ -207,7 +212,7 @@ class Path(pathlib.Path):
 
         """
 
-        yield from self.glob(patterns, flags=flags | _EXTMATCHBASE, limit=limit)
+        yield from self.glob(patterns, flags=flags | _EXTMATCHBASE, limit=limit, exclude=exclude)
 
 
 class PurePosixPath(PurePath):

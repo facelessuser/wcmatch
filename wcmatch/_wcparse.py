@@ -175,6 +175,7 @@ _ANCHOR = 0x200000000  # The pattern, if it starts with a slash, is anchored to 
 _EXTMATCHBASE = 0x400000000  # Like `MATCHBASE`, but works for multiple directory levels.
 _NOABSOLUTE = 0x800000000  # Do not allow absolute patterns
 _RTL = 0x1000000000  # Match from right to left
+_NO_GLOBSTAR_CAPTURE = 0x2000000000  # Disallow `GLOBSTAR` capturing groups.
 
 FLAG_MASK = (
     CASE |
@@ -202,7 +203,8 @@ FLAG_MASK = (
     _ANCHOR |
     _EXTMATCHBASE |
     _RTL |
-    _NOABSOLUTE
+    _NOABSOLUTE |
+    _NO_GLOBSTAR_CAPTURE
 )
 CASE_FLAGS = IGNORECASE | CASE
 
@@ -592,15 +594,28 @@ def is_unix_style(flags: int) -> bool:
     )
 
 
+def exclude_flags(flags: int) -> int:
+    """No negation."""
+
+    if flags & NEGATE:
+        flags ^= NEGATE
+    return flags | DOTMATCH | _NO_GLOBSTAR_CAPTURE
+
+
 def translate(
     patterns: Sequence[AnyStr],
     flags: int,
-    limit: int = PATTERN_LIMIT
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Sequence[AnyStr]] = None
 ) -> Tuple[List[AnyStr], List[AnyStr]]:
     """Translate patterns."""
 
     positive = []  # type: List[AnyStr]
     negative = []  # type: List[AnyStr]
+
+    if exclude is not None:
+        negative = translate(exclude, flags=exclude_flags(flags), limit=limit)[0]
+        limit -= len(negative)
 
     flags = (flags | _TRANSLATE) & FLAG_MASK
     is_unix = is_unix_style(flags)
@@ -626,17 +641,16 @@ def translate(
     except bracex.ExpansionLimitException:
         raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
 
-    if patterns is not None and negative and not positive:
+    if negative and not positive:
         if flags & NEGATEALL:
-            default = b'**' if isinstance(patterns[0], bytes) else '**'
+            default = b'**' if isinstance(negative[0], bytes) else '**'
             positive.append(
                 WcParse(default, flags | (GLOBSTAR if flags & PATHNAME else 0)).parse()
             )
 
-    if patterns and flags & NODIR:
-        index = util.BYTES if isinstance(patterns[0], bytes) else util.UNICODE
-        exclude = cast(AnyStr, _NO_NIX_DIR[index] if is_unix else _NO_WIN_DIR[index])
-        negative.append(exclude)
+    if positive and flags & NODIR:
+        index = util.BYTES if isinstance(positive[0], bytes) else util.UNICODE
+        negative.append(cast(AnyStr, _NO_NIX_DIR[index] if is_unix else _NO_WIN_DIR[index]))
 
     return positive, negative
 
@@ -650,15 +664,20 @@ def split(pattern: AnyStr, flags: int) -> Iterable[AnyStr]:
         yield pattern
 
 
-def compile(  # noqa: A001
+def compile_pattern(
     patterns: Sequence[AnyStr],
     flags: int,
-    limit: int = PATTERN_LIMIT
-) -> WcRegexp[AnyStr]:
-    """Compile patterns."""
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Sequence[AnyStr]] = None
+) -> Tuple[List[Pattern[AnyStr]], List[Pattern[AnyStr]]]:
+    """Compile the patterns."""
 
     positive = []  # type: List[Pattern[AnyStr]]
     negative = []  # type: List[Pattern[AnyStr]]
+
+    if exclude is not None:
+        negative = compile_pattern(exclude, flags=exclude_flags(flags), limit=limit)[0]
+        limit -= len(negative)
 
     is_unix = is_unix_style(flags)
     seen = set()
@@ -683,15 +702,27 @@ def compile(  # noqa: A001
     except bracex.ExpansionLimitException:
         raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
 
-    if patterns is not None and negative and not positive:
+    if negative and not positive:
         if flags & NEGATEALL:
-            default = b'**' if isinstance(patterns[0], bytes) else '**'
+            default = b'**' if isinstance(negative[0].pattern, bytes) else '**'
             positive.append(_compile(default, flags | (GLOBSTAR if flags & PATHNAME else 0)))
 
-    if patterns is not None and flags & NODIR:
-        ptype = util.BYTES if isinstance(patterns[0], bytes) else util.UNICODE
+    if positive and flags & NODIR:
+        ptype = util.BYTES if isinstance(positive[0].pattern, bytes) else util.UNICODE
         negative.append(cast(Pattern[AnyStr], RE_NO_DIR[ptype] if is_unix else RE_WIN_NO_DIR[ptype]))
 
+    return positive, negative
+
+
+def compile(  # noqa: A001
+    patterns: Sequence[AnyStr],
+    flags: int,
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Sequence[AnyStr]] = None
+) -> WcRegexp[AnyStr]:
+    """Compile patterns."""
+
+    positive, negative = compile_pattern(patterns, flags, limit, exclude)
     return WcRegexp(
         tuple(positive), tuple(negative),
         bool(flags & REALPATH), bool(flags & PATHNAME), bool(flags & FOLLOW)
@@ -847,7 +878,7 @@ class WcParse(Generic[AnyStr]):
         self.realpath = bool(flags & REALPATH) and self.pathname
         self.translate = bool(flags & _TRANSLATE)
         self.negate = bool(flags & NEGATE)
-        self.globstar_capture = self.realpath and not self.translate
+        self.globstar_capture = self.realpath and not self.translate and not bool(flags & _NO_GLOBSTAR_CAPTURE)
         self.dot = bool(flags & DOTMATCH)
         self.extend = bool(flags & EXTMATCH)
         self.matchbase = bool(flags & MATCHBASE)

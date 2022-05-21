@@ -4,6 +4,9 @@
 
 - **NEW**: Drop support for Python 3.6.
 - **NEW**: Switch to Hatch backend instead of Setuptools.
+- **NEW**: Add new `exclude` option to `fnmatch` and `glob` methods that allows exclusion patterns to be specified
+  directly without needing to enable `NEGATE` and prepend patterns with `!`. `exclude` accepts a separate pattern lists.
+  `exclude` should not be used in conjunction with `NEGATE`. One or the other should be used.
 
 ## 8.3
 
