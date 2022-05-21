@@ -1,20 +1,67 @@
 [build-system]
 requires = [
-    "setuptools>=42",
-    "wheel"
+    "hatchling>=0.21.1",
+]
+build-backend = "hatchling.build"
+
+[project]
+name = "wcmatch"
+description = "Wildcard/glob file name matcher."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.7"
+authors = [
+    { name = "Isaac Muse", email = "Isaac.Muse@gmail.com" },
+]
+keywords = [
+    "glob",
+    "fnmatch",
+    "search",
+    "wildcard"
+]
+dynamic = [
+    "classifiers",
+    "dependencies",
+    "version",
 ]
 
-build-backend = "setuptools.build_meta"
+[project.urls]
+Homepage = "https://github.com/facelessuser/wcmatch"
+
+[tool.hatch.version]
+source = "code"
+path = "wcmatch/__meta__.py"
+
+[tool.hatch.build.targets.wheel]
+include = [
+    "/wcmatch",
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/docs/src/markdown/**/*.md",
+    "/docs/src/markdown/**/*.gif",
+    "/docs/src/markdown/**/*.png",
+    "/docs/src/markdown/dictionary/*.txt",
+    "/docs/theme/**/*.css",
+    "/docs/theme/**/*.js",
+    "/docs/theme/**/*.html",
+    "/requirements/*.txt",
+    "/wcmatch/**/*.py",
+    "/wcmatch/py.typed",
+    "/tests/**/*.py",
+    "/tools/**/*.py",
+    "/.pyspelling.yml",
+    "/.coveragerc",
+    "/mkdocs.yml",
+    "/tox.ini",
+]
 
 [tool.mypy]
 files = [
-    "wcmatch/*.py"
+    "wcmatch"
 ]
 strict = true
 show_error_codes = true
 
-[[tool.mypy.overrides]]
-module = [
-    'wcmatch.glob.*'
-]
-warn_unused_ignores = false
+[tool.hatch.metadata.hooks.custom]

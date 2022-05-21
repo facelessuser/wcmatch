@@ -237,7 +237,7 @@ class TestRealpath(unittest.TestCase):
     def test_real_file(self):
         """Test real file."""
 
-        p = pathlib.PurePath('setup.py')
+        p = pathlib.PurePath('pyproject.toml')
         self.assertFalse(p.globmatch('*/', flags=pathlib.REALPATH))
         self.assertTrue(p.globmatch('*', flags=pathlib.REALPATH))
 

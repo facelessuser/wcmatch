@@ -3,6 +3,7 @@
 ## 8.4
 
 - **NEW**: Drop support for Python 3.6.
+- **NEW**: Switch to Hatch backend instead of Setuptools.
 
 ## 8.3
 

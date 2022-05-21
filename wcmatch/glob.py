@@ -633,7 +633,7 @@ class Glob(Generic[AnyStr]):
                 yield special, True, True, False
 
             try:
-                with os.scandir(scandir) as scan:  # type: ignore[type-var]
+                with os.scandir(scandir) as scan:
                     for f in scan:
                         try:
                             hidden = self._is_hidden(f.name)  # type: ignore[arg-type]

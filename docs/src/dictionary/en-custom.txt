@@ -19,6 +19,7 @@ POSIX
 Pathlib
 Preprocess
 PyPI
+Setuptools
 Symlink
 TODO
 Twemoji
@@ -29,6 +30,7 @@ XORed
 Zsh
 accessor
 amongst
+backend
 basename
 boolean
 builtin
