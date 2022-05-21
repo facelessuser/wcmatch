@@ -9,7 +9,6 @@ from functools import wraps
 import warnings
 from typing import Any, Callable, Tuple, AnyStr, Match, Pattern, Optional, cast
 
-PY37 = (3, 7) <= sys.version_info
 PY310 = (3, 10) <= sys.version_info
 
 UNICODE = 0
