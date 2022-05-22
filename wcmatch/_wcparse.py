@@ -594,12 +594,14 @@ def is_unix_style(flags: int) -> bool:
     )
 
 
-def exclude_flags(flags: int) -> int:
+def no_negate_flags(flags: int) -> int:
     """No negation."""
 
     if flags & NEGATE:
         flags ^= NEGATE
-    return flags | DOTMATCH | _NO_GLOBSTAR_CAPTURE
+    if flags & NEGATEALL:
+        flags ^= NEGATEALL
+    return flags
 
 
 def translate(
@@ -614,7 +616,8 @@ def translate(
     negative = []  # type: List[AnyStr]
 
     if exclude is not None:
-        negative = translate(exclude, flags=exclude_flags(flags), limit=limit)[0]
+        flags = no_negate_flags(flags)
+        negative = translate(exclude, flags=flags | DOTMATCH | _NO_GLOBSTAR_CAPTURE, limit=limit)[0]
         limit -= len(negative)
 
     flags = (flags | _TRANSLATE) & FLAG_MASK
@@ -676,7 +679,8 @@ def compile_pattern(
     negative = []  # type: List[Pattern[AnyStr]]
 
     if exclude is not None:
-        negative = compile_pattern(exclude, flags=exclude_flags(flags), limit=limit)[0]
+        flags = no_negate_flags(flags)
+        negative = compile_pattern(exclude, flags=flags | DOTMATCH | _NO_GLOBSTAR_CAPTURE, limit=limit)[0]
         limit -= len(negative)
 
     is_unix = is_unix_style(flags)

@@ -403,6 +403,9 @@ class Glob(Generic[AnyStr]):
         pats = _wcparse.to_str_sequence(pattern)
         epats = _wcparse.to_str_sequence(exclude) if exclude is not None else exclude
 
+        if epats:
+            flags = _wcparse.no_negate_flags(flags)
+
         self.pattern = []  # type: List[List[_GlobPart]]
         self.npatterns = []  # type: List[Pattern[AnyStr]]
         self.seen = set()  # type: Set[AnyStr]
@@ -426,7 +429,7 @@ class Glob(Generic[AnyStr]):
         if flags & _RTL:  # pragma: no cover
             flags ^= _RTL
         self.flags = _flag_transform(flags | REALPATH)  # type: int
-        self.negate_flags = self.flags | DOTMATCH  # type: int
+        self.negate_flags = self.flags | DOTMATCH | _wcparse._NO_GLOBSTAR_CAPTURE  # type: int
         if not self.scandotdir and not self.flags & NODOTDIR:
             self.flags |= NODOTDIR
         self.raw_chars = bool(self.flags & RAWCHARS)  # type: bool
@@ -522,7 +525,7 @@ class Glob(Generic[AnyStr]):
             else:
                 self.pattern.append(_GlobSplit(p, self.flags).split())
 
-        if not self.pattern and self.npatterns and not force_negate:
+        if not self.pattern and self.npatterns:
             if self.negateall:
                 default = self.stars
                 self.pattern.append(_GlobSplit(default, self.flags | GLOBSTAR).split())
@@ -533,11 +536,11 @@ class Glob(Generic[AnyStr]):
         # A single positive pattern will not find multiples of the same file
         # disable unique mode so that we won't waste time or memory computing unique returns.
         if (
+            not force_negate and
             len(self.pattern) <= 1 and
             not self.flags & NODOTDIR and
             not self.nounique and
-            not (self.pathlib and self.scandotdir) and
-            not force_negate
+            not (self.pathlib and self.scandotdir)
         ):
             self.nounique = True
 
