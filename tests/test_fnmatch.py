@@ -470,19 +470,62 @@ class TestFnMatchTranslate(unittest.TestCase):
         self.assertFalse(fnmatch.fnmatch('test', '!test', flags=fnmatch.N | fnmatch.A))
         self.assertFalse(fnmatch.fnmatch(b'test', b'!test', flags=fnmatch.N | fnmatch.A))
 
-    def test_default_compile_exclude(self):
-        """Test default with exclusion keyword."""
-
-        self.assertTrue(fnmatch.fnmatch('name', '*', exclude='test', flags=fnmatch.A))
-        self.assertTrue(fnmatch.fnmatch(b'name', b'*', exclude=b'test', flags=fnmatch.A))
-        self.assertFalse(fnmatch.fnmatch('test', '*', exclude='test', flags=fnmatch.A))
-        self.assertFalse(fnmatch.fnmatch(b'test', b'*', exclude=b'test', flags=fnmatch.A))
-
     def test_default_translate(self):
         """Test default with exclusion in translation."""
 
         self.assertTrue(len(fnmatch.translate('!test', flags=fnmatch.N | fnmatch.A)[0]) == 1)
         self.assertTrue(len(fnmatch.translate(b'!test', flags=fnmatch.N | fnmatch.A)[0]) == 1)
+
+
+class TestExcludes(unittest.TestCase):
+    """Test expansion limits."""
+
+    def test_translate_exclude(self):
+        """Test exclusion in translation."""
+
+        results = fnmatch.translate('*', exclude='test')
+        self.assertTrue(len(results[0]) == 1 and len(results[1]) == 1)
+        results = fnmatch.translate(b'*', exclude=b'test')
+        self.assertTrue(len(results[0]) == 1 and len(results[1]) == 1)
+
+    def test_translate_exclude_mix(self):
+        """
+        Test translate exclude mix.
+
+        If both are given, flags are ignored.
+        """
+
+        results = fnmatch.translate(['*', '!test'], exclude=b'test', flags=fnmatch.N | fnmatch.A)
+        self.assertTrue(len(results[0]) == 2 and len(results[1]) == 1)
+
+    def test_exclude(self):
+        """Test exclude parameter."""
+
+        self.assertTrue(fnmatch.fnmatch('name', '*', exclude='test'))
+        self.assertTrue(fnmatch.fnmatch(b'name', b'*', exclude=b'test'))
+        self.assertFalse(fnmatch.fnmatch('test', '*', exclude='test'))
+        self.assertFalse(fnmatch.fnmatch(b'test', b'*', exclude=b'test'))
+
+    def test_exclude_mix(self):
+        """
+        Test exclusion flags mixed with exclusion parameter.
+
+        If both are given, flags are ignored.
+        """
+
+        self.assertTrue(fnmatch.fnmatch('name', '*', exclude='test', flags=fnmatch.N | fnmatch.A))
+        self.assertTrue(fnmatch.fnmatch(b'name', b'*', exclude=b'test', flags=fnmatch.N | fnmatch.A))
+        self.assertFalse(fnmatch.fnmatch('test', '*', exclude='test', flags=fnmatch.N | fnmatch.A))
+        self.assertFalse(fnmatch.fnmatch(b'test', b'*', exclude=b'test', flags=fnmatch.N | fnmatch.A))
+
+        self.assertTrue(fnmatch.fnmatch('name', ['*', '!name'], exclude='test', flags=fnmatch.N | fnmatch.A))
+        self.assertFalse(fnmatch.fnmatch('test', ['*', '!name'], exclude='test', flags=fnmatch.N | fnmatch.A))
+        self.assertTrue(fnmatch.fnmatch('!name', ['*', '!name'], exclude='test', flags=fnmatch.N | fnmatch.A))
+
+    def test_filter(self):
+        """Test exclusion with filter."""
+
+        self.assertEqual(fnmatch.filter(['name', 'test'], '*', exclude='test'), ['name'])
 
 
 class TestIsMagic(unittest.TestCase):
