@@ -391,19 +391,19 @@ class Glob(Generic[AnyStr]):
 
     def __init__(
         self,
-        pattern: Union[str, bytes, Sequence[AnyStr]],
+        pattern: Union[AnyStr, Sequence[AnyStr]],
         flags: int = 0,
         root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
         dir_fd: Optional[int] = None,
         limit: int = _wcparse.PATTERN_LIMIT,
-        exclude: Optional[Union[str, bytes, Sequence[AnyStr]]] = None
+        exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
     ) -> None:
         """Initialize the directory walker object."""
 
-        pats = _wcparse.to_str_sequence(pattern)
-        epats = _wcparse.to_str_sequence(exclude) if exclude is not None else exclude
+        pats = [pattern] if isinstance(pattern, (str, bytes)) else pattern
+        epats = [exclude] if isinstance(exclude, (str, bytes)) else exclude
 
-        if epats:
+        if epats is not None:
             flags = _wcparse.no_negate_flags(flags)
 
         self.pattern = []  # type: List[List[_GlobPart]]
@@ -476,7 +476,7 @@ class Glob(Generic[AnyStr]):
         self.root_dir = temp  # type: AnyStr
         self.current_limit = self.limit
         self._parse_patterns(pats)
-        if epats:
+        if epats is not None:
             self._parse_patterns(epats, force_negate=True)
 
     def _iter_patterns(self, patterns: Sequence[AnyStr], force_negate: bool = False) -> Iterator[Tuple[bool, AnyStr]]:
@@ -861,13 +861,13 @@ class Glob(Generic[AnyStr]):
 
 
 def iglob(
-    patterns: Union[str, bytes, Sequence[AnyStr]],
+    patterns: Union[AnyStr, Sequence[AnyStr]],
     *,
     flags: int = 0,
     root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
     dir_fd: Optional[int] = None,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[Union[str, bytes, Sequence[AnyStr]]] = None
+    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
 ) -> Iterator[AnyStr]:
     """Glob."""
 
@@ -878,13 +878,13 @@ def iglob(
 
 
 def glob(
-    patterns: Union[str, bytes, Sequence[AnyStr]],
+    patterns: Union[AnyStr, Sequence[AnyStr]],
     *,
     flags: int = 0,
     root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
     dir_fd: Optional[int] = None,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[Union[str, bytes, Sequence[AnyStr]]] = None
+    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
 ) -> List[AnyStr]:
     """Glob."""
 
@@ -892,32 +892,27 @@ def glob(
 
 
 def translate(
-    patterns: Union[str, bytes, Sequence[AnyStr]],
+    patterns: Union[AnyStr, Sequence[AnyStr]],
     *,
     flags: int = 0,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[Union[str, bytes, Sequence[AnyStr]]] = None
+    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
 ) -> Tuple[List[AnyStr], List[AnyStr]]:
     """Translate glob pattern."""
 
     flags = _flag_transform(flags)
-    return _wcparse.translate(
-        _wcparse.to_str_sequence(patterns),
-        flags,
-        limit,
-        _wcparse.to_str_sequence(exclude) if exclude is not None else exclude
-    )
+    return _wcparse.translate(patterns, flags, limit, exclude)
 
 
 def globmatch(
     filename: Union[AnyStr, 'os.PathLike[AnyStr]'],
-    patterns: Union[str, bytes, Sequence[AnyStr]],
+    patterns: Union[AnyStr, Sequence[AnyStr]],
     *,
     flags: int = 0,
     root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
     dir_fd: Optional[int] = None,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[Union[str, bytes, Sequence[AnyStr]]] = None
+    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
 ) -> bool:
     """
     Check if filename matches pattern.
@@ -926,68 +921,38 @@ def globmatch(
     but if `case_sensitive` is set, respect that instead.
     """
 
-    pats = _wcparse.to_str_sequence(patterns)
-
     # Shortcut out if we have no patterns
-    if not pats:
+    if not patterns:
         return False
 
-    ptype = type(pats[0])
     rdir = os.fspath(root_dir) if root_dir is not None else root_dir
     flags = _flag_transform(flags)
     fname = os.fspath(filename)
 
-    # Ensure types are not mismatched
-    if (rdir is not None and not isinstance(rdir, ptype)):
-        raise TypeError(
-            "Pattern type of '{}' does not match the resolved type of '{}' of the root dir".format(ptype, type(rdir))
-        )
-
-    return bool(
-        _wcparse.compile(
-            pats,
-            flags,
-            limit,
-            _wcparse.to_str_sequence(exclude) if exclude is not None else exclude
-        ).match(fname, rdir, dir_fd)
-    )
+    return bool(_wcparse.compile(patterns, flags, limit, exclude).match(fname, rdir, dir_fd))
 
 
 def globfilter(
     filenames: Iterable[Union[AnyStr, 'os.PathLike[AnyStr]']],
-    patterns: Union[str, bytes, Sequence[AnyStr]],
+    patterns: Union[AnyStr, Sequence[AnyStr]],
     *,
     flags: int = 0,
     root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
     dir_fd: Optional[int] = None,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[Union[str, bytes, Sequence[AnyStr]]] = None
+    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
 ) -> List[Union[AnyStr, 'os.PathLike[AnyStr]']]:
     """Filter names using pattern."""
 
-    pats = _wcparse.to_str_sequence(patterns)
-
     # Shortcut out if we have no patterns
-    if not pats:
+    if not patterns:
         return []
 
-    ptype = type(pats[0])
     rdir = os.fspath(root_dir) if root_dir is not None else root_dir
-
-    # Ensure types are not mismatched
-    if (rdir is not None and not isinstance(rdir, ptype)):
-        raise TypeError(
-            "Pattern type of '{}' does not match the resolved type of '{}' of the root dir".format(ptype, type(rdir))
-        )
 
     matches = []  # type: List[Union[AnyStr, 'os.PathLike[AnyStr]']]
     flags = _flag_transform(flags)
-    obj = _wcparse.compile(
-        pats,
-        flags,
-        limit,
-        _wcparse.to_str_sequence(exclude) if exclude is not None else exclude
-    )
+    obj = _wcparse.compile(patterns, flags, limit, exclude)
 
     for filename in filenames:
         temp = os.fspath(filename)

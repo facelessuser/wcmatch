@@ -27,7 +27,7 @@ import os
 from . import util
 from . import posix
 from . _wcmatch import WcRegexp
-from typing import List, Tuple, AnyStr, Iterable, Pattern, Generic, Optional, Set, Sequence, Union, cast
+from typing import List, Tuple, AnyStr, Iterable, Pattern, Generic, Optional, Set, Sequence, Iterator, Union, cast
 
 UNICODE_RANGE = '\u0000-\U0010ffff'
 ASCII_RANGE = '\x00-\xff'
@@ -301,13 +301,13 @@ class PatternLimitException(Exception):
     """Pattern limit exception."""
 
 
-def to_str_sequence(patterns: Union[str, bytes, Sequence[AnyStr]]) -> Sequence[AnyStr]:
+def iter_patterns(patterns: Union[str, bytes, Sequence[AnyStr]]) -> Iterator[AnyStr]:
     """Return a simple string sequence."""
 
     if isinstance(patterns, (str, bytes)):
-        return cast(Sequence[AnyStr], [patterns])
+        yield cast(AnyStr, patterns)
     else:
-        return patterns
+        yield from patterns
 
 
 def escape(pattern: AnyStr, unix: Optional[bool] = None, pathname: bool = True, raw: bool = False) -> AnyStr:
@@ -605,10 +605,10 @@ def no_negate_flags(flags: int) -> int:
 
 
 def translate(
-    patterns: Sequence[AnyStr],
+    patterns: Union[str, bytes, Sequence[AnyStr]],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Sequence[AnyStr]] = None
+    exclude: Optional[Union[str, bytes, Sequence[AnyStr]]] = None
 ) -> Tuple[List[AnyStr], List[AnyStr]]:
     """Translate patterns."""
 
@@ -627,7 +627,7 @@ def translate(
     try:
         current_limit = limit
         total = 0
-        for pattern in patterns:
+        for pattern in iter_patterns(patterns):
             pattern = util.norm_pattern(pattern, not is_unix, bool(flags & RAWCHARS))
             count = 0
             for count, expanded in enumerate(expand(pattern, flags, current_limit), 1):
@@ -668,10 +668,10 @@ def split(pattern: AnyStr, flags: int) -> Iterable[AnyStr]:
 
 
 def compile_pattern(
-    patterns: Sequence[AnyStr],
+    patterns: Union[str, bytes, Sequence[AnyStr]],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Sequence[AnyStr]] = None
+    exclude: Optional[Union[str, bytes, Sequence[AnyStr]]] = None
 ) -> Tuple[List[Pattern[AnyStr]], List[Pattern[AnyStr]]]:
     """Compile the patterns."""
 
@@ -689,7 +689,7 @@ def compile_pattern(
     try:
         current_limit = limit
         total = 0
-        for pattern in patterns:
+        for pattern in iter_patterns(patterns):
             pattern = util.norm_pattern(pattern, not is_unix, bool(flags & RAWCHARS))
             count = 0
             for count, expanded in enumerate(expand(pattern, flags, current_limit), 1):
@@ -719,10 +719,10 @@ def compile_pattern(
 
 
 def compile(  # noqa: A001
-    patterns: Sequence[AnyStr],
+    patterns: Union[str, bytes, Sequence[AnyStr]],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Sequence[AnyStr]] = None
+    exclude: Optional[Union[str, bytes, Sequence[AnyStr]]] = None
 ) -> WcRegexp[AnyStr]:
     """Compile patterns."""
 
