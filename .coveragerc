@@ -5,3 +5,6 @@ omit=
 [report]
 omit=
     wcmatch/pep562.py
+exclude_lines =
+    pragma: no cover
+    @overload
