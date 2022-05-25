@@ -302,11 +302,13 @@ class PatternLimitException(Exception):
 
 
 @overload
-def iter_patterns(patterns: Union[str, Sequence[str]]) -> Iterable[str]: ...
+def iter_patterns(patterns: Union[str, Sequence[str]]) -> Iterable[str]:
+    ...
 
 
 @overload
-def iter_patterns(patterns: Union[bytes, Sequence[bytes]]) -> Iterable[bytes]: ...
+def iter_patterns(patterns: Union[bytes, Sequence[bytes]]) -> Iterable[bytes]:
+    ...
 
 
 def iter_patterns(patterns: Union[AnyStr, Sequence[AnyStr]]) -> Iterable[AnyStr]:
@@ -618,7 +620,8 @@ def translate(
     flags: int,
     limit: int = PATTERN_LIMIT,
     exclude: Optional[Union[str, Sequence[str]]] = None
-) -> Tuple[List[str], List[str]]: ...
+) -> Tuple[List[str], List[str]]:
+    ...
 
 
 @overload
@@ -627,7 +630,8 @@ def translate(
     flags: int,
     limit: int = PATTERN_LIMIT,
     exclude: Optional[Union[bytes, Sequence[bytes]]] = None
-) -> Tuple[List[bytes], List[bytes]]: ...
+) -> Tuple[List[bytes], List[bytes]]:
+    ...
 
 
 def translate(
@@ -699,7 +703,8 @@ def compile_pattern(
     flags: int,
     limit: int = PATTERN_LIMIT,
     exclude: Optional[Union[str, Sequence[str]]] = None
-) -> Tuple[List[Pattern[str]], List[Pattern[str]]]: ...
+) -> Tuple[List[Pattern[str]], List[Pattern[str]]]:
+    ...
 
 
 @overload
@@ -708,7 +713,8 @@ def compile_pattern(
     flags: int,
     limit: int = PATTERN_LIMIT,
     exclude: Optional[Union[bytes, Sequence[bytes]]] = None
-) -> Tuple[List[Pattern[bytes]], List[Pattern[bytes]]]: ...
+) -> Tuple[List[Pattern[bytes]], List[Pattern[bytes]]]:
+    ...
 
 
 def compile_pattern(
@@ -768,7 +774,8 @@ def compile(  # noqa: A001
     flags: int,
     limit: int = PATTERN_LIMIT,
     exclude: Optional[Union[str, Sequence[str]]] = None
-) -> WcRegexp[str]: ...
+) -> WcRegexp[str]:
+    ...
 
 
 @overload
@@ -777,7 +784,8 @@ def compile(  # noqa: A001
     flags: int,
     limit: int = PATTERN_LIMIT,
     exclude: Optional[Union[bytes, Sequence[bytes]]] = None
-) -> WcRegexp[bytes]: ...
+) -> WcRegexp[bytes]:
+    ...
 
 
 def compile(  # noqa: A001
