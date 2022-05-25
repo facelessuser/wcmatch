@@ -27,7 +27,7 @@ import os
 from . import util
 from . import posix
 from . _wcmatch import WcRegexp
-from typing import List, Tuple, AnyStr, Iterable, Pattern, Generic, Optional, Set, Sequence, Iterator, Union, cast
+from typing import List, Tuple, AnyStr, Iterable, Pattern, Generic, Optional, Set, Sequence, Union, overload, cast
 
 UNICODE_RANGE = '\u0000-\U0010ffff'
 ASCII_RANGE = '\x00-\xff'
@@ -301,11 +301,19 @@ class PatternLimitException(Exception):
     """Pattern limit exception."""
 
 
-def iter_patterns(patterns: Union[str, bytes, Sequence[AnyStr]]) -> Iterator[AnyStr]:
+@overload
+def iter_patterns(patterns: Union[str, Sequence[str]]) -> Iterable[str]: ...
+
+
+@overload
+def iter_patterns(patterns: Union[bytes, Sequence[bytes]]) -> Iterable[bytes]: ...
+
+
+def iter_patterns(patterns: Union[AnyStr, Sequence[AnyStr]]) -> Iterable[AnyStr]:
     """Return a simple string sequence."""
 
     if isinstance(patterns, (str, bytes)):
-        yield cast(AnyStr, patterns)
+        yield patterns
     else:
         yield from patterns
 
@@ -604,11 +612,29 @@ def no_negate_flags(flags: int) -> int:
     return flags
 
 
+@overload
 def translate(
-    patterns: Union[str, bytes, Sequence[AnyStr]],
+    patterns: Union[str, Sequence[str]],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[str, bytes, Sequence[AnyStr]]] = None
+    exclude: Optional[Union[str, Sequence[str]]] = None
+) -> Tuple[List[str], List[str]]: ...
+
+
+@overload
+def translate(
+    patterns: Union[bytes, Sequence[bytes]],
+    flags: int,
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Union[bytes, Sequence[bytes]]] = None
+) -> Tuple[List[bytes], List[bytes]]: ...
+
+
+def translate(
+    patterns: Union[AnyStr, Sequence[AnyStr]],
+    flags: int,
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
 ) -> Tuple[List[AnyStr], List[AnyStr]]:
     """Translate patterns."""
 
@@ -667,11 +693,29 @@ def split(pattern: AnyStr, flags: int) -> Iterable[AnyStr]:
         yield pattern
 
 
+@overload
 def compile_pattern(
-    patterns: Union[str, bytes, Sequence[AnyStr]],
+    patterns: Union[str, Sequence[str]],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[str, bytes, Sequence[AnyStr]]] = None
+    exclude: Optional[Union[str, Sequence[str]]] = None
+) -> Tuple[List[Pattern[str]], List[Pattern[str]]]: ...
+
+
+@overload
+def compile_pattern(
+    patterns: Union[bytes, Sequence[bytes]],
+    flags: int,
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Union[bytes, Sequence[bytes]]] = None
+) -> Tuple[List[Pattern[bytes]], List[Pattern[bytes]]]: ...
+
+
+def compile_pattern(
+    patterns: Union[AnyStr, Sequence[AnyStr]],
+    flags: int,
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
 ) -> Tuple[List[Pattern[AnyStr]], List[Pattern[AnyStr]]]:
     """Compile the patterns."""
 
@@ -718,11 +762,29 @@ def compile_pattern(
     return positive, negative
 
 
+@overload
 def compile(  # noqa: A001
-    patterns: Union[str, bytes, Sequence[AnyStr]],
+    patterns: Union[str, Sequence[str]],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[str, bytes, Sequence[AnyStr]]] = None
+    exclude: Optional[Union[str, Sequence[str]]] = None
+) -> WcRegexp[str]: ...
+
+
+@overload
+def compile(  # noqa: A001
+    patterns: Union[bytes, Sequence[bytes]],
+    flags: int,
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Union[bytes, Sequence[bytes]]] = None
+) -> WcRegexp[bytes]: ...
+
+
+def compile(  # noqa: A001
+    patterns: Union[AnyStr, Sequence[AnyStr]],
+    flags: int,
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
 ) -> WcRegexp[AnyStr]:
     """Compile patterns."""
 
