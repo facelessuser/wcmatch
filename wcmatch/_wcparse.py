@@ -666,7 +666,10 @@ def translate(
                     raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
                 if expanded not in seen:
                     seen.add(expanded)
-                    (negative if is_negative(expanded, flags) else positive).append(WcParse(expanded, flags).parse())
+                    if is_negative(expanded, flags):
+                        negative.append(WcParse(expanded[1:], flags | _NO_GLOBSTAR_CAPTURE | DOTMATCH).parse())
+                    else:
+                        positive.append(WcParse(expanded, flags).parse())
             if limit:
                 current_limit -= count
                 if current_limit < 1:
@@ -748,7 +751,10 @@ def compile_pattern(
                     raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
                 if expanded not in seen:
                     seen.add(expanded)
-                    (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
+                    if is_negative(expanded, flags):
+                        negative.append(_compile(expanded[1:], flags | _NO_GLOBSTAR_CAPTURE | DOTMATCH))
+                    else:
+                        positive.append(_compile(expanded, flags))
             if limit:
                 current_limit -= count
                 if current_limit < 1:
@@ -1639,17 +1645,6 @@ class WcParse(Generic[AnyStr]):
         result = ['']
         prepend = ['']
 
-        self.negative = False
-
-        if is_negative(p, self.flags):
-            self.negative = True
-            p = p[1:]
-
-        if self.negative:
-            # TODO: Do we prevent `NODOTDIR` for negative patterns?
-            self.globstar_capture = False
-            self.dot = True
-
         if self.anchor:
             p, number = (RE_ANCHOR if not self.win_drive_detect else RE_WIN_ANCHOR).subn('', p)
             if number:
@@ -1692,7 +1687,7 @@ class WcParse(Generic[AnyStr]):
             result = prepend + result
 
         case_flag = 'i' if not self.case_sensitive else ''
-        pattern = r'^(?s{}:{})$'.format(case_flag, ''.join(result))
+        pattern = R'^(?s{}:{})$'.format(case_flag, ''.join(result))
 
         if self.capture:
             # Strip out unnecessary regex comments

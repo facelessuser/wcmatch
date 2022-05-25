@@ -503,7 +503,7 @@ class Glob(Generic[AnyStr]):
                             continue
                         seen.add(expanded)
 
-                    yield is_neg, expanded
+                    yield is_neg, expanded[1:] if is_neg and not force_negate else expanded
                 if self.limit:
                     self.current_limit -= count
                     if self.current_limit < 1:
