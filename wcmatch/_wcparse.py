@@ -27,7 +27,7 @@ import os
 from . import util
 from . import posix
 from . _wcmatch import WcRegexp
-from typing import List, Tuple, AnyStr, Iterable, Pattern, Generic, Optional, Set, Sequence, Union, cast
+from typing import List, Tuple, AnyStr, Iterable, Pattern, Generic, Optional, Set, Sequence, Union, overload, cast
 
 UNICODE_RANGE = '\u0000-\U0010ffff'
 ASCII_RANGE = '\x00-\xff'
@@ -175,6 +175,7 @@ _ANCHOR = 0x200000000  # The pattern, if it starts with a slash, is anchored to 
 _EXTMATCHBASE = 0x400000000  # Like `MATCHBASE`, but works for multiple directory levels.
 _NOABSOLUTE = 0x800000000  # Do not allow absolute patterns
 _RTL = 0x1000000000  # Match from right to left
+_NO_GLOBSTAR_CAPTURE = 0x2000000000  # Disallow `GLOBSTAR` capturing groups.
 
 FLAG_MASK = (
     CASE |
@@ -202,7 +203,8 @@ FLAG_MASK = (
     _ANCHOR |
     _EXTMATCHBASE |
     _RTL |
-    _NOABSOLUTE
+    _NOABSOLUTE |
+    _NO_GLOBSTAR_CAPTURE
 )
 CASE_FLAGS = IGNORECASE | CASE
 
@@ -299,13 +301,23 @@ class PatternLimitException(Exception):
     """Pattern limit exception."""
 
 
-def to_str_sequence(patterns: Union[str, bytes, Sequence[AnyStr]]) -> Sequence[AnyStr]:
+@overload
+def iter_patterns(patterns: Union[str, Sequence[str]]) -> Iterable[str]:
+    ...
+
+
+@overload
+def iter_patterns(patterns: Union[bytes, Sequence[bytes]]) -> Iterable[bytes]:
+    ...
+
+
+def iter_patterns(patterns: Union[AnyStr, Sequence[AnyStr]]) -> Iterable[AnyStr]:
     """Return a simple string sequence."""
 
     if isinstance(patterns, (str, bytes)):
-        return cast(Sequence[AnyStr], [patterns])
+        yield patterns
     else:
-        return patterns
+        yield from patterns
 
 
 def escape(pattern: AnyStr, unix: Optional[bool] = None, pathname: bool = True, raw: bool = False) -> AnyStr:
@@ -592,15 +604,51 @@ def is_unix_style(flags: int) -> bool:
     )
 
 
+def no_negate_flags(flags: int) -> int:
+    """No negation."""
+
+    if flags & NEGATE:
+        flags ^= NEGATE
+    if flags & NEGATEALL:
+        flags ^= NEGATEALL
+    return flags
+
+
+@overload
 def translate(
-    patterns: Sequence[AnyStr],
+    patterns: Union[str, Sequence[str]],
     flags: int,
-    limit: int = PATTERN_LIMIT
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Union[str, Sequence[str]]] = None
+) -> Tuple[List[str], List[str]]:
+    ...
+
+
+@overload
+def translate(
+    patterns: Union[bytes, Sequence[bytes]],
+    flags: int,
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Union[bytes, Sequence[bytes]]] = None
+) -> Tuple[List[bytes], List[bytes]]:
+    ...
+
+
+def translate(
+    patterns: Union[AnyStr, Sequence[AnyStr]],
+    flags: int,
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
 ) -> Tuple[List[AnyStr], List[AnyStr]]:
     """Translate patterns."""
 
     positive = []  # type: List[AnyStr]
     negative = []  # type: List[AnyStr]
+
+    if exclude is not None:
+        flags = no_negate_flags(flags)
+        negative = translate(exclude, flags=flags | DOTMATCH | _NO_GLOBSTAR_CAPTURE, limit=limit)[0]
+        limit -= len(negative)
 
     flags = (flags | _TRANSLATE) & FLAG_MASK
     is_unix = is_unix_style(flags)
@@ -609,7 +657,7 @@ def translate(
     try:
         current_limit = limit
         total = 0
-        for pattern in patterns:
+        for pattern in iter_patterns(patterns):
             pattern = util.norm_pattern(pattern, not is_unix, bool(flags & RAWCHARS))
             count = 0
             for count, expanded in enumerate(expand(pattern, flags, current_limit), 1):
@@ -618,7 +666,10 @@ def translate(
                     raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
                 if expanded not in seen:
                     seen.add(expanded)
-                    (negative if is_negative(expanded, flags) else positive).append(WcParse(expanded, flags).parse())
+                    if is_negative(expanded, flags):
+                        negative.append(WcParse(expanded[1:], flags | _NO_GLOBSTAR_CAPTURE | DOTMATCH).parse())
+                    else:
+                        positive.append(WcParse(expanded, flags).parse())
             if limit:
                 current_limit -= count
                 if current_limit < 1:
@@ -626,17 +677,16 @@ def translate(
     except bracex.ExpansionLimitException:
         raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
 
-    if patterns is not None and negative and not positive:
+    if negative and not positive:
         if flags & NEGATEALL:
-            default = b'**' if isinstance(patterns[0], bytes) else '**'
+            default = b'**' if isinstance(negative[0], bytes) else '**'
             positive.append(
                 WcParse(default, flags | (GLOBSTAR if flags & PATHNAME else 0)).parse()
             )
 
-    if patterns and flags & NODIR:
-        index = util.BYTES if isinstance(patterns[0], bytes) else util.UNICODE
-        exclude = cast(AnyStr, _NO_NIX_DIR[index] if is_unix else _NO_WIN_DIR[index])
-        negative.append(exclude)
+    if positive and flags & NODIR:
+        index = util.BYTES if isinstance(positive[0], bytes) else util.UNICODE
+        negative.append(cast(AnyStr, _NO_NIX_DIR[index] if is_unix else _NO_WIN_DIR[index]))
 
     return positive, negative
 
@@ -650,15 +700,41 @@ def split(pattern: AnyStr, flags: int) -> Iterable[AnyStr]:
         yield pattern
 
 
-def compile(  # noqa: A001
-    patterns: Sequence[AnyStr],
+@overload
+def compile_pattern(
+    patterns: Union[str, Sequence[str]],
     flags: int,
-    limit: int = PATTERN_LIMIT
-) -> WcRegexp[AnyStr]:
-    """Compile patterns."""
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Union[str, Sequence[str]]] = None
+) -> Tuple[List[Pattern[str]], List[Pattern[str]]]:
+    ...
+
+
+@overload
+def compile_pattern(
+    patterns: Union[bytes, Sequence[bytes]],
+    flags: int,
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Union[bytes, Sequence[bytes]]] = None
+) -> Tuple[List[Pattern[bytes]], List[Pattern[bytes]]]:
+    ...
+
+
+def compile_pattern(
+    patterns: Union[AnyStr, Sequence[AnyStr]],
+    flags: int,
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
+) -> Tuple[List[Pattern[AnyStr]], List[Pattern[AnyStr]]]:
+    """Compile the patterns."""
 
     positive = []  # type: List[Pattern[AnyStr]]
     negative = []  # type: List[Pattern[AnyStr]]
+
+    if exclude is not None:
+        flags = no_negate_flags(flags)
+        negative = compile_pattern(exclude, flags=flags | DOTMATCH | _NO_GLOBSTAR_CAPTURE, limit=limit)[0]
+        limit -= len(negative)
 
     is_unix = is_unix_style(flags)
     seen = set()
@@ -666,7 +742,7 @@ def compile(  # noqa: A001
     try:
         current_limit = limit
         total = 0
-        for pattern in patterns:
+        for pattern in iter_patterns(patterns):
             pattern = util.norm_pattern(pattern, not is_unix, bool(flags & RAWCHARS))
             count = 0
             for count, expanded in enumerate(expand(pattern, flags, current_limit), 1):
@@ -675,7 +751,10 @@ def compile(  # noqa: A001
                     raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
                 if expanded not in seen:
                     seen.add(expanded)
-                    (negative if is_negative(expanded, flags) else positive).append(_compile(expanded, flags))
+                    if is_negative(expanded, flags):
+                        negative.append(_compile(expanded[1:], flags | _NO_GLOBSTAR_CAPTURE | DOTMATCH))
+                    else:
+                        positive.append(_compile(expanded, flags))
             if limit:
                 current_limit -= count
                 if current_limit < 1:
@@ -683,15 +762,47 @@ def compile(  # noqa: A001
     except bracex.ExpansionLimitException:
         raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
 
-    if patterns is not None and negative and not positive:
+    if negative and not positive:
         if flags & NEGATEALL:
-            default = b'**' if isinstance(patterns[0], bytes) else '**'
+            default = b'**' if isinstance(negative[0].pattern, bytes) else '**'
             positive.append(_compile(default, flags | (GLOBSTAR if flags & PATHNAME else 0)))
 
-    if patterns is not None and flags & NODIR:
-        ptype = util.BYTES if isinstance(patterns[0], bytes) else util.UNICODE
+    if positive and flags & NODIR:
+        ptype = util.BYTES if isinstance(positive[0].pattern, bytes) else util.UNICODE
         negative.append(cast(Pattern[AnyStr], RE_NO_DIR[ptype] if is_unix else RE_WIN_NO_DIR[ptype]))
 
+    return positive, negative
+
+
+@overload
+def compile(  # noqa: A001
+    patterns: Union[str, Sequence[str]],
+    flags: int,
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Union[str, Sequence[str]]] = None
+) -> WcRegexp[str]:
+    ...
+
+
+@overload
+def compile(  # noqa: A001
+    patterns: Union[bytes, Sequence[bytes]],
+    flags: int,
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Union[bytes, Sequence[bytes]]] = None
+) -> WcRegexp[bytes]:
+    ...
+
+
+def compile(  # noqa: A001
+    patterns: Union[AnyStr, Sequence[AnyStr]],
+    flags: int,
+    limit: int = PATTERN_LIMIT,
+    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
+) -> WcRegexp[AnyStr]:
+    """Compile patterns."""
+
+    positive, negative = compile_pattern(patterns, flags, limit, exclude)
     return WcRegexp(
         tuple(positive), tuple(negative),
         bool(flags & REALPATH), bool(flags & PATHNAME), bool(flags & FOLLOW)
@@ -847,7 +958,7 @@ class WcParse(Generic[AnyStr]):
         self.realpath = bool(flags & REALPATH) and self.pathname
         self.translate = bool(flags & _TRANSLATE)
         self.negate = bool(flags & NEGATE)
-        self.globstar_capture = self.realpath and not self.translate
+        self.globstar_capture = self.realpath and not self.translate and not bool(flags & _NO_GLOBSTAR_CAPTURE)
         self.dot = bool(flags & DOTMATCH)
         self.extend = bool(flags & EXTMATCH)
         self.matchbase = bool(flags & MATCHBASE)
@@ -1534,17 +1645,6 @@ class WcParse(Generic[AnyStr]):
         result = ['']
         prepend = ['']
 
-        self.negative = False
-
-        if is_negative(p, self.flags):
-            self.negative = True
-            p = p[1:]
-
-        if self.negative:
-            # TODO: Do we prevent `NODOTDIR` for negative patterns?
-            self.globstar_capture = False
-            self.dot = True
-
         if self.anchor:
             p, number = (RE_ANCHOR if not self.win_drive_detect else RE_WIN_ANCHOR).subn('', p)
             if number:
@@ -1587,7 +1687,7 @@ class WcParse(Generic[AnyStr]):
             result = prepend + result
 
         case_flag = 'i' if not self.case_sensitive else ''
-        pattern = r'^(?s{}:{})$'.format(case_flag, ''.join(result))
+        pattern = R'^(?s{}:{})$'.format(case_flag, ''.join(result))
 
         if self.capture:
             # Strip out unnecessary regex comments

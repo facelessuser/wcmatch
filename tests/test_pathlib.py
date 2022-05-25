@@ -372,3 +372,13 @@ class TestExpansionLimit(unittest.TestCase):
 
         with self.assertRaises(_wcparse.PatternLimitException):
             list(pathlib.Path('.').rglob('{1..11}', flags=pathlib.BRACE, limit=10))
+
+
+class TestExcludes(unittest.TestCase):
+    """Test expansion limits."""
+
+    def test_exclude(self):
+        """Test exclude parameter."""
+
+        self.assertTrue(pathlib.PurePath('path/name').globmatch('*/*', exclude='*/test'))
+        self.assertFalse(pathlib.PurePath('path/test').globmatch('*/*', exclude='*/test'))

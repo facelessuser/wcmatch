@@ -167,12 +167,13 @@ no limit.
 #### `glob.glob` {: #glob}
 
 ```py3
-def glob(patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000):
+def glob(patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000, exclude=None):
 ```
 
 `glob` takes a pattern (or list of patterns), flags, and an optional root directory (string or path-like object) and/or
-directory file descriptor. It also allows configuring the [max pattern limit](#multi-pattern-limits). When executed it
-will crawl the file system returning matching files.
+directory file descriptor. It also allows configuring the [max pattern limit](#multi-pattern-limits). Exclusion patterns
+can be specified via the `exclude` parameter which takes a pattern or a list of patterns.When executed it will crawl the
+file system returning matching files.
 
 !!! warning "Path-like Input Support"
     Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
@@ -299,10 +300,13 @@ Additionally, you can use `dir_fd` and specify a root directory with a directory
 !!! new "New 8.2"
     `dir_fd` parameter was added in 8.2.
 
+!!! new "New 8.4"
+    `exclude` parameter was added.
+
 #### `glob.iglob` {: #iglob}
 
 ```py3
-def iglob(patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000):
+def iglob(patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000, exclude=None):
 ```
 
 `iglob` is just like [`glob`](#glob) except it returns an iterator.
@@ -322,15 +326,19 @@ def iglob(patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000):
 !!! new "New 8.2"
     `dir_fd` parameter was added in 8.2.
 
+!!! new "New 8.4"
+    `exclude` parameter was added.
+
 #### `glob.globmatch` {: #globmatch}
 
 ```py3
-def globmatch(filename, patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000):
+def globmatch(filename, patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000, exclude=None):
 ```
 
 `globmatch` takes a file name (string or path-like object), a pattern (or list of patterns), flags, and an optional root
-directory and/or file descriptor.  It also allows configuring the [max pattern limit](#multi-pattern-limits). It will
-return a boolean indicating whether the file path was matched by the pattern(s).
+directory and/or file descriptor.  It also allows configuring the [max pattern limit](#multi-pattern-limits). Exclusion
+patterns can be specified via the `exclude` parameter which takes a pattern or a list of patterns. It will return a
+boolean indicating whether the file path was matched by the pattern(s).
 
 ```pycon3
 >>> from wcmatch import glob
@@ -457,16 +465,20 @@ True
 !!! new "New 8.2"
     `dir_fd` parameter was added in 8.2.
 
+!!! new "New 8.4"
+    `exclude` parameter was added.
+
 #### `glob.globfilter` {: #globfilter}
 
 ```py3
-def globfilter(filenames, patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000):
+def globfilter(filenames, patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000, method=None):
 ```
 
 `globfilter` takes a list of file paths (strings or path-like objects), a pattern (or list of patterns), flags, and an
-optional root directory and/or directory file descriptor. It also allows configuring the
-[max pattern limit](#multi-pattern-limits). It returns a list of all files paths that matched the pattern(s). The same
-logic used for [`globmatch`](#globmatch) is used for `globfilter`, albeit more efficient for processing multiple files.
+optional root directory and/or directory file descriptor. It also allows configuring the 
+[max pattern limit](#multi-pattern-limits). Exclusion patterns can be specified via the `exclude` parameter which takes
+a pattern or a list of patterns.It returns a list of all files paths that matched the pattern(s). The same logic used
+for [`globmatch`](#globmatch) is used for `globfilter`, albeit more efficient for processing multiple files.
 
 !!! warning "Path-like Input Support"
     Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
@@ -492,16 +504,20 @@ be matched by `GLOBSTAR`. See [`globmatch`](#globmatch) for examples.
 !!! new "New 8.2"
     `dir_fd` parameter was added in 8.2.
 
+!!! new "New 8.4"
+    `exclude` parameter was added.
+
 #### `glob.translate` {: #translate}
 
 ```py3
-def translate(patterns, *, flags=0, limit=1000):
+def translate(patterns, *, flags=0, limit=1000, exclude=None):
 ```
 
 `translate` takes a file pattern (or list of patterns) and flags. It also allows configuring the [max pattern
-limit](#multi-pattern-limits). It returns two lists: one for inclusion patterns and one for exclusion patterns. The
-lists contain the regular expressions used for matching the given patterns. It should be noted that a file is considered
-matched if it matches at least one inclusion pattern and matches **none** of the exclusion patterns.
+limit](#multi-pattern-limits). Exclusion patterns can be specified via the `exclude` parameter which takes a pattern or
+a list of patterns. It returns two lists: one for inclusion patterns and one for exclusion patterns. The lists contain
+the regular expressions used for matching the given patterns. It should be noted that a file is considered matched if it
+matches at least one inclusion pattern and matches **none** of the exclusion patterns.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -530,6 +546,9 @@ we wrap the entire group to be captured: `#!py3 '+(a)'` --> `#!py3 r'((a)+)'`.
 
 !!! new "New 7.1"
     Translate patterns now provide capturing groups for [`EXTGLOB`](#extglob) groups.
+
+!!! new "New 8.4"
+    `exclude` parameter was added.
 
 #### `glob.escape` {: #escape}
 
@@ -758,6 +777,9 @@ unless the file matches the excluded pattern. This is done with the [`NEGATEALL`
 
 `NEGATE` enables [`DOTGLOB`](#dotglob) in all exclude patterns, this cannot be disabled. This will not affect the
 inclusion patterns.
+
+If `NEGATE` is set and exclusion patterns are passed via a matching or glob function's `exclude` parameter, `NEGATE`
+will be ignored and the `exclude` patterns will be used instead. Either `exclude` or `NEGATE` should be used, not both.
 
 #### `glob.NEGATEALL, glob.A` {: #negateall}
 

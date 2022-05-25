@@ -54,11 +54,12 @@ be no limit.
 #### `fnmatch.fnmatch` {: #fnmatch}
 
 ```py3
-def fnmatch(filename, patterns, *, flags=0, limit=1000)
+def fnmatch(filename, patterns, *, flags=0, limit=1000, exclude=None)
 ```
 
 `fnmatch` takes a file name, a pattern (or list of patterns), and flags.  It also allows configuring the [max pattern
-limit](#multi-pattern-limits). It will return a boolean indicating whether the file name was matched by the pattern(s).
+limit](#multi-pattern-limits). Exclusion patterns can be specified via the `exclude` parameter which takes a pattern or
+a list of patterns. It will return a boolean indicating whether the file name was matched by the pattern(s).
 
 ```pycon3
 >>> from wcmatch import fnmatch
@@ -74,10 +75,21 @@ When applying multiple patterns, a file matches if it matches any of the pattern
 True
 ```
 
-Exclusion patterns are allowed as well. When exclusion patterns are used in conjunction with inclusion patterns, a file
-will be considered matched if one of the inclusion patterns match **and** none of the exclusion patterns match. If an
-exclusion pattern is given without any inclusion patterns, the pattern will match nothing. Exclusion patterns are meant
-to filter other patterns, not match anything by themselves.
+Exclusions can be used by taking advantage of the `exclude` parameter. It takes a single exclude pattern or a list of
+patterns. Files that match the exclude pattern will not be matched.
+
+```pycon3
+>>> from wcmatch import fnmatch
+>>> fnmatch.fnmatch('test.py', '*', exclude='*.py')
+False
+>>> fnmatch.fnmatch('test.txt', '*', exclude='*.py')
+True
+```
+
+Inline exclusion patterns are allowed as well. When exclusion patterns are used in conjunction with inclusion patterns,
+a file will be considered matched if one of the inclusion patterns match **and** none of the exclusion patterns match.
+If an exclusion pattern is given without any inclusion patterns, the pattern will match nothing. Exclusion patterns are
+meant to filter other patterns, not match anything by themselves.
 
 ```pycon3
 >>> from wcmatch import fnmatch
@@ -107,14 +119,18 @@ True
 !!! new "New 6.0"
     `limit` was added in 6.0.
 
+!!! new "New 8.4"
+    `exclude` parameter was added.
+
 #### `fnmatch.filter` {: #filter}
 
 ```py3
-def filter(filenames, patterns, *, flags=0, limit=1000):
+def filter(filenames, patterns, *, flags=0, limit=1000, exclude=None):
 ```
 
 `filter` takes a list of filenames, a pattern (or list of patterns), and flags. It also allows configuring the [max 
-pattern limit](#multi-pattern-limits). It returns a list of all files that matched the pattern(s). The same logic used for
+pattern limit](#multi-pattern-limits). Exclusion patterns can be specified via the `exclude` parameter which takes a
+pattern or a list of patterns.It returns a list of all files that matched the pattern(s). The same logic used for
 [`fnmatch`](#fnmatch) is used for `filter`, albeit more efficient for processing multiple files.
 
 ```pycon3
@@ -126,16 +142,20 @@ pattern limit](#multi-pattern-limits). It returns a list of all files that match
 !!! new "New 6.0"
     `limit` was added in 6.0.
 
+!!! new "New 8.4"
+    `exclude` parameter was added.
+
 #### `fnmatch.translate` {: #translate}
 
 ```py3
-def translate(patterns, *, flags=0, limit=1000):
+def translate(patterns, *, flags=0, limit=1000, exclude=None):
 ```
 
 `translate` takes a file pattern (or list of patterns) and flags. It also allows configuring the [max pattern
-limit](#multi-pattern-limits). It returns two lists: one for inclusion patterns and one for exclusion patterns. The
-lists contain the regular expressions used for matching the given patterns. It should be noted that a file is considered
-matched if it matches at least one inclusion pattern and matches **none** of the exclusion patterns.
+limit](#multi-pattern-limits). Exclusion patterns can be specified via the `exclude` parameter which takes a pattern or
+a list of patterns. It returns two lists: one for inclusion patterns and one for exclusion patterns. The lists contain
+the regular expressions used for matching the given patterns. It should be noted that a file is considered matched if it
+matches at least one inclusion pattern and matches **none** of the exclusion patterns.
 
 ```pycon3
 >>> from wcmatch import fnmatch
@@ -164,6 +184,9 @@ we wrap the entire group to be captured: `#!py3 '+(a)'` --> `#!py3 r'((a)+)'`.
 
 !!! new "New 7.1"
     Translate patterns now provide capturing groups for [`EXTMATCH`](#extmatch) groups.
+
+!!! new "New 8.4"
+    `exclude` parameter was added.
 
 #### `fnmatch.escape` {: #escape}
 
@@ -245,6 +268,12 @@ Assuming the `SPLIT` flag, this means using it in a pattern such as `inclusion|!
 
 If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match
 unless the file matches the excluded pattern. This is done with the [`NEGATEALL`](#negateall) flag.
+
+`NEGATE` enables [`DOTMATCH`](#dotglob) in all exclude patterns, this cannot be disabled. This will not affect the
+inclusion patterns.
+
+If `NEGATE` is set and exclusion patterns are passed via a matching function's `exclude` parameter, `NEGATE` will be
+ignored and the `exclude` patterns will be used instead. Either `exclude` or `NEGATE` should be used, not both.
 
 #### `fnmatch.NEGATEALL, fnmatch.A` {: #negateall}
 

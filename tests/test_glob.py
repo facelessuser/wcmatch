@@ -1608,6 +1608,16 @@ class TestGlobPaths(unittest.TestCase):
         )
 
 
+class TestExcludes(unittest.TestCase):
+    """Test expansion limits."""
+
+    def test_translate_exclude(self):
+        """Test excludes."""
+
+        results = glob.glob('**/*.md', exclude='**/README.md', flags=glob.GLOBSTAR)
+        self.assertTrue('README.md' not in results)
+
+
 @unittest.skipUnless(os.path.expanduser('~') != '~', "Requires expand user functionality")
 class TestTilde(unittest.TestCase):
     """Test tilde cases."""

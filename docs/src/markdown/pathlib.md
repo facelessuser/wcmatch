@@ -240,11 +240,12 @@ PosixPath('/usr/local/bin')
 #### `PurePath.match` {: #match}
 
 ```py3
-def match(self, patterns, *, flags=0, limit=1000):
+def match(self, patterns, *, flags=0, limit=1000, exclude=None):
 ```
 
 `match` takes a pattern (or list of patterns), and flags.  It also allows configuring the [max pattern
-limit](#multi-pattern-limits). It will return a boolean indicating whether the object's file path was matched by the
+limit](#multi-pattern-limits). Exclusion patterns can be specified via the `exclude` parameter which takes a pattern or
+a list of patterns. It will return a boolean indicating whether the object's file path was matched by the
 pattern(s).
 
 `match` mimics Python's `pathlib` version of `match`. Python's `match` uses a right to left evaluation. Wildcard Match
@@ -279,15 +280,18 @@ True
 !!! new "New 6.0"
     `limit` was added in 6.0.
 
+!!! new "New 8.4"
+    `exclude` parameter was added.
+
 #### `PurePath.globmatch` {: #globmatch}
 
 ```py3
-def globmatch(self, patterns, *, flags=0, limit=1000):
+def globmatch(self, patterns, *, flags=0, limit=1000, exclude=None):
 ```
 
 `globmatch` takes a pattern (or list of patterns), and flags.  It also allows configuring the [max pattern
-limit](#multi-pattern-limits).It will return a boolean indicating whether the objects file path was matched by the
-pattern(s).
+limit](#multi-pattern-limits). Exclusion patterns can be specified via the `exclude` parameter which takes a pattern or
+a list of patterns. It will return a boolean indicating whether the objects file path was matched by the pattern(s).
 
 `globmatch` is similar to [`match`](#match) except it does not use the same recursive logic that
 [`match`](#match) does. In all other respects, it behaves the same.
@@ -310,17 +314,20 @@ True
 !!! new "New 6.0"
     `limit` was added in 6.0.
 
+!!! new "New 8.4"
+    `exclude` parameter was added.
+
 #### `Path.glob` {: #glob}
 
 ```py3
-def glob(self, patterns, *, flags=0, limit=1000):
+def glob(self, patterns, *, flags=0, limit=1000, exclude=None):
 ```
 
 `glob` takes a pattern (or list of patterns) and flags. It also allows configuring the [max pattern
 limit](#multi-pattern-limits). It will crawl the file system, relative to the current [`Path`](#path) object,
 returning a generator of [`Path`](#path) objects. If a file/folder matches any regular, inclusion pattern, it is
-considered a match.  If a file matches *any* exclusion pattern (when enabling the [`NEGATE`](#negate) flag), then
-it will not be returned.
+considered a match.  If a file matches *any* exclusion pattern (specified via `exclude` or using negation patterns when
+enabling the [`NEGATE`](#negate) flag), then it will not be returned.
 
 This method calls our own [`iglob`](./glob.md#iglob) implementation, and as such, should behave in the same manner
 in respect to features, the one exception being that instead of returning path strings in the generator, it will return
@@ -340,17 +347,20 @@ working directory.
 !!! new "New 6.0"
     `limit` was added in 6.0.
 
+!!! new "New 8.4"
+    `exclude` parameter was added.
+
 #### `Path.rglob` {: #rglob}
 
 ```py3
-def rglob(self, patterns, *, flags=0, path_limit=1000):
+def rglob(self, patterns, *, flags=0, path_limit=1000, exclude=None):
 ```
 
 `rglob` takes a pattern (or list of patterns) and flags. It also allows configuring the [max pattern
 limit](#multi-pattern-limits). It will crawl the file system, relative to the current [`Path`](#path) object,
 returning a generator of [`Path`](#path) objects. If a file/folder matches any regular patterns, it is considered
-a match.  If a file matches *any* exclusion pattern (when enabling the [`NEGATE`](#negate) flag), then it will be
-not be returned.
+a match.  If a file matches *any* exclusion pattern (specified via `exclude` or using negation patterns when enabling
+the [`NEGATE`](#negate) flag), then it will be not be returned.
 
 `rglob` mimics Python's [`pathlib`][pathlib] version of `rglob` in that it uses a recursive logic. What this means is
 that when you are matching a path in the form `some/path/name`, the patterns `name`, `path/name` and `some/path/name`
@@ -369,6 +379,9 @@ the same.
 
 !!! new "New 6.0"
     `limit` was added in 6.0.
+
+!!! new "New 8.4"
+    `exclude` parameter was added.
 
 ## Flags
 
@@ -400,6 +413,9 @@ unless the file matches the excluded pattern. This is done with the [`NEGATEALL`
 
 `NEGATE` enables [`DOTGLOB`](#dotglob) in all exclude patterns, this cannot be disabled. This will not affect the
 inclusion patterns.
+
+If `NEGATE` is set and exclusion patterns are passed via a matching or glob function's `exclude` parameter, `NEGATE`
+will be ignored and the `exclude` patterns will be used instead. Either `exclude` or `NEGATE` should be used, not both.
 
 #### `pathlib.NEGATEALL, pathlib.A` {: #negateall}
 

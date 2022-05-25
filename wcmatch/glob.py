@@ -391,15 +391,20 @@ class Glob(Generic[AnyStr]):
 
     def __init__(
         self,
-        pattern: Union[str, bytes, Sequence[AnyStr]],
+        pattern: Union[AnyStr, Sequence[AnyStr]],
         flags: int = 0,
         root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
         dir_fd: Optional[int] = None,
-        limit: int = _wcparse.PATTERN_LIMIT
+        limit: int = _wcparse.PATTERN_LIMIT,
+        exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
     ) -> None:
         """Initialize the directory walker object."""
 
-        pats = _wcparse.to_str_sequence(pattern)
+        pats = [pattern] if isinstance(pattern, (str, bytes)) else pattern
+        epats = [exclude] if isinstance(exclude, (str, bytes)) else exclude
+
+        if epats is not None:
+            flags = _wcparse.no_negate_flags(flags)
 
         self.pattern = []  # type: List[List[_GlobPart]]
         self.npatterns = []  # type: List[Pattern[AnyStr]]
@@ -424,7 +429,7 @@ class Glob(Generic[AnyStr]):
         if flags & _RTL:  # pragma: no cover
             flags ^= _RTL
         self.flags = _flag_transform(flags | REALPATH)  # type: int
-        self.negate_flags = self.flags  # type: int
+        self.negate_flags = self.flags | DOTMATCH | _wcparse._NO_GLOBSTAR_CAPTURE  # type: int
         if not self.scandotdir and not self.flags & NODOTDIR:
             self.flags |= NODOTDIR
         self.raw_chars = bool(self.flags & RAWCHARS)  # type: bool
@@ -469,19 +474,21 @@ class Glob(Generic[AnyStr]):
             )
 
         self.root_dir = temp  # type: AnyStr
+        self.current_limit = self.limit
         self._parse_patterns(pats)
+        if epats is not None:
+            self._parse_patterns(epats, force_negate=True)
 
-    def _iter_patterns(self, patterns: Sequence[AnyStr]) -> Iterator[Tuple[bool, AnyStr]]:
+    def _iter_patterns(self, patterns: Sequence[AnyStr], force_negate: bool = False) -> Iterator[Tuple[bool, AnyStr]]:
         """Iterate expanded patterns."""
 
         seen = set()
         try:
-            current_limit = self.limit
             total = 0
             for p in patterns:
                 p = util.norm_pattern(p, not self.unix, self.raw_chars)
                 count = 0
-                for count, expanded in enumerate(_wcparse.expand(p, self.flags, current_limit), 1):
+                for count, expanded in enumerate(_wcparse.expand(p, self.flags, self.current_limit), 1):
                     total += 1
                     if 0 < self.limit < total:
                         raise _wcparse.PatternLimitException(
@@ -490,26 +497,26 @@ class Glob(Generic[AnyStr]):
                     # Filter out duplicate patterns. If `NOUNIQUE` is enabled,
                     # we only want to filter on negative patterns as they are
                     # only filters.
-                    is_neg = _wcparse.is_negative(expanded, self.flags)
+                    is_neg = force_negate or _wcparse.is_negative(expanded, self.flags)
                     if not self.nounique or is_neg:
                         if expanded in seen:
                             continue
                         seen.add(expanded)
 
-                    yield is_neg, expanded
+                    yield is_neg, expanded[1:] if is_neg and not force_negate else expanded
                 if self.limit:
-                    current_limit -= count
-                    if current_limit < 1:
-                        current_limit = 1
+                    self.current_limit -= count
+                    if self.current_limit < 1:
+                        self.current_limit = 1
         except bracex.ExpansionLimitException:
             raise _wcparse.PatternLimitException(
                 "Pattern limit exceeded the limit of {:d}".format(self.limit)
             )
 
-    def _parse_patterns(self, patterns: Sequence[AnyStr]) -> None:
+    def _parse_patterns(self, patterns: Sequence[AnyStr], force_negate: bool = False) -> None:
         """Parse patterns."""
 
-        for is_neg, p in self._iter_patterns(patterns):
+        for is_neg, p in self._iter_patterns(patterns, force_negate=force_negate):
             if is_neg:
                 # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
                 # This is faster as compiled patterns usually compare the include patterns first,
@@ -523,12 +530,13 @@ class Glob(Generic[AnyStr]):
                 default = self.stars
                 self.pattern.append(_GlobSplit(default, self.flags | GLOBSTAR).split())
 
-        if self.nodir:
+        if self.nodir and not force_negate:
             self.npatterns.append(self.re_no_dir)
 
         # A single positive pattern will not find multiples of the same file
         # disable unique mode so that we won't waste time or memory computing unique returns.
         if (
+            not force_negate and
             len(self.pattern) <= 1 and
             not self.flags & NODOTDIR and
             not self.nounique and
@@ -853,54 +861,58 @@ class Glob(Generic[AnyStr]):
 
 
 def iglob(
-    patterns: Union[str, bytes, Sequence[AnyStr]],
+    patterns: Union[AnyStr, Sequence[AnyStr]],
     *,
     flags: int = 0,
     root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
     dir_fd: Optional[int] = None,
-    limit: int = _wcparse.PATTERN_LIMIT
+    limit: int = _wcparse.PATTERN_LIMIT,
+    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
 ) -> Iterator[AnyStr]:
     """Glob."""
 
     if not isinstance(patterns, (str, bytes)) and not patterns:
         return
 
-    yield from Glob(patterns, flags, root_dir, dir_fd, limit).glob()
+    yield from Glob(patterns, flags, root_dir, dir_fd, limit, exclude).glob()
 
 
 def glob(
-    patterns: Union[str, bytes, Sequence[AnyStr]],
+    patterns: Union[AnyStr, Sequence[AnyStr]],
     *,
     flags: int = 0,
     root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
     dir_fd: Optional[int] = None,
-    limit: int = _wcparse.PATTERN_LIMIT
+    limit: int = _wcparse.PATTERN_LIMIT,
+    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
 ) -> List[AnyStr]:
     """Glob."""
 
-    return list(iglob(patterns, flags=flags, root_dir=root_dir, dir_fd=dir_fd, limit=limit))
+    return list(iglob(patterns, flags=flags, root_dir=root_dir, dir_fd=dir_fd, limit=limit, exclude=exclude))
 
 
 def translate(
-    patterns: Union[str, bytes, Sequence[AnyStr]],
+    patterns: Union[AnyStr, Sequence[AnyStr]],
     *,
     flags: int = 0,
-    limit: int = _wcparse.PATTERN_LIMIT
+    limit: int = _wcparse.PATTERN_LIMIT,
+    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
 ) -> Tuple[List[AnyStr], List[AnyStr]]:
     """Translate glob pattern."""
 
     flags = _flag_transform(flags)
-    return _wcparse.translate(_wcparse.to_str_sequence(patterns), flags, limit)
+    return _wcparse.translate(patterns, flags, limit, exclude)
 
 
 def globmatch(
     filename: Union[AnyStr, 'os.PathLike[AnyStr]'],
-    patterns: Union[str, bytes, Sequence[AnyStr]],
+    patterns: Union[AnyStr, Sequence[AnyStr]],
     *,
     flags: int = 0,
     root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
     dir_fd: Optional[int] = None,
-    limit: int = _wcparse.PATTERN_LIMIT
+    limit: int = _wcparse.PATTERN_LIMIT,
+    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
 ) -> bool:
     """
     Check if filename matches pattern.
@@ -909,55 +921,38 @@ def globmatch(
     but if `case_sensitive` is set, respect that instead.
     """
 
-    pats = _wcparse.to_str_sequence(patterns)
-
     # Shortcut out if we have no patterns
-    if not pats:
+    if not patterns:
         return False
 
-    ptype = type(pats[0])
     rdir = os.fspath(root_dir) if root_dir is not None else root_dir
     flags = _flag_transform(flags)
     fname = os.fspath(filename)
 
-    # Ensure types are not mismatched
-    if (rdir is not None and not isinstance(rdir, ptype)):
-        raise TypeError(
-            "Pattern type of '{}' does not match the resolved type of '{}' of the root dir".format(ptype, type(rdir))
-        )
-
-    return bool(_wcparse.compile(pats, flags, limit).match(fname, rdir, dir_fd))
+    return bool(_wcparse.compile(patterns, flags, limit, exclude).match(fname, rdir, dir_fd))
 
 
 def globfilter(
     filenames: Iterable[Union[AnyStr, 'os.PathLike[AnyStr]']],
-    patterns: Union[str, bytes, Sequence[AnyStr]],
+    patterns: Union[AnyStr, Sequence[AnyStr]],
     *,
     flags: int = 0,
     root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
     dir_fd: Optional[int] = None,
-    limit: int = _wcparse.PATTERN_LIMIT
+    limit: int = _wcparse.PATTERN_LIMIT,
+    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
 ) -> List[Union[AnyStr, 'os.PathLike[AnyStr]']]:
     """Filter names using pattern."""
 
-    pats = _wcparse.to_str_sequence(patterns)
-
     # Shortcut out if we have no patterns
-    if not pats:
+    if not patterns:
         return []
 
-    ptype = type(pats[0])
     rdir = os.fspath(root_dir) if root_dir is not None else root_dir
-
-    # Ensure types are not mismatched
-    if (rdir is not None and not isinstance(rdir, ptype)):
-        raise TypeError(
-            "Pattern type of '{}' does not match the resolved type of '{}' of the root dir".format(ptype, type(rdir))
-        )
 
     matches = []  # type: List[Union[AnyStr, 'os.PathLike[AnyStr]']]
     flags = _flag_transform(flags)
-    obj = _wcparse.compile(pats, flags, limit)
+    obj = _wcparse.compile(patterns, flags, limit, exclude)
 
     for filename in filenames:
         temp = os.fspath(filename)
