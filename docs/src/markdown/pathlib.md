@@ -414,6 +414,9 @@ unless the file matches the excluded pattern. This is done with the [`NEGATEALL`
 `NEGATE` enables [`DOTGLOB`](#dotglob) in all exclude patterns, this cannot be disabled. This will not affect the
 inclusion patterns.
 
+If `NEGATE` is set and exclusion patterns are passed via a matching or glob function's `exclude` parameter, `NEGATE`
+will be ignored and the `exclude` patterns will be used instead. Either `exclude` or `NEGATE` should be used, not both.
+
 #### `pathlib.NEGATEALL, pathlib.A` {: #negateall}
 
 `NEGATEALL` can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the

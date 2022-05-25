@@ -269,6 +269,12 @@ Assuming the `SPLIT` flag, this means using it in a pattern such as `inclusion|!
 If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match
 unless the file matches the excluded pattern. This is done with the [`NEGATEALL`](#negateall) flag.
 
+`NEGATE` enables [`DOTMATCH`](#dotglob) in all exclude patterns, this cannot be disabled. This will not affect the
+inclusion patterns.
+
+If `NEGATE` is set and exclusion patterns are passed via a matching function's `exclude` parameter, `NEGATE` will be
+ignored and the `exclude` patterns will be used instead. Either `exclude` or `NEGATE` should be used, not both.
+
 #### `fnmatch.NEGATEALL, fnmatch.A` {: #negateall}
 
 `NEGATEALL` can force exclusion patterns, when no inclusion pattern is provided, to assume all files match unless the
