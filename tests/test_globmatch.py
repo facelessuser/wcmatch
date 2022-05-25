@@ -1887,3 +1887,54 @@ class TestExpansionLimit(unittest.TestCase):
 
         with self.assertRaises(_wcparse.PatternLimitException):
             glob.translate('{1..11}', flags=glob.BRACE, limit=10)
+
+
+class TestExcludes(unittest.TestCase):
+    """Test expansion limits."""
+
+    def test_translate_exclude(self):
+        """Test exclusion in translation."""
+
+        results = glob.translate('*/somepath', exclude='test/somepath')
+        self.assertTrue(len(results[0]) == 1 and len(results[1]) == 1)
+        results = glob.translate(b'*/somepath', exclude=b'test/somepath')
+        self.assertTrue(len(results[0]) == 1 and len(results[1]) == 1)
+
+    def test_translate_exclude_mix(self):
+        """
+        Test translate exclude mix.
+
+        If both are given, flags are ignored.
+        """
+
+        results = glob.translate(['*/somepath', '!test/somepath'], exclude=b'test/somepath', flags=glob.N | glob.A)
+        self.assertTrue(len(results[0]) == 2 and len(results[1]) == 1)
+
+    def test_exclude(self):
+        """Test exclude parameter."""
+
+        self.assertTrue(glob.globmatch('path/name', '*/*', exclude='*/test'))
+        self.assertTrue(glob.globmatch(b'path/name', b'*/*', exclude=b'*/test'))
+        self.assertFalse(glob.globmatch('path/test', '*/*', exclude='*/test'))
+        self.assertFalse(glob.globmatch(b'path/test', b'*/*', exclude=b'*/test'))
+
+    def test_exclude_mix(self):
+        """
+        Test exclusion flags mixed with exclusion parameter.
+
+        If both are given, flags are ignored.
+        """
+
+        self.assertTrue(glob.globmatch('path/name', '*/*', exclude='*/test', flags=glob.N | glob.A))
+        self.assertTrue(glob.globmatch(b'path/name', b'*/*', exclude=b'*/test', flags=glob.N | glob.A))
+        self.assertFalse(glob.globmatch('path/test', '*/*', exclude='*/test', flags=glob.N | glob.A))
+        self.assertFalse(glob.globmatch(b'path/test', b'*/*', exclude=b'*/test', flags=glob.N | glob.A))
+
+        self.assertTrue(glob.globmatch('path/name', ['*/*', '!path/name'], exclude='*/test', flags=glob.N | glob.A))
+        self.assertFalse(glob.globmatch('path/test', ['*/*', '!path/name'], exclude='*/test', flags=glob.N | glob.A))
+        self.assertTrue(glob.globmatch('!path/name', ['*/*', '!path/name'], exclude='*/test', flags=glob.N | glob.A))
+
+    def test_filter(self):
+        """Test exclusion with filter."""
+
+        self.assertEqual(glob.globfilter(['path/name', 'path/test'], '*/*', exclude='path/test'), ['path/name'])
