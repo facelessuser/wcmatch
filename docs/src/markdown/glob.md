@@ -23,7 +23,7 @@ Pattern           | Meaning
 `[seq]`           | Matches any character in seq.
 `[!seq]`          | Matches any character not in seq. Will also accept character exclusions in the form of `[^seq]`.
 `[[:alnum:]]`     | POSIX style character classes inside sequences. See [POSIX Character Classes](#posix-character-classes) for more info.
-`\`               | Escapes characters. If applied to a meta character, it will be treated as a normal character.
+`\`               | Escapes characters. If applied to a meta character or non-meta characters, the character will be treated as a literal character. If applied to another escape, the backslash will be a literal backslash.
 `!`               | When used at the start of a pattern, the pattern will be an exclusion pattern. Requires the [`NEGATE`](#negate) flag. If also using the [`MINUSNEGATE`](#minusnegate) flag, `-` will be used instead of `!`.
 `?(pattern_list)` | The pattern matches if zero or one occurrences of any of the patterns in the `pattern_list` match the input string. Requires the [`EXTGLOB`](#extglob) flag.
 `*(pattern_list)` | The pattern matches if zero or more occurrences of any of the patterns in the `pattern_list` match the input string. Requires the [`EXTGLOB`](#extglob) flag.
@@ -152,6 +152,24 @@ Pattern           | Meaning
 
 --8<-- "posix.md"
 
+## Windows Separators
+
+On Windows, it is not required to use backslashes for path separators as `/` will match path separators for all systems.
+The following will work on Windows and Linux/Unix systems.
+
+```python
+glob.glob('docs/.*')
+```
+
+With that said, you can match Windows separators with backslashes as well. Keep in mind that Wildcard Match allows
+escaped characters in patterns, so to match a literal backslash separator, you must escape the backslash. It is advised
+to use raw strings when using backslashes to make the patterns more readable, but either of the below will work.
+
+```python
+glob.glob(r'docs\\.*')
+glob.glob('docs\\\\.*')
+```
+
 ## Multi-Pattern Limits
 
 Many of the API functions allow passing in multiple patterns or using either [`BRACE`](#brace) or
@@ -180,7 +198,7 @@ file system returning matching files.
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.glob(r'**/*.md')
+>>> glob.glob('**/*.md')
 ['docs/src/markdown/_snippets/abbr.md', 'docs/src/markdown/_snippets/links.md', 'docs/src/markdown/_snippets/refs.md', 'docs/src/markdown/changelog.md', 'docs/src/markdown/fnmatch.md', 'docs/src/markdown/glob.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md', 'README.md']
 ```
 
@@ -188,7 +206,7 @@ Using a list, we can add exclusion patterns and also exclude directories and/or 
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.glob([r'**/*.md', r'!README.md', r'!**/_snippets'], flags=glob.NEGATE)
+>>> glob.glob(['**/*.md', '!README.md', '!**/_snippets'], flags=glob.NEGATE)
 ['docs/src/markdown/changelog.md', 'docs/src/markdown/fnmatch.md', 'docs/src/markdown/glob.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md']
 ```
 
@@ -196,7 +214,7 @@ When a glob pattern ends with a slash, it will only return directories:
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.glob(r'**/')
+>>> glob.glob('**/')
 ['__pycache__/', 'docs/', 'docs/src/', 'docs/src/markdown/', 'docs/src/markdown/_snippets/', 'docs/theme/', 'requirements/', 'stuff/', 'tests/', 'tests/__pycache__/', 'wcmatch/', 'wcmatch/__pycache__/']
 ```
 
@@ -313,7 +331,7 @@ def iglob(patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000, exclude=
 
 ```pycon3
 >>> from wcmatch import glob
->>> list(glob.iglob(r'**/*.md'))
+>>> list(glob.iglob('**/*.md'))
 ['docs/src/markdown/_snippets/abbr.md', 'docs/src/markdown/_snippets/links.md', 'docs/src/markdown/_snippets/refs.md', 'docs/src/markdown/changelog.md', 'docs/src/markdown/fnmatch.md', 'docs/src/markdown/glob.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md', 'README.md']
 ```
 
@@ -342,7 +360,7 @@ boolean indicating whether the file path was matched by the pattern(s).
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.globmatch('some/path/test.txt', r'**/*/@(*.txt|*.py)', flags=glob.EXTGLOB)
+>>> glob.globmatch('some/path/test.txt', '**/*/@(*.txt|*.py)', flags=glob.EXTGLOB)
 True
 ```
 
@@ -350,7 +368,7 @@ When applying multiple patterns, a file path matches if it matches any of the pa
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.globmatch('some/path/test.txt', [r'**/*/*.txt', r'**/*/*.py'])
+>>> glob.globmatch('some/path/test.txt', ['**/*/*.txt', '**/*/*.py'])
 True
 ```
 
@@ -361,13 +379,13 @@ to filter other patterns, not match anything by themselves.
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.globmatch('some/path/test.py', r'**|!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.SPLIT)
+>>> glob.globmatch('some/path/test.py', '**|!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.SPLIT)
 True
->>> glob.globmatch('some/path/test.txt', r'**|!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.SPLIT)
+>>> glob.globmatch('some/path/test.txt', '**|!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.SPLIT)
 False
->>> glob.globmatch('some/path/test.txt', [r'*/*/*.txt', r'!*/*/avoid.txt'], flags=glob.NEGATE)
+>>> glob.globmatch('some/path/test.txt', ['*/*/*.txt', '!*/*/avoid.txt'], flags=glob.NEGATE)
 True
->>> glob.globmatch('some/path/avoid.txt', [r'*/*/*.txt', r'!*/*/avoid.txt'], flags=glob.NEGATE)
+>>> glob.globmatch('some/path/avoid.txt', ['*/*/*.txt', '!*/*/avoid.txt'], flags=glob.NEGATE)
 False
 ```
 
@@ -379,9 +397,9 @@ if [`GLOBSTAR`](#globstar) was enabled).
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.globmatch('some/path/test.py', r'!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.NEGATEALL)
+>>> glob.globmatch('some/path/test.py', '!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.NEGATEALL)
 True
->>> glob.globmatch('some/path/test.txt', r'!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.NEGATEALL)
+>>> glob.globmatch('some/path/test.txt', '!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.NEGATEALL)
 False
 ```
 
@@ -485,7 +503,7 @@ for [`globmatch`](#globmatch) is used for `globfilter`, albeit more efficient fo
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.globfilter(['some/path/a.txt', 'b.txt', 'another/path/c.py'], r'**/*.txt')
+>>> glob.globfilter(['some/path/a.txt', 'b.txt', 'another/path/c.py'], '**/*.txt')
 ['some/path/a.txt', 'b.txt']
 ```
 
@@ -521,9 +539,9 @@ matches at least one inclusion pattern and matches **none** of the exclusion pat
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.translate(r'**/*.{py,txt}')
+>>> glob.translate('**/*.{py,txt}')
 (['^(?s:(?=[^/])(?!(?:\\.{1,2})(?:$|[/]))(?:(?!\\.)[^/]*?)?[/]+(?=[^/])(?!(?:\\.{1,2})(?:$|[/]))(?:(?!\\.)[^/]*?)?\\.\\{py,txt\\}[/]*?)$'], [])
->>> glob.translate(r'**|!**/*.{py,txt}', flags=glob.NEGATE | glob.SPLIT)
+>>> glob.translate('**|!**/*.{py,txt}', flags=glob.NEGATE | glob.SPLIT)
 (['^(?s:(?=[^/])(?!(?:\\.{1,2})(?:$|[/]))(?:(?!\\.)[^/]*?)?[/]*?)$'], ['^(?s:(?=[^/])(?!(?:\\.{1,2})(?:$|[/]))[^/]*?[/]+(?=[^/])(?!(?:\\.{1,2})(?:$|[/]))[^/]*?\\.\\{py,txt\\}[/]*?)$'])
 ```
 
@@ -967,9 +985,9 @@ related to pairing it with `SPLIT`.
 
 ```pycon3
 >>> from wcmatch import glob
->>> glob.globmatch('test.txt', r'*.txt|*.py', flags=fnmatch.SPLIT)
+>>> glob.globmatch('test.txt', '*.txt|*.py', flags=fnmatch.SPLIT)
 True
->>> glob.globmatch('test.py', r'*.txt|*.py', flags=fnmatch.SPLIT)
+>>> glob.globmatch('test.py', '*.txt|*.py', flags=fnmatch.SPLIT)
 True
 ```
 
