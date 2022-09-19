@@ -1591,13 +1591,29 @@ class TestSymlinkLoopGlob(unittest.TestCase):
 class TestGlobPaths(unittest.TestCase):
     """Test `glob` paths."""
 
-    def test_root(self):
+    @unittest.skipUnless(not sys.platform.startswith('win'), "Linux/Unix specific test")
+    def test_root_unix(self):
+        """Test that `glob` translates the root properly."""
+
+        # On Linux/Unix, this should translate to the root.
+        # Basically, we should not return an empty set.
+        results = glob.glob('/*')
+        self.assertTrue(len(results) > 0)
+        self.assertTrue('/' not in results)
+
+    @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
+    def test_root_win(self):
         """Test that `glob` translates the root properly."""
 
         # On Windows, this should translate to the current drive.
-        # On Linux/Unix, this should translate to the root.
         # Basically, we should not return an empty set.
-        self.assertTrue(len(glob.glob('/*')) > 0)
+        results = glob.glob('/*')
+        self.assertTrue(len(results) > 0)
+        self.assertTrue('\\' not in results)
+
+        results = glob.glob(r'\\*')
+        self.assertTrue(len(results) > 0)
+        self.assertTrue('\\' not in results)
 
     def test_start(self):
         """Test that starting directory/files are handled properly."""

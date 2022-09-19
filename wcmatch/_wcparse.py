@@ -362,9 +362,9 @@ def _get_win_drive(
         end = m.end(0)
         if m.group(3) and RE_WIN_DRIVE_LETTER.match(m.group(0)):
             if regex:
-                drive = escape_drive(RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m.group(3)), case_sensitive)
+                drive = escape_drive(RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m.group(3)).replace('/', '\\'), case_sensitive)
             else:
-                drive = RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m.group(0))
+                drive = RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m.group(0)).replace('/', '\\')
             slash = bool(m.group(4))
             root_specified = True
         elif m.group(2):

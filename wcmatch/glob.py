@@ -314,8 +314,12 @@ class _GlobSplit(Generic[AnyStr]):
                 i.advance(start)
             elif drive is None and root_specified:
                 parts.append(_GlobPart(b'\\' if is_bytes else '\\', False, False, True, True))
-                start = 1
-                i.advance(2)
+                if pattern.startswith('/'):
+                    start = 0
+                    i.advance(1)
+                else:
+                    start = 1
+                    i.advance(2)
         elif not self.win_drive_detect and pattern.startswith('/'):
             parts.append(_GlobPart(b'/' if is_bytes else '/', False, False, True, True))
             start = 0

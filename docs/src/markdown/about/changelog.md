@@ -1,5 +1,10 @@
 # Changelog
 
+## 8.4.1
+
+- **FIX**: Windows drive path separators should normalize like other path separators.
+- **FIX**: Fix a Windows pattern parsing issue that caused absolute paths with ambiguous drives to not parse correctly.
+
 ## 8.4
 
 - **NEW**: Drop support for Python 3.6.
