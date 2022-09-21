@@ -3,6 +3,7 @@ Wild Card Match.
 
 A module for performing wild card matches.
 """
+from __future__ import annotations
 import os
 import re
 from . import _wcparse

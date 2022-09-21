@@ -1,4 +1,5 @@
 """Wildcard parsing."""
+from __future__ import annotations
 import re
 import functools
 import bracex
@@ -6,7 +7,7 @@ import os
 from . import util
 from . import posix
 from . _wcmatch import WcRegexp
-from typing import List, Tuple, AnyStr, Iterable, Pattern, Generic, Optional, Set, Sequence, Union, overload, cast
+from typing import List, Tuple, AnyStr, Iterable, Pattern, Generic, Optional, Set, Sequence, overload, cast
 
 UNICODE_RANGE = '\u0000-\U0010ffff'
 ASCII_RANGE = '\x00-\xff'
@@ -281,16 +282,16 @@ class PatternLimitException(Exception):
 
 
 @overload
-def iter_patterns(patterns: Union[str, Sequence[str]]) -> Iterable[str]:
+def iter_patterns(patterns: str | Sequence[str]) -> Iterable[str]:
     ...
 
 
 @overload
-def iter_patterns(patterns: Union[bytes, Sequence[bytes]]) -> Iterable[bytes]:
+def iter_patterns(patterns: bytes | Sequence[bytes]) -> Iterable[bytes]:
     ...
 
 
-def iter_patterns(patterns: Union[AnyStr, Sequence[AnyStr]]) -> Iterable[AnyStr]:
+def iter_patterns(patterns: AnyStr | Sequence[AnyStr]) -> Iterable[AnyStr]:
     """Return a simple string sequence."""
 
     if isinstance(patterns, (str, bytes)):
@@ -362,9 +363,9 @@ def _get_win_drive(
         end = m.end(0)
         if m.group(3) and RE_WIN_DRIVE_LETTER.match(m.group(0)):
             if regex:
-                drive = escape_drive(RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m.group(3)), case_sensitive)
+                drive = escape_drive(RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m.group(3)).replace('/', '\\'), case_sensitive)
             else:
-                drive = RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m.group(0))
+                drive = RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m.group(0)).replace('/', '\\')
             slash = bool(m.group(4))
             root_specified = True
         elif m.group(2):
@@ -595,29 +596,29 @@ def no_negate_flags(flags: int) -> int:
 
 @overload
 def translate(
-    patterns: Union[str, Sequence[str]],
+    patterns: str | Sequence[str],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[str, Sequence[str]]] = None
+    exclude: Optional[str | Sequence[str]] = None
 ) -> Tuple[List[str], List[str]]:
     ...
 
 
 @overload
 def translate(
-    patterns: Union[bytes, Sequence[bytes]],
+    patterns: bytes | Sequence[bytes],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[bytes, Sequence[bytes]]] = None
+    exclude: Optional[bytes | Sequence[bytes]] = None
 ) -> Tuple[List[bytes], List[bytes]]:
     ...
 
 
 def translate(
-    patterns: Union[AnyStr, Sequence[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
+    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
 ) -> Tuple[List[AnyStr], List[AnyStr]]:
     """Translate patterns."""
 
@@ -681,29 +682,29 @@ def split(pattern: AnyStr, flags: int) -> Iterable[AnyStr]:
 
 @overload
 def compile_pattern(
-    patterns: Union[str, Sequence[str]],
+    patterns: str | Sequence[str],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[str, Sequence[str]]] = None
+    exclude: Optional[str | Sequence[str]] = None
 ) -> Tuple[List[Pattern[str]], List[Pattern[str]]]:
     ...
 
 
 @overload
 def compile_pattern(
-    patterns: Union[bytes, Sequence[bytes]],
+    patterns: bytes | Sequence[bytes],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[bytes, Sequence[bytes]]] = None
+    exclude: Optional[bytes | Sequence[bytes]] = None
 ) -> Tuple[List[Pattern[bytes]], List[Pattern[bytes]]]:
     ...
 
 
 def compile_pattern(
-    patterns: Union[AnyStr, Sequence[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
+    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
 ) -> Tuple[List[Pattern[AnyStr]], List[Pattern[AnyStr]]]:
     """Compile the patterns."""
 
@@ -755,29 +756,29 @@ def compile_pattern(
 
 @overload
 def compile(  # noqa: A001
-    patterns: Union[str, Sequence[str]],
+    patterns: str | Sequence[str],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[str, Sequence[str]]] = None
+    exclude: Optional[str | Sequence[str]] = None
 ) -> WcRegexp[str]:
     ...
 
 
 @overload
 def compile(  # noqa: A001
-    patterns: Union[bytes, Sequence[bytes]],
+    patterns: bytes | Sequence[bytes],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[bytes, Sequence[bytes]]] = None
+    exclude: Optional[bytes | Sequence[bytes]] = None
 ) -> WcRegexp[bytes]:
     ...
 
 
 def compile(  # noqa: A001
-    patterns: Union[AnyStr, Sequence[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
+    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
 ) -> WcRegexp[AnyStr]:
     """Compile patterns."""
 
@@ -1551,7 +1552,7 @@ class WcParse(Generic[AnyStr]):
                 self.consume_path_sep(i)
             elif drive is None and root_specified:
                 root_specified = True
-        elif not self.win_drive_detect and self.pathname and pattern.startswith('/'):
+        elif self.pathname and pattern.startswith('/'):
             root_specified = True
 
         if self.no_abs and root_specified:

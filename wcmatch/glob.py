@@ -3,6 +3,7 @@ Wild Card Match.
 
 A custom implementation of `glob`.
 """
+from __future__ import annotations
 import os
 import sys
 import re
@@ -13,7 +14,7 @@ from . import _wcparse
 from . import _wcmatch
 from . import util
 from typing import (
-    Optional, Iterator, Iterable, List, AnyStr, Union, Generic,
+    Optional, Iterator, Iterable, List, AnyStr, Generic,
     Tuple, Pattern, Callable, Any, Set, Sequence, cast
 )
 
@@ -281,7 +282,7 @@ class _GlobSplit(Generic[AnyStr]):
         globstar = value in (b'**', '**') and self.globstar
         magic = self.is_magic(value)
         if magic:
-            v = cast(Pattern[AnyStr], _wcparse._compile(value, self.flags))  # type: Union[Pattern[AnyStr], AnyStr]
+            v = cast(Pattern[AnyStr], _wcparse._compile(value, self.flags))  # type: Pattern[AnyStr] | AnyStr
         else:
             v = value
         if globstar and l and l[-1].is_globstar:
@@ -374,12 +375,12 @@ class Glob(Generic[AnyStr]):
 
     def __init__(
         self,
-        pattern: Union[AnyStr, Sequence[AnyStr]],
+        pattern: AnyStr | Sequence[AnyStr],
         flags: int = 0,
-        root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
+        root_dir: Optional[AnyStr | 'os.PathLike[AnyStr]'] = None,
         dir_fd: Optional[int] = None,
         limit: int = _wcparse.PATTERN_LIMIT,
-        exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
+        exclude: Optional[AnyStr | Sequence[AnyStr]] = None
     ) -> None:
         """Initialize the directory walker object."""
 
@@ -566,7 +567,7 @@ class Glob(Generic[AnyStr]):
 
         return a.lower() == b if not self.case_sensitive else a == b
 
-    def _get_matcher(self, target: Optional[Union[AnyStr, Pattern[AnyStr]]]) -> Optional[Callable[..., Any]]:
+    def _get_matcher(self, target: Optional[AnyStr | Pattern[AnyStr]]) -> Optional[Callable[..., Any]]:
         """Get deep match."""
 
         if target is None:
@@ -609,7 +610,7 @@ class Glob(Generic[AnyStr]):
         try:
             fd = None  # type: Optional[int]
             if self.is_abs_pattern and curdir:
-                scandir = curdir  # type: Union[AnyStr, int]
+                scandir = curdir  # type: AnyStr | int
             elif self.dir_fd is not None:
                 fd = scandir = os.open(
                     os.path.join(self.root_dir, curdir) if curdir else self.root_dir,
@@ -844,13 +845,13 @@ class Glob(Generic[AnyStr]):
 
 
 def iglob(
-    patterns: Union[AnyStr, Sequence[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
     *,
     flags: int = 0,
-    root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
+    root_dir: Optional[AnyStr | os.PathLike[AnyStr]] = None,
     dir_fd: Optional[int] = None,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
+    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
 ) -> Iterator[AnyStr]:
     """Glob."""
 
@@ -861,13 +862,13 @@ def iglob(
 
 
 def glob(
-    patterns: Union[AnyStr, Sequence[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
     *,
     flags: int = 0,
-    root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
+    root_dir: Optional[AnyStr | os.PathLike[AnyStr]] = None,
     dir_fd: Optional[int] = None,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
+    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
 ) -> List[AnyStr]:
     """Glob."""
 
@@ -875,11 +876,11 @@ def glob(
 
 
 def translate(
-    patterns: Union[AnyStr, Sequence[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
     *,
     flags: int = 0,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
+    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
 ) -> Tuple[List[AnyStr], List[AnyStr]]:
     """Translate glob pattern."""
 
@@ -888,14 +889,14 @@ def translate(
 
 
 def globmatch(
-    filename: Union[AnyStr, 'os.PathLike[AnyStr]'],
-    patterns: Union[AnyStr, Sequence[AnyStr]],
+    filename: AnyStr | os.PathLike[AnyStr],
+    patterns: AnyStr | Sequence[AnyStr],
     *,
     flags: int = 0,
-    root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
+    root_dir: Optional[AnyStr | os.PathLike[AnyStr]] = None,
     dir_fd: Optional[int] = None,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
+    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
 ) -> bool:
     """
     Check if filename matches pattern.
@@ -916,15 +917,15 @@ def globmatch(
 
 
 def globfilter(
-    filenames: Iterable[Union[AnyStr, 'os.PathLike[AnyStr]']],
-    patterns: Union[AnyStr, Sequence[AnyStr]],
+    filenames: Iterable[AnyStr | os.PathLike[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
     *,
     flags: int = 0,
-    root_dir: Optional[Union[AnyStr, 'os.PathLike[AnyStr]']] = None,
+    root_dir: Optional[AnyStr | os.PathLike[AnyStr]] = None,
     dir_fd: Optional[int] = None,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
-) -> List[Union[AnyStr, 'os.PathLike[AnyStr]']]:
+    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
+) -> List[AnyStr | os.PathLike[AnyStr]]:
     """Filter names using pattern."""
 
     # Shortcut out if we have no patterns
@@ -933,7 +934,7 @@ def globfilter(
 
     rdir = os.fspath(root_dir) if root_dir is not None else root_dir
 
-    matches = []  # type: List[Union[AnyStr, 'os.PathLike[AnyStr]']]
+    matches = []  # type: List[AnyStr | os.PathLike[AnyStr]]
     flags = _flag_transform(flags)
     obj = _wcparse.compile(patterns, flags, limit, exclude)
 
