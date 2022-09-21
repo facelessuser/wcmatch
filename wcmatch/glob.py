@@ -14,8 +14,8 @@ from . import _wcparse
 from . import _wcmatch
 from . import util
 from typing import (
-    Optional, Iterator, Iterable, List, AnyStr, Generic,
-    Tuple, Pattern, Callable, Any, Set, Sequence, cast
+    Optional, Iterator, Iterable, AnyStr, Generic,
+    Pattern, Callable, Any, Sequence, cast
 )
 
 __all__ = (
@@ -94,12 +94,12 @@ FLAG_MASK = (
 _RE_PATHLIB_DOT_NORM = (
     re.compile(r'(?:((?<=^)|(?<=/))\.(?:/|$))+'),
     re.compile(br'(?:((?<=^)|(?<=/))\.(?:/|$))+')
-)  # type: Tuple[Pattern[str], Pattern[bytes]]
+)  # type: tuple[Pattern[str], Pattern[bytes]]
 
 _RE_WIN_PATHLIB_DOT_NORM = (
     re.compile(r'(?:((?<=^)|(?<=[\\/]))\.(?:[\\/]|$))+'),
     re.compile(br'(?:((?<=^)|(?<=[\\/]))\.(?:[\\/]|$))+')
-)  # type: Tuple[Pattern[str], Pattern[bytes]]
+)  # type: tuple[Pattern[str], Pattern[bytes]]
 
 
 def _flag_transform(flags: int) -> int:
@@ -186,7 +186,7 @@ class _GlobSplit(Generic[AnyStr]):
             self.sep = '/'
         # Once split, Windows file names will never have `\\` in them,
         # so we can use the Unix magic detect
-        self.magic_symbols = _wcparse._get_magic_symbols(pattern, self.unix, self.flags)[0]  # type: Set[AnyStr]
+        self.magic_symbols = _wcparse._get_magic_symbols(pattern, self.unix, self.flags)[0]  # type: set[AnyStr]
 
     def is_magic(self, name: AnyStr) -> bool:
         """Check if name contains magic characters."""
@@ -273,7 +273,7 @@ class _GlobSplit(Generic[AnyStr]):
 
         return success
 
-    def store(self, value: AnyStr, l: List[_GlobPart], dir_only: bool) -> None:
+    def store(self, value: AnyStr, l: list[_GlobPart], dir_only: bool) -> None:
         """Group patterns by literals and potential magic patterns."""
 
         if l and value in (b'', ''):
@@ -290,7 +290,7 @@ class _GlobSplit(Generic[AnyStr]):
         else:
             l.append(_GlobPart(v, magic, globstar, dir_only, False))
 
-    def split(self) -> List[_GlobPart]:
+    def split(self) -> list[_GlobPart]:
         """Start parsing the pattern."""
 
         split_index = []
@@ -390,9 +390,9 @@ class Glob(Generic[AnyStr]):
         if epats is not None:
             flags = _wcparse.no_negate_flags(flags)
 
-        self.pattern = []  # type: List[List[_GlobPart]]
-        self.npatterns = []  # type: List[Pattern[AnyStr]]
-        self.seen = set()  # type: Set[AnyStr]
+        self.pattern = []  # type: list[list[_GlobPart]]
+        self.npatterns = []  # type: list[Pattern[AnyStr]]
+        self.seen = set()  # type: set[AnyStr]
         self.dir_fd = dir_fd if SUPPORT_DIR_FD else None  # type: Optional[int]
         self.nounique = bool(flags & NOUNIQUE)  # type: bool
         self.mark = bool(flags & MARK)  # type: bool
@@ -431,11 +431,11 @@ class Glob(Generic[AnyStr]):
         if isinstance(pats[0], bytes):
             ptype = util.BYTES
             self.current = b'.'  # type: AnyStr
-            self.specials = (b'.', b'..')  # type: Tuple[AnyStr, ...]
+            self.specials = (b'.', b'..')  # type: tuple[AnyStr, ...]
             self.empty = b''  # type: AnyStr
             self.stars = b'**'  # type: AnyStr
             self.sep = b'\\' if forcewin else b'/'  # type: AnyStr
-            self.seps = (b'/', self.sep) if forcewin else (self.sep,)  # type: Tuple[AnyStr, ...]
+            self.seps = (b'/', self.sep) if forcewin else (self.sep,)  # type: tuple[AnyStr, ...]
             self.re_pathlib_norm = cast(Pattern[AnyStr], _RE_WIN_PATHLIB_DOT_NORM[ptype])  # type: Pattern[AnyStr]
             self.re_no_dir = cast(Pattern[AnyStr], _wcparse.RE_WIN_NO_DIR[ptype])  # type: Pattern[AnyStr]
         else:
@@ -463,7 +463,7 @@ class Glob(Generic[AnyStr]):
         if epats is not None:
             self._parse_patterns(epats, force_negate=True)
 
-    def _iter_patterns(self, patterns: Sequence[AnyStr], force_negate: bool = False) -> Iterator[Tuple[bool, AnyStr]]:
+    def _iter_patterns(self, patterns: Sequence[AnyStr], force_negate: bool = False) -> Iterator[tuple[bool, AnyStr]]:
         """Iterate expanded patterns."""
 
         seen = set()
@@ -604,7 +604,7 @@ class Glob(Generic[AnyStr]):
         else:
             return os.path.join(self.root_dir, path)
 
-    def _iter(self, curdir: Optional[AnyStr], dir_only: bool, deep: bool) -> Iterator[Tuple[AnyStr, bool, bool, bool]]:
+    def _iter(self, curdir: Optional[AnyStr], dir_only: bool, deep: bool) -> Iterator[tuple[AnyStr, bool, bool, bool]]:
         """Iterate the directory."""
 
         try:
@@ -652,7 +652,7 @@ class Glob(Generic[AnyStr]):
         matcher: Optional[Callable[..., Any]],
         dir_only: bool = False,
         deep: bool = False
-    ) -> Iterator[Tuple[AnyStr, bool]]:
+    ) -> Iterator[tuple[AnyStr, bool]]:
         """Recursive directory glob."""
 
         files = list(self._iter(curdir, dir_only, deep))
@@ -670,7 +670,7 @@ class Glob(Generic[AnyStr]):
             if deep and not hidden and is_dir and follow:
                 yield from self._glob_dir(path, matcher, dir_only, deep)
 
-    def _glob(self, curdir: AnyStr, part: _GlobPart, rest: List[_GlobPart]) -> Iterator[Tuple[AnyStr, bool]]:
+    def _glob(self, curdir: AnyStr, part: _GlobPart, rest: list[_GlobPart]) -> Iterator[tuple[AnyStr, bool]]:
         """
         Handle glob flow.
 
@@ -745,7 +745,7 @@ class Glob(Generic[AnyStr]):
                 else:
                     yield path, is_dir
 
-    def _get_starting_paths(self, curdir: AnyStr, dir_only: bool) -> List[Tuple[AnyStr, bool]]:
+    def _get_starting_paths(self, curdir: AnyStr, dir_only: bool) -> list[tuple[AnyStr, bool]]:
         """
         Get the starting location.
 
@@ -869,7 +869,7 @@ def glob(
     dir_fd: Optional[int] = None,
     limit: int = _wcparse.PATTERN_LIMIT,
     exclude: Optional[AnyStr | Sequence[AnyStr]] = None
-) -> List[AnyStr]:
+) -> list[AnyStr]:
     """Glob."""
 
     return list(iglob(patterns, flags=flags, root_dir=root_dir, dir_fd=dir_fd, limit=limit, exclude=exclude))
@@ -881,7 +881,7 @@ def translate(
     flags: int = 0,
     limit: int = _wcparse.PATTERN_LIMIT,
     exclude: Optional[AnyStr | Sequence[AnyStr]] = None
-) -> Tuple[List[AnyStr], List[AnyStr]]:
+) -> tuple[list[AnyStr], list[AnyStr]]:
     """Translate glob pattern."""
 
     flags = _flag_transform(flags)
@@ -925,7 +925,7 @@ def globfilter(
     dir_fd: Optional[int] = None,
     limit: int = _wcparse.PATTERN_LIMIT,
     exclude: Optional[AnyStr | Sequence[AnyStr]] = None
-) -> List[AnyStr | os.PathLike[AnyStr]]:
+) -> list[AnyStr | os.PathLike[AnyStr]]:
     """Filter names using pattern."""
 
     # Shortcut out if we have no patterns
@@ -934,7 +934,7 @@ def globfilter(
 
     rdir = os.fspath(root_dir) if root_dir is not None else root_dir
 
-    matches = []  # type: List[AnyStr | os.PathLike[AnyStr]]
+    matches = []  # type: list[AnyStr | os.PathLike[AnyStr]]
     flags = _flag_transform(flags)
     obj = _wcparse.compile(patterns, flags, limit, exclude)
 
