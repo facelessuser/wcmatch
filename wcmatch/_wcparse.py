@@ -1,4 +1,5 @@
 """Wildcard parsing."""
+from __future__ import annotations
 import re
 import functools
 import bracex
@@ -6,7 +7,7 @@ import os
 from . import util
 from . import posix
 from . _wcmatch import WcRegexp
-from typing import List, Tuple, AnyStr, Iterable, Pattern, Generic, Optional, Set, Sequence, Union, overload, cast
+from typing import AnyStr, Iterable, Pattern, Generic, Optional, Sequence, overload, cast
 
 UNICODE_RANGE = '\u0000-\U0010ffff'
 ASCII_RANGE = '\x00-\xff'
@@ -281,16 +282,16 @@ class PatternLimitException(Exception):
 
 
 @overload
-def iter_patterns(patterns: Union[str, Sequence[str]]) -> Iterable[str]:
+def iter_patterns(patterns: str | Sequence[str]) -> Iterable[str]:
     ...
 
 
 @overload
-def iter_patterns(patterns: Union[bytes, Sequence[bytes]]) -> Iterable[bytes]:
+def iter_patterns(patterns: bytes | Sequence[bytes]) -> Iterable[bytes]:
     ...
 
 
-def iter_patterns(patterns: Union[AnyStr, Sequence[AnyStr]]) -> Iterable[AnyStr]:
+def iter_patterns(patterns: AnyStr | Sequence[AnyStr]) -> Iterable[AnyStr]:
     """Return a simple string sequence."""
 
     if isinstance(patterns, (str, bytes)):
@@ -350,7 +351,7 @@ def _get_win_drive(
     pattern: str,
     regex: bool = False,
     case_sensitive: bool = False
-) -> Tuple[bool, Optional[str], bool, int]:
+) -> tuple[bool, Optional[str], bool, int]:
     """Get Windows drive."""
 
     drive = None
@@ -397,7 +398,7 @@ def _get_win_drive(
     return root_specified, drive, slash, end
 
 
-def _get_magic_symbols(pattern: AnyStr, unix: bool, flags: int) -> Tuple[Set[AnyStr], Set[AnyStr]]:
+def _get_magic_symbols(pattern: AnyStr, unix: bool, flags: int) -> tuple[set[AnyStr], set[AnyStr]]:
     """Get magic symbols."""
 
     if isinstance(pattern, bytes):
@@ -407,28 +408,28 @@ def _get_magic_symbols(pattern: AnyStr, unix: bool, flags: int) -> Tuple[Set[Any
         ptype = util.UNICODE
         slash = '\\'
 
-    magic = set()  # type: Set[AnyStr]
+    magic = set()  # type: set[AnyStr]
     if unix:
-        magic_drive = set()  # type: Set[AnyStr]
+        magic_drive = set()  # type: set[AnyStr]
     else:
         magic_drive = set([slash])
 
-    magic |= cast(Set[AnyStr], MAGIC_DEF[ptype])
+    magic |= cast('set[AnyStr]', MAGIC_DEF[ptype])
     if flags & BRACE:
-        magic |= cast(Set[AnyStr], MAGIC_BRACE[ptype])
-        magic_drive |= cast(Set[AnyStr], MAGIC_BRACE[ptype])
+        magic |= cast('set[AnyStr]', MAGIC_BRACE[ptype])
+        magic_drive |= cast('set[AnyStr]', MAGIC_BRACE[ptype])
     if flags & SPLIT:
-        magic |= cast(Set[AnyStr], MAGIC_SPLIT[ptype])
-        magic_drive |= cast(Set[AnyStr], MAGIC_SPLIT[ptype])
+        magic |= cast('set[AnyStr]', MAGIC_SPLIT[ptype])
+        magic_drive |= cast('set[AnyStr]', MAGIC_SPLIT[ptype])
     if flags & GLOBTILDE:
-        magic |= cast(Set[AnyStr], MAGIC_TILDE[ptype])
+        magic |= cast('set[AnyStr]', MAGIC_TILDE[ptype])
     if flags & EXTMATCH:
-        magic |= cast(Set[AnyStr], MAGIC_EXTMATCH[ptype])
+        magic |= cast('set[AnyStr]', MAGIC_EXTMATCH[ptype])
     if flags & NEGATE:
         if flags & MINUSNEGATE:
-            magic |= cast(Set[AnyStr], MAGIC_MINUS_NEGATE[ptype])
+            magic |= cast('set[AnyStr]', MAGIC_MINUS_NEGATE[ptype])
         else:
-            magic |= cast(Set[AnyStr], MAGIC_NEGATE[ptype])
+            magic |= cast('set[AnyStr]', MAGIC_NEGATE[ptype])
 
     return magic, magic_drive
 
@@ -595,34 +596,34 @@ def no_negate_flags(flags: int) -> int:
 
 @overload
 def translate(
-    patterns: Union[str, Sequence[str]],
+    patterns: str | Sequence[str],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[str, Sequence[str]]] = None
-) -> Tuple[List[str], List[str]]:
+    exclude: Optional[str | Sequence[str]] = None
+) -> tuple[list[str], list[str]]:
     ...
 
 
 @overload
 def translate(
-    patterns: Union[bytes, Sequence[bytes]],
+    patterns: bytes | Sequence[bytes],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[bytes, Sequence[bytes]]] = None
-) -> Tuple[List[bytes], List[bytes]]:
+    exclude: Optional[bytes | Sequence[bytes]] = None
+) -> tuple[list[bytes], list[bytes]]:
     ...
 
 
 def translate(
-    patterns: Union[AnyStr, Sequence[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
-) -> Tuple[List[AnyStr], List[AnyStr]]:
+    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
+) -> tuple[list[AnyStr], list[AnyStr]]:
     """Translate patterns."""
 
-    positive = []  # type: List[AnyStr]
-    negative = []  # type: List[AnyStr]
+    positive = []  # type: list[AnyStr]
+    negative = []  # type: list[AnyStr]
 
     if exclude is not None:
         flags = no_negate_flags(flags)
@@ -681,34 +682,34 @@ def split(pattern: AnyStr, flags: int) -> Iterable[AnyStr]:
 
 @overload
 def compile_pattern(
-    patterns: Union[str, Sequence[str]],
+    patterns: str | Sequence[str],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[str, Sequence[str]]] = None
-) -> Tuple[List[Pattern[str]], List[Pattern[str]]]:
+    exclude: Optional[str | Sequence[str]] = None
+) -> tuple[list[Pattern[str]], list[Pattern[str]]]:
     ...
 
 
 @overload
 def compile_pattern(
-    patterns: Union[bytes, Sequence[bytes]],
+    patterns: bytes | Sequence[bytes],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[bytes, Sequence[bytes]]] = None
-) -> Tuple[List[Pattern[bytes]], List[Pattern[bytes]]]:
+    exclude: Optional[bytes | Sequence[bytes]] = None
+) -> tuple[list[Pattern[bytes]], list[Pattern[bytes]]]:
     ...
 
 
 def compile_pattern(
-    patterns: Union[AnyStr, Sequence[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
-) -> Tuple[List[Pattern[AnyStr]], List[Pattern[AnyStr]]]:
+    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
+) -> tuple[list[Pattern[AnyStr]], list[Pattern[AnyStr]]]:
     """Compile the patterns."""
 
-    positive = []  # type: List[Pattern[AnyStr]]
-    negative = []  # type: List[Pattern[AnyStr]]
+    positive = []  # type: list[Pattern[AnyStr]]
+    negative = []  # type: list[Pattern[AnyStr]]
 
     if exclude is not None:
         flags = no_negate_flags(flags)
@@ -755,29 +756,29 @@ def compile_pattern(
 
 @overload
 def compile(  # noqa: A001
-    patterns: Union[str, Sequence[str]],
+    patterns: str | Sequence[str],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[str, Sequence[str]]] = None
+    exclude: Optional[str | Sequence[str]] = None
 ) -> WcRegexp[str]:
     ...
 
 
 @overload
 def compile(  # noqa: A001
-    patterns: Union[bytes, Sequence[bytes]],
+    patterns: bytes | Sequence[bytes],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[bytes, Sequence[bytes]]] = None
+    exclude: Optional[bytes | Sequence[bytes]] = None
 ) -> WcRegexp[bytes]:
     ...
 
 
 def compile(  # noqa: A001
-    patterns: Union[AnyStr, Sequence[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
+    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
 ) -> WcRegexp[AnyStr]:
     """Compile patterns."""
 
@@ -954,7 +955,7 @@ class WcParse(Generic[AnyStr]):
         self.unix = is_unix_style(self.flags)
         if not self.unix:
             self.win_drive_detect = self.pathname
-            self.char_avoid = (ord('\\'), ord('/'), ord('.'))  # type: Tuple[int, ...]
+            self.char_avoid = (ord('\\'), ord('/'), ord('.'))  # type: tuple[int, ...]
             self.bslash_abort = self.pathname
             sep = {"sep": re.escape('\\/')}
         else:
@@ -1028,7 +1029,7 @@ class WcParse(Generic[AnyStr]):
 
         return value
 
-    def _sequence_range_check(self, result: List[str], last: str) -> bool:
+    def _sequence_range_check(self, result: list[str], last: str) -> bool:
         """
         If range backwards, remove it.
 
@@ -1053,7 +1054,7 @@ class WcParse(Generic[AnyStr]):
             result.append(last)
         return removed
 
-    def _handle_posix(self, i: util.StringIter, result: List[str], end_range: int) -> bool:
+    def _handle_posix(self, i: util.StringIter, result: list[str], end_range: int) -> bool:
         """Handle posix classes."""
 
         last_posix = False
@@ -1210,7 +1211,7 @@ class WcParse(Generic[AnyStr]):
 
         return value
 
-    def _handle_dot(self, i: util.StringIter, current: List[str]) -> None:
+    def _handle_dot(self, i: util.StringIter, current: list[str]) -> None:
         """Handle dot."""
 
         is_current = True
@@ -1260,7 +1261,7 @@ class WcParse(Generic[AnyStr]):
         else:
             current.append(re.escape('.'))
 
-    def _handle_star(self, i: util.StringIter, current: List[str]) -> None:
+    def _handle_star(self, i: util.StringIter, current: list[str]) -> None:
         """Handle star."""
 
         if self.pathname:
@@ -1354,7 +1355,7 @@ class WcParse(Generic[AnyStr]):
         else:
             current.append(value)
 
-    def clean_up_inverse(self, current: List[str], nested: bool = False) -> None:
+    def clean_up_inverse(self, current: list[str], nested: bool = False) -> None:
         """
         Clean up current.
 
@@ -1385,7 +1386,7 @@ class WcParse(Generic[AnyStr]):
             index -= 1
         self.inv_ext = 0
 
-    def parse_extend(self, c: str, i: util.StringIter, current: List[str], reset_dot: bool = False) -> bool:
+    def parse_extend(self, c: str, i: util.StringIter, current: list[str], reset_dot: bool = False) -> bool:
         """Parse extended pattern lists."""
 
         # Save state
@@ -1404,7 +1405,7 @@ class WcParse(Generic[AnyStr]):
         success = True
         index = i.index
         list_type = c
-        extended = []  # type: List[str]
+        extended = []  # type: list[str]
 
         try:
             c = next(i)
@@ -1534,7 +1535,7 @@ class WcParse(Generic[AnyStr]):
         except StopIteration:
             pass
 
-    def root(self, pattern: str, current: List[str]) -> None:
+    def root(self, pattern: str, current: list[str]) -> None:
         """Start parsing the pattern."""
 
         self.set_after_start()
@@ -1551,7 +1552,7 @@ class WcParse(Generic[AnyStr]):
                 self.consume_path_sep(i)
             elif drive is None and root_specified:
                 root_specified = True
-        elif not self.win_drive_detect and self.pathname and pattern.startswith('/'):
+        elif self.pathname and pattern.startswith('/'):
             root_specified = True
 
         if self.no_abs and root_specified:

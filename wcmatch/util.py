@@ -1,5 +1,5 @@
 """Compatibility module."""
-from __future__ import unicode_literals
+from __future__ import annotations
 import sys
 import os
 import stat
@@ -7,7 +7,7 @@ import re
 import unicodedata
 from functools import wraps
 import warnings
-from typing import Any, Callable, Tuple, AnyStr, Match, Pattern, Optional, cast
+from typing import Any, Callable, AnyStr, Match, Pattern, Optional, cast
 
 PY310 = (3, 10) <= sys.version_info
 
@@ -194,7 +194,7 @@ class StringIter:
 class Immutable:
     """Immutable."""
 
-    __slots__: Tuple[Any, ...] = tuple()
+    __slots__: tuple[Any, ...] = tuple()
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize."""

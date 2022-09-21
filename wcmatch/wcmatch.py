@@ -3,12 +3,13 @@ Wild Card Match.
 
 A module for performing wild card matches.
 """
+from __future__ import annotations
 import os
 import re
 from . import _wcparse
 from . import _wcmatch
 from . import util
-from typing import Optional, Any, Iterator, List, Generic, AnyStr
+from typing import Optional, Any, Iterator, Generic, AnyStr
 
 
 __all__ = (
@@ -299,7 +300,7 @@ class WcMatch(Generic[AnyStr]):
                     if self.is_aborted():
                         break
 
-    def match(self) -> List[Any]:
+    def match(self) -> list[Any]:
         """Run the directory walker."""
 
         return list(self.imatch())

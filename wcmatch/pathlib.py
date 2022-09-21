@@ -1,10 +1,11 @@
 """Pathlib implementation that uses our own glob."""
+from __future__ import annotations
 import pathlib
 import os
 from . import glob
 from . import _wcparse
 from . import util
-from typing import Iterable, Any, Union, Sequence, Optional, cast
+from typing import Iterable, Any, Sequence, Optional, cast
 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
@@ -109,11 +110,11 @@ class PurePath(pathlib.PurePath):
 
     def match(
         self,
-        patterns: Union[str, Sequence[str]],
+        patterns: str | Sequence[str],
         *,
         flags: int = 0,
         limit: int = _wcparse.PATTERN_LIMIT,
-        exclude: Optional[Union[str, Sequence[str]]] = None
+        exclude: Optional[str | Sequence[str]] = None
     ) -> bool:
         """
         Match patterns using `globmatch`, but also using the same right to left logic that the default `pathlib` uses.
@@ -129,11 +130,11 @@ class PurePath(pathlib.PurePath):
 
     def globmatch(
         self,
-        patterns: Union[str, Sequence[str]],
+        patterns: str | Sequence[str],
         *,
         flags: int = 0,
         limit: int = _wcparse.PATTERN_LIMIT,
-        exclude: Optional[Union[str, Sequence[str]]] = None
+        exclude: Optional[str | Sequence[str]] = None
     ) -> bool:
         """
         Match patterns using `globmatch`, but without the right to left logic that the default `pathlib` uses.
@@ -173,11 +174,11 @@ class Path(pathlib.Path):
 
     def glob(  # type: ignore[override]
         self,
-        patterns: Union[str, Sequence[str]],
+        patterns: str | Sequence[str],
         *,
         flags: int = 0,
         limit: int = _wcparse.PATTERN_LIMIT,
-        exclude: Optional[Union[str, Sequence[str]]] = None
+        exclude: Optional[str | Sequence[str]] = None
     ) -> Iterable['Path']:
         """
         Search the file system.
@@ -196,11 +197,11 @@ class Path(pathlib.Path):
 
     def rglob(  # type: ignore[override]
         self,
-        patterns: Union[str, Sequence[str]],
+        patterns: str | Sequence[str],
         *,
         flags: int = 0,
         limit: int = _wcparse.PATTERN_LIMIT,
-        exclude: Optional[Union[str, Sequence[str]]] = None
+        exclude: Optional[str | Sequence[str]] = None
     ) -> Iterable['Path']:
         """
         Recursive glob.

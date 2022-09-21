@@ -3,8 +3,9 @@ Wild Card Match.
 
 A custom implementation of `fnmatch`.
 """
+from __future__ import annotations
 from . import _wcparse
-from typing import Tuple, List, AnyStr, Iterable, Union, Sequence, Optional
+from typing import AnyStr, Iterable, Sequence, Optional
 
 __all__ = (
     "CASE", "EXTMATCH", "IGNORECASE", "RAWCHARS",
@@ -54,12 +55,12 @@ def _flag_transform(flags: int) -> int:
 
 
 def translate(
-    patterns: Union[AnyStr, Sequence[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
     *,
     flags: int = 0,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
-) -> Tuple[List[AnyStr], List[AnyStr]]:
+    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
+) -> tuple[list[AnyStr], list[AnyStr]]:
     """Translate `fnmatch` pattern."""
 
     flags = _flag_transform(flags)
@@ -68,11 +69,11 @@ def translate(
 
 def fnmatch(
     filename: AnyStr,
-    patterns: Union[AnyStr, Sequence[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
     *,
     flags: int = 0,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
+    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
 ) -> bool:
     """
     Check if filename matches pattern.
@@ -87,12 +88,12 @@ def fnmatch(
 
 def filter(  # noqa A001
     filenames: Iterable[AnyStr],
-    patterns: Union[AnyStr, Sequence[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
     *,
     flags: int = 0,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[Union[AnyStr, Sequence[AnyStr]]] = None
-) -> List[AnyStr]:
+    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
+) -> list[AnyStr]:
     """Filter names using pattern."""
 
     matches = []

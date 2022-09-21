@@ -1,4 +1,5 @@
 """Meta related things."""
+from __future__ import annotations
 from __future__ import unicode_literals
 from collections import namedtuple
 import re
