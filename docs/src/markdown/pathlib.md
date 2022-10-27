@@ -587,9 +587,9 @@ pattern which will perform much better: `@(ab|ac|ad)`.
         ```
 
         This effect is reduced as redundant, identical patterns are optimized away[^1], but when using crawling
-    functions (like in [`glob`](#glob)) *and* [`NOUNIQUE`](#nounique) that optimization is removed, and all
-    of those patterns will be crawled. For this reason, especially when using functions like [`glob`](#glob), it is
-    recommended to use one syntax or the other.
+        functions (like in [`glob`](#glob)) *and* [`NOUNIQUE`](#nounique) that optimization is removed, and all
+        of those patterns will be crawled. For this reason, especially when using functions like [`glob`](#glob), it is
+        recommended to use one syntax or the other.
 
 [^1]: Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
 `[[:alnum:]]` =/= `[[:ALNUM:]]`.

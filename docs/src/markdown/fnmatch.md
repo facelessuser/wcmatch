@@ -327,7 +327,7 @@ pattern which will perform much better: `@(ab|ac|ad)`.
         ```
 
         This effect is reduced as redundant, identical patterns are optimized away[^1]. But it is useful to know if
-    trying to construct efficient patterns.
+        trying to construct efficient patterns.
 
 [^1]: Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
 `[[:alnum:]]` =/= `[[:ALNUM:]]`.
