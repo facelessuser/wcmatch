@@ -5,7 +5,7 @@ import os
 import stat
 import copyreg
 from . import util
-from typing import Pattern, AnyStr, Optional, Generic, Any, cast
+from typing import Pattern, AnyStr, Generic, Any, cast
 
 # `O_DIRECTORY` may not always be defined
 DIR_FLAGS = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
@@ -30,7 +30,7 @@ class _Match(Generic[AnyStr]):
         self,
         filename: AnyStr,
         include: tuple[Pattern[AnyStr], ...],
-        exclude: Optional[tuple[Pattern[AnyStr], ...]],
+        exclude: tuple[Pattern[AnyStr], ...] | None,
         real: bool,
         path: bool,
         follow: bool
@@ -39,7 +39,7 @@ class _Match(Generic[AnyStr]):
 
         self.filename = filename  # type: AnyStr
         self.include = include  # type: tuple[Pattern[AnyStr], ...]
-        self.exclude = exclude  # type: Optional[tuple[Pattern[AnyStr], ...]]
+        self.exclude = exclude  # type: tuple[Pattern[AnyStr], ...] | None
         self.real = real
         self.path = path
         self.follow = follow
@@ -52,9 +52,9 @@ class _Match(Generic[AnyStr]):
         is_dir: bool,
         sep: AnyStr,
         follow: bool,
-        symlinks: dict[tuple[Optional[int], AnyStr], bool],
+        symlinks: dict[tuple[int | None, AnyStr], bool],
         root: AnyStr,
-        dir_fd: Optional[int]
+        dir_fd: int | None
     ) -> bool:
         """
         Match path against the pattern.
@@ -119,9 +119,9 @@ class _Match(Generic[AnyStr]):
 
     def _match_real(
         self,
-        symlinks: dict[tuple[Optional[int], AnyStr], bool],
+        symlinks: dict[tuple[int | None, AnyStr], bool],
         root: AnyStr,
-        dir_fd: Optional[int]
+        dir_fd: int | None
     ) -> bool:
         """Match real filename includes and excludes."""
 
@@ -166,7 +166,7 @@ class _Match(Generic[AnyStr]):
 
         return matched
 
-    def match(self, root_dir: Optional[AnyStr] = None, dir_fd: Optional[int] = None) -> bool:
+    def match(self, root_dir: AnyStr | None = None, dir_fd: int | None = None) -> bool:
         """Match."""
 
         if self.real:
@@ -208,7 +208,7 @@ class _Match(Generic[AnyStr]):
                     exists = True
 
             if exists:
-                symlinks = {}  # type: dict[tuple[Optional[int], AnyStr], bool]
+                symlinks = {}  # type: dict[tuple[int | None, AnyStr], bool]
                 return self._match_real(symlinks, root, dir_fd)
             else:
                 return False
@@ -233,7 +233,7 @@ class WcRegexp(util.Immutable, Generic[AnyStr]):
     """File name match object."""
 
     _include: tuple[Pattern[AnyStr], ...]
-    _exclude: Optional[tuple[Pattern[AnyStr], ...]]
+    _exclude: tuple[Pattern[AnyStr], ...] | None
     _real: bool
     _path: bool
     _follow: bool
@@ -244,7 +244,7 @@ class WcRegexp(util.Immutable, Generic[AnyStr]):
     def __init__(
         self,
         include: tuple[Pattern[AnyStr], ...],
-        exclude: Optional[tuple[Pattern[AnyStr], ...]] = None,
+        exclude: tuple[Pattern[AnyStr], ...] | None = None,
         real: bool = False,
         path: bool = False,
         follow: bool = False
@@ -303,7 +303,7 @@ class WcRegexp(util.Immutable, Generic[AnyStr]):
             self._follow != other._follow
         )
 
-    def match(self, filename: AnyStr, root_dir: Optional[AnyStr] = None, dir_fd: Optional[int] = None) -> bool:
+    def match(self, filename: AnyStr, root_dir: AnyStr | None = None, dir_fd: int | None = None) -> bool:
         """Match filename."""
 
         return _Match(

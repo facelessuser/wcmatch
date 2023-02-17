@@ -5,7 +5,7 @@ import os
 from . import glob
 from . import _wcparse
 from . import util
-from typing import Iterable, Any, Sequence, Optional, cast
+from typing import Iterable, Any, Sequence, cast
 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
@@ -114,7 +114,7 @@ class PurePath(pathlib.PurePath):
         *,
         flags: int = 0,
         limit: int = _wcparse.PATTERN_LIMIT,
-        exclude: Optional[str | Sequence[str]] = None
+        exclude: str | Sequence[str] | None = None
     ) -> bool:
         """
         Match patterns using `globmatch`, but also using the same right to left logic that the default `pathlib` uses.
@@ -134,7 +134,7 @@ class PurePath(pathlib.PurePath):
         *,
         flags: int = 0,
         limit: int = _wcparse.PATTERN_LIMIT,
-        exclude: Optional[str | Sequence[str]] = None
+        exclude: str | Sequence[str] | None = None
     ) -> bool:
         """
         Match patterns using `globmatch`, but without the right to left logic that the default `pathlib` uses.
@@ -178,7 +178,7 @@ class Path(pathlib.Path):
         *,
         flags: int = 0,
         limit: int = _wcparse.PATTERN_LIMIT,
-        exclude: Optional[str | Sequence[str]] = None
+        exclude: str | Sequence[str] | None = None
     ) -> Iterable['Path']:
         """
         Search the file system.
@@ -201,7 +201,7 @@ class Path(pathlib.Path):
         *,
         flags: int = 0,
         limit: int = _wcparse.PATTERN_LIMIT,
-        exclude: Optional[str | Sequence[str]] = None
+        exclude: str | Sequence[str] | None = None
     ) -> Iterable['Path']:
         """
         Recursive glob.

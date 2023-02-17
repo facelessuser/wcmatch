@@ -9,7 +9,7 @@ import re
 from . import _wcparse
 from . import _wcmatch
 from . import util
-from typing import Optional, Any, Iterator, Generic, AnyStr
+from typing import Any, Iterator, Generic, AnyStr
 
 
 __all__ = (
@@ -71,8 +71,8 @@ class WcMatch(Generic[AnyStr]):
     def __init__(
         self,
         root_dir: AnyStr,
-        file_pattern: Optional[AnyStr] = None,
-        exclude_pattern: Optional[AnyStr] = None,
+        file_pattern: AnyStr | None = None,
+        exclude_pattern: AnyStr | None = None,
         flags: int = 0,
         limit: int = _wcparse.PATHNAME,
         **kwargs: Any
@@ -90,8 +90,8 @@ class WcMatch(Generic[AnyStr]):
         empty = os.fsencode('') if isinstance(root_dir, bytes) else ''
         self.pattern_file = file_pattern if file_pattern is not None else empty  # type: AnyStr
         self.pattern_folder_exclude = exclude_pattern if exclude_pattern is not None else empty  # type: AnyStr
-        self.file_check = None  # type: Optional[_wcmatch.WcRegexp[AnyStr]]
-        self.folder_exclude_check = None  # type: Optional[_wcmatch.WcRegexp[AnyStr]]
+        self.file_check = None  # type: _wcmatch.WcRegexp[AnyStr] | None
+        self.folder_exclude_check = None  # type: _wcmatch.WcRegexp[AnyStr] | None
         self.on_init(**kwargs)
         self._compile(self.pattern_file, self.pattern_folder_exclude)
 
@@ -135,7 +135,7 @@ class WcMatch(Generic[AnyStr]):
             self.flags |= _FORCEWIN
         self.flags = self.flags & (_wcparse.FLAG_MASK ^ MATCHBASE)
 
-    def _compile_wildcard(self, pattern: AnyStr, pathname: bool = False) -> Optional[_wcmatch.WcRegexp[AnyStr]]:
+    def _compile_wildcard(self, pattern: AnyStr, pathname: bool = False) -> _wcmatch.WcRegexp[AnyStr] | None:
         """Compile or format the wildcard inclusion/exclusion pattern."""
 
         flags = self.flags

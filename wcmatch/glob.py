@@ -13,10 +13,7 @@ import bracex
 from . import _wcparse
 from . import _wcmatch
 from . import util
-from typing import (
-    Optional, Iterator, Iterable, AnyStr, Generic,
-    Pattern, Callable, Any, Sequence, cast
-)
+from typing import Iterator, Iterable, AnyStr, Generic, Pattern, Callable, Any, Sequence, cast
 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
@@ -381,10 +378,10 @@ class Glob(Generic[AnyStr]):
         self,
         pattern: AnyStr | Sequence[AnyStr],
         flags: int = 0,
-        root_dir: Optional[AnyStr | 'os.PathLike[AnyStr]'] = None,
-        dir_fd: Optional[int] = None,
+        root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+        dir_fd: int | None = None,
         limit: int = _wcparse.PATTERN_LIMIT,
-        exclude: Optional[AnyStr | Sequence[AnyStr]] = None
+        exclude: AnyStr | Sequence[AnyStr] | None = None
     ) -> None:
         """Initialize the directory walker object."""
 
@@ -397,7 +394,7 @@ class Glob(Generic[AnyStr]):
         self.pattern = []  # type: list[list[_GlobPart]]
         self.npatterns = []  # type: list[Pattern[AnyStr]]
         self.seen = set()  # type: set[AnyStr]
-        self.dir_fd = dir_fd if SUPPORT_DIR_FD else None  # type: Optional[int]
+        self.dir_fd = dir_fd if SUPPORT_DIR_FD else None  # type: int | None
         self.nounique = bool(flags & NOUNIQUE)  # type: bool
         self.mark = bool(flags & MARK)  # type: bool
         # Only scan for `.` and `..` if it is specifically requested.
@@ -566,16 +563,16 @@ class Glob(Generic[AnyStr]):
 
         return bool(self.npatterns and self._match_excluded(path, is_dir))
 
-    def _match_literal(self, a: AnyStr, b: Optional[AnyStr] = None) -> bool:
+    def _match_literal(self, a: AnyStr, b: AnyStr | None = None) -> bool:
         """Match two names."""
 
         return a.lower() == b if not self.case_sensitive else a == b
 
-    def _get_matcher(self, target: Optional[AnyStr | Pattern[AnyStr]]) -> Optional[Callable[..., Any]]:
+    def _get_matcher(self, target: AnyStr | Pattern[AnyStr] | None) -> Callable[..., Any] | None:
         """Get deep match."""
 
         if target is None:
-            matcher = None  # type: Optional[Callable[..., Any]]
+            matcher = None  # type: Callable[..., Any] | None
         elif isinstance(target, (str, bytes)):
             # Plain text match
             if not self.case_sensitive:
@@ -608,11 +605,11 @@ class Glob(Generic[AnyStr]):
         else:
             return os.path.join(self.root_dir, path)
 
-    def _iter(self, curdir: Optional[AnyStr], dir_only: bool, deep: bool) -> Iterator[tuple[AnyStr, bool, bool, bool]]:
+    def _iter(self, curdir: AnyStr | None, dir_only: bool, deep: bool) -> Iterator[tuple[AnyStr, bool, bool, bool]]:
         """Iterate the directory."""
 
         try:
-            fd = None  # type: Optional[int]
+            fd = None  # type: int | None
             if self.is_abs_pattern and curdir:
                 scandir = curdir  # type: AnyStr | int
             elif self.dir_fd is not None:
@@ -653,7 +650,7 @@ class Glob(Generic[AnyStr]):
     def _glob_dir(
         self,
         curdir: AnyStr,
-        matcher: Optional[Callable[..., Any]],
+        matcher: Callable[..., Any] | None,
         dir_only: bool = False,
         deep: bool = False
     ) -> Iterator[tuple[AnyStr, bool]]:
@@ -852,10 +849,10 @@ def iglob(
     patterns: AnyStr | Sequence[AnyStr],
     *,
     flags: int = 0,
-    root_dir: Optional[AnyStr | os.PathLike[AnyStr]] = None,
-    dir_fd: Optional[int] = None,
+    root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+    dir_fd: int | None = None,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
+    exclude: AnyStr | Sequence[AnyStr] | None = None
 ) -> Iterator[AnyStr]:
     """Glob."""
 
@@ -869,10 +866,10 @@ def glob(
     patterns: AnyStr | Sequence[AnyStr],
     *,
     flags: int = 0,
-    root_dir: Optional[AnyStr | os.PathLike[AnyStr]] = None,
-    dir_fd: Optional[int] = None,
+    root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+    dir_fd: int | None = None,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
+    exclude: AnyStr | Sequence[AnyStr] | None = None
 ) -> list[AnyStr]:
     """Glob."""
 
@@ -884,7 +881,7 @@ def translate(
     *,
     flags: int = 0,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
+    exclude: AnyStr | Sequence[AnyStr] | None = None
 ) -> tuple[list[AnyStr], list[AnyStr]]:
     """Translate glob pattern."""
 
@@ -897,10 +894,10 @@ def globmatch(
     patterns: AnyStr | Sequence[AnyStr],
     *,
     flags: int = 0,
-    root_dir: Optional[AnyStr | os.PathLike[AnyStr]] = None,
-    dir_fd: Optional[int] = None,
+    root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+    dir_fd: int | None = None,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
+    exclude: AnyStr | Sequence[AnyStr] | None = None
 ) -> bool:
     """
     Check if filename matches pattern.
@@ -925,10 +922,10 @@ def globfilter(
     patterns: AnyStr | Sequence[AnyStr],
     *,
     flags: int = 0,
-    root_dir: Optional[AnyStr | os.PathLike[AnyStr]] = None,
-    dir_fd: Optional[int] = None,
+    root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+    dir_fd: int | None = None,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
+    exclude: AnyStr | Sequence[AnyStr] | None = None
 ) -> list[AnyStr | os.PathLike[AnyStr]]:
     """Filter names using pattern."""
 
@@ -950,7 +947,7 @@ def globfilter(
 
 
 @util.deprecated("This function will be removed in 9.0.")
-def raw_escape(pattern: AnyStr, unix: Optional[bool] = None, raw_chars: bool = True) -> AnyStr:
+def raw_escape(pattern: AnyStr, unix: bool | None = None, raw_chars: bool = True) -> AnyStr:
     """Apply raw character transform before applying escape."""
 
     return _wcparse.escape(
@@ -958,7 +955,7 @@ def raw_escape(pattern: AnyStr, unix: Optional[bool] = None, raw_chars: bool = T
     )
 
 
-def escape(pattern: AnyStr, unix: Optional[bool] = None) -> AnyStr:
+def escape(pattern: AnyStr, unix: bool | None = None) -> AnyStr:
     """Escape."""
 
     return _wcparse.escape(pattern, unix=unix)

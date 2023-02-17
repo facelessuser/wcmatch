@@ -7,7 +7,7 @@ import os
 from . import util
 from . import posix
 from . _wcmatch import WcRegexp
-from typing import AnyStr, Iterable, Pattern, Generic, Optional, Sequence, overload, cast
+from typing import AnyStr, Iterable, Pattern, Generic, Sequence, overload, cast
 
 UNICODE_RANGE = '\u0000-\U0010ffff'
 ASCII_RANGE = '\x00-\xff'
@@ -300,7 +300,7 @@ def iter_patterns(patterns: AnyStr | Sequence[AnyStr]) -> Iterable[AnyStr]:
         yield from patterns
 
 
-def escape(pattern: AnyStr, unix: Optional[bool] = None, pathname: bool = True, raw: bool = False) -> AnyStr:
+def escape(pattern: AnyStr, unix: bool | None = None, pathname: bool = True, raw: bool = False) -> AnyStr:
     """
     Escape.
 
@@ -351,7 +351,7 @@ def _get_win_drive(
     pattern: str,
     regex: bool = False,
     case_sensitive: bool = False
-) -> tuple[bool, Optional[str], bool, int]:
+) -> tuple[bool, str | None, bool, int]:
     """Get Windows drive."""
 
     drive = None
@@ -599,7 +599,7 @@ def translate(
     patterns: str | Sequence[str],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[str | Sequence[str]] = None
+    exclude: str | Sequence[str] | None = None
 ) -> tuple[list[str], list[str]]:
     ...
 
@@ -609,7 +609,7 @@ def translate(
     patterns: bytes | Sequence[bytes],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[bytes | Sequence[bytes]] = None
+    exclude: bytes | Sequence[bytes] | None = None
 ) -> tuple[list[bytes], list[bytes]]:
     ...
 
@@ -618,7 +618,7 @@ def translate(
     patterns: AnyStr | Sequence[AnyStr],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
+    exclude: AnyStr | Sequence[AnyStr] | None = None
 ) -> tuple[list[AnyStr], list[AnyStr]]:
     """Translate patterns."""
 
@@ -685,7 +685,7 @@ def compile_pattern(
     patterns: str | Sequence[str],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[str | Sequence[str]] = None
+    exclude: str | Sequence[str] | None = None
 ) -> tuple[list[Pattern[str]], list[Pattern[str]]]:
     ...
 
@@ -695,7 +695,7 @@ def compile_pattern(
     patterns: bytes | Sequence[bytes],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[bytes | Sequence[bytes]] = None
+    exclude: bytes | Sequence[bytes] | None = None
 ) -> tuple[list[Pattern[bytes]], list[Pattern[bytes]]]:
     ...
 
@@ -704,7 +704,7 @@ def compile_pattern(
     patterns: AnyStr | Sequence[AnyStr],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
+    exclude: AnyStr | Sequence[AnyStr] | None = None
 ) -> tuple[list[Pattern[AnyStr]], list[Pattern[AnyStr]]]:
     """Compile the patterns."""
 
@@ -759,7 +759,7 @@ def compile(  # noqa: A001
     patterns: str | Sequence[str],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[str | Sequence[str]] = None
+    exclude: str | Sequence[str] | None = None
 ) -> WcRegexp[str]:
     ...
 
@@ -769,7 +769,7 @@ def compile(  # noqa: A001
     patterns: bytes | Sequence[bytes],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[bytes | Sequence[bytes]] = None
+    exclude: bytes | Sequence[bytes] | None = None
 ) -> WcRegexp[bytes]:
     ...
 
@@ -778,7 +778,7 @@ def compile(  # noqa: A001
     patterns: AnyStr | Sequence[AnyStr],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
+    exclude: AnyStr | Sequence[AnyStr] | None = None
 ) -> WcRegexp[AnyStr]:
     """Compile patterns."""
 

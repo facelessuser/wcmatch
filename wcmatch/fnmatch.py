@@ -5,7 +5,7 @@ A custom implementation of `fnmatch`.
 """
 from __future__ import annotations
 from . import _wcparse
-from typing import AnyStr, Iterable, Sequence, Optional
+from typing import AnyStr, Iterable, Sequence
 
 __all__ = (
     "CASE", "EXTMATCH", "IGNORECASE", "RAWCHARS",
@@ -59,7 +59,7 @@ def translate(
     *,
     flags: int = 0,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
+    exclude: AnyStr | Sequence[AnyStr] | None = None
 ) -> tuple[list[AnyStr], list[AnyStr]]:
     """Translate `fnmatch` pattern."""
 
@@ -73,7 +73,7 @@ def fnmatch(
     *,
     flags: int = 0,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
+    exclude: AnyStr | Sequence[AnyStr] | None = None
 ) -> bool:
     """
     Check if filename matches pattern.
@@ -92,7 +92,7 @@ def filter(  # noqa A001
     *,
     flags: int = 0,
     limit: int = _wcparse.PATTERN_LIMIT,
-    exclude: Optional[AnyStr | Sequence[AnyStr]] = None
+    exclude: AnyStr | Sequence[AnyStr] | None = None
 ) -> list[AnyStr]:
     """Filter names using pattern."""
 
