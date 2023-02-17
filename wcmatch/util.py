@@ -7,7 +7,7 @@ import re
 import unicodedata
 from functools import wraps
 import warnings
-from typing import Any, Callable, AnyStr, Match, Pattern, Optional, cast
+from typing import Any, Callable, AnyStr, Match, Pattern, cast
 
 PY310 = (3, 10) <= sys.version_info
 
@@ -76,7 +76,7 @@ def is_case_sensitive() -> bool:
     return CASE_FS
 
 
-def norm_pattern(pattern: AnyStr, normalize: Optional[bool], is_raw_chars: bool, ignore_escape: bool = False) -> AnyStr:
+def norm_pattern(pattern: AnyStr, normalize: bool | None, is_raw_chars: bool, ignore_escape: bool = False) -> AnyStr:
     r"""
     Normalize pattern.
 
@@ -147,7 +147,7 @@ class StringIter:
 
         return self.iternext()
 
-    def match(self, pattern: Pattern[str]) -> Optional[Match[str]]:
+    def match(self, pattern: Pattern[str]) -> Match[str] | None:
         """Perform regex match at index."""
 
         m = pattern.match(self._string, self._index)
