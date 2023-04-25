@@ -1,11 +1,13 @@
 """Pathlib implementation that uses our own glob."""
 from __future__ import annotations
+import ntpath
+import posixpath
 import pathlib
 import os
 from . import glob
 from . import _wcparse
 from . import util
-from typing import Iterable, Any, Sequence, cast
+from typing import Iterable, Any, Sequence
 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
@@ -80,7 +82,7 @@ class PurePath(pathlib.PurePath):
 
         if cls is PurePath:
             cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
-        return cast('PurePath', cls._from_parts(args))  # type: ignore[attr-defined]
+        return cls._from_parts(args)  # type: ignore[no-any-return,attr-defined]
 
     def _translate_flags(self, flags: int) -> int:
         """Translate flags for the current `pathlib` object."""
@@ -160,17 +162,22 @@ class Path(pathlib.Path):
     def __new__(cls, *args: str, **kwargs: Any) -> 'Path':
         """New."""
 
+        win_host = os.name == 'nt'
         if cls is Path:
-            cls = WindowsPath if os.name == 'nt' else PosixPath
+            cls = WindowsPath if win_host else PosixPath
         if util.PY310:
             self = cls._from_parts(args)  # type: ignore[attr-defined]
         else:
             self = cls._from_parts(args, init=False)  # type: ignore[attr-defined]
-        if not self._flavour.is_supported:
-            raise NotImplementedError("Cannot instantiate {!r} on your system".format(cls.__name__))
+        if util.PY312:
+            if cls is WindowsPath and not win_host or cls is not WindowsPath and win_host:
+                raise NotImplementedError("Cannot instantiate {!r} on your system".format(cls.__name__))
+        else:
+            if not self._flavour.is_supported:
+                raise NotImplementedError("Cannot instantiate {!r} on your system".format(cls.__name__))
         if not util.PY310:
             self._init()
-        return cast('Path', self)
+        return self  # type: ignore[no-any-return]
 
     def glob(  # type: ignore[override]
         self,
@@ -219,14 +226,14 @@ class Path(pathlib.Path):
 class PurePosixPath(PurePath):
     """Pure Posix path."""
 
-    _flavour = pathlib._posix_flavour  # type: ignore[attr-defined]
+    _flavour = pathlib._posix_flavour if not util.PY312 else posixpath  # type: ignore[attr-defined]
     __slots__ = ()
 
 
 class PureWindowsPath(PurePath):
     """Pure Windows path."""
 
-    _flavour = pathlib._windows_flavour  # type: ignore[attr-defined]
+    _flavour = pathlib._windows_flavour if not util.PY312 else ntpath  # type: ignore[attr-defined]
     __slots__ = ()
 
 

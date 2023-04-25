@@ -1,5 +1,10 @@
 # Changelog
 
+## 8.5
+
+- **NEW**: Formally support Python 3.11 (no change).
+- **NEW**: Experimental, early support for upcoming Python 3.12 (`pathlib` changes).
+
 ## 8.4.1
 
 - **FIX**: Windows drive path separators should normalize like other path separators.
