@@ -82,7 +82,10 @@ class PurePath(pathlib.PurePath):
 
         if cls is PurePath:
             cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
-        return cls._from_parts(args)  # type: ignore[no-any-return,attr-defined]
+        if not util.PY312:
+            return cls._from_parts(args)  # type: ignore[no-any-return,attr-defined]
+        else:
+            return object.__new__(cls)
 
     def _translate_flags(self, flags: int) -> int:
         """Translate flags for the current `pathlib` object."""
@@ -165,19 +168,20 @@ class Path(pathlib.Path):
         win_host = os.name == 'nt'
         if cls is Path:
             cls = WindowsPath if win_host else PosixPath
-        if util.PY310:
-            self = cls._from_parts(args)  # type: ignore[attr-defined]
-        else:
-            self = cls._from_parts(args, init=False)  # type: ignore[attr-defined]
-        if util.PY312:
-            if cls is WindowsPath and not win_host or cls is not WindowsPath and win_host:
-                raise NotImplementedError("Cannot instantiate {!r} on your system".format(cls.__name__))
-        else:
+        if not util.PY312:
+            if util.PY310:
+                self = cls._from_parts(args)  # type: ignore[attr-defined]
+            else:
+                self = cls._from_parts(args, init=False)  # type: ignore[attr-defined]
             if not self._flavour.is_supported:
                 raise NotImplementedError("Cannot instantiate {!r} on your system".format(cls.__name__))
-        if not util.PY310:
-            self._init()
-        return self  # type: ignore[no-any-return]
+            if not util.PY310:
+                self._init()
+            return self  # type: ignore[no-any-return]
+        else:
+            if cls is WindowsPath and not win_host or cls is not WindowsPath and win_host:
+                raise NotImplementedError("Cannot instantiate {!r} on your system".format(cls.__name__))
+            return object.__new__(cls)
 
     def glob(  # type: ignore[override]
         self,
