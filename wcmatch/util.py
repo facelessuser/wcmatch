@@ -10,6 +10,7 @@ import warnings
 from typing import Any, Callable, AnyStr, Match, Pattern, cast
 
 PY310 = (3, 10) <= sys.version_info
+PY312 = (3, 12) <= sys.version_info
 
 UNICODE = 0
 BYTES = 1
