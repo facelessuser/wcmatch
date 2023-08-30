@@ -24,19 +24,19 @@ about it in the [issue tracker][issues].
 
 A quick overview of Wildcard Match's Features:
 
-- Provides an interface comparable to Python's builtin in [`fnmatch`][fnmatch], [`glob`][glob], and
-  [`pathlib`][pathlib].
-- Allows for a much more configurable experience when matching or globbing with many more features.
-- Adds support for `**` in glob.
-- Adds support for escaping characters with `\`.
-- Add support for POSIX style character classes inside sequences: `[[:alnum:]]`, etc. The `C` locale is used.
-- Adds support for brace expansion: `a{b,{c,d}}` --> `ab ac ad`.
-- Adds support for expanding `~` or `~username` to the appropriate user path.
-- Adds support for extended match patterns: `@(...)`, `+(...)`, `*(...)`, `?(...)`, and `!(...)`.
-- Adds ability to match path names via the path centric `globmatch`.
-- Provides a [`pathlib`][pathlib] variant that uses Wildcard Match's `glob` library instead of Python's default.
-- Provides an alternative file crawler called `wcmatch`.
-- And more...
+-   Provides an interface comparable to Python's builtin in [`fnmatch`][fnmatch], [`glob`][glob], and
+    [`pathlib`][pathlib].
+-   Allows for a much more configurable experience when matching or globbing with many more features.
+-   Adds support for `**` in glob.
+-   Adds support for escaping characters with `\`.
+-   Add support for POSIX style character classes inside sequences: `[[:alnum:]]`, etc. The `C` locale is used.
+-   Adds support for brace expansion: `a{b,{c,d}}` --> `ab ac ad`.
+-   Adds support for expanding `~` or `~username` to the appropriate user path.
+-   Adds support for extended match patterns: `@(...)`, `+(...)`, `*(...)`, `?(...)`, and `!(...)`.
+-   Adds ability to match path names via the path centric `globmatch`.
+-   Provides a [`pathlib`][pathlib] variant that uses Wildcard Match's `glob` library instead of Python's default.
+-   Provides an alternative file crawler called `wcmatch`.
+-   And more...
 
 ## Installation
 
@@ -48,7 +48,7 @@ $ pip install wcmatch
 
 ## Libraries
 
-- [`fnmatch`](./fnmatch.md): A file name matching library.
-- [`glob`](./glob.md): A file system searching and file path matching library.
-- [`pathlib`](./pathlib.md): A implementation of Python's `pathlib` that uses our own `glob` implementation.
-- [`wcmatch`](./wcmatch.md): An alternative file search library built on `fnmatch` and `globmatch`.
+-   [`fnmatch`](./fnmatch.md): A file name matching library.
+-   [`glob`](./glob.md): A file system searching and file path matching library.
+-   [`pathlib`](./pathlib.md): A implementation of Python's `pathlib` that uses our own `glob` implementation.
+-   [`wcmatch`](./wcmatch.md): An alternative file search library built on `fnmatch` and `globmatch`.

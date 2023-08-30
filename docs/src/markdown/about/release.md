@@ -114,22 +114,22 @@ If we want to modify the pattern matcher, and not just the the directory scanner
 
 These changes were done for a couple of reasons:
 
-1. Generally, it is rare to specifically want `.` and `..`, so often when people glob with something like `**/.*`, they
-   are just trying to get hidden files. While we generally model our behavior off Bash, there are many alternative
-   shells (such as Zsh) that do not return or match `.` and `..` with magic patterns by design, regardless of what
-   directory scanner returns.
+1.  Generally, it is rare to specifically want `.` and `..`, so often when people glob with something like `**/.*`, they
+    are just trying to get hidden files. While we generally model our behavior off Bash, there are many alternative
+    shells (such as Zsh) that do not return or match `.` and `..` with magic patterns by design, regardless of what
+    directory scanner returns.
 
-2. Many people who come to use our library are probably coming from having experience with Python's glob. By mirroring
-   this behavior out of the box, it may help people adapt to the library easier.
+2.  Many people who come to use our library are probably coming from having experience with Python's glob. By mirroring
+    this behavior out of the box, it may help people adapt to the library easier.
 
-3. Python's `pathlib`, which Wildcard Match's `pathlib` is derived from, normalizes paths by stripping out `.`
-   directories and trimming off trailing slashes.  This means patterns such as `**/.*`, which would normally match both
-   `.hidden` and `.hidden/.`, would normalize those results to return two `.hidden` results. Mirroring this behavior
-   helps provide more sane results and prevent confusing duplicates when using `pathlib`.
+3.  Python's `pathlib`, which Wildcard Match's `pathlib` is derived from, normalizes paths by stripping out `.`
+    directories and trimming off trailing slashes.  This means patterns such as `**/.*`, which would normally match both
+    `.hidden` and `.hidden/.`, would normalize those results to return two `.hidden` results. Mirroring this behavior
+    helps provide more sane results and prevent confusing duplicates when using `pathlib`.
 
-4. This is not unique behavior to Python's glob and our implementation. For example, let's take a look at
-   [`node-glob`](https://github.com/isaacs/node-glob) and its underlying match library called
-   [`minimatch`](https://github.com/isaacs/minimatch).
+4.  This is not unique behavior to Python's glob and our implementation. For example, let's take a look at
+    [`node-glob`](https://github.com/isaacs/node-glob) and its underlying match library called
+    [`minimatch`](https://github.com/isaacs/minimatch).
 
     ```js
     > glob('.*', {}, function (er, files) {

@@ -11,9 +11,10 @@ It is mainly used for matching filenames with glob patterns. For path names, Wil
 [`globmatch`](./glob.md#globmatch) is a more appropriate choice. Not all of the features listed below are enabled by
 default. See [flags](#flags) for more information.
 
-!!! tip "Backslashes"
-    When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a
-    character `#!py3 r'\?'`.  If you want to represent a literal backslash, you must use two: `#!py3 r'some\\path'`.
+/// tip | Backslashes
+When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a
+character `#!py3 r'\?'`.  If you want to represent a literal backslash, you must use two: `#!py3 r'some\\path'`.
+///
 
 Pattern           | Meaning
 ----------------- | -------
@@ -31,11 +32,11 @@ Pattern           | Meaning
 `!(pattern_list)` | The pattern matches if the input string cannot be matched with any of the patterns in the `pattern_list`. Requires the [`EXTMATCH`](#extmatch) flag.
 `{}`              | Bash style brace expansions.  This is applied to patterns before anything else. Requires the [`BRACE`](#brace) flag.
 
-- Slashes are generally treated as normal characters, but on windows they are normalized. On Windows, `/` will match
-  both `/` and `\\`. There is no need to explicitly use `\\` in patterns on Windows, but if you do, they must be escaped
-  to specify a literal `\\`. If a backslash is escaped, it will match all valid windows separators, just like `/` does.
-- By default, `.` is *not* matched by `*`, `?`, and `[]`. See the [`DOTMATCH`](#dotmatch) flag to match `.` at
-  the start of a filename without a literal `.`.
+-   Slashes are generally treated as normal characters, but on windows they are normalized. On Windows, `/` will match
+    both `/` and `\\`. There is no need to explicitly use `\\` in patterns on Windows, but if you do, they must be escaped
+    to specify a literal `\\`. If a backslash is escaped, it will match all valid windows separators, just like `/` does.
+-   By default, `.` is *not* matched by `*`, `?`, and `[]`. See the [`DOTMATCH`](#dotmatch) flag to match `.` at
+    the start of a filename without a literal `.`.
 
 --8<-- "posix.md"
 
@@ -46,8 +47,9 @@ Many of the API functions allow passing in multiple patterns or using either [`B
 you can raise or lower this limit via the keyword option `limit`. If you set `limit` to `0`, there will
 be no limit.
 
-!!! new "New 6.0"
-    The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
+/// new | New 6.0
+The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
+///
 
 ## API
 
@@ -116,11 +118,13 @@ False
 True
 ```
 
-!!! new "New 6.0"
-    `limit` was added in 6.0.
+/// new | New 6.0
+`limit` was added in 6.0.
+///
 
-!!! new "New 8.4"
-    `exclude` parameter was added.
+/// new | New 8.4
+`exclude` parameter was added.
+///
 
 #### `fnmatch.filter` {: #filter}
 
@@ -139,11 +143,13 @@ pattern or a list of patterns.It returns a list of all files that matched the pa
 ['a.txt', 'b.txt']
 ```
 
-!!! new "New 6.0"
-    `limit` was added in 6.0.
+/// new | New 6.0
+`limit` was added in 6.0.
+///
 
-!!! new "New 8.4"
-    `exclude` parameter was added.
+/// new | New 8.4
+`exclude` parameter was added.
+///
 
 #### `fnmatch.translate` {: #translate}
 
@@ -179,14 +185,17 @@ we wrap the entire group to be captured: `#!py3 '+(a)'` --> `#!py3 r'((a)+)'`.
 ('file', '33', '.test.txt')
 ```
 
-!!! new "New 6.0"
-    `limit` was added in 6.0.
+/// new | New 6.0
+`limit` was added in 6.0.
+///
 
-!!! new "New 7.1"
-    Translate patterns now provide capturing groups for [`EXTMATCH`](#extmatch) groups.
+/// new | New 7.1
+Translate patterns now provide capturing groups for [`EXTMATCH`](#extmatch) groups.
+///
 
-!!! new "New 8.4"
-    `exclude` parameter was added.
+/// new | New 8.4
+`exclude` parameter was added.
+///
 
 #### `fnmatch.escape` {: #escape}
 
@@ -205,8 +214,9 @@ backslashes, regardless of what feature is or is not enabled. It is meant to esc
 True
 ```
 
-!!! new "New 8.1"
-    An `escape` variant for `fnmatch` was made available in 8.1.
+/// new | New 8.1
+An `escape` variant for `fnmatch` was made available in 8.1.
+///
 
 ### `fnmatch.is_magic` {: #is_magic}
 
@@ -241,8 +251,9 @@ Default                       | `?*[]\`
 [`MINUSNEGATE`](#minusnegate) | `-`
 [`SPLIT`](#split)             | `|`
 
-!!! new "New 8.1"
-    Added `is_magic` in 8.1.
+/// new | New 8.1
+Added `is_magic` in 8.1.
+///
 
 ## Flags
 
@@ -299,11 +310,11 @@ other character. Dots will not be matched in `[]`, `*`, or `?`.
 `EXTMATCH` enables extended pattern matching. This includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`,
 etc. See the [syntax overview](#syntax) for more information.
 
-!!! tip "EXTMATCH and NEGATE"
-
-    When using `EXTMATCH` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
-    be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTMATCH` pattern). To
-    negate a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
+/// tip | EXTMATCH and NEGATE
+When using `EXTMATCH` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
+be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTMATCH` pattern). To
+negate a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
+///
 
 #### `fnmatch.BRACE, fnmatch.B` {: #brace}
 
@@ -314,20 +325,21 @@ Redundant, identical patterns are discarded[^1] by default.
 For simple patterns, it may make more sense to use [`EXTMATCH`](#extmatch) which will only generate a single
 pattern which will perform much better: `@(ab|ac|ad)`.
 
-!!! warning "Massive Expansion Risk"
-    1. It is important to note that each pattern is matched separately, so patterns such as `{1..100}` would generate
+/// warning | Massive Expansion Risk
+1.  It is important to note that each pattern is matched separately, so patterns such as `{1..100}` would generate
     **one hundred** patterns. Sometimes patterns like this are needed, so construct patterns thoughtfully and carefully.
 
-    2. `BRACE` and [`SPLIT`](#split) both expand patterns into multiple patterns. Using these two syntaxes
+2.  `BRACE` and [`SPLIT`](#split) both expand patterns into multiple patterns. Using these two syntaxes
     simultaneously can exponential increase in duplicate patterns:
 
-        ```pycon3
-        >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
-        ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
-        ```
+    ```pycon3
+    >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
+    ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
+    ```
 
-        This effect is reduced as redundant, identical patterns are optimized away[^1]. But it is useful to know if
-        trying to construct efficient patterns.
+    This effect is reduced as redundant, identical patterns are optimized away[^1]. But it is useful to know if
+    trying to construct efficient patterns.
+///
 
 [^1]: Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
 `[[:alnum:]]` =/= `[[:ALNUM:]]`.

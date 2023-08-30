@@ -37,13 +37,15 @@ Parameter         | Default       | Description
 `flags`           | `#!py3 0`     | Flags to alter behavior of folder and file matching. See [Flags](#flags) for more info.
 `limit`           | `#!py3 1000`  | Allows configuring the [max pattern limit](#multi-pattern-limits).
 
-!!! note
-    Dots are not treated special in `wcmatch`. When the `HIDDEN` flag is not included, all hidden files (system and dot
-    files) are excluded from the crawling processes, so there is no risk of `*` matching a dot file as it will not show
-    up in the crawl. If the `HIDDEN` flag is included, `*`, `?`, and `[.]` will then match dot files.
+/// note
+Dots are not treated special in `wcmatch`. When the `HIDDEN` flag is not included, all hidden files (system and dot
+files) are excluded from the crawling processes, so there is no risk of `*` matching a dot file as it will not show
+up in the crawl. If the `HIDDEN` flag is included, `*`, `?`, and `[.]` will then match dot files.
+///
 
-!!! new "New 6.0"
-    `limit` was added in 6.0.
+/// new | New 6.0
+`limit` was added in 6.0.
+///
 
 ### Multi-Pattern Limits
 
@@ -51,8 +53,9 @@ The `WcMatch` class allow expanding a pattern into multiple patterns by using `|
 The number of allowed patterns is limited `1000`, but you can raise or lower this limit via the keyword option
 `limit`. If you set `limit` to `0`, there will be no limit.
 
-!!! new "New 6.0"
-    The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
+/// new | New 6.0
+The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
+///
 
 ### Examples
 
@@ -215,9 +218,10 @@ Returns the number of skipped files. Files in skipped folders are not included i
 Any keyword arguments not processed by the main initializer are sent to `on_init`. This allows you to
 specify additional arguments when deriving from `WcMatch`.
 
-!!! new "Changed 8.0"
-    Starting in 8.0, `on_init` only accepts keyword arguments as now `WcMatch` requires all parameters (except
-    `root_dir` and `file_pattern`) to be keyword parameters and must explicitly be specified in the form `key=value`.
+/// new | Changed 8.0
+Starting in 8.0, `on_init` only accepts keyword arguments as now `WcMatch` requires all parameters (except
+`root_dir` and `file_pattern`) to be keyword parameters and must explicitly be specified in the form `key=value`.
+///
 
 #### `WcMatch.on_validate_directory` {: #on_validate_directory}
 
@@ -329,11 +333,11 @@ handle standard string escapes and Unicode (including `#!py3 r'\N{CHAR NAME}'`).
 `EXTMATCH` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`,
 etc.
 
-!!! tip "EXTMATCH and NEGATE"
-
-    When using `EXTMATCH` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
-    be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTMATCH` pattern). To
-    negate a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
+/// tip | EXTMATCH and NEGATE
+When using `EXTMATCH` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
+be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTMATCH` pattern). To
+negate a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
+///
 
 #### `wcmatch.BRACE, wcmatch.B` {: #brace}
 
@@ -344,24 +348,25 @@ Redundant, identical patterns are discarded[^1] by default.
 For simple patterns, it may make more sense to use [`EXTMATCH`](#extmatch) which will only generate a single
 pattern which will perform much better: `@(ab|ac|ad)`.
 
-!!! warning "Massive Expansion Risk"
-    1. It is important to note that each pattern is matched separately, so patterns such as `{1..100}` would generate
+/// warning | Massive Expansion Risk
+1.  It is important to note that each pattern is matched separately, so patterns such as `{1..100}` would generate
     **one hundred** patterns. Since [`WcMatch`](#wcmatch_1) class is able to crawl the file system one pass
     accounting for all the patterns, the performance isn't as bad as it may be with [`glob`](./glob.md), but it can
     still impact performance as each file must get compared against many patterns until one is matched. Sometimes
     patterns like this are needed, so construct patterns thoughtfully and carefully.
 
-    2. Splitting patterns with `|` is built into [`WcMatch`](#wcmatch_1). `BRACE` and and splitting with `|` both
+2.  Splitting patterns with `|` is built into [`WcMatch`](#wcmatch_1). `BRACE` and and splitting with `|` both
     expand patterns into multiple patterns. Using these two syntaxes simultaneously can exponential increase in
     duplicate patterns:
 
-        ```pycon3
-        >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
-        ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
-        ```
+    ```pycon3
+    >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
+    ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
+    ```
 
-        This effect is reduced as redundant, identical patterns are optimized away[^1]. But it is useful to know if
+    This effect is reduced as redundant, identical patterns are optimized away[^1]. But it is useful to know if
     trying to construct efficient patterns.
+///
 
 [^1]: Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
 `[[:alnum:]]` =/= `[[:ALNUM:]]`.

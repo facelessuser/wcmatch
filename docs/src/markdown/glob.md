@@ -11,9 +11,10 @@ glob patterns.  The library also provides a function called [`globmatch`](#globm
 is similar to [`fnmatch`](./fnmatch.md#fnmatch), but for paths. In short, [`globmatch`](#globmatch) matches
 what [`glob`](#glob) globs :slight_smile:.
 
-!!! tip
-    When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a
-    character `#!py3 r'\?'`.  If you want to represent a literal backslash, you must use two: `#!py3 r'some\\path'`.
+/// tip
+When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a
+character `#!py3 r'\?'`.  If you want to represent a literal backslash, you must use two: `#!py3 r'some\\path'`.
+///  
 
 Pattern           | Meaning
 ----------------- | -------
@@ -33,50 +34,50 @@ Pattern           | Meaning
 `{}`              | Bash style brace expansions.  This is applied to patterns before anything else. Requires the [`BRACE`](#brace) flag.
 `~/pattern`       | User path expansion via `~/pattern` or `~user/pattern`. Requires the [`GLOBTILDE`](#globtilde) flag.
 
-- Slashes are generally treated special in glob related methods. Slashes are not matched in `[]`, `*`, `?`, or extended
-  patterns like `*(...)`. Slashes can be matched by `**` if [`GLOBSTAR`](#globstar) is set.
+-   Slashes are generally treated special in glob related methods. Slashes are not matched in `[]`, `*`, `?`, or extended
+    patterns like `*(...)`. Slashes can be matched by `**` if [`GLOBSTAR`](#globstar) is set.
 
-- Slashes on Windows are normalized. `/` will match both `/` and `\\`. There is no need to explicitly use `\\` in
-  patterns on Windows, but if you do, they must be escaped to specify a literal `\\`. If a backslash is escaped, it will
-  match all valid windows separators, just like `/` does.
+-   Slashes on Windows are normalized. `/` will match both `/` and `\\`. There is no need to explicitly use `\\` in
+    patterns on Windows, but if you do, they must be escaped to specify a literal `\\`. If a backslash is escaped, it will
+    match all valid windows separators, just like `/` does.
 
-- On Windows, drives are treated special and must come at the beginning of the pattern and cannot be matched with `*`,
-  `[]`, `?`, or even extended match patterns like `+(...)`.
+-   On Windows, drives are treated special and must come at the beginning of the pattern and cannot be matched with `*`,
+    `[]`, `?`, or even extended match patterns like `+(...)`.
 
-- Windows drives are recognized as either `C:/` and `//Server/mount/`. If a path uses an ambiguous root (`/some/path`),
-  the system will assume the drive of the current working directory.
+-   Windows drives are recognized as either `C:/` and `//Server/mount/`. If a path uses an ambiguous root (`/some/path`),
+    the system will assume the drive of the current working directory.
 
-- Meta characters have no effect when inside a UNC path: `//Server?/mount*/`. The one exception is pattern expansion
-  characters like `{}` which are used by [brace expansion](#brace) and `|` used by [pattern splitting](#split).
-  Pattern expansion characters are the only characters that can be escaped in a Windows drive/mount.
+-   Meta characters have no effect when inside a UNC path: `//Server?/mount*/`. The one exception is pattern expansion
+    characters like `{}` which are used by [brace expansion](#brace) and `|` used by [pattern splitting](#split).
+    Pattern expansion characters are the only characters that can be escaped in a Windows drive/mount.
 
-- If [`FORCEUNIX`](#forceunix) is applied on a Windows system, match and filter commands that do not touch the file
-  system will **not** have slashes normalized. In addition, drive letters will also not be handled. Essentially, paths
-  will be treated as if on a Linux/Unix system. Commands that do touch the file system ([`glob`](#glob) and
-  [`iglob`](#iglob)) will ignore [`FORCEUNIX`](#forceunix) and [`FORCEWIN`](#forcewin).
-  [`globmatch`](#globmatch) and [`globfilter`](#globfilter), will also ignore [`FORCEUNIX`](#forceunix) and
-  [`FORCEWIN`](#forcewin) if the [`REALPATH`](#realpath) flag is enabled.
+-   If [`FORCEUNIX`](#forceunix) is applied on a Windows system, match and filter commands that do not touch the file
+    system will **not** have slashes normalized. In addition, drive letters will also not be handled. Essentially, paths
+    will be treated as if on a Linux/Unix system. Commands that do touch the file system ([`glob`](#glob) and
+    [`iglob`](#iglob)) will ignore [`FORCEUNIX`](#forceunix) and [`FORCEWIN`](#forcewin).
+    [`globmatch`](#globmatch) and [`globfilter`](#globfilter), will also ignore [`FORCEUNIX`](#forceunix) and
+    [`FORCEWIN`](#forcewin) if the [`REALPATH`](#realpath) flag is enabled.
 
     [`FORCEWIN`](#forcewin) will do the opposite on a Linux/Unix system, and will force Windows logic on a
     Linux/Unix system. Like with [`FORCEUNIX`](#forceunix), it only applies to commands that don't touch the file
     system.
 
-- By default, file and directory names starting with `.` are only matched with literal `.`.  The patterns `*`, `**`,
-  `?`, and `[]` will not match a leading `.`.  To alter this behavior, you can use the [`DOTGLOB`](#dotglob) flag.
+-   By default, file and directory names starting with `.` are only matched with literal `.`.  The patterns `*`, `**`,
+    `?`, and `[]` will not match a leading `.`.  To alter this behavior, you can use the [`DOTGLOB`](#dotglob) flag.
 
-- [`NEGATE`](#negate) will always enable [`DOTGLOB`](#dotglob) in exclude patterns.
+-   [`NEGATE`](#negate) will always enable [`DOTGLOB`](#dotglob) in exclude patterns.
 
-- Even with [`DOTGLOB`](#dotglob) enabled, special tokens will not match a special directory (`.` or `..`).  But
-  when a literal `.` is used at the start of the pattern (`.*`, `.`, `..`, etc.), `.` and `..` can potentially be
-  matched.
+-   Even with [`DOTGLOB`](#dotglob) enabled, special tokens will not match a special directory (`.` or `..`).  But
+    when a literal `.` is used at the start of the pattern (`.*`, `.`, `..`, etc.), `.` and `..` can potentially be
+    matched.
 
-- In general, Wildcard Match's behavior is modeled off of Bash's, and prior to version 7.0, unlike Python's default
-  [`glob`][glob], Wildcard Match's [`glob`](#glob) would match and return `.` and `..` for magic patterns like `.*`.
-  This is because our directory scanning logic inserts `.` and `..` into results to be faithful to Bash. While this
-  emulates Bash's behavior, it can be surprising to the user, especially if they are used to Python's default glob. In
-  7.0 we now avoid returning `.` and `..` in our directory scanner. This does not affect how patterns are matched, just
-  what is returned via our directory scan logic. You can once again enable the old Bash-like behavior with the flag
-  [`SCANDOTDIR`](#scandotdir) if this old behavior is desired.
+-   In general, Wildcard Match's behavior is modeled off of Bash's, and prior to version 7.0, unlike Python's default
+    [`glob`][glob], Wildcard Match's [`glob`](#glob) would match and return `.` and `..` for magic patterns like `.*`.
+    This is because our directory scanning logic inserts `.` and `..` into results to be faithful to Bash. While this
+    emulates Bash's behavior, it can be surprising to the user, especially if they are used to Python's default glob. In
+    7.0 we now avoid returning `.` and `..` in our directory scanner. This does not affect how patterns are matched, just
+    what is returned via our directory scan logic. You can once again enable the old Bash-like behavior with the flag
+    [`SCANDOTDIR`](#scandotdir) if this old behavior is desired.
 
     Python's default:
 
@@ -141,14 +142,15 @@ Pattern           | Meaning
     False
     ```
 
-    !!! new "Changes 7.0"
-        Prior to 7.0 `.` and `..` would get returned by our directory scanner. This is no longer the default.
+    /// new | Changes 7.0
+    Prior to 7.0 `.` and `..` would get returned by our directory scanner. This is no longer the default.
+    ///
 
-    !!! new "New 7.0"
-        Legacy behavior of directory scanning, in relation to `.` and `..`, can be restored via
-        [`SCANDOTDIR`](#scandotdir).
+    /// new | New 7.0
+    Legacy behavior of directory scanning, in relation to `.` and `..`, can be restored via [`SCANDOTDIR`](#scandotdir).
 
-        [`NODOTDIR`](#nodotdir) was added in 7.0.
+    [`NODOTDIR`](#nodotdir) was added in 7.0.
+    ///
 
 --8<-- "posix.md"
 
@@ -177,8 +179,9 @@ Many of the API functions allow passing in multiple patterns or using either [`B
 can raise or lower this limit via the keyword option `limit`. If you set `limit` to `0`, there will be
 no limit.
 
-!!! new "New 6.0"
-    The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
+/// new | New 6.0
+The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
+///
 
 ## API
 
@@ -193,8 +196,9 @@ directory file descriptor. It also allows configuring the [max pattern limit](#m
 can be specified via the `exclude` parameter which takes a pattern or a list of patterns.When executed it will crawl the
 file system returning matching files.
 
-!!! warning "Path-like Input Support"
-    Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
+/// warning | Path-like Input Support
+Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
+///
 
 ```pycon3
 >>> from wcmatch import glob
@@ -302,24 +306,29 @@ Additionally, you can use `dir_fd` and specify a root directory with a directory
 ['markdown', 'dictionary']
 ```
 
-!!! warning "Support for Directory Descriptors"
-    Directory descriptors may not be supported on all systems. You can check whether or not `dir_fd` is supported for a
-    your platform referencing the attribute `#!py3 glob.SUPPORT_DIR_FD` which will be `#!py3 True` if it is supported.
+/// warning | Support for Directory Descriptors
+Directory descriptors may not be supported on all systems. You can check whether or not `dir_fd` is supported for a
+your platform referencing the attribute `#!py3 glob.SUPPORT_DIR_FD` which will be `#!py3 True` if it is supported.
 
-    Additionally, the `#!py3 os.O_DIRECTORY` may not be defined on some systems. You can likely just use
-    `#!py3 os.O_RDONLY`.
+Additionally, the `#!py3 os.O_DIRECTORY` may not be defined on some systems. You can likely just use
+`#!py3 os.O_RDONLY`.
+///
 
-!!! new "New 5.1"
-    `root_dir` was added in 5.1.0.
+/// new | New 5.1
+`root_dir` was added in 5.1.0.
+///
 
-!!! new "New 6.0"
-    `limit` was added in 6.0.
+/// new | New 6.0
+`limit` was added in 6.0.
+///
 
-!!! new "New 8.2"
-    `dir_fd` parameter was added in 8.2.
+/// new | New 8.2
+`dir_fd` parameter was added in 8.2.
+///
 
-!!! new "New 8.4"
-    `exclude` parameter was added.
+/// new | New 8.4
+`exclude` parameter was added.
+///
 
 #### `glob.iglob` {: #iglob}
 
@@ -335,17 +344,21 @@ def iglob(patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000, exclude=
 ['docs/src/markdown/_snippets/abbr.md', 'docs/src/markdown/_snippets/links.md', 'docs/src/markdown/_snippets/refs.md', 'docs/src/markdown/changelog.md', 'docs/src/markdown/fnmatch.md', 'docs/src/markdown/glob.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md', 'README.md']
 ```
 
-!!! new "New 5.1"
-    `root_dir` was added in 5.1.0.
+/// new | New 5.1
+`root_dir` was added in 5.1.0.
+///
 
-!!! new "New 6.0"
-    `limit` was added in 6.0.
+/// new | New 6.0
+`limit` was added in 6.0.
+///
 
-!!! new "New 8.2"
-    `dir_fd` parameter was added in 8.2.
+/// new | New 8.2
+`dir_fd` parameter was added in 8.2.
+///
 
-!!! new "New 8.4"
-    `exclude` parameter was added.
+/// new | New 8.4
+`exclude` parameter was added.
+///
 
 #### `glob.globmatch` {: #globmatch}
 
@@ -466,25 +479,30 @@ False
 True
 ```
 
-!!! warning "Support for Directory Descriptors"
-    Directory descriptors may not be supported on all systems. You can check whether or not `dir_fd` is supported for a
-    your platform referencing the attribute `#!py3 glob.SUPPORT_DIR_FD` which will be `#!py3 True` if it is supported.
+/// warning | Support for Directory Descriptors
+Directory descriptors may not be supported on all systems. You can check whether or not `dir_fd` is supported for a
+your platform referencing the attribute `#!py3 glob.SUPPORT_DIR_FD` which will be `#!py3 True` if it is supported.
 
-    Additionally, the `#!py3 os.O_DIRECTORY` may not be defined on some systems. You can likely just use
-    `#!py3 os.O_RDONLY`.
+Additionally, the `#!py3 os.O_DIRECTORY` may not be defined on some systems. You can likely just use
+`#!py3 os.O_RDONLY`.
+///
 
-!!! new "New 5.1"
-    - `root_dir` was added in 5.1.0.
-    - path-like object support for file path inputs was added in 5.1.0
+/// new | New 5.1
+-   `root_dir` was added in 5.1.0.
+-   path-like object support for file path inputs was added in 5.1.0
+///
 
-!!! new "New 6.0"
-    `limit` was added in 6.0.
+/// new | New 6.0
+`limit` was added in 6.0.
+///
 
-!!! new "New 8.2"
-    `dir_fd` parameter was added in 8.2.
+/// new | New 8.2
+`dir_fd` parameter was added in 8.2.
+///
 
-!!! new "New 8.4"
-    `exclude` parameter was added.
+/// new | New 8.4
+`exclude` parameter was added.
+///
 
 #### `glob.globfilter` {: #globfilter}
 
@@ -498,8 +516,9 @@ optional root directory and/or directory file descriptor. It also allows configu
 a pattern or a list of patterns.It returns a list of all files paths that matched the pattern(s). The same logic used
 for [`globmatch`](#globmatch) is used for `globfilter`, albeit more efficient for processing multiple files.
 
-!!! warning "Path-like Input Support"
-    Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
+/// warning | Path-like Input Support
+Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
+///
 
 ```pycon3
 >>> from wcmatch import glob
@@ -512,18 +531,22 @@ associated. But you can enable the [`REALPATH`](#realpath) flag and `globfilter`
 context such as: whether the file exists, whether it is a directory or not, or whether it has symlinks that should not
 be matched by `GLOBSTAR`. See [`globmatch`](#globmatch) for examples.
 
-!!! new "New 5.1"
-    - `root_dir` was added in 5.1.0.
-    - path-like object support for file path inputs was added in 5.1.0
+/// new | New 5.1
+-   `root_dir` was added in 5.1.0.
+-   path-like object support for file path inputs was added in 5.1.0
+///
 
-!!! new "New 6.0"
-    `limit` was added in 6.0.
+/// new | New 6.0
+`limit` was added in 6.0.
+///
 
-!!! new "New 8.2"
-    `dir_fd` parameter was added in 8.2.
+/// new | New 8.2
+`dir_fd` parameter was added in 8.2.
+///
 
-!!! new "New 8.4"
-    `exclude` parameter was added.
+/// new | New 8.4
+`exclude` parameter was added.
+///
 
 #### `glob.translate` {: #translate}
 
@@ -559,14 +582,17 @@ we wrap the entire group to be captured: `#!py3 '+(a)'` --> `#!py3 r'((a)+)'`.
 ('file', '33', '.test.txt')
 ```
 
-!!! new "New 6.0"
-    `limit` was added in 6.0.
+/// new | New 6.0
+`limit` was added in 6.0.
+///
 
-!!! new "New 7.1"
-    Translate patterns now provide capturing groups for [`EXTGLOB`](#extglob) groups.
+/// new | New 7.1
+Translate patterns now provide capturing groups for [`EXTGLOB`](#extglob) groups.
+///
 
-!!! new "New 8.4"
-    `exclude` parameter was added.
+/// new | New 8.4
+`exclude` parameter was added.
+///
 
 #### `glob.escape` {: #escape}
 
@@ -624,28 +650,31 @@ escaping will be used.
 >>> glob.escape('some/path?/**file**{}.txt', unix=True)
 ```
 
-!!! new "New 5.0"
-    The `unix` parameter is now `None` by default. Set to `True` to force Linux/Unix style escaping or set to `False` to
-    force Windows style escaping.
+/// new | New 5.0
+The `unix` parameter is now `None` by default. Set to `True` to force Linux/Unix style escaping or set to `False` to
+force Windows style escaping.
+///
 
-!!! new "New 7.0"
-    `{`, `}`, and `|` will be escaped in Windows drives. Additionally, users can escape these characters in Windows
-    drives manually in their match patterns as well.
+/// new | New 7.0
+`{`, `}`, and `|` will be escaped in Windows drives. Additionally, users can escape these characters in Windows
+drives manually in their match patterns as well.
+///
 
 #### `glob.raw_escape` {: #raw_escape}
 
-!!! warning "Deprecated 8.1"
-    In 8.1, `raw_escape` has been deprecated. The same can be accomplished simply by using `codecs` and then using the
-    normal [`escape`](#escape):
+/// warning | Deprecated 8.1
+In 8.1, `raw_escape` has been deprecated. The same can be accomplished simply by using `codecs` and then using the
+normal [`escape`](#escape):
 
-    ```pycon3
-    >>> string = r"translate\\raw strings\\\u00c3\xc3\303\N{LATIN CAPITAL LETTER A WITH TILDE}"
-    >>> translated = codecs.decode(string, 'unicode_escape')
-    >>> glob.escape(translated)
-    'translate\\\\raw strings\\\\ÃÃÃÃ'
-    >>> glob.raw_escape(string)
-    'translate\\\\raw strings\\\\ÃÃÃÃ'
-    ```
+```pycon3
+>>> string = r"translate\\raw strings\\\u00c3\xc3\303\N{LATIN CAPITAL LETTER A WITH TILDE}"
+>>> translated = codecs.decode(string, 'unicode_escape')
+>>> glob.escape(translated)
+'translate\\\\raw strings\\\\ÃÃÃÃ'
+>>> glob.raw_escape(string)
+'translate\\\\raw strings\\\\ÃÃÃÃ'
+```
+///
 
 ```py3
 def raw_escape(pattern, unix=None, raw_chars=True):
@@ -703,15 +732,17 @@ escaping will be used.
 >>> glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt', unix=True)
 ```
 
-!!! new "New 5.0"
-    The `unix` parameter is now `None` by default. Set to `True` to force Linux/Unix style escaping or set to `False` to
-    force Windows style escaping.
+/// new | New 5.0
+The `unix` parameter is now `None` by default. Set to `True` to force Linux/Unix style escaping or set to `False` to
+force Windows style escaping.
+///
 
-!!! new "New 7.0"
-    `{`, `}`, and `|` will be escaped in Windows drives. Additionally, users can escape these characters in Windows
-    drives manually in their match patterns as well.
+/// new | New 7.0
+`{`, `}`, and `|` will be escaped in Windows drives. Additionally, users can escape these characters in Windows
+drives manually in their match patterns as well.
 
-    `raw_chars` option was added.
+`raw_chars` option was added.
+///
 
 ### `glob.is_magic` {: #is_magic}
 
@@ -737,9 +768,9 @@ When `is_magic` is called, the system it is called on is detected automatically 
 sharepoints will be detected and treated differently. Wildcard Match cannot detect and glob all possible connected
 sharepoints, so they are treated differently and cannot contain magic except in three cases:
 
-1. The drive or sharepoint is using backslashes as backslashes are treated as magic.
-2. [`BRACE`](#brace) is enabled and either `{` or `}` are found in the drive name or UNC sharepoint.
-3. [`SPLIT`](#split) is enabled and `|` is found in the drive name or UNC sharepoint.
+1.  The drive or sharepoint is using backslashes as backslashes are treated as magic.
+2.  [`BRACE`](#brace) is enabled and either `{` or `}` are found in the drive name or UNC sharepoint.
+3.  [`SPLIT`](#split) is enabled and `|` is found in the drive name or UNC sharepoint.
 
 ```pycon3
 >>> glob.is_magic('//?/UNC/server/mount{}/', flags=glob.FORCEWIN)
@@ -762,8 +793,9 @@ Default                       | `?*[]\`
 [`SPLIT`](#split)             | `|`
 [`GLOBTILDE`](#globtilde)     | `~`
 
-!!! new "New 8.1"
-    Added `is_magic` in 8.1.
+/// new | New 8.1
+Added `is_magic` in 8.1.
+///
 
 ## Flags
 
@@ -835,14 +867,14 @@ for the operating system.
 file path for the given system it is running on. It will augment the patterns used to match files and enable additional
 logic so that the path must meet the following in order to match:
 
-- Path must exist.
-- Directories that are symlinks will not be matched by [`GLOBSTAR`](#globstar) patterns (`**`) unless the
-  [`FOLLOW`](#follow) flag is enabled.
-- When presented with a pattern where the match must be a directory, but the file path being compared doesn't indicate
-  the file is a directory with a trailing slash, the command will look at the filesystem to determine if it is a
-  directory.
-- Paths must match in relation to the current working directory unless the pattern is constructed in a way to indicates
-  an absolute path.
+-   Path must exist.
+-   Directories that are symlinks will not be matched by [`GLOBSTAR`](#globstar) patterns (`**`) unless the
+    [`FOLLOW`](#follow) flag is enabled.
+-   When presented with a pattern where the match must be a directory, but the file path being compared doesn't indicate
+    the file is a directory with a trailing slash, the command will look at the filesystem to determine if it is a
+    directory.
+-   Paths must match in relation to the current working directory unless the pattern is constructed in a way to indicates
+    an absolute path.
 
 Since `REALPATH` causes the file system to be referenced when matching a path, flags such as
 [`FORCEUNIX`](#forceunix) and [`FORCEWIN`](#forcewin) are not allowed with this flag and will be ignored.
@@ -889,8 +921,9 @@ Also affects exclusion patterns:
 []
 ```
 
-!!! new "New 7.0"
-    `NODOTDIR` was added in 7.0.
+/// new | New 7.0
+`NODOTDIR` was added in 7.0.
+///
 
 #### `glob.SCANDOTDIR, glob.SD` {: #scandotdir}
 
@@ -912,8 +945,9 @@ change how glob patterns behave, you can use [`NODOTDIR`](#nodotdir).
 ['.', '..', '.codecov.yml', '.tox', '.coverage', '.coveragerc', '.gitignore', '.github', '.pyspelling.yml', '.git']
 ```
 
-!!! new "New 7.0"
-    `SCANDOTDIR` was added in 7.0.
+/// new | New 7.0
+`SCANDOTDIR` was added in 7.0.
+///
 
 #### `glob.EXTGLOB, glob.E` {: #extglob}
 
@@ -925,11 +959,11 @@ Alternatively `EXTMATCH` will also be accepted for consistency with the other pr
 the same and are provided as a convenience in case the user finds one more intuitive than the other since `EXTGLOB` is
 often the name used in Bash.
 
-!!! tip "EXTGLOB and NEGATE"
-
-    When using `EXTGLOB` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
-    be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate
-    a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
+/// tip | EXTGLOB and NEGATE
+When using `EXTGLOB` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
+be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate
+a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
+///
 
 #### `glob.BRACE, glob.B` {: #brace}
 
@@ -944,24 +978,25 @@ Duplicate patterns will be discarded[^1] by default, and `glob` and `iglob` will
 For simple patterns, it may make more sense to use [`EXTGLOB`](#extglob) which will only generate a single pattern
 which will perform much better: `@(ab|ac|ad)`.
 
-!!! warning "Massive Expansion Risk"
-    1. It is important to note that each pattern is crawled separately, so patterns such as `{1..100}` would generate
+/// warning | Massive Expansion Risk
+1.  It is important to note that each pattern is crawled separately, so patterns such as `{1..100}` would generate
     **one hundred** patterns. In a match function ([`globmatch`](#globmatch)), that would cause a hundred compares,
     and in a file crawling function ([`glob`](#glob)), it would cause the file system to be crawled one hundred
     times. Sometimes patterns like this are needed, so construct patterns thoughtfully and carefully.
 
-    2. `BRACE` and [`SPLIT`](#split) both expand patterns into multiple patterns. Using these two syntaxes
+2.  `BRACE` and [`SPLIT`](#split) both expand patterns into multiple patterns. Using these two syntaxes
     simultaneously can exponential increase duplicate patterns:
 
-        ```pycon3
-        >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
-        ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
-        ```
+    ```pycon3
+    >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
+    ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
+    ```
 
-        This effect is reduced as redundant, identical patterns are optimized away[^1], but when using crawling
-        functions (like [`glob`](#glob)) *and* [`NOUNIQUE`](#nounique) that optimization is removed, and all of
-        those patterns will be crawled. For this reason, especially when using functions like [`glob`](#glob), it is
-        recommended to use one syntax or the other.
+    This effect is reduced as redundant, identical patterns are optimized away[^1], but when using crawling
+    functions (like [`glob`](#glob)) *and* [`NOUNIQUE`](#nounique) that optimization is removed, and all of
+    those patterns will be crawled. For this reason, especially when using functions like [`glob`](#glob), it is
+    recommended to use one syntax or the other.
+///
 
 [^1]: Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
 `[[:alnum:]]` =/= `[[:ALNUM:]]`.
@@ -1022,8 +1057,9 @@ multiple inclusive patterns are provided.
 [`iglob`](#iglob). Functions like [`globmatch`](#globmatch) and [`globfilter`](#globfilter) would get no
 benefit from disabling "unique" optimizations as they only match what they are given.
 
-!!! new "New in 6.0"
-    "Unique" optimizations were added in 6.0, along with `NOUNIQUE`.
+/// new | New in 6.0
+"Unique" optimizations were added in 6.0, along with `NOUNIQUE`.
+///
 
 #### `glob.GLOBTILDE, glob.T` {: #globtilde}
 
@@ -1050,8 +1086,9 @@ from wcmatch import glob
 True
 ```
 
-!!! new "New 6.0"
-    Tilde expansion with `GLOBTILDE` was added in version 6.0.
+/// new | New 6.0
+Tilde expansion with `GLOBTILDE` was added in version 6.0.
+///
 
 #### `glob.MARK, glob.K` {: #mark}
 

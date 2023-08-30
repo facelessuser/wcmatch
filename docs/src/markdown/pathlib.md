@@ -4,8 +4,9 @@
 from wcmatch import pathlib
 ```
 
-!!! new "New 5.0"
-    `wcmatch.pathlib` was added in `wcmatch` 5.0.
+/// new | New 5.0
+`wcmatch.pathlib` was added in `wcmatch` 5.0.
+///
 
 ## Overview
 
@@ -26,40 +27,41 @@ Many of the API functions allow passing in multiple patterns or using either [`B
 you can raise or lower this limit via the keyword option `limit`. If you set `limit` to `0`, there will
 be no limit.
 
-!!! new "New 6.0"
-    The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
+/// new | New 6.0
+The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
+///
 
 ### Differences
 
 The API is the same as Python's default [`pathlib`][pathlib] except for the few differences related to file globbing and
 matching:
 
-- Each `pathlib` object's [`glob`](#glob), [`rglob`](#rglob), and [`match`](#match) methods are now
-  driven by the [`wcmatch.glob`](./glob.md) library. As a result, some of the defaults and accepted parameters are
-  different. Also, many new optional features can be enabled via [flags](#flags).
+-   Each `pathlib` object's [`glob`](#glob), [`rglob`](#rglob), and [`match`](#match) methods are now
+    driven by the [`wcmatch.glob`](./glob.md) library. As a result, some of the defaults and accepted parameters are
+    different. Also, many new optional features can be enabled via [flags](#flags).
 
-- [`glob`](#glob), [`rglob`](#rglob), and  [`match`](#match) can take a single string pattern or a list
-  of patterns. They also accept [flags](#flags) via the `flags` keyword. This matches the interfaces found detailed in
-  our [`glob`](./glob.md) documentation.
+-   [`glob`](#glob), [`rglob`](#rglob), and  [`match`](#match) can take a single string pattern or a list
+    of patterns. They also accept [flags](#flags) via the `flags` keyword. This matches the interfaces found detailed in
+    our [`glob`](./glob.md) documentation.
 
-- [`glob`](#glob), [`rglob`](#rglob), and [`match`](#match) do not enable [`GLOBSTAR`](#globstar)
-  or [`DOTGLOB`](#dotglob) by default. These flags must be passed in to take advantage of this functionality.
+-   [`glob`](#glob), [`rglob`](#rglob), and [`match`](#match) do not enable [`GLOBSTAR`](#globstar)
+    or [`DOTGLOB`](#dotglob) by default. These flags must be passed in to take advantage of this functionality.
 
-- A [`globmatch`](#globmatch) function has been added to `PurePath` classes (and `Path` classes which are
-  derived from `PurePath`) which is like [`match`](#match) except without the right to left behavior. See
-  [`match`](#match) and [`globmatch`](purepathglobmatch) for more information.
+-   A [`globmatch`](#globmatch) function has been added to `PurePath` classes (and `Path` classes which are
+    derived from `PurePath`) which is like [`match`](#match) except without the right to left behavior. See
+    [`match`](#match) and [`globmatch`](purepathglobmatch) for more information.
 
-- If file searching methods ([`glob`](#glob) and [`rglob`](#rglob)) are given multiple patterns, they will
-  ensure duplicate results are filtered out. This only occurs when more than one inclusive pattern is given, or a
-  pattern is expanded into multiple, inclusive patterns via [`BRACE`](#brace) or [`SPLIT`](#split). When
-  this occurs, an internal set is kept to track the results returned so that duplicates can be filtered. This will not
-  occur if only a single, inclusive pattern is given or the [`NOUNIQUE`](#nounique) flag is specified.
+-   If file searching methods ([`glob`](#glob) and [`rglob`](#rglob)) are given multiple patterns, they will
+    ensure duplicate results are filtered out. This only occurs when more than one inclusive pattern is given, or a
+    pattern is expanded into multiple, inclusive patterns via [`BRACE`](#brace) or [`SPLIT`](#split). When
+    this occurs, an internal set is kept to track the results returned so that duplicates can be filtered. This will not
+    occur if only a single, inclusive pattern is given or the [`NOUNIQUE`](#nounique) flag is specified.
 
-- Python's [`pathlib`][pathlib] has logic to ignore `.` when used as a directory in both the file path and glob pattern.
-  We do not alter how [`pathlib`][pathlib] stores paths, but our implementation allows explicit use of `.` as a literal
-  directory and will match accordingly. With that said, since [`pathlib`][pathlib] normalizes paths by removing `.`
-  directories, in most cases, you won't notice the difference, except when it comes to a path that is literally just
-  `.`.
+-   Python's [`pathlib`][pathlib] has logic to ignore `.` when used as a directory in both the file path and glob
+    pattern. We do not alter how [`pathlib`][pathlib] stores paths, but our implementation allows explicit use of `.` as
+    a literal directory and will match accordingly. With that said, since [`pathlib`][pathlib] normalizes paths by
+    removing `.` directories, in most cases, you won't notice the difference, except when it comes to a path that is
+    literally just `.`.
 
     Python's default glob:
 
@@ -99,15 +101,15 @@ matching:
 
 ### Similarities
 
-- [`glob`](#glob), [`rglob`](#rglob), and [`match`](#match) should mimic the basic behavior of
-  Python's original [`pathlib`][pathlib] library, just with the enhancements and configurability that Wildcard
-  Match's [`glob`](./glob.md) provides.
+-   [`glob`](#glob), [`rglob`](#rglob), and [`match`](#match) should mimic the basic behavior of
+    Python's original [`pathlib`][pathlib] library, just with the enhancements and configurability that Wildcard
+    Match's [`glob`](./glob.md) provides.
 
-- [`glob`](#glob) and [`rglob`](#rglob) will yield an iterator of the results.
+-   [`glob`](#glob) and [`rglob`](#rglob) will yield an iterator of the results.
 
-- [`rglob`](#rglob) will exhibit the same *recursive* behavior.
+-   [`rglob`](#rglob) will exhibit the same *recursive* behavior.
 
-- [`match`](#match) will exhibit the same right to left behavior.
+-   [`match`](#match) will exhibit the same right to left behavior.
 
 ## Classes
 
@@ -277,11 +279,13 @@ Since [`Path`](#path) is derived from [`PurePath`](#purepath), this method is al
 True
 ```
 
-!!! new "New 6.0"
-    `limit` was added in 6.0.
+/// new | New 6.0
+`limit` was added in 6.0.
+///
 
-!!! new "New 8.4"
-    `exclude` parameter was added.
+/// new | New 8.4
+`exclude` parameter was added.
+///
 
 #### `PurePath.globmatch` {: #globmatch}
 
@@ -311,11 +315,13 @@ Since [`Path`](#path) is derived from  [`PurePath`](#purepath), this method is a
 True
 ```
 
-!!! new "New 6.0"
-    `limit` was added in 6.0.
+/// new | New 6.0
+`limit` was added in 6.0.
+///
 
-!!! new "New 8.4"
-    `exclude` parameter was added.
+/// new | New 8.4
+`exclude` parameter was added.
+///
 
 #### `Path.glob` {: #glob}
 
@@ -344,11 +350,13 @@ working directory.
 [PosixPath('docs/src/dictionary/en-custom.txt'), PosixPath('docs/src/markdown/_snippets/links.txt'), PosixPath('docs/src/markdown/_snippets/refs.txt'), PosixPath('docs/src/markdown/_snippets/abbr.txt'), PosixPath('docs/src/markdown/_snippets/posix.txt')]
 ```
 
-!!! new "New 6.0"
-    `limit` was added in 6.0.
+/// new | New 6.0
+`limit` was added in 6.0.
+///
 
-!!! new "New 8.4"
-    `exclude` parameter was added.
+/// new | New 8.4
+`exclude` parameter was added.
+///
 
 #### `Path.rglob` {: #rglob}
 
@@ -377,11 +385,13 @@ the same.
 [PosixPath('docs/src/dictionary/en-custom.txt'), PosixPath('docs/src/markdown/_snippets/links.txt'), PosixPath('docs/src/markdown/_snippets/refs.txt'), PosixPath('docs/src/markdown/_snippets/abbr.txt'), PosixPath('docs/src/markdown/_snippets/posix.txt')]
 ```
 
-!!! new "New 6.0"
-    `limit` was added in 6.0.
+/// new | New 6.0
+`limit` was added in 6.0.
+///
 
-!!! new "New 8.4"
-    `exclude` parameter was added.
+/// new | New 8.4
+`exclude` parameter was added.
+///
 
 ## Flags
 
@@ -453,14 +463,14 @@ valid for the operating system.
 for the given system it is running on. It will augment the patterns used to match files and enable additional logic so
 that the path must meet the following in order to match:
 
-- Path must exist.
-- Directories that are symlinks will not be matched by [`GLOBSTAR`](#globstar) patterns (`**`) unless the
-  [`FOLLOW`](#follow) flag is enabled.
-- When presented with a pattern where the match must be a directory, but the file path being compared doesn't indicate
-  the file is a directory with a trailing slash, the command will look at the filesystem to determine if it is a
-  directory.
-- Paths must match in relation to the current working directory unless the pattern is constructed in a way to indicates
-  an absolute path.
+-   Path must exist.
+-   Directories that are symlinks will not be matched by [`GLOBSTAR`](#globstar) patterns (`**`) unless the
+    [`FOLLOW`](#follow) flag is enabled.
+-   When presented with a pattern where the match must be a directory, but the file path being compared doesn't indicate
+    the file is a directory with a trailing slash, the command will look at the filesystem to determine if it is a
+    directory.
+-   Paths must match in relation to the current working directory unless the pattern is constructed in a way to
+    indicates an absolute path.
 
 #### `pathlib.DOTGLOB, pathlib.D` {: #dotglob}
 
@@ -502,15 +512,17 @@ Also affects exclusion patterns:
 []
 ```
 
-!!! new "New 7.0"
-    `NODOTDIR` was added in 7.0.
+/// new | New 7.0
+`NODOTDIR` was added in 7.0.
+///
 
 #### `pathlib.SCANDOTDIR, pathlib.SD` {: #scandotdir}
 
-!!! warning "Not recommended for `pathlib`"
-    `pathlib` supports all of the same flags that the [`wcmatch.glob`](./glob.md) library does. But due to how
-    `pathlib` normalizes the paths that get returned, enabling `SCANDOTDIR` will only give confusing duplicates if using
-    patterns such as `.*`. This is not a bug, but is something to be aware of.
+/// warning | Not recommended for `pathlib`
+`pathlib` supports all of the same flags that the [`wcmatch.glob`](./glob.md) library does. But due to how
+`pathlib` normalizes the paths that get returned, enabling `SCANDOTDIR` will only give confusing duplicates if using
+patterns such as `.*`. This is not a bug, but is something to be aware of.
+///
 
 `SCANDOTDIR` controls the directory scanning behavior of [`glob`](#glob) and [`rglob`](#rglob). The directory scanner
 of these functions do not return `.` and `..` in their results. This means unless you use an explicit `.` or `..` in
@@ -540,8 +552,9 @@ normalizes directories. When comparing the results to a non-`pathlib` glob, the 
 ['.', '..', '.hidden', '.hidden/.', '.hidden/..', '.DS_Store']
 ```
 
-!!! new "New 7.0"
-    `SCANDOTDIR` was added in 7.0.
+/// new | New 7.0
+`SCANDOTDIR` was added in 7.0.
+///
 
 #### `pathlib.EXTGLOB, pathlib.E` {: #extglob}
 
@@ -553,11 +566,11 @@ Alternatively `EXTMATCH` will also be accepted for consistency with the other pr
 the same and are provided as a convenience in case the user finds one more intuitive than the other since `EXTGLOB` is
 often the name used in Bash.
 
-!!! tip "EXTGLOB and NEGATE"
-
-    When using `EXTGLOB` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
-    be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate
-    a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
+/// tip | EXTGLOB and NEGATE
+When using `EXTGLOB` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
+be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate
+a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
+///
 
 #### `pathlib.BRACE, pathlib.B` {: #brace}
 
@@ -572,24 +585,25 @@ such as [`globmatch`](#globmatch) and [`match`](#match).
 For simple patterns, it may make more sense to use [`EXTGLOB`](#extglob) which will only generate a single
 pattern which will perform much better: `@(ab|ac|ad)`.
 
-!!! warning "Massive Expansion Risk"
-    1. It is important to note that each pattern is crawled separately, so patterns such as `{1..100}` would generate
+/// warning | Massive Expansion Risk
+1.  It is important to note that each pattern is crawled separately, so patterns such as `{1..100}` would generate
     **one hundred** patterns. In a match function ([`globmatch`](#globmatch)), that would cause a hundred
     compares, and in a file crawling function ([`glob`](#glob)), it would cause the file system to be crawled one
     hundred times. Sometimes patterns like this are needed, so construct patterns thoughtfully and carefully.
 
-    2. `BRACE` and [`SPLIT`](#split) both expand patterns into multiple patterns. Using these two syntaxes
+2.  `BRACE` and [`SPLIT`](#split) both expand patterns into multiple patterns. Using these two syntaxes
     simultaneously can exponential increase duplicate patterns:
 
-        ```pycon3
-        >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
-        ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
-        ```
+    ```pycon3
+    >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
+    ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
+    ```
 
-        This effect is reduced as redundant, identical patterns are optimized away[^1], but when using crawling
-        functions (like in [`glob`](#glob)) *and* [`NOUNIQUE`](#nounique) that optimization is removed, and all
-        of those patterns will be crawled. For this reason, especially when using functions like [`glob`](#glob), it is
-        recommended to use one syntax or the other.
+    This effect is reduced as redundant, identical patterns are optimized away[^1], but when using crawling
+    functions (like in [`glob`](#glob)) *and* [`NOUNIQUE`](#nounique) that optimization is removed, and all
+    of those patterns will be crawled. For this reason, especially when using functions like [`glob`](#glob), it is
+    recommended to use one syntax or the other.
+///
 
 [^1]: Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
 `[[:alnum:]]` =/= `[[:ALNUM:]]`.
@@ -648,8 +662,9 @@ normalize two unique results to be the same path, such as `.hidden` and `.hidden
 [`rglob`](#rglob). Functions like [`globmatch`](#globmatch) and [`match`](#match) would get no
 benefit from disabling "unique" optimizations as they only match what they are given.
 
-!!! new "New in 6.0"
-    "Unique" optimizations were added in 6.0, along with `NOUNIQUE`.
+/// new | New in 6.0
+"Unique" optimizations were added in 6.0, along with `NOUNIQUE`.
+///
 
 #### `pathlib.MATCHBASE, pathlib.X` {: #matchbase}
 
@@ -661,7 +676,7 @@ such files and directories if [`DOTGLOB`](#dotglob) is not enabled.
 ```pycon3
 >>> from wcmatch import pathlib
 >>> list(pathlib.Path('.').glob('*.txt', flags=pathlib.MATCHBASE))
-[WindowsPath('docs/src/dictionary/en-custom.txt'), WindowsPath('docs/src/markdown/_snippets/abbr.txt'), WindowsPath('docs/src/markdown/_snippets/links.txt'), WindowsPath('docs/src/markdown/_snippets/posix.txt'), WindowsPath('docs/src/markdown/_snippets/refs.txt'), WindowsPath('requirements/docs.txt'), WindowsPath('requirements/lint.txt'), WindowsPath('requirements/setup.txt'), WindowsPath('requirements/test.txt'), WindowsPath('requirements/tools.txt'), WindowsPath('site/_snippets/abbr.txt'), WindowsPath('site/_snippets/links.txt'), WindowsPath('site/_snippets/posix.txt'), WindowsPath('site/_snippets/refs.txt')]  
+[WindowsPath('docs/src/dictionary/en-custom.txt'), WindowsPath('docs/src/markdown/_snippets/abbr.txt'), WindowsPath('docs/src/markdown/_snippets/links.txt'), WindowsPath('docs/src/markdown/_snippets/posix.txt'), WindowsPath('docs/src/markdown/_snippets/refs.txt'), WindowsPath('requirements/docs.txt'), WindowsPath('requirements/lint.txt'), WindowsPath('requirements/setup.txt'), WindowsPath('requirements/test.txt'), WindowsPath('requirements/tools.txt'), WindowsPath('site/_snippets/abbr.txt'), WindowsPath('site/_snippets/links.txt'), WindowsPath('site/_snippets/posix.txt'), WindowsPath('site/_snippets/refs.txt')]
 ```
 
 #### `pathlib.NODIR, pathlib.O` {: #nodir}
