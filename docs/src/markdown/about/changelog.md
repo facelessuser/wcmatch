@@ -4,6 +4,7 @@
 
 -   **NEW**: Formally support Python 3.11 (no change).
 -   **NEW**: Add support for Python 3.12 (`pathlib` changes).
+-   **NEW**: Drop Python 3.7 support.
 -   **FIX**: Fix handling of current directory when magic and non-magic patterns are mixed in `glob` pattern list.
 
 ## 8.4.1
