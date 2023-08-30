@@ -1,5 +1,9 @@
 # Changelog
 
+## 8.5.1
+
+- **FIX**: Fix handling of current directory when magic and non-magic patterns are mixed in `glob` pattern list.
+
 ## 8.5
 
 - **NEW**: Formally support Python 3.11 (no change).

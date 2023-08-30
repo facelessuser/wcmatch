@@ -340,10 +340,10 @@ class TestComparisons(unittest.TestCase):
         p3 = pickle.loads(pickle.dumps(p1))
         p4 = pickle.loads(pickle.dumps(p2))
 
-        self.assertTrue(type(p1) == type(p3))
-        self.assertTrue(type(p2) == type(p4))
-        self.assertTrue(type(p1) != type(p2))
-        self.assertTrue(type(p3) != type(p4))
+        self.assertTrue(type(p1) == type(p3))  # noqa: E721
+        self.assertTrue(type(p2) == type(p4))  # noqa: E721
+        self.assertTrue(type(p1) != type(p2))  # noqa: E721
+        self.assertTrue(type(p3) != type(p4))  # noqa: E721
 
 
 class TestExpansionLimit(unittest.TestCase):

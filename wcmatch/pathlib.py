@@ -113,7 +113,7 @@ class PurePath(pathlib.PurePath):
 
         return name + sep
 
-    def match(
+    def match(  # type: ignore[override, unused-ignore]
         self,
         patterns: str | Sequence[str],
         *,

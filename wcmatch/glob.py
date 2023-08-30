@@ -795,9 +795,9 @@ class Glob(Generic[AnyStr]):
     def glob(self) -> Iterator[AnyStr]:
         """Starts off the glob iterator."""
 
-        curdir = self.current
-
         for pattern in self.pattern:
+            curdir = self.current
+
             # If the pattern ends with `/` we return the files ending with `/`.
             dir_only = pattern[-1].dir_only if pattern else False
             self.is_abs_pattern = pattern[0].is_drive if pattern else False
