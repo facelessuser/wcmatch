@@ -1000,6 +1000,18 @@ class Testglob(_TestGlob):
         for file in glob.glob(b'!**/', flags=glob.N | glob.NEGATEALL | glob.G, root_dir=os.fsencode(self.tempdir)):
             self.assert_equal(os.path.isdir(file), False)
 
+    def test_magic_non_magic(self):
+        """Test logic when switching from magic to non-magic patterns."""
+
+        with change_cwd(self.tempdir):
+            self.assert_equal(sorted(glob.glob(['**/aab', 'dummy'], flags=glob.G)), ['aab',])
+
+    def test_non_magic_magic(self):
+        """Test logic when switching from non-magic to magic patterns."""
+
+        with change_cwd(self.tempdir):
+            self.assert_equal(sorted(glob.glob(['dummy', '**/aab'], flags=glob.G)), ['aab',])
+
 
 class TestGlobMarked(Testglob):
     """Test glob marked."""
