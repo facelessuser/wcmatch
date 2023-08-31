@@ -67,7 +67,7 @@ class _TestWcmatch(unittest.TestCase):
                 try:
                     os.makedirs(base)
                     retry = 0
-                except Exception:
+                except Exception:  # noqa: PERF203
                     retry -= 1
         create_empty_file(filename)
 
@@ -105,7 +105,7 @@ class _TestWcmatch(unittest.TestCase):
             try:
                 shutil.rmtree(self.tempdir)
                 retry = 0
-            except Exception:
+            except Exception:  # noqa: PERF203
                 retry -= 1
 
     def crawl_files(self, walker):
@@ -282,7 +282,7 @@ class TestWcmatch(_TestWcmatch):
         )
 
         records = 0
-        for f in walker.imatch():
+        for _f in walker.imatch():
             records += 1
             walker.kill()
         self.assertEqual(records, 1)
@@ -308,7 +308,7 @@ class TestWcmatch(_TestWcmatch):
 
         walker.kill()
         records = 0
-        for f in walker.imatch():
+        for _f in walker.imatch():
             records += 1
 
         self.assertTrue(records == 0 or walker.get_skipped() == 0)

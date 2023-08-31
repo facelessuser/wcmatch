@@ -186,8 +186,8 @@ class StringIter:
         try:
             char = self._string[self._index]
             self._index += 1
-        except IndexError:  # pragma: no cover
-            raise StopIteration
+        except IndexError as e:  # pragma: no cover
+            raise StopIteration from e
 
         return char
 
@@ -195,7 +195,7 @@ class StringIter:
 class Immutable:
     """Immutable."""
 
-    __slots__: tuple[Any, ...] = tuple()
+    __slots__: tuple[Any, ...] = ()
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize."""

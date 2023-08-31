@@ -761,12 +761,12 @@ class TestTypes(unittest.TestCase):
     def test_match_set(self):
         """Test `set` matching."""
 
-        self.assertTrue(fnmatch.fnmatch('a', set(['a'])))
+        self.assertTrue(fnmatch.fnmatch('a', {'a'}))
 
     def test_match_tuple(self):
         """Test `tuple` matching."""
 
-        self.assertTrue(fnmatch.fnmatch('a', tuple(['a'])))
+        self.assertTrue(fnmatch.fnmatch('a', ('a',)))
 
     def test_match_list(self):
         """Test `list` matching."""

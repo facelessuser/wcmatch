@@ -15,6 +15,7 @@ def change_cwd(path, quiet=False):
     Return a context manager that changes the current working directory.
 
     Arguments:
+    ---------
       path: the directory to use as the temporary current working directory.
       quiet: if False (the default), the context manager raises an exception
         on error.  Otherwise, it issues only a warning and keeps the current
@@ -53,7 +54,7 @@ class TestGlob(unittest.TestCase):
         with change_cwd(os.path.dirname(abspath)):
             results = list(p.glob('docs/**/*.md', flags=pathlib.GLOBSTAR))
         self.assertTrue(len(results))
-        self.assertTrue(all([file.suffix == '.md' for file in results]))
+        self.assertTrue(all(file.suffix == '.md' for file in results))
 
     def test_relative_exclude(self):
         """Test relative path exclude."""
@@ -63,7 +64,7 @@ class TestGlob(unittest.TestCase):
         with change_cwd(os.path.dirname(abspath)):
             results = list(p.glob('docs/**/*.md|!**/index.md', flags=pathlib.GLOBSTAR | pathlib.NEGATE | pathlib.SPLIT))
         self.assertTrue(len(results))
-        self.assertTrue(all([file.name != 'index.md' for file in results]))
+        self.assertTrue(all(file.name != 'index.md' for file in results))
 
     def test_glob(self):
         """Test globbing function."""
@@ -74,7 +75,7 @@ class TestGlob(unittest.TestCase):
 
         results = list(p.glob('**/*.md', flags=pathlib.GLOBSTAR))
         self.assertTrue(len(results))
-        self.assertTrue(all([file.suffix == '.md' for file in results]))
+        self.assertTrue(all(file.suffix == '.md' for file in results))
 
     def test_rglob(self):
         """Test globbing function."""
@@ -82,15 +83,15 @@ class TestGlob(unittest.TestCase):
         p = pathlib.Path('docs')
         results = list(p.rglob('*.md'))
         self.assertTrue(len(results))
-        self.assertTrue(all([file.suffix == '.md' for file in results]))
+        self.assertTrue(all(file.suffix == '.md' for file in results))
 
         results = list(p.rglob('*.md'))
         self.assertTrue(len(results))
-        self.assertTrue(all([file.suffix == '.md' for file in results]))
+        self.assertTrue(all(file.suffix == '.md' for file in results))
 
         results = list(p.rglob('markdown/*.md'))
         self.assertTrue(len(results))
-        self.assertTrue(all([file.suffix == '.md' for file in results]))
+        self.assertTrue(all(file.suffix == '.md' for file in results))
 
     def test_integrity(self):
         """Test glob integrity, or better put, test the path structure comes out sane."""

@@ -115,7 +115,7 @@ class EnvironmentVarGuard(MutableMapping):
                     del self._environ[k]
             else:
                 self._environ[k] = v
-        os.environ = self._environ
+        os.environ = self._environ  # noqa: B003
 
 
 @contextlib.contextmanager
@@ -124,6 +124,7 @@ def change_cwd(path, quiet=False):
     Return a context manager that changes the current working directory.
 
     Arguments:
+    ---------
       path: the directory to use as the temporary current working directory.
       quiet: if False (the default), the context manager raises an exception
         on error.  Otherwise, it issues only a warning and keeps the current
@@ -265,7 +266,7 @@ class _TestGlob:
                 try:
                     os.makedirs(base)
                     retry = 0
-                except Exception:
+                except Exception:  # noqa: PERF203
                     retry -= 1
         create_empty_file(filename)
 
@@ -298,7 +299,7 @@ class _TestGlob:
             try:
                 shutil.rmtree(cls.tempdir)
                 retry = 0
-            except Exception:
+            except Exception:  # noqa: PERF203
                 retry -= 1
 
     @staticmethod
