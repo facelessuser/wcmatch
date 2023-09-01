@@ -375,10 +375,10 @@ def _get_win_drive(
             complete = 1
             first = 1
             count = 0
-            for count, m in enumerate(RE_WIN_DRIVE_PART.finditer(pattern, m.end(0)), 1):
-                end = m.end(0)
-                part.append(RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m.group(1)))
-                slash = bool(m.group(2))
+            for count, m2 in enumerate(RE_WIN_DRIVE_PART.finditer(pattern, m.end(0)), 1):
+                end = m2.end(0)
+                part.append(RE_WIN_DRIVE_UNESCAPE.sub(r'\1', m2.group(1)))
+                slash = bool(m2.group(2))
                 if is_special:
                     if count == first and part[-1].lower() == 'unc':
                         complete += 2
@@ -412,7 +412,7 @@ def _get_magic_symbols(pattern: AnyStr, unix: bool, flags: int) -> tuple[set[Any
     if unix:
         magic_drive = set()  # type: set[AnyStr]
     else:
-        magic_drive = set([slash])
+        magic_drive = {slash}
 
     magic |= cast('set[AnyStr]', MAGIC_DEF[ptype])
     if flags & BRACE:
@@ -505,7 +505,7 @@ def expand_braces(patterns: AnyStr, flags: int, limit: int) -> Iterable[AnyStr]:
             try:
                 # Turn off limit as we are handling it ourselves.
                 yield from bracex.iexpand(p, keep_escapes=True, limit=limit)
-            except bracex.ExpansionLimitException:
+            except bracex.ExpansionLimitException:  # noqa: PERF203
                 raise
             except Exception:  # pragma: no cover
                 # We will probably never hit this as `bracex`
@@ -640,7 +640,8 @@ def translate(
         for pattern in iter_patterns(patterns):
             pattern = util.norm_pattern(pattern, not is_unix, bool(flags & RAWCHARS))
             count = 0
-            for count, expanded in enumerate(expand(pattern, flags, current_limit), 1):
+            for expanded in expand(pattern, flags, current_limit):
+                count += 1
                 total += 1
                 if 0 < limit < total:
                     raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
@@ -654,8 +655,8 @@ def translate(
                 current_limit -= count
                 if current_limit < 1:
                     current_limit = 1
-    except bracex.ExpansionLimitException:
-        raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
+    except bracex.ExpansionLimitException as e:
+        raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit)) from e
 
     if negative and not positive:
         if flags & NEGATEALL:
@@ -725,7 +726,8 @@ def compile_pattern(
         for pattern in iter_patterns(patterns):
             pattern = util.norm_pattern(pattern, not is_unix, bool(flags & RAWCHARS))
             count = 0
-            for count, expanded in enumerate(expand(pattern, flags, current_limit), 1):
+            for expanded in expand(pattern, flags, current_limit):
+                count += 1
                 total += 1
                 if 0 < limit < total:
                     raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
@@ -739,8 +741,8 @@ def compile_pattern(
                 current_limit -= count
                 if current_limit < 1:
                     current_limit = 1
-    except bracex.ExpansionLimitException:
-        raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
+    except bracex.ExpansionLimitException as e:
+        raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit)) from e
 
     if negative and not positive:
         if flags & NEGATEALL:
@@ -817,17 +819,17 @@ class WcSplit(Generic[AnyStr]):
         if c in ('^', '-', '['):
             c = next(i)
 
-        while c != ']':
-            if c == '\\':
-                # Handle escapes
-                try:
+        try:
+            while c != ']':
+                if c == '\\':
+                    # Handle escapes
                     self._references(i, True)
-                except PathNameException:
-                    raise StopIteration
-            elif c == '/':
-                if self.pathname:
-                    raise StopIteration
-            c = next(i)
+                elif c == '/':
+                    if self.pathname:
+                        raise StopIteration
+                c = next(i)
+        except PathNameException as e:
+            raise StopIteration from e
 
     def _references(self, i: util.StringIter, sequence: bool = False) -> None:
         """Handle references."""
@@ -1128,8 +1130,8 @@ class WcParse(Generic[AnyStr]):
                     value = self._references(i, True)
                 except DotException:
                     value = re.escape(next(i))
-                except PathNameException:
-                    raise StopIteration
+                except PathNameException as e:
+                    raise StopIteration from e
             elif c == '/':
                 if self.pathname:
                     raise StopIteration
@@ -1218,6 +1220,7 @@ class WcParse(Generic[AnyStr]):
         is_previous = False
 
         if self.after_start and self.pathname and self.nodotdir:
+            index = 0
             try:
                 index = i.index
                 while True:
@@ -1237,16 +1240,16 @@ class WcParse(Generic[AnyStr]):
                             is_current = False
                             is_previous = False
                             raise StopIteration
-                        except DotException:
+                        except DotException as e:
                             if is_current:
                                 is_previous = True
                                 is_current = False
                                 c = next(i)
                             else:
                                 is_previous = False
-                                raise StopIteration
-                        except PathNameException:
-                            raise StopIteration
+                                raise StopIteration from e
+                        except PathNameException as e:
+                            raise StopIteration from e
                     elif c == '/':
                         raise StopIteration
                     else:

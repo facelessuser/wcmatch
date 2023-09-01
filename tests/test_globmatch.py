@@ -70,7 +70,7 @@ class _TestGlobmatch(unittest.TestCase):
                 try:
                     os.makedirs(base)
                     retry = 0
-                except Exception:
+                except Exception:  # noqa: PERF203
                     retry -= 1
         create_empty_file(filename)
 
@@ -105,7 +105,7 @@ class _TestGlobmatch(unittest.TestCase):
                 while os.path.exists(self.tempdir):
                     pass
                 retry = 0
-            except Exception:
+            except Exception:  # noqa: PERF203
                 retry -= 1
 
 
@@ -134,7 +134,8 @@ class Options():
 
 
 class TestGlobFilter:
-    """Test matches against `globfilter`.
+    """
+    Test matches against `globfilter`.
 
     Each list entry in `cases` is run through the `globsplit` and then `globfilter`.
     Entries are run through `globsplit` ensure it does not add any unintended side effects.
@@ -1255,11 +1256,9 @@ class TestGlobMatchSpecial(unittest.TestCase):
 
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, b'!**/*.md', flags=self.flags | glob.SPLIT
                     ) for x in glob.glob(b'!**/*.md', flags=self.flags | glob.SPLIT)
-                ]
             )
         )
 
@@ -1271,66 +1270,52 @@ class TestGlobMatchSpecial(unittest.TestCase):
         # UNC mounts are special cases and it matters there.
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '**/../*.{md,py}', flags=self.flags
                     ) for x in glob.glob('**/../*.{md,py}', flags=self.flags)
-                ]
             )
         )
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, './**/./../*.py', flags=self.flags
                     ) for x in glob.glob('./**/./../*.py', flags=self.flags)
-                ]
             )
         )
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, './///**///./../*.py', flags=self.flags
                     ) for x in glob.glob('./**/.//////..////*.py', flags=self.flags)
-                ]
             )
         )
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '**/docs/**', flags=self.flags
                     ) for x in glob.glob('**/docs/**', flags=self.flags)
-                ]
             )
         )
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT
                     ) for x in glob.glob('**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT)
-                ]
             )
         )
 
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '!**/*.md', flags=self.flags | glob.SPLIT
                     ) for x in glob.glob('!**/*.md', flags=self.flags | glob.SPLIT)
-                ]
             )
         )
         self.assertFalse(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT
                     ) for x in glob.glob('**/docs/**', flags=self.flags | glob.SPLIT)
-                ]
             )
         )
 
@@ -1342,39 +1327,31 @@ class TestGlobMatchSpecial(unittest.TestCase):
         # UNC mounts are special cases and it matters there.
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '**/docs/**', flags=self.flags | glob.MARK
                     ) for x in glob.glob('**/docs/**', flags=self.flags | glob.MARK)
-                ]
             )
         )
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.MARK
                     ) for x in glob.glob('**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.MARK)
-                ]
             )
         )
 
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '!**/*.md', flags=self.flags | glob.SPLIT | glob.MARK
                     ) for x in glob.glob('!**/*.md', flags=self.flags | glob.SPLIT | glob.MARK)
-                ]
             )
         )
         self.assertFalse(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.MARK
                     ) for x in glob.glob('**/docs/**', flags=self.flags | glob.SPLIT | glob.MARK)
-                ]
             )
         )
 
@@ -1386,65 +1363,51 @@ class TestGlobMatchSpecial(unittest.TestCase):
         # UNC mounts are special cases and it matters there.
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '**/../*.{md,py}', flags=self.flags | glob.REALPATH
                     ) for x in glob.glob('**/../*.{md,py}', flags=self.flags)
-                ]
             )
         )
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, './**/./../*.py', flags=self.flags | glob.REALPATH
                     ) for x in glob.glob('./**/./../*.py', flags=self.flags)
-                ]
             )
         )
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, './///**///./../*.py', flags=self.flags | glob.REALPATH
                     ) for x in glob.glob('./**/.//////..////*.py', flags=self.flags)
-                ]
             )
         )
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '**/docs/**', flags=self.flags | glob.REALPATH
                     ) for x in glob.glob('**/docs/**', flags=self.flags)
-                ]
             )
         )
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.REALPATH
                     ) for x in glob.glob('**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT)
-                ]
             )
         )
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '!**/*.md', flags=self.flags | glob.SPLIT | glob.REALPATH
                     ) for x in glob.glob('!**/*.md', flags=self.flags | glob.SPLIT)
-                ]
             )
         )
         self.assertFalse(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.REALPATH
                     ) for x in glob.glob('**/docs/**', flags=self.flags | glob.SPLIT)
-                ]
             )
         )
 
@@ -1456,38 +1419,30 @@ class TestGlobMatchSpecial(unittest.TestCase):
         # UNC mounts are special cases and it matters there.
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '**/docs/**', flags=self.flags | glob.REALPATH | glob.MARK
                     ) for x in glob.glob('**/docs/**', flags=self.flags | glob.MARK)
-                ]
             )
         )
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.REALPATH | glob.MARK
                     ) for x in glob.glob('**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.MARK)
-                ]
             )
         )
         self.assertTrue(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '!**/*.md', flags=self.flags | glob.SPLIT | glob.REALPATH | glob.MARK
                     ) for x in glob.glob('!**/*.md', flags=self.flags | glob.SPLIT | glob.MARK)
-                ]
             )
         )
         self.assertFalse(
             all(
-                [
-                    glob.globmatch(
+                glob.globmatch(
                         x, '**/docs/**|!**/*.md', flags=self.flags | glob.SPLIT | glob.REALPATH | glob.MARK
                     ) for x in glob.glob('**/docs/**', flags=self.flags | glob.SPLIT | glob.MARK)
-                ]
             )
         )
 
@@ -1603,7 +1558,7 @@ class TestGlobMatchSpecial(unittest.TestCase):
             root_dir=pathlib.Path('docs/src')
         )
 
-        self.assertTrue(all([isinstance(result, pathlib.Path) for result in results]))
+        self.assertTrue(all(isinstance(result, pathlib.Path) for result in results))
 
     def test_filter_root_dir_pathlib_bytes(self):
         """Test root directory with `globfilter`."""

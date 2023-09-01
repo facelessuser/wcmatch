@@ -137,6 +137,7 @@ class _GlobSplit(Generic[AnyStr]):
     is "magic", etc.: `["pattern", is_magic, is_globstar, dir_only, is_drive]`.
 
     Example:
+    -------
         `"**/this/is_literal/*magic?/@(magic|part)"`
 
         Would  become:
@@ -207,8 +208,8 @@ class _GlobSplit(Generic[AnyStr]):
                 # Handle escapes
                 try:
                     self._references(i, True)
-                except _wcparse.PathNameException:
-                    raise StopIteration
+                except _wcparse.PathNameException as e:
+                    raise StopIteration from e
             elif c == '/':
                 raise StopIteration
             c = next(i)
@@ -473,7 +474,8 @@ class Glob(Generic[AnyStr]):
             for p in patterns:
                 p = util.norm_pattern(p, not self.unix, self.raw_chars)
                 count = 0
-                for count, expanded in enumerate(_wcparse.expand(p, self.flags, self.current_limit), 1):
+                for expanded in _wcparse.expand(p, self.flags, self.current_limit):
+                    count += 1
                     total += 1
                     if 0 < self.limit < total:
                         raise _wcparse.PatternLimitException(
@@ -493,10 +495,10 @@ class Glob(Generic[AnyStr]):
                     self.current_limit -= count
                     if self.current_limit < 1:
                         self.current_limit = 1
-        except bracex.ExpansionLimitException:
+        except bracex.ExpansionLimitException as e:
             raise _wcparse.PatternLimitException(
                 "Pattern limit exceeded the limit of {:d}".format(self.limit)
-            )
+            ) from e
 
     def _parse_patterns(self, patterns: Sequence[AnyStr], force_negate: bool = False) -> None:
         """Parse patterns."""
@@ -638,7 +640,7 @@ class Glob(Generic[AnyStr]):
                                 is_link = False
                             if (not dir_only or is_dir):
                                 yield f.name, is_dir, hidden, is_link  # type: ignore[misc]
-                        except OSError:  # pragma: no cover
+                        except OSError:  # pragma: no cover # noqa: PERF203
                             pass
             finally:
                 if fd is not None:
@@ -760,7 +762,7 @@ class Glob(Generic[AnyStr]):
             results = []
             matcher = self._get_matcher(curdir)
             files = list(self._iter(None, dir_only, False))
-            for file, is_dir, hidden, is_link in files:
+            for file, is_dir, _hidden, _is_link in files:
                 if file not in self.specials and (matcher is None or matcher(file)):
                     results.append((file, is_dir))
         else:

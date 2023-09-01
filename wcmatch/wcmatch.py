@@ -159,7 +159,7 @@ class WcMatch(Generic[AnyStr]):
 
         if self.folder_exclude_check is None:
             if not folder_exclude_pattern:
-                self.folder_exclude_check = _wcmatch.WcRegexp(tuple())
+                self.folder_exclude_check = _wcmatch.WcRegexp(())
             else:
                 self.folder_exclude_check = self._compile_wildcard(folder_exclude_pattern, self.dir_pathname)
 

@@ -103,7 +103,7 @@ def filter(  # noqa A001
 
     for filename in filenames:
         if obj.match(filename):
-            matches.append(filename)
+            matches.append(filename)  # noqa: PERF401
     return matches
 
 
