@@ -452,7 +452,7 @@ class Glob(Generic[AnyStr]):
             self.re_no_dir = cast(Pattern[AnyStr], _wcparse.RE_WIN_NO_DIR[ptype])
 
         temp = os.fspath(root_dir) if root_dir is not None else self.current
-        if not isinstance(temp, type(pats[0])):
+        if not isinstance(temp, bytes if ptype else str):
             raise TypeError(
                 'Pattern and root_dir should be of the same type, not {} and {}'.format(
                     type(pats[0]), type(temp)

@@ -1,5 +1,9 @@
 # Changelog
 
+## 8.5.1
+
+-   **FIX**: Fix issue with type check failure in `wcmatch.glob`.
+
 ## 8.5
 
 -   **NEW**: Formally support Python 3.11 (no change).
