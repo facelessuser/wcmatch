@@ -1337,6 +1337,7 @@ class TestGlobCornerCase(_TestGlob):
         [('test[',), [('test[',)]],
         [(r'a\/b',), [('a', 'b')]],
         [(r'a[\/]b',), [('a[', ']b')]],
+        [('[a]',), [('[a]',)], glob.NOSEQ],
 
         Options(skip=util.is_case_sensitive()),
         [('a[\\',), [('a[',)]],
@@ -1355,6 +1356,7 @@ class TestGlobCornerCase(_TestGlob):
         cls.mktemp('a[', ']b')
         cls.mktemp('@(a', 'b)')
         cls.mktemp('@(a[', ']b)')
+        cls.mktemp('[a]')
         cls.can_symlink = can_symlink()
 
     @pytest.mark.parametrize("case", cases)

@@ -13,8 +13,8 @@ __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "NEGATE", "MINUSNEGATE", "BRACE",
     "REALPATH", "FOLLOW", "MATCHBASE", "NEGATEALL", "NODIR", "NOUNIQUE",
-    "NODOTDIR", "SCANDOTDIR",
-    "C", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A", "Q", "Z", "SD",
+    "NODOTDIR", "SCANDOTDIR", "NOSEQ",
+    "C", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A", "Q", "Z", "SD", "NS",
     "Path", "PurePath", "WindowsPath", "PosixPath", "PurePosixPath", "PureWindowsPath"
 )
 
@@ -36,6 +36,7 @@ A = NEGATEALL = glob.NEGATEALL
 Q = NOUNIQUE = glob.NOUNIQUE
 Z = NODOTDIR = glob.NODOTDIR
 
+NS = NOSEQ = glob.NOSEQ
 SD = SCANDOTDIR = glob.SCANDOTDIR
 
 # Internal flags
@@ -66,6 +67,7 @@ FLAG_MASK = (
     NEGATEALL |
     NOUNIQUE |
     NODOTDIR |
+    NOSEQ |
     _EXTMATCHBASE |
     _RTL |
     _NOABSOLUTE

@@ -148,6 +148,7 @@ FORCEUNIX = 0x20000
 GLOBTILDE = 0x40000
 NOUNIQUE = 0x80000
 NODOTDIR = 0x100000
+NOSEQ = 0x200000
 
 # Internal flag
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
@@ -179,6 +180,7 @@ FLAG_MASK = (
     SPLIT |
     NOUNIQUE |
     NODOTDIR |
+    NOSEQ |
     _TRANSLATE |
     _ANCHOR |
     _EXTMATCHBASE |
@@ -807,6 +809,7 @@ class WcSplit(Generic[AnyStr]):
         self.pattern = pattern  # type: AnyStr
         self.pathname = bool(flags & PATHNAME)
         self.extend = bool(flags & EXTMATCH)
+        self.noseq = bool(flags & NOSEQ)
         self.unix = is_unix_style(flags)
         self.bslash_abort = not self.unix
 
@@ -869,7 +872,7 @@ class WcSplit(Generic[AnyStr]):
                         self._references(i)
                     except StopIteration:
                         pass
-                elif c == '[':
+                elif c == '[' and not self.noseq:
                     index = i.index
                     try:
                         self._sequence(i)
@@ -904,7 +907,7 @@ class WcSplit(Generic[AnyStr]):
                     self._references(i)
                 except StopIteration:
                     i.rewind(i.index - index)
-            elif c == '[':
+            elif c == '[' and not self.noseq:
                 index = i.index
                 try:
                     self._sequence(i)
@@ -948,6 +951,7 @@ class WcParse(Generic[AnyStr]):
         self.rtl = bool(flags & _RTL)
         self.anchor = bool(flags & _ANCHOR)
         self.nodotdir = bool(flags & NODOTDIR)
+        self.noseq = bool(flags & NOSEQ)
         self.capture = self.translate
         self.case_sensitive = get_case(flags)
         self.in_list = False
@@ -1448,7 +1452,7 @@ class WcParse(Generic[AnyStr]):
                         # We've reached the end.
                         # Do nothing because this is going to abort the `extmatch` anyways.
                         pass
-                elif c == '[':
+                elif c == '[' and not self.noseq:
                     subindex = i.index
                     try:
                         extended.append(self._sequence(i))
@@ -1605,7 +1609,7 @@ class WcParse(Generic[AnyStr]):
                 except StopIteration:
                     # Escapes nothing, ignore
                     i.rewind(i.index - index)
-            elif c == '[':
+            elif c == '[' and not self.noseq:
                 index = i.index
                 try:
                     current.append(self._sequence(i))

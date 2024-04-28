@@ -18,9 +18,9 @@ from typing import Iterator, Iterable, AnyStr, Generic, Pattern, Callable, Any, 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE", "NOUNIQUE",
-    "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX", "GLOBTILDE",
+    "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX", "GLOBTILDE", "NOSEQ",
     "NODOTDIR", "SCANDOTDIR", "SUPPORT_DIR_FD",
-    "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T", "Q", "Z", "SD",
+    "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T", "Q", "Z", "SD", "NS",
     "iglob", "glob", "globmatch", "globfilter", "escape", "raw_escape", "is_magic"
 )
 
@@ -50,6 +50,7 @@ U = FORCEUNIX = _wcparse.FORCEUNIX
 T = GLOBTILDE = _wcparse.GLOBTILDE
 Q = NOUNIQUE = _wcparse.NOUNIQUE
 Z = NODOTDIR = _wcparse.NODOTDIR
+NS = NOSEQ = _wcparse.NOSEQ
 
 K = MARK = 0x1000000
 SD = SCANDOTDIR = 0x2000000
@@ -83,6 +84,7 @@ FLAG_MASK = (
     GLOBTILDE |
     NOUNIQUE |
     NODOTDIR |
+    NOSEQ |
     _EXTMATCHBASE |
     _RTL |
     _NOABSOLUTE
@@ -165,6 +167,7 @@ class _GlobSplit(Generic[AnyStr]):
         self.matchbase = bool(flags & MATCHBASE)
         self.extmatchbase = bool(flags & _wcparse._EXTMATCHBASE)
         self.tilde = bool(flags & GLOBTILDE)
+        self.noseq = bool(flags & NOSEQ)
         if _wcparse.is_negative(self.pattern, flags):  # pragma: no cover
             # This isn't really used, but we'll keep it around
             # in case we find a reason to directly send inverse patterns
@@ -257,7 +260,7 @@ class _GlobSplit(Generic[AnyStr]):
                         self._references(i)
                     except StopIteration:
                         pass
-                elif c == '[':
+                elif c == '[' and not self.noseq:
                     index = i.index
                     try:
                         self._sequence(i)
@@ -339,7 +342,7 @@ class _GlobSplit(Generic[AnyStr]):
                     i.rewind(i.index - index)
             elif c == '/':
                 split_index.append((i.index - 1, 0))
-            elif c == '[':
+            elif c == '[' and not self.noseq:
                 index = i.index
                 try:
                     self._sequence(i)
@@ -426,6 +429,7 @@ class Glob(Generic[AnyStr]):
         self.globstar = bool(self.flags & GLOBSTAR)  # type: bool
         self.braces = bool(self.flags & BRACE)  # type: bool
         self.matchbase = bool(self.flags & MATCHBASE)  # type: bool
+        self.noseq = bool(self.flags & NOSEQ)  # type: bool
         self.case_sensitive = _wcparse.get_case(self.flags)  # type: bool
         self.limit = limit  # type: int
 

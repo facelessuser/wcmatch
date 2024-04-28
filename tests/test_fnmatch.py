@@ -184,6 +184,10 @@ class TestFnMatch:
         [r'!!(test)', 'test', True, fnmatch.N | fnmatch.E | fnmatch.A],
         [r'!(test', '!(test', True, fnmatch.N | fnmatch.E | fnmatch.A],
 
+        # Noseq
+        ['[a]', '[a]', True, fnmatch.NS],
+        ['[a]', 'a', False, fnmatch.NS],
+
         # Backwards ranges
         ['[a-z]', 'a', True, 0],
         ['[z-a]', 'a', False, 0],

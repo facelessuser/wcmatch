@@ -768,7 +768,12 @@ class TestGlobFilter:
         [b'//./unc/localhost/c$/*', [b'//./UNC/LOCALHOST/c$/temp'], glob.W],
         [b'//?/global/unc/localhost/c$/*', [b'//?/GLOBAL/UNC/LOCALHOST/c$/temp'], glob.W],
         [b'//?/global/global/unc/localhost/c$/*', [b'//?/GLOBAL/global/UNC/LOCALHOST/c$/temp'], glob.W],
-        [b'//?/c:/*', [b'//?/C:/temp'], glob.W]
+        [b'//?/c:/*', [b'//?/C:/temp'], glob.W],
+
+        # Test NOSEQ
+        GlobFiles(['[a]', 'a',]),
+        ['[a]', ['[a]'], glob.NOSEQ],
+        ['!([a])', ['a'], glob.NOSEQ],
     ]
 
     @classmethod
