@@ -1,5 +1,9 @@
 # Changelog
 
+## TODO_VERSION
+
+-   **NEW**: Add `NOSEQ` flag to disable the matching of sequences.
+
 ## 8.5.1
 
 -   **FIX**: Fix issue with type check failure in `wcmatch.glob`.
