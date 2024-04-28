@@ -20,9 +20,9 @@ Pattern           | Meaning
 ----------------- | -------
 `*`               | Matches everything.
 `?`               | Matches any single character.
-`[seq]`           | Matches any character in seq.
-`[!seq]`          | Matches any character not in seq. Will also accept character exclusions in the form of `[^seq]`.
-`[[:alnum:]]`     | POSIX style character classes inside sequences. See [POSIX Character Classes](#posix-character-classes) for more info.
+`[seq]`           | Matches any character in seq. Can be disabled with the [`NOSEQ`](#noseq) flag.
+`[!seq]`          | Matches any character not in seq. Will also accept character exclusions in the form of `[^seq]`. Can be disabled with the [`NOSEQ`](#noseq) flag.
+`[[:alnum:]]`     | POSIX style character classes inside sequences. See [POSIX Character Classes](#posix-character-classes) for more info. Can be disabled with the [`NOSEQ`](#noseq) flag.
 `\`               | Escapes characters. If applied to a meta character or non-meta characters, the character will be treated as a literal character. If applied to another escape, the backslash will be a literal backslash.
 `!`               | When used at the start of a pattern, the pattern will be an exclusion pattern. Requires the [`NEGATE`](#negate) flag. If also using the [`MINUSNEGATE`](#minusnegate) flag, `-` will be used instead of `!`.
 `?(pattern_list)` | The pattern matches if zero or one occurrences of any of the patterns in the `pattern_list` match the input string. Requires the [`EXTMATCH`](#extmatch) flag.
@@ -314,6 +314,15 @@ etc. See the [syntax overview](#syntax) for more information.
 When using `EXTMATCH` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
 be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTMATCH` pattern). To
 negate a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
+///
+
+#### `glob.NOSEQ, glob.NS` {: #noseq}
+
+`NOSEQ` disables the matching of sequences such as `[abc]`, `[0-9]`, or `[[:alnum:]]`. Instead, the `[` and `]` characters
+(and anything between them) are matched literally.
+
+/// new | New TODO_VERSION
+`NOSEQ` was added in TODO_VERSION.
 ///
 
 #### `fnmatch.BRACE, fnmatch.B` {: #brace}

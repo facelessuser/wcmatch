@@ -572,6 +572,15 @@ be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid 
 a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
 ///
 
+#### `glob.NOSEQ, glob.NS` {: #noseq}
+
+`NOSEQ` disables the matching of sequences such as `[abc]`, `[0-9]`, or `[[:alnum:]]`. Instead, the `[` and `]` characters
+(and anything between them) are matched literally.
+
+/// new | New TODO_VERSION
+`NOSEQ` was added in TODO_VERSION.
+///
+
 #### `pathlib.BRACE, pathlib.B` {: #brace}
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything
