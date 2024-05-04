@@ -109,7 +109,7 @@ class PurePath(pathlib.PurePath):
         sep = ''
         name = str(self)
         if isinstance(self, Path) and name and self.is_dir():
-            sep = self._flavour.sep
+            sep = self.parser.sep if util.PY313 else self._flavour.sep
 
         return name + sep
 
@@ -227,18 +227,28 @@ class Path(pathlib.Path):
         yield from self.glob(patterns, flags=flags | _EXTMATCHBASE, limit=limit, exclude=exclude)
 
 
-class PurePosixPath(PurePath):
-    """Pure Posix path."""
+if util.PY313:
+    class PurePosixPath(pathlib.PurePosixPath, PurePath):
+        """Pure Posix path."""
 
-    _flavour = pathlib._posix_flavour if not util.PY312 else posixpath  # type: ignore[attr-defined]
-    __slots__ = ()
+        __slots__ = ()
 
+    class PureWindowsPath(pathlib.PureWindowsPath, PurePath):
+        """Pure Windows path."""
 
-class PureWindowsPath(PurePath):
-    """Pure Windows path."""
+        __slots__ = ()
+else:
+    class PurePosixPath(PurePath):  # type: ignore[no-redef]
+        """Pure Posix path."""
 
-    _flavour = pathlib._windows_flavour if not util.PY312 else ntpath  # type: ignore[attr-defined]
-    __slots__ = ()
+        _flavour = pathlib._posix_flavour if not util.PY312 else posixpath  # type: ignore[attr-defined]
+        __slots__ = ()
+
+    class PureWindowsPath(PurePath):  # type: ignore[no-redef]
+        """Pure Windows path."""
+
+        _flavour = pathlib._windows_flavour if not util.PY312 else ntpath  # type: ignore[attr-defined]
+        __slots__ = ()
 
 
 class PosixPath(Path, PurePosixPath):
