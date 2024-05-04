@@ -17,7 +17,7 @@ jobs:
       max-parallel: 4
       matrix:
         platform: [ubuntu-latest, windows-latest]
-        python-version: [3.8, 3.9, '3.10', '3.11', '3.12', '3.13-dev']
+        python-version: [3.8, 3.9, '3.10', '3.11', '3.12', '3.13']
         include:
           - python-version: 3.8
             tox-env: py38
@@ -33,7 +33,7 @@ jobs:
             tox-env: py313
         exclude:
           - platform: windows-latest
-            python-version: '3.13-dev'
+            python-version: '3.13'
 
     env:
       TOXENV: ${{ matrix.tox-env }}
@@ -43,15 +43,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      if: "!endsWith(matrix.python-version, '-dev')"
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Set up development Python ${{ matrix.python-version }}
-      if: endsWith(matrix.python-version, '-dev')
-      uses: deadsnakes/action@v2.1.1
-      with:
-        python-version: ${{ matrix.python-version }}
+        allow-prereleases: true
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools tox coverage
