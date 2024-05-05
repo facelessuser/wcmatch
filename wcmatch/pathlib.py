@@ -1,7 +1,5 @@
 """Pathlib implementation that uses our own glob."""
 from __future__ import annotations
-import ntpath
-import posixpath
 import pathlib
 import os
 from . import glob
@@ -227,28 +225,16 @@ class Path(pathlib.Path):
         yield from self.glob(patterns, flags=flags | _EXTMATCHBASE, limit=limit, exclude=exclude)
 
 
-if util.PY313:
-    class PurePosixPath(pathlib.PurePosixPath, PurePath):
-        """Pure Posix path."""
+class PurePosixPath(PurePath, pathlib.PurePosixPath):
+    """Pure Posix path."""
 
-        __slots__ = ()
+    __slots__ = ()
 
-    class PureWindowsPath(pathlib.PureWindowsPath, PurePath):
-        """Pure Windows path."""
 
-        __slots__ = ()
-else:
-    class PurePosixPath(PurePath):  # type: ignore[no-redef]
-        """Pure Posix path."""
+class PureWindowsPath(PurePath, pathlib.PureWindowsPath):
+    """Pure Windows path."""
 
-        _flavour = pathlib._posix_flavour if not util.PY312 else posixpath  # type: ignore[attr-defined]
-        __slots__ = ()
-
-    class PureWindowsPath(PurePath):  # type: ignore[no-redef]
-        """Pure Windows path."""
-
-        _flavour = pathlib._windows_flavour if not util.PY312 else ntpath  # type: ignore[attr-defined]
-        __slots__ = ()
+    __slots__ = ()
 
 
 class PosixPath(Path, PurePosixPath):
