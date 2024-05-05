@@ -1,7 +1,5 @@
 """Pathlib implementation that uses our own glob."""
 from __future__ import annotations
-import ntpath
-import posixpath
 import pathlib
 import os
 from . import glob
