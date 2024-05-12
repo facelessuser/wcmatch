@@ -310,9 +310,9 @@ is called on every new [`match`](#match) call.
 `HIDDEN` enables the crawling of hidden directories and will return hidden files if the wildcard pattern matches. This
 enables not just dot files, but system hidden files as well.
 
-#### `wcmatch.SYMLINK, wcmatch.SL` {: #symlink}
+#### `wcmatch.SYMLINKS, wcmatch.SL` {: #symlinks}
 
-`SYMLINK` enables the crawling of symlink directories. By default, symlink directories are ignored during the file
+`SYMLINKS` enables the crawling of symlink directories. By default, symlink directories are ignored during the file
 crawl.
 
 #### `wcmatch.CASE, wcmatch.C` {: #case}
