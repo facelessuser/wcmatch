@@ -1,5 +1,10 @@
 # Changelog
 
+## 8.5.2
+
+-   **FIX**: Fix `pathlib` issue with inheritance on Python versions greater than 3.12.
+-   **FIX**: Fix `EXTMATCH` case with `!(...)` patterns.
+
 ## 8.5.1
 
 -   **FIX**: Fix issue with type check failure in `wcmatch.glob`.
