@@ -148,6 +148,10 @@ class TestFnMatch:
         ['!(test)', 'abc', True, fnmatch.D | fnmatch.E],
         ['!(test)', '..', False, fnmatch.D | fnmatch.E],
 
+        # Negation list followed by extended list
+        ['!(2)_@(foo|bar)', '1_foo', True, fnmatch.E],
+        ['!(!(2|3))_@(foo|bar)', '2_foo', True, fnmatch.E],
+
         # POSIX style character classes
         ['[[:alnum:]]bc', 'zbc', True, 0],
         ['[[:alnum:]]bc', '1bc', True, 0],

@@ -1435,7 +1435,8 @@ class WcParse(Generic[AnyStr]):
                         extended.append(self._restrict_extended_slash())
                     extended.append(self.sep)
                 elif c == "|":
-                    self.clean_up_inverse(extended, temp_inv_nest and self.inv_nest)
+                    if self.inv_nest:
+                        self.clean_up_inverse(extended, temp_inv_nest)
                     extended.append(c)
                     if temp_after_start:
                         self.set_start_dir()
