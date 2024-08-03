@@ -1373,7 +1373,7 @@ class TestGlobCornerCaseMarked(Testglob):
 class TestGlobEscapes(unittest.TestCase):
     """Test escaping."""
 
-    def check_escape(self, arg, expected, raw=False, unix=None, raw_chars=True):
+    def check_escape(self, arg, expected, unix=None):
         """Verify escapes."""
 
         flags = 0
@@ -1382,38 +1382,15 @@ class TestGlobEscapes(unittest.TestCase):
         elif unix is True:
             flags = glob.FORCEUNIX
 
-        if raw:
-            self.assertEqual(glob.raw_escape(arg, unix=unix, raw_chars=raw_chars), expected)
-            self.assertEqual(glob.raw_escape(os.fsencode(arg), unix=unix, raw_chars=raw_chars), os.fsencode(expected))
-            file = (util.norm_pattern(arg, False, True) if raw_chars else arg).replace('\\\\', '\\')
-            self.assertTrue(
-                glob.globmatch(
-                    file,
-                    glob.raw_escape(arg, unix=unix, raw_chars=raw_chars),
-                    flags=flags
-                )
+        self.assertEqual(glob.escape(arg, unix=unix), expected)
+        self.assertEqual(glob.escape(os.fsencode(arg), unix=unix), os.fsencode(expected))
+        self.assertTrue(
+            glob.globmatch(
+                arg,
+                glob.escape(arg, unix=unix),
+                flags=flags
             )
-        else:
-            self.assertEqual(glob.escape(arg, unix=unix), expected)
-            self.assertEqual(glob.escape(os.fsencode(arg), unix=unix), os.fsencode(expected))
-            self.assertTrue(
-                glob.globmatch(
-                    arg,
-                    glob.escape(arg, unix=unix),
-                    flags=flags
-                )
-            )
-
-    def test_raw_escape_deprecation(self):
-        """Test raw escape deprecation."""
-
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-
-            glob.raw_escape(r'test\\test')
-
-            self.assertTrue(len(w) == 1)
-            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
+        )
 
     def test_escape(self):
         """Test path escapes."""
@@ -1425,34 +1402,6 @@ class TestGlobEscapes(unittest.TestCase):
         check('*', r'\*')
         check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_\]\]')
         check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_\]\]/')
-
-    def test_raw_escape(self):
-        """Test path escapes."""
-
-        check = self.check_escape
-        check(r'abc', 'abc', raw=True)
-        check(r'[', r'\[', raw=True)
-        check(r'?', r'\?', raw=True)
-        check(r'*', r'\*', raw=True)
-        check(r'[[_/*?*/_]]', r'\[\[_/\*\?\*/_\]\]', raw=True)
-        check(r'/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_\]\]/', raw=True)
-        check(r'\x3f', r'\?', raw=True)
-        check(r'\\\\[^what]\\name\\temp', r'\\\\[^what]\\name\\temp', raw=True, unix=False)
-        check('//[^what]/name/temp', r'//[^what]/name/temp', raw=True, unix=False)
-
-    def test_raw_escape_no_raw_chars(self):
-        """Test path escapes with no raw character translations."""
-
-        check = self.check_escape
-        check(r'abc', 'abc', raw=True, raw_chars=False)
-        check(r'[', r'\[', raw=True, raw_chars=False)
-        check(r'?', r'\?', raw=True, raw_chars=False)
-        check(r'*', r'\*', raw=True, raw_chars=False)
-        check(r'[[_/*?*/_]]', r'\[\[_/\*\?\*/_\]\]', raw=True, raw_chars=False)
-        check(r'/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_\]\]/', raw=True, raw_chars=False)
-        check(r'\x3f', r'\\x3f', raw=True, raw_chars=False)
-        check(r'\\\\[^what]\\name\\temp', r'\\\\[^what]\\name\\temp', raw=True, raw_chars=False, unix=False)
-        check('//[^what]/name/temp', r'//[^what]/name/temp', raw=True, raw_chars=False, unix=False)
 
     @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
     def test_escape_windows(self):

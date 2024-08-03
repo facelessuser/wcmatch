@@ -203,7 +203,7 @@ Translate patterns now provide capturing groups for [`EXTMATCH`](#extmatch) grou
 def escape(pattern):
 ```
 
-The `escape` function will conservatively escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `{`, `}`. and `\` with
+The `escape` function will conservatively escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `{`, `}`, and `\` with
 backslashes, regardless of what feature is or is not enabled. It is meant to escape filenames.
 
 ```pycon3

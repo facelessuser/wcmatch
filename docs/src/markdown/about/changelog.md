@@ -1,5 +1,10 @@
 # Changelog
 
+## 9.0
+
+-   **NEW**: Remove deprecated function `glob.raw_escape`.
+-   **NEW**: Officially support Python 3.13.
+
 ## 8.5.2
 
 -   **FIX**: Fix `pathlib` issue with inheritance on Python versions greater than 3.12.

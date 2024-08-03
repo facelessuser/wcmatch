@@ -172,13 +172,13 @@ class Path(pathlib.Path):
             else:
                 self = cls._from_parts(args, init=False)  # type: ignore[attr-defined]
             if not self._flavour.is_supported:
-                raise NotImplementedError("Cannot instantiate {!r} on your system".format(cls.__name__))
+                raise NotImplementedError(f"Cannot instantiate {cls.__name__!r} on your system")
             if not util.PY310:
                 self._init()
             return self  # type: ignore[no-any-return]
         else:
             if cls is WindowsPath and not win_host or cls is not WindowsPath and win_host:
-                raise NotImplementedError("Cannot instantiate {!r} on your system".format(cls.__name__))
+                raise NotImplementedError(f"Cannot instantiate {cls.__name__!r} on your system")
             return object.__new__(cls)
 
     def glob(  # type: ignore[override]

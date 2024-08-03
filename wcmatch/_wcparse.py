@@ -7,7 +7,7 @@ import os
 from . import util
 from . import posix
 from . _wcmatch import WcRegexp
-from typing import AnyStr, Iterable, Pattern, Generic, Sequence, overload, cast
+from typing import AnyStr, Iterable, Pattern, Generic, Sequence, overload
 
 UNICODE_RANGE = '\u0000-\U0010ffff'
 ASCII_RANGE = '\x00-\xff'
@@ -205,7 +205,7 @@ _PATH_STAR = r'[^{sep}]*?'
 _PATH_STAR_DOTMATCH = _NO_DIR + _PATH_STAR
 # Star for `PATHNAME` when `DOTMATCH` is disabled and start is at start of file.
 # Disallow . and .. and don't allow match to start with a dot.
-_PATH_STAR_NO_DOTMATCH = _NO_DIR + r'(?:(?!\.){})?'.format(_PATH_STAR)
+_PATH_STAR_NO_DOTMATCH = _NO_DIR + fr'(?:(?!\.){_PATH_STAR})?'
 # `GLOBSTAR` during `DOTMATCH`. Avoid directory match /./ or /../
 _PATH_GSTAR_DOTMATCH = r'(?:(?!(?:[{sep}]|^)(?:\.{{1,2}})($|[{sep}])).)*?'
 # `GLOBSTAR` with `DOTMATCH` disabled. Don't allow a dot to follow /
@@ -250,7 +250,7 @@ _CAPTURE_GROUP = r'((?#){})'
 _EXCLA_GROUP = r'(?:(?!(?:{})'
 _EXCLA_CAPTURE_GROUP = r'((?#)(?!(?:{})'
 # Closing for inverse group
-_EXCLA_GROUP_CLOSE = r'){})'
+_EXCLA_GROUP_CLOSE = '){})'
 # Restrict root
 _NO_ROOT = r'(?!/)'
 _NO_WIN_ROOT = r'(?!(?:[\\/]|[a-zA-Z]:))'
@@ -300,35 +300,32 @@ def iter_patterns(patterns: AnyStr | Sequence[AnyStr]) -> Iterable[AnyStr]:
         yield from patterns
 
 
-def escape(pattern: AnyStr, unix: bool | None = None, pathname: bool = True, raw: bool = False) -> AnyStr:
+def escape(pattern: AnyStr, unix: bool | None = None, pathname: bool = True) -> AnyStr:
     """
     Escape.
 
     `unix`: use Unix style path logic.
     `pathname`: Use path logic.
-    `raw`: Handle raw strings (deprecated)
-
     """
 
     if isinstance(pattern, bytes):
-        drive_pat = cast(Pattern[AnyStr], RE_WIN_DRIVE[util.BYTES])
-        magic = cast(Pattern[AnyStr], RE_MAGIC_ESCAPE[util.BYTES])
-        drive_magic = cast(Pattern[AnyStr], RE_WIN_DRIVE_MAGIC[util.BYTES])
+        drive_pat = RE_WIN_DRIVE[util.BYTES]  # type: Pattern[AnyStr]  # type: ignore[assignment]
+        magic = RE_MAGIC_ESCAPE[util.BYTES]  # type: Pattern[AnyStr]  # type: ignore[assignment]
+        drive_magic = RE_WIN_DRIVE_MAGIC[util.BYTES]  # type: Pattern[AnyStr]  # type: ignore[assignment]
         replace = br'\\\1'
         slash = b'\\'
         double_slash = b'\\\\'
         drive = b''
     else:
-        drive_pat = cast(Pattern[AnyStr], RE_WIN_DRIVE[util.UNICODE])
-        magic = cast(Pattern[AnyStr], RE_MAGIC_ESCAPE[util.UNICODE])
-        drive_magic = cast(Pattern[AnyStr], RE_WIN_DRIVE_MAGIC[util.UNICODE])
+        drive_pat = RE_WIN_DRIVE[util.UNICODE]  # type: ignore[assignment]
+        magic = RE_MAGIC_ESCAPE[util.UNICODE]  # type: ignore[assignment]
+        drive_magic = RE_WIN_DRIVE_MAGIC[util.UNICODE]  # type: ignore[assignment]
         replace = r'\\\1'
         slash = '\\'
         double_slash = '\\\\'
         drive = ''
 
-    if not raw:
-        pattern = pattern.replace(slash, double_slash)
+    pattern = pattern.replace(slash, double_slash)
 
     # Handle windows drives special.
     # Windows drives are handled special internally.
@@ -408,28 +405,27 @@ def _get_magic_symbols(pattern: AnyStr, unix: bool, flags: int) -> tuple[set[Any
         ptype = util.UNICODE
         slash = '\\'
 
-    magic = set()  # type: set[AnyStr]
     if unix:
         magic_drive = set()  # type: set[AnyStr]
     else:
         magic_drive = {slash}
 
-    magic |= cast('set[AnyStr]', MAGIC_DEF[ptype])
+    magic = set(MAGIC_DEF[ptype])  # type: set[AnyStr]  # type: ignore[arg-type]
     if flags & BRACE:
-        magic |= cast('set[AnyStr]', MAGIC_BRACE[ptype])
-        magic_drive |= cast('set[AnyStr]', MAGIC_BRACE[ptype])
+        magic |= MAGIC_BRACE[ptype]  # type: ignore[arg-type]
+        magic_drive |= MAGIC_BRACE[ptype]  # type: ignore[arg-type]
     if flags & SPLIT:
-        magic |= cast('set[AnyStr]', MAGIC_SPLIT[ptype])
-        magic_drive |= cast('set[AnyStr]', MAGIC_SPLIT[ptype])
+        magic |= MAGIC_SPLIT[ptype]  # type: ignore[arg-type]
+        magic_drive |= MAGIC_SPLIT[ptype]  # type: ignore[arg-type]
     if flags & GLOBTILDE:
-        magic |= cast('set[AnyStr]', MAGIC_TILDE[ptype])
+        magic |= MAGIC_TILDE[ptype]  # type: ignore[arg-type]
     if flags & EXTMATCH:
-        magic |= cast('set[AnyStr]', MAGIC_EXTMATCH[ptype])
+        magic |= MAGIC_EXTMATCH[ptype]  # type: ignore[arg-type]
     if flags & NEGATE:
         if flags & MINUSNEGATE:
-            magic |= cast('set[AnyStr]', MAGIC_MINUS_NEGATE[ptype])
+            magic |= MAGIC_MINUS_NEGATE[ptype]  # type: ignore[arg-type]
         else:
-            magic |= cast('set[AnyStr]', MAGIC_NEGATE[ptype])
+            magic |= MAGIC_NEGATE[ptype]  # type: ignore[arg-type]
 
     return magic, magic_drive
 
@@ -445,7 +441,7 @@ def is_magic(pattern: AnyStr, flags: int = 0) -> bool:
     else:
         ptype = util.UNICODE
 
-    drive_pat = cast(Pattern[AnyStr], RE_WIN_DRIVE[ptype])
+    drive_pat = RE_WIN_DRIVE[ptype]  # type: Pattern[AnyStr]  # type: ignore[assignment]
 
     magic, magic_drive = _get_magic_symbols(pattern, unix, flags)
     is_path = flags & PATHNAME
@@ -524,8 +520,8 @@ def expand_tilde(pattern: AnyStr, is_unix: bool, flags: int) -> AnyStr:
 
     if pos > -1:
         string_type = util.BYTES if isinstance(pattern, bytes) else util.UNICODE
-        tilde = cast(AnyStr, TILDE_SYM[string_type])
-        re_tilde = cast(Pattern[AnyStr], RE_WIN_TILDE[string_type] if not is_unix else RE_TILDE[string_type])
+        tilde = TILDE_SYM[string_type]  # type: AnyStr  # type: ignore[assignment]
+        re_tilde = RE_WIN_TILDE[string_type] if not is_unix else RE_TILDE[string_type]  # type: Pattern[AnyStr]  # type: ignore[assignment]
         m = re_tilde.match(pattern, pos)
         if m:
             expanded = os.path.expanduser(m.group(0))
@@ -569,7 +565,7 @@ def get_case(flags: int) -> bool:
 def escape_drive(drive: str, case: bool) -> str:
     """Escape drive."""
 
-    return '(?i:{})'.format(re.escape(drive)) if case else re.escape(drive)
+    return f'(?i:{re.escape(drive)})' if case else re.escape(drive)
 
 
 def is_unix_style(flags: int) -> bool:
@@ -644,7 +640,7 @@ def translate(
                 count += 1
                 total += 1
                 if 0 < limit < total:
-                    raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
+                    raise PatternLimitException(f"Pattern limit exceeded the limit of {limit:d}")
                 if expanded not in seen:
                     seen.add(expanded)
                     if is_negative(expanded, flags):
@@ -656,7 +652,7 @@ def translate(
                 if current_limit < 1:
                     current_limit = 1
     except bracex.ExpansionLimitException as e:
-        raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit)) from e
+        raise PatternLimitException(f"Pattern limit exceeded the limit of {limit:d}") from e
 
     if negative and not positive:
         if flags & NEGATEALL:
@@ -667,7 +663,7 @@ def translate(
 
     if positive and flags & NODIR:
         index = util.BYTES if isinstance(positive[0], bytes) else util.UNICODE
-        negative.append(cast(AnyStr, _NO_NIX_DIR[index] if is_unix else _NO_WIN_DIR[index]))
+        negative.append(_NO_NIX_DIR[index] if is_unix else _NO_WIN_DIR[index])  # type: ignore[arg-type]
 
     return positive, negative
 
@@ -730,7 +726,7 @@ def compile_pattern(
                 count += 1
                 total += 1
                 if 0 < limit < total:
-                    raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit))
+                    raise PatternLimitException(f"Pattern limit exceeded the limit of {limit:d}")
                 if expanded not in seen:
                     seen.add(expanded)
                     if is_negative(expanded, flags):
@@ -742,7 +738,7 @@ def compile_pattern(
                 if current_limit < 1:
                     current_limit = 1
     except bracex.ExpansionLimitException as e:
-        raise PatternLimitException("Pattern limit exceeded the limit of {:d}".format(limit)) from e
+        raise PatternLimitException(f"Pattern limit exceeded the limit of {limit:d}") from e
 
     if negative and not positive:
         if flags & NEGATEALL:
@@ -751,7 +747,7 @@ def compile_pattern(
 
     if positive and flags & NODIR:
         ptype = util.BYTES if isinstance(positive[0].pattern, bytes) else util.UNICODE
-        negative.append(cast(Pattern[AnyStr], RE_NO_DIR[ptype] if is_unix else RE_WIN_NO_DIR[ptype]))
+        negative.append(RE_NO_DIR[ptype] if is_unix else RE_WIN_NO_DIR[ptype])  # type: ignore[arg-type]
 
     return positive, negative
 
@@ -966,7 +962,7 @@ class WcParse(Generic[AnyStr]):
             self.bslash_abort = False
             sep = {"sep": re.escape('/')}
         self.bare_sep = sep['sep']
-        self.sep = '[{}]'.format(self.bare_sep)
+        self.sep = f'[{self.bare_sep}]'
         self.path_eop = _PATH_EOP.format(**sep)
         self.no_dir = _NO_DIR.format(**sep)
         self.seq_path = _PATH_NO_SLASH.format(**sep)
@@ -1159,12 +1155,12 @@ class WcParse(Generic[AnyStr]):
             if value == '[]':
                 # We specified some ranges, but they are all
                 # out of reach.  Create an impossible sequence to match.
-                result = ['[^{}]'.format(ASCII_RANGE if self.is_bytes else UNICODE_RANGE)]
+                result = [f'[^{ASCII_RANGE if self.is_bytes else UNICODE_RANGE}]']
             elif value == '[^]':
                 # We specified some range, but hey are all
                 # out of reach. Since this is exclusive
                 # that means we can match *anything*.
-                result = ['[{}]'.format(ASCII_RANGE if self.is_bytes else UNICODE_RANGE)]
+                result = [f'[{ASCII_RANGE if self.is_bytes else UNICODE_RANGE}]']
             else:
                 result = [value]
 
@@ -1260,7 +1256,7 @@ class WcParse(Generic[AnyStr]):
                 i.rewind(i.index - index)
 
         if not is_current and not is_previous:
-            current.append(r'(?!\.[.]?{})\.'.format(self.path_eop))
+            current.append(rf'(?!\.[.]?{self.path_eop})\.')
         else:
             current.append(re.escape('.'))
 
@@ -1278,7 +1274,7 @@ class WcParse(Generic[AnyStr]):
                 star = self.path_star
                 globstar = self.path_gstar_dot1
             if self.globstar_capture:
-                globstar = '({})'.format(globstar)
+                globstar = f'({globstar})'
         else:
             if self.after_start and not self.dot:
                 star = _NO_DOT + _STAR
@@ -1671,7 +1667,7 @@ class WcParse(Generic[AnyStr]):
             result = prepend + result
 
         case_flag = 'i' if not self.case_sensitive else ''
-        pattern = R'^(?s{}:{})$'.format(case_flag, ''.join(result))
+        pattern = Rf'^(?s{case_flag}:{"".join(result)})$'
 
         if self.capture:
             # Strip out unnecessary regex comments

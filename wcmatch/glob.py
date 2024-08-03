@@ -13,7 +13,7 @@ import bracex
 from . import _wcparse
 from . import _wcmatch
 from . import util
-from typing import Iterator, Iterable, AnyStr, Generic, Pattern, Callable, Any, Sequence, cast
+from typing import Iterator, Iterable, AnyStr, Generic, Pattern, Callable, Any, Sequence
 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
@@ -21,7 +21,7 @@ __all__ = (
     "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX", "GLOBTILDE",
     "NODOTDIR", "SCANDOTDIR", "SUPPORT_DIR_FD",
     "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T", "Q", "Z", "SD",
-    "iglob", "glob", "globmatch", "globfilter", "escape", "raw_escape", "is_magic"
+    "iglob", "glob", "globmatch", "globfilter", "escape", "is_magic"
 )
 
 # We don't use `util.platform` only because we mock it in tests,
@@ -280,7 +280,7 @@ class _GlobSplit(Generic[AnyStr]):
         globstar = value in (b'**', '**') and self.globstar
         magic = self.is_magic(value)
         if magic:
-            v = cast(Pattern[AnyStr], _wcparse._compile(value, self.flags))  # type: Pattern[AnyStr] | AnyStr
+            v = _wcparse._compile(value, self.flags)  # type: Pattern[AnyStr] | AnyStr
         else:
             v = value
         if globstar and l and l[-1].is_globstar:
@@ -348,13 +348,13 @@ class _GlobSplit(Generic[AnyStr]):
 
         for split, offset in split_index:
             value = pattern[start + 1:split]
-            self.store(cast(AnyStr, value.encode('latin-1') if is_bytes else value), parts, True)
+            self.store(value.encode('latin-1') if is_bytes else value, parts, True)  # type: ignore[arg-type]
             start = split + offset
 
         if start < len(pattern):
             value = pattern[start + 1:]
             if value:
-                self.store(cast(AnyStr, value.encode('latin-1') if is_bytes else value), parts, False)
+                self.store(value.encode('latin-1') if is_bytes else value, parts, False)  # type: ignore[arg-type]
 
         if len(pattern) == 0:
             parts.append(_GlobPart(pattern.encode('latin-1') if is_bytes else pattern, False, False, False, False))
@@ -438,8 +438,8 @@ class Glob(Generic[AnyStr]):
             self.stars = b'**'  # type: AnyStr
             self.sep = b'\\' if forcewin else b'/'  # type: AnyStr
             self.seps = (b'/', self.sep) if forcewin else (self.sep,)  # type: tuple[AnyStr, ...]
-            self.re_pathlib_norm = cast(Pattern[AnyStr], _RE_WIN_PATHLIB_DOT_NORM[ptype])  # type: Pattern[AnyStr]
-            self.re_no_dir = cast(Pattern[AnyStr], _wcparse.RE_WIN_NO_DIR[ptype])  # type: Pattern[AnyStr]
+            self.re_pathlib_norm = _RE_WIN_PATHLIB_DOT_NORM[ptype]  # type: Pattern[AnyStr]  # type: ignore[assignment]
+            self.re_no_dir = _wcparse.RE_WIN_NO_DIR[ptype]  # type: Pattern[AnyStr]  # type: ignore[assignment]
         else:
             ptype = util.UNICODE
             self.current = '.'
@@ -448,15 +448,13 @@ class Glob(Generic[AnyStr]):
             self.stars = '**'
             self.sep = '\\' if forcewin else '/'
             self.seps = ('/', self.sep) if forcewin else (self.sep,)
-            self.re_pathlib_norm = cast(Pattern[AnyStr], _RE_WIN_PATHLIB_DOT_NORM[ptype])
-            self.re_no_dir = cast(Pattern[AnyStr], _wcparse.RE_WIN_NO_DIR[ptype])
+            self.re_pathlib_norm = _RE_WIN_PATHLIB_DOT_NORM[ptype]  # type: ignore[assignment]
+            self.re_no_dir = _wcparse.RE_WIN_NO_DIR[ptype]  # type: ignore[assignment]
 
         temp = os.fspath(root_dir) if root_dir is not None else self.current
         if not isinstance(temp, bytes if ptype else str):
             raise TypeError(
-                'Pattern and root_dir should be of the same type, not {} and {}'.format(
-                    type(pats[0]), type(temp)
-                )
+                f'Pattern and root_dir should be of the same type, not {type(pats[0])} and {type(temp)}'
             )
 
         self.root_dir = temp  # type: AnyStr
@@ -479,7 +477,7 @@ class Glob(Generic[AnyStr]):
                     total += 1
                     if 0 < self.limit < total:
                         raise _wcparse.PatternLimitException(
-                            "Pattern limit exceeded the limit of {:d}".format(self.limit)
+                            f"Pattern limit exceeded the limit of {self.limit:d}"
                         )
                     # Filter out duplicate patterns. If `NOUNIQUE` is enabled,
                     # we only want to filter on negative patterns as they are
@@ -497,7 +495,7 @@ class Glob(Generic[AnyStr]):
                         self.current_limit = 1
         except bracex.ExpansionLimitException as e:
             raise _wcparse.PatternLimitException(
-                "Pattern limit exceeded the limit of {:d}".format(self.limit)
+                f"Pattern limit exceeded the limit of {self.limit:d}"
             ) from e
 
     def _parse_patterns(self, patterns: Sequence[AnyStr], force_negate: bool = False) -> None:
@@ -508,7 +506,7 @@ class Glob(Generic[AnyStr]):
                 # Treat the inverse pattern as a normal pattern if it matches, we will exclude.
                 # This is faster as compiled patterns usually compare the include patterns first,
                 # and then the exclude, but glob will already know it wants to include the file.
-                self.npatterns.append(cast(Pattern[AnyStr], _wcparse._compile(p, self.negate_flags)))
+                self.npatterns.append(_wcparse._compile(p, self.negate_flags))
             else:
                 self.pattern.append(_GlobSplit(p, self.flags).split())
 
@@ -946,15 +944,6 @@ def globfilter(
         if obj.match(temp, rdir, dir_fd):
             matches.append(filename)
     return matches
-
-
-@util.deprecated("This function will be removed in 9.0.")
-def raw_escape(pattern: AnyStr, unix: bool | None = None, raw_chars: bool = True) -> AnyStr:
-    """Apply raw character transform before applying escape."""
-
-    return _wcparse.escape(
-        util.norm_pattern(pattern, False, raw_chars, True), unix=unix, pathname=True, raw=True
-    )
 
 
 def escape(pattern: AnyStr, unix: bool | None = None) -> AnyStr:

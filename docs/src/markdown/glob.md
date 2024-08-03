@@ -600,7 +600,7 @@ Translate patterns now provide capturing groups for [`EXTGLOB`](#extglob) groups
 def escape(pattern, unix=None):
 ```
 
-The `escape` function will conservatively escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `{`, `}`. and `\` with
+The `escape` function will conservatively escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `{`, `}`, and `\` with
 backslashes, regardless of what feature is or is not enabled. It is meant to escape path parts (filenames, Windows
 drives, UNC sharepoints) or full paths.
 
@@ -658,90 +658,6 @@ force Windows style escaping.
 /// new | New 7.0
 `{`, `}`, and `|` will be escaped in Windows drives. Additionally, users can escape these characters in Windows
 drives manually in their match patterns as well.
-///
-
-#### `glob.raw_escape` {: #raw_escape}
-
-/// warning | Deprecated 8.1
-In 8.1, `raw_escape` has been deprecated. The same can be accomplished simply by using `codecs` and then using the
-normal [`escape`](#escape):
-
-```pycon3
->>> string = r"translate\\raw strings\\\u00c3\xc3\303\N{LATIN CAPITAL LETTER A WITH TILDE}"
->>> translated = codecs.decode(string, 'unicode_escape')
->>> glob.escape(translated)
-'translate\\\\raw strings\\\\ÃÃÃÃ'
->>> glob.raw_escape(string)
-'translate\\\\raw strings\\\\ÃÃÃÃ'
-```
-///
-
-```py3
-def raw_escape(pattern, unix=None, raw_chars=True):
-```
-
-`raw_escape` is kind of a niche function and 99% of the time, it is recommended to use [`escape`](#escape).
-
-The big difference between `raw_escape` and [`escape`](#escape) is how `\` are handled. `raw_escape` is mainly for paths
-provided to Python via an interface that doesn't process Python strings like they normally are, for instance an input
-in a GUI.
-
-To illustrate, you may have an interface to input path names, but may want to take advantage of Python Unicode
-references. Normally, on a python command line, you can do this:
-
-```pycon3
->>> 'folder\\El Ni\u00f1o'
-'folder\\El Niño'
-```
-
-But when in a GUI interface, if a user inputs the same, it's like getting a raw string.
-
-```pycon3
->>> r'folder\\El Ni\u00f1o'
-'folder\\\\El Ni\\u00f1o'
-```
-
-`raw_escape` will take a raw string in the above format and resolve character escapes and escape the path as if it was
-a normal string.  Notice to do this, we must treat literal Windows' path backslashes as an escaped backslash.
-
-```pycon3
->>> glob.escape('folder\\El Ni\u00f1o', unix=False)
-'folder\\\\El Niño'
->>> glob.raw_escape(r'folder\\El Ni\u00f1o')
-'folder\\\\El Niño'
-```
-
-Handling of raw character references can be turned off if desired:
-
-```pycon3
->>> glob.raw_escape(r'my\\file-\x31.txt', unix=False)
-'my\\\\file\\-1.txt'
->>> glob.raw_escape(r'my\\file-\x31.txt', unix=False, raw_chars=False)
-'my\\\\file\\-\\\\x31.txt'
-```
-
-Outside of the treatment of `\`, `raw_escape` will function just like [`escape`](#escape):
-
-`raw_escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since
-[`globmatch`](#globmatch) allows you to match Unix style paths on a Windows system, and vice versa, you can force
-Unix style escaping or Windows style escaping via the `unix` parameter. When `unix` is `None`, the escape style will be
-detected, when `unix` is `True` Linux/Unix style escaping will be used, and when `unix` is `False` Windows style
-escaping will be used.
-
-```pycon3
->>> glob.raw_escape(r'some/path?/\x2a\x2afile\x2a\x2a{}.txt', unix=True)
-```
-
-/// new | New 5.0
-The `unix` parameter is now `None` by default. Set to `True` to force Linux/Unix style escaping or set to `False` to
-force Windows style escaping.
-///
-
-/// new | New 7.0
-`{`, `}`, and `|` will be escaped in Windows drives. Additionally, users can escape these characters in Windows
-drives manually in their match patterns as well.
-
-`raw_chars` option was added.
 ///
 
 ### `glob.is_magic` {: #is_magic}

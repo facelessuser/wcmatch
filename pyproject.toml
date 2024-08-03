@@ -111,7 +111,7 @@ legacy_tox_ini = """
 isolated_build = true
 skipsdist=true
 envlist=
-    py38,py39,py310,py311,py312,
+    py38,py39,py310,py311,py312,py313,
     lint
 
 [testenv]
