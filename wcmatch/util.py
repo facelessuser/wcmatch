@@ -78,7 +78,7 @@ def is_case_sensitive() -> bool:
     return CASE_FS
 
 
-def norm_pattern(pattern: AnyStr, normalize: bool | None, is_raw_chars: bool, ignore_escape: bool = False) -> AnyStr:
+def norm_pattern(pattern: AnyStr, normalize: bool | None, is_raw_chars: bool) -> AnyStr:
     r"""
     Normalize pattern.
 
@@ -99,7 +99,7 @@ def norm_pattern(pattern: AnyStr, normalize: bool | None, is_raw_chars: bool, ig
         multi_slash = slash * 4
         pat = RE_NORM
 
-    if not normalize and not is_raw_chars and not ignore_escape:
+    if not normalize and not is_raw_chars:
         return pattern
 
     def norm(m: Match[AnyStr]) -> AnyStr:
@@ -119,8 +119,6 @@ def norm_pattern(pattern: AnyStr, normalize: bool | None, is_raw_chars: bool, ig
             char = unicodedata.lookup(m.group(5)[3:-1])
         elif not is_raw_chars or m.group(5 if is_bytes else 6):
             char = m.group(0)
-            if ignore_escape:
-                char = slash + char
         else:
             value = m.group(6) if is_bytes else m.group(7)
             pos = m.start(6) if is_bytes else m.start(7)
