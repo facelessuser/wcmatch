@@ -5,7 +5,7 @@ import os
 import stat
 import copyreg
 from . import util
-from typing import Pattern, AnyStr, Generic, Any, cast
+from typing import Pattern, AnyStr, Generic, Any
 
 # `O_DIRECTORY` may not always be defined
 DIR_FLAGS = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
@@ -192,7 +192,7 @@ class _Match(Generic[AnyStr]):
                     )
                 )
 
-            re_mount = cast(Pattern[AnyStr], (RE_WIN_MOUNT if util.platform() == "windows" else RE_MOUNT)[self.ptype])
+            re_mount = (RE_WIN_MOUNT if util.platform() == "windows" else RE_MOUNT)[self.ptype]  # type: Pattern[AnyStr]  # type: ignore[assignment]
             is_abs = re_mount.match(self.filename) is not None
 
             if is_abs:

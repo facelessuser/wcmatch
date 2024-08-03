@@ -7,7 +7,7 @@ import re
 import unicodedata
 from functools import wraps
 import warnings
-from typing import Any, Callable, AnyStr, Match, Pattern, cast
+from typing import Any, Callable, AnyStr, Match, Pattern
 
 PY310 = (3, 10) <= sys.version_info
 PY312 = (3, 12) <= sys.version_info
@@ -78,7 +78,7 @@ def is_case_sensitive() -> bool:
     return CASE_FS
 
 
-def norm_pattern(pattern: AnyStr, normalize: bool | None, is_raw_chars: bool, ignore_escape: bool = False) -> AnyStr:
+def norm_pattern(pattern: AnyStr, normalize: bool | None, is_raw_chars: bool) -> AnyStr:
     r"""
     Normalize pattern.
 
@@ -99,7 +99,7 @@ def norm_pattern(pattern: AnyStr, normalize: bool | None, is_raw_chars: bool, ig
         multi_slash = slash * 4
         pat = RE_NORM
 
-    if not normalize and not is_raw_chars and not ignore_escape:
+    if not normalize and not is_raw_chars:
         return pattern
 
     def norm(m: Match[AnyStr]) -> AnyStr:
@@ -110,21 +110,19 @@ def norm_pattern(pattern: AnyStr, normalize: bool | None, is_raw_chars: bool, ig
             if normalize and len(char) > 1:
                 char = multi_slash
         elif m.group(2):
-            char = cast(AnyStr, BACK_SLASH_TRANSLATION[m.group(2)] if is_raw_chars else m.group(2))
+            char = BACK_SLASH_TRANSLATION[m.group(2)] if is_raw_chars else m.group(2)
         elif is_raw_chars and m.group(4):
-            char = cast(AnyStr, bytes([int(m.group(4), 8) & 0xFF]) if is_bytes else chr(int(m.group(4), 8)))
+            char = bytes([int(m.group(4), 8) & 0xFF]) if is_bytes else chr(int(m.group(4), 8))
         elif is_raw_chars and m.group(3):
-            char = cast(AnyStr, bytes([int(m.group(3)[2:], 16)]) if is_bytes else chr(int(m.group(3)[2:], 16)))
+            char = bytes([int(m.group(3)[2:], 16)]) if is_bytes else chr(int(m.group(3)[2:], 16))
         elif is_raw_chars and not is_bytes and m.group(5):
             char = unicodedata.lookup(m.group(5)[3:-1])
         elif not is_raw_chars or m.group(5 if is_bytes else 6):
             char = m.group(0)
-            if ignore_escape:
-                char = slash + char
         else:
             value = m.group(6) if is_bytes else m.group(7)
             pos = m.start(6) if is_bytes else m.start(7)
-            raise SyntaxError("Could not convert character value {!r} at position {:d}".format(value, pos))
+            raise SyntaxError(f"Could not convert character value {value!r} at position {pos:d}")
         return char
 
     return pat.sub(norm, pattern)

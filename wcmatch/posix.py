@@ -73,4 +73,4 @@ def get_posix_property(value: str, limit_ascii: bool = False) -> str:
         else:
             return unicode_posix_properties[value]
     except Exception as e:  # pragma: no cover
-        raise ValueError("'{} is not a valid posix property".format(value)) from e
+        raise ValueError(f"'{value} is not a valid posix property") from e
