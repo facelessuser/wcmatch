@@ -432,7 +432,7 @@ False
 If you would like for `globmatch` (or [`globfilter`](#globfilter)) to operate on your current filesystem directly,
 simply pass in the [`REALPATH`](#realpath) flag. When enabled, the path under consideration will be analyzed and
 will use that context to determine if the file exists, if it is a directory, does it's context make sense compared to
-what the pattern is looking vs the current working directory, or if it has symlinks that should not be matched by
+what the pattern is looking vs the current working directory, or if it has symlinks that should not be traversed by
 [`GLOBSTAR`](#globstar).
 
 Here we use [`REALPATH`](#realpath) and can see that `globmatch` now knows that `doc` is a directory.
@@ -529,7 +529,7 @@ Path-like object input support is only available in Python 3.6+ as the path-like
 Like [`globmatch`](#globmatch), `globfilter` does not operate directly on the file system, with all the caveats
 associated. But you can enable the [`REALPATH`](#realpath) flag and `globfilter` will use the filesystem to gain
 context such as: whether the file exists, whether it is a directory or not, or whether it has symlinks that should not
-be matched by `GLOBSTAR`. See [`globmatch`](#globmatch) for examples.
+be traversed by `GLOBSTAR`. See [`globmatch`](#globmatch) for examples.
 
 /// new | New 5.1
 -   `root_dir` was added in 5.1.0.
@@ -754,8 +754,8 @@ file matches the excluded pattern. Essentially, it means if you use a pattern su
 patterns were given: `**` and `!*.md`, where `!*.md` is applied to the results of `**`, and `**` is specifically treated
 as if [`GLOBSTAR`](#globstar) was enabled.
 
-Dot files will not be returned unless [`DOTGLOB`](#dotglob) is enabled. Symlinks will also be ignored in the return
-unless [`FOLLOW`](#follow) is enabled.
+Dot files will not be returned unless [`DOTGLOB`](#dotglob) is enabled. Symlinks will also not be traversed unless
+[`FOLLOW`](#follow) is enabled.
 
 #### `glob.MINUSNEGATE, glob.M` {: #minusnegate}
 
@@ -768,7 +768,7 @@ When `MINUSNEGATE` is used with [`NEGATE`](#negate), exclusion patterns are reco
 
 #### `glob.FOLLOW, glob.L` {: #follow}
 
-`FOLLOW` will cause [`GLOBSTAR`](#globstar) patterns (`**`) to match and traverse symlink directories.
+`FOLLOW` will cause [`GLOBSTAR`](#globstar) patterns (`**`) to traverse symlink directories.
 
 #### `glob.REALPATH, glob.P` {: #realpath}
 
@@ -784,7 +784,7 @@ file path for the given system it is running on. It will augment the patterns us
 logic so that the path must meet the following in order to match:
 
 -   Path must exist.
--   Directories that are symlinks will not be matched by [`GLOBSTAR`](#globstar) patterns (`**`) unless the
+-   Directories that are symlinks will not be traversed by [`GLOBSTAR`](#globstar) patterns (`**`) unless the
     [`FOLLOW`](#follow) flag is enabled.
 -   When presented with a pattern where the match must be a directory, but the file path being compared doesn't indicate
     the file is a directory with a trailing slash, the command will look at the filesystem to determine if it is a

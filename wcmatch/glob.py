@@ -665,7 +665,7 @@ class Glob(Generic[AnyStr]):
 
             path = os.path.join(curdir, file)
             follow = not is_link or self.follow_links
-            if (matcher is None and not hidden and (follow or not deep)) or (matcher and matcher(file)):
+            if (matcher is None and not hidden) or (matcher and matcher(file)):
                 yield path, is_dir
 
             if deep and not hidden and is_dir and follow:

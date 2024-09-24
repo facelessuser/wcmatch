@@ -75,7 +75,7 @@ class _Match(Generic[AnyStr]):
 
         matched = False
 
-        end = len(filename)
+        end = len(filename) - 1
         base = None
         m = pattern.fullmatch(filename)
         if m:
@@ -83,7 +83,6 @@ class _Match(Generic[AnyStr]):
             # Lets look at the captured `globstar` groups and see if that part of the path
             # contains symlinks.
             if not follow:
-                last = len(m.groups())
                 try:
                     for i, star in enumerate(m.groups(), 1):
                         if star:
@@ -91,10 +90,11 @@ class _Match(Generic[AnyStr]):
                             parts = star.strip(sep).split(sep)
                             if base is None:
                                 base = os.path.join(root, filename[:m.start(i)])
-                            for part in parts:
+                            last_part = len(parts)
+                            for j, part in enumerate(parts, 1):
                                 base = os.path.join(base, part)
                                 key = (dir_fd, base)
-                                if is_dir or i != last or not at_end:
+                                if not at_end or (at_end and j != last_part):
                                     is_link = symlinks.get(key, None)
                                     if is_link is None:
                                         if dir_fd is None:
