@@ -1606,12 +1606,14 @@ class TestGlobmatchSymlink(_TestGlobmatch):
 
         self.assertFalse(glob.globmatch(self.tempdir + '/sym1/a.txt', '**/*.txt}', flags=self.default_flags))
         self.assertTrue(glob.globmatch(self.tempdir + '/a.txt', '**/*.txt', flags=self.default_flags))
+        self.assertTrue(glob.globmatch(self.tempdir + '/sym1/', '**', flags=self.default_flags))
 
     def test_globmatch_follow_symlink(self):
         """Test `globmatch` with symlinks that we follow."""
 
         self.assertTrue(glob.globmatch(self.tempdir + '/sym1/a.txt', '**/*.txt', flags=self.default_flags | glob.L))
         self.assertTrue(glob.globmatch(self.tempdir + '/a.txt', '**/*.txt', flags=self.default_flags | glob.L))
+        self.assertTrue(glob.globmatch(self.tempdir + '/sym1/', '**', flags=self.default_flags))
 
     def test_globmatch_trigger_symlink_cache(self):
         """Use a pattern that exercises the symlink cache."""
