@@ -510,7 +510,7 @@ class Testglob(_TestGlob):
             ] if not can_symlink() else [
                 ('',), ('aab',), ('aab', 'F'), ('a',), ('a', 'bcd'), ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg'),
                 ('a', 'bcd', 'efg', 'ha'), ('a', 'D'), ('aaa',), ('aaa', 'zzzF'), ('EF',), ('ZZZ',),
-                ('sym1',), ('sym2',)
+                ('sym1',), ('sym2',), ('sym3',)
             ],
             glob.L
         ],
@@ -553,7 +553,7 @@ class Testglob(_TestGlob):
             [
                 ('EF',), ('ZZZ',), ('',)
             ] if not can_symlink() else [
-                ('EF',), ('ZZZ',), ('',), ('sym1',), ('sym2',)
+                ('EF',), ('ZZZ',), ('',), ('sym1',), ('sym2',), ('sym3',)
             ],
             glob.N | glob.L
         ],
