@@ -12,14 +12,29 @@ DIR_FLAGS = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
 # Right half can return an empty set if not supported
 SUPPORT_DIR_FD = {os.open, os.stat} <= os.supports_dir_fd and os.scandir in os.supports_fd
 
-
 RE_WIN_MOUNT = (
-    re.compile(r'\\|[a-z]:(?:\\|$)', re.I),
-    re.compile(br'\\|[a-z]:(?:\\|$)', re.I)
+    re.compile(r'\\|/|[a-z]:(?:\\|/|$)', re.I),
+    re.compile(br'\\|/|[a-z]:(?:\\|/|$)', re.I)
 )
 RE_MOUNT = (
     re.compile(r'/'),
     re.compile(br'/')
+)
+RE_WIN_SPLIT = (
+    re.compile(r'\\|/'),
+    re.compile(br'\\|/')
+)
+RE_SPLIT = (
+    re.compile(r'/'),
+    re.compile(br'/')
+)
+RE_WIN_STRIP = (
+    r'\\/',
+    br'\\/'
+)
+RE_STRIP = (
+    r'/',
+    br'/'
 )
 
 
@@ -49,8 +64,7 @@ class _Match(Generic[AnyStr]):
         self,
         pattern: Pattern[AnyStr],
         filename: AnyStr,
-        is_dir: bool,
-        sep: AnyStr,
+        is_win: bool,
         follow: bool,
         symlinks: dict[tuple[int | None, AnyStr], bool],
         root: AnyStr,
@@ -65,15 +79,16 @@ class _Match(Generic[AnyStr]):
         We only check for the symlink if we know we are looking at a directory.
         And we only call `lstat` if we can't find it in the cache.
 
-        We know it's a directory if:
+        We know we need to check the directory if:
 
-        1. If the base is a directory, all parts are directories.
-        2. If we are not the last part of the `globstar`, the part is a directory.
-        3. If the base is a file, but the part is not at the end, it is a directory.
+        1. If the match has not reached the end of the path and directory is in `globstar` match.
+        2. Or the match is at the end of the path and the directory is not the last part of `globstar` match.
 
         """
 
         matched = False
+        split = (RE_WIN_SPLIT if is_win else RE_SPLIT)[self.ptype]  # type: Any
+        strip = (RE_WIN_STRIP if is_win else RE_STRIP)[self.ptype]  # type: Any
 
         end = len(filename) - 1
         base = None
@@ -87,7 +102,7 @@ class _Match(Generic[AnyStr]):
                     for i, star in enumerate(m.groups(), 1):
                         if star:
                             at_end = m.end(i) == end
-                            parts = star.strip(sep).split(sep)
+                            parts = split.split(star.strip(strip))
                             if base is None:
                                 base = os.path.join(root, filename[:m.start(i)])
                             last_part = len(parts)
@@ -125,13 +140,15 @@ class _Match(Generic[AnyStr]):
     ) -> bool:
         """Match real filename includes and excludes."""
 
-        temp = '\\' if util.platform() == "windows" else '/'
-        if isinstance(self.filename, bytes):
-            sep = os.fsencode(temp)
-        else:
-            sep = temp
+        is_win = util.platform() == "windows"
 
-        is_dir = self.filename.endswith(sep)
+        if isinstance(self.filename, bytes):
+            sep = b'/'
+            is_dir = (RE_WIN_SPLIT if is_win else RE_SPLIT)[1].match(self.filename[-1:]) is not None
+        else:
+            sep = '/'
+            is_dir = (RE_WIN_SPLIT if is_win else RE_SPLIT)[0].match(self.filename[-1:]) is not None
+
         try:
             if dir_fd is None:
                 is_file_dir = os.path.isdir(os.path.join(root, self.filename))
@@ -153,14 +170,14 @@ class _Match(Generic[AnyStr]):
 
         matched = False
         for pattern in self.include:
-            if self._fs_match(pattern, filename, is_dir, sep, self.follow, symlinks, root, dir_fd):
+            if self._fs_match(pattern, filename, is_win, self.follow, symlinks, root, dir_fd):
                 matched = True
                 break
 
         if matched:
             if self.exclude:
                 for pattern in self.exclude:
-                    if self._fs_match(pattern, filename, is_dir, sep, True, symlinks, root, dir_fd):
+                    if self._fs_match(pattern, filename, is_win, True, symlinks, root, dir_fd):
                         matched = False
                         break
 
