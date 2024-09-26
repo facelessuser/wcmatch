@@ -1014,6 +1014,91 @@ class Testglob(_TestGlob):
             self.assert_equal(sorted(glob.glob(['dummy', '**/aab'], flags=glob.G)), ['aab',])
 
 
+class TestGlobStarLong(_TestGlob):
+    """Test `***` cases."""
+
+    DEFAULT_FLAGS = glob.BRACE | glob.EXTGLOB | glob.GLOBSTARLONG | glob.MARK | glob.NOUNIQUE
+
+    cases = [
+        # Test `globstar` with `globstarlong` enabled
+        [
+            ('**', '*'),
+            [
+                ('aab',), ('aab', 'F'), ('a',), ('a', 'bcd'), ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg'),
+                ('a', 'bcd', 'efg', 'ha'), ('a', 'D'), ('aaa',), ('aaa', 'zzzF'), ('EF',), ('ZZZ',)
+            ] if not can_symlink() else [
+                ('aab',), ('aab', 'F'), ('a',), ('a', 'bcd'), ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg'),
+                ('a', 'bcd', 'efg', 'ha'), ('a', 'D'), ('aaa',), ('aaa', 'zzzF'), ('EF',), ('ZZZ',),
+                ('sym1',), ('sym2',), ('sym3',)
+            ]
+        ],
+
+        # Test `globstarlong`
+        [
+            ('***', '*'),
+            [
+                ('aab',), ('aab', 'F'), ('a',), ('a', 'bcd'), ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg'),
+                ('a', 'bcd', 'efg', 'ha'), ('a', 'D'), ('aaa',), ('aaa', 'zzzF'), ('EF',), ('ZZZ',)
+            ] if not can_symlink() else [
+                ('aab',), ('aab', 'F'), ('a',), ('a', 'bcd'), ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg'),
+                ('a', 'bcd', 'efg', 'ha'), ('a', 'D'), ('aaa',), ('aaa', 'zzzF'), ('EF',), ('ZZZ',),
+                ('sym1',), ('sym2',), ('sym3',), ('sym3', 'EF'), ('sym3', 'efg'), ('sym3', 'efg', 'ha')
+            ]
+        ],
+
+        # Enable `FOLLOW`. Should be no changes.
+        [
+            ('**', '*'),
+            [
+                ('aab',), ('aab', 'F'), ('a',), ('a', 'bcd'), ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg'),
+                ('a', 'bcd', 'efg', 'ha'), ('a', 'D'), ('aaa',), ('aaa', 'zzzF'), ('EF',), ('ZZZ',)
+            ] if not can_symlink() else [
+                ('aab',), ('aab', 'F'), ('a',), ('a', 'bcd'), ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg'),
+                ('a', 'bcd', 'efg', 'ha'), ('a', 'D'), ('aaa',), ('aaa', 'zzzF'), ('EF',), ('ZZZ',),
+                ('sym1',), ('sym2',), ('sym3',)
+            ],
+            glob.L
+        ],
+        [
+            ('***', '*'),
+            [
+                ('aab',), ('aab', 'F'), ('a',), ('a', 'bcd'), ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg'),
+                ('a', 'bcd', 'efg', 'ha'), ('a', 'D'), ('aaa',), ('aaa', 'zzzF'), ('EF',), ('ZZZ',)
+            ] if not can_symlink() else [
+                ('aab',), ('aab', 'F'), ('a',), ('a', 'bcd'), ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg'),
+                ('a', 'bcd', 'efg', 'ha'), ('a', 'D'), ('aaa',), ('aaa', 'zzzF'), ('EF',), ('ZZZ',),
+                ('sym1',), ('sym2',), ('sym3',), ('sym3', 'EF'), ('sym3', 'efg'), ('sym3', 'efg', 'ha')
+            ],
+            glob.L
+        ]
+    ]
+
+    @classmethod
+    def setup_fs(cls):
+        """Setup file system."""
+
+        cls.mktemp('a', 'D')
+        cls.mktemp('aab', 'F')
+        cls.mktemp('.aa', 'G')
+        cls.mktemp('.bb', 'H')
+        cls.mktemp('aaa', 'zzzF')
+        cls.mktemp('ZZZ')
+        cls.mktemp('EF')
+        cls.mktemp('a', 'bcd', 'EF')
+        cls.mktemp('a', 'bcd', 'efg', 'ha')
+        cls.can_symlink = can_symlink()
+        if cls.can_symlink:
+            os.symlink(cls.norm('broken'), cls.norm('sym1'))
+            os.symlink('broken', cls.norm('sym2'))
+            os.symlink(os.path.join('a', 'bcd'), cls.norm('sym3'))
+
+    @pytest.mark.parametrize("case", cases)
+    def test_glob_cases(self, case):
+        """Test glob cases."""
+
+        self.eval_glob_cases(case)
+
+
 class TestGlobMarked(Testglob):
     """Test glob marked."""
 
