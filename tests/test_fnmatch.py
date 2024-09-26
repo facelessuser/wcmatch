@@ -45,12 +45,12 @@ class TestFnMatch:
         ['b', 'a', False, 0],
 
         # Test that '\' is handled correctly in character sets;
-        [r'[\]', '\\', False, 0],
-        [r'[!\]', 'a', False, 0],
-        [r'[!\]', '\\', False, 0],
-        [r'[\\]', '\\', True, 0],
-        [r'[!\\]', 'a', True, 0],
-        [r'[!\\]', '\\', False, 0],
+        [R'[\]', '\\', False, 0],
+        [R'[!\]', 'a', False, 0],
+        [R'[!\]', '\\', False, 0],
+        [R'[\\]', '\\', True, 0],
+        [R'[!\\]', 'a', True, 0],
+        [R'[!\\]', '\\', False, 0],
 
         # Test that filenames with newlines in them are handled correctly.
         ['foo*', 'foo\nbar', True, 0],
@@ -67,14 +67,14 @@ class TestFnMatch:
         # Case and Force Unix: slash conventions
         ['usr/bin', 'usr/bin', True, fnmatch.C | fnmatch.U],
         ['usr/bin', 'usr\\bin', False, fnmatch.C | fnmatch.U],
-        [r'usr\\bin', 'usr/bin', False, fnmatch.C | fnmatch.U],
-        [r'usr\\bin', 'usr\\bin', True, fnmatch.C | fnmatch.U],
+        [R'usr\\bin', 'usr/bin', False, fnmatch.C | fnmatch.U],
+        [R'usr\\bin', 'usr\\bin', True, fnmatch.C | fnmatch.U],
 
         # Case and Force Windows: slash conventions
         ['usr/bin', 'usr/bin', True, fnmatch.C | fnmatch.W],
         ['usr/bin', 'usr\\bin', True, fnmatch.C | fnmatch.W],
-        [r'usr\\bin', 'usr/bin', True, fnmatch.C | fnmatch.W],
-        [r'usr\\bin', 'usr\\bin', True, fnmatch.C | fnmatch.W],
+        [R'usr\\bin', 'usr/bin', True, fnmatch.C | fnmatch.W],
+        [R'usr\\bin', 'usr\\bin', True, fnmatch.C | fnmatch.W],
 
         # Wildcard tests
         [b'te*', b'test', True, 0],
@@ -94,12 +94,12 @@ class TestFnMatch:
         # OS specific slash behavior
         ['usr/bin', 'usr/bin', True, 0],
         ['usr/bin', 'usr\\bin', not util.is_case_sensitive(), 0],
-        [r'usr\\bin', 'usr/bin', not util.is_case_sensitive(), 0],
-        [r'usr\\bin', 'usr\\bin', True, 0],
+        [R'usr\\bin', 'usr/bin', not util.is_case_sensitive(), 0],
+        [R'usr\\bin', 'usr\\bin', True, 0],
         ['usr/bin', 'usr\\bin', True, fnmatch.W],
-        [r'usr\\bin', 'usr/bin', True, fnmatch.W],
+        [R'usr\\bin', 'usr/bin', True, fnmatch.W],
         ['usr/bin', 'usr\\bin', False, fnmatch.U],
-        [r'usr\\bin', 'usr/bin', False, fnmatch.U],
+        [R'usr\\bin', 'usr/bin', False, fnmatch.U],
 
         # Ensure that we don't fail on regular expression related symbols
         # such as &&, ||, ~~, --, or [.  Currently re doesn't do anything with
@@ -113,7 +113,7 @@ class TestFnMatch:
 
         # `Dotmatch` cases
         ['.abc', '.abc', True, 0],
-        [r'\.abc', '.abc', True, 0],
+        [R'\.abc', '.abc', True, 0],
         ['?abc', '.abc', True, 0],
         ['*abc', '.abc', True, 0],
         ['[.]abc', '.abc', True, 0],
@@ -126,12 +126,12 @@ class TestFnMatch:
 
         # Turn off `dotmatch` cases
         ['.abc', '.abc', True, fnmatch.D],
-        [r'\.abc', '.abc', True, fnmatch.D],
+        [R'\.abc', '.abc', True, fnmatch.D],
         ['?abc', '.abc', False, fnmatch.D],
         ['*abc', '.abc', False, fnmatch.D],
         ['[.]abc', '.abc', False, fnmatch.D],
         ['*(.)abc', '.abc', True, fnmatch.E | fnmatch.D],
-        [r'*(\.)abc', '.abc', True, fnmatch.E | fnmatch.D],
+        [R'*(\.)abc', '.abc', True, fnmatch.E | fnmatch.D],
         ['*(?)abc', '.abc', False, fnmatch.E | fnmatch.D],
         ['*(?|.)abc', '.abc', True, fnmatch.E | fnmatch.D],
         ['*(?|*)abc', '.abc', False, fnmatch.E | fnmatch.D],
@@ -140,7 +140,7 @@ class TestFnMatch:
         ['a*bc', 'a.bc', True, fnmatch.D],
         ['a[.]bc', 'a.bc', True, fnmatch.D],
         ['a*(.)bc', 'a.bc', True, fnmatch.E | fnmatch.D],
-        [r'a*(\.)bc', 'a.bc', True, fnmatch.E | fnmatch.D],
+        [R'a*(\.)bc', 'a.bc', True, fnmatch.E | fnmatch.D],
         ['a*(?)bc', 'a.bc', True, fnmatch.E | fnmatch.D],
         ['a*(?|.)bc', 'a.bc', True, fnmatch.E | fnmatch.D],
         ['a*(?|*)bc', 'a.bc', True, fnmatch.E | fnmatch.D],
@@ -183,10 +183,10 @@ class TestFnMatch:
         # `(` must be escaped to exclude a name that starts with `(`.
         # If `!(` doesn't start a valid extended glob pattern,
         # it will be treated as a literal, not an exclude pattern.
-        [r'!\(test)', 'test', True, fnmatch.N | fnmatch.E | fnmatch.A],
-        [r'!(test)', 'test', False, fnmatch.N | fnmatch.E | fnmatch.A],
-        [r'!!(test)', 'test', True, fnmatch.N | fnmatch.E | fnmatch.A],
-        [r'!(test', '!(test', True, fnmatch.N | fnmatch.E | fnmatch.A],
+        [R'!\(test)', 'test', True, fnmatch.N | fnmatch.E | fnmatch.A],
+        [R'!(test)', 'test', False, fnmatch.N | fnmatch.E | fnmatch.A],
+        [R'!!(test)', 'test', True, fnmatch.N | fnmatch.E | fnmatch.A],
+        [R'!(test', '!(test', True, fnmatch.N | fnmatch.E | fnmatch.A],
 
         # Backwards ranges
         ['[a-z]', 'a', True, 0],
@@ -196,9 +196,9 @@ class TestFnMatch:
         ['[9--]', '9', False, 0],
 
         # Escaped slashes are just slashes as they aren't treated special beyond normalization.
-        [r'a\/b', ('a/b' if util.is_case_sensitive() else 'a\\\\b'), True, 0],
-        [r'a\/b', 'a/b', True, fnmatch.U],
-        [r'a\/b', 'a\\\\b', True, fnmatch.W]
+        [R'a\/b', ('a/b' if util.is_case_sensitive() else 'a\\\\b'), True, 0],
+        [R'a\/b', 'a/b', True, fnmatch.U],
+        [R'a\/b', 'a\\\\b', True, fnmatch.W]
     ]
 
     @classmethod
@@ -273,13 +273,13 @@ class TestFnMatchFilter:
             0
         ],
         [
-            r'usr\\*',
+            R'usr\\*',
             ['usr/bin', 'usr', 'usr\\lib'],
             (['usr/bin', 'usr\\lib'] if not util.is_case_sensitive() else ['usr\\lib']),
             0
         ],
-        [r'te\st[ma]', ['testm', 'test\\3', 'testa'], ['testm', 'testa'], fnmatch.I],
-        [r'te\st[ma]', ['testm', 'test\\3', 'testa'], ['testm', 'testa'], fnmatch.C],
+        [R'te\st[ma]', ['testm', 'test\\3', 'testa'], ['testm', 'testa'], fnmatch.I],
+        [R'te\st[ma]', ['testm', 'test\\3', 'testa'], ['testm', 'testa'], fnmatch.C],
 
         # Issue #24
         ['*.bar', ["goo.cfg", "foo.bar", "foo.bar.cfg", "foo.cfg.bar"], ["foo.bar", "foo.cfg.bar"], 0],
@@ -395,22 +395,22 @@ class TestFnMatchTranslate(unittest.TestCase):
         self.assertEqual(p1, [r'^(?s:test[^chars])$'])
         self.assertEqual(p2, [])
 
-        p1 = self.split_translate(r'test[^\\-\\&]', flags=flags)[0]
+        p1 = self.split_translate(R'test[^\\-\\&]', flags=flags)[0]
         self.assertEqual(p1, [r'^(?s:test[^\\-\\\&])$'])
 
-        p1 = self.split_translate(r'\\*\\?\\|\\[\\]', flags=flags)[0]
+        p1 = self.split_translate(R'\\*\\?\\|\\[\\]', flags=flags)[0]
         self.assertEqual(p1, [r'^(?s:\\.*?\\.\\)$', r'^(?s:\\[\\])$'])
 
-        p1 = self.split_translate(r'\\u0300', flags=flags | fnmatch.R)[0]
+        p1 = self.split_translate(R'\\u0300', flags=flags | fnmatch.R)[0]
         self.assertEqual(p1, [r'^(?s:\\u0300)$'])
 
     def test_posix_range(self):
         """Test posix range."""
 
-        p = fnmatch.translate(r'[[:ascii:]-z]', flags=self.flags | fnmatch.U | fnmatch.C)
+        p = fnmatch.translate(R'[[:ascii:]-z]', flags=self.flags | fnmatch.U | fnmatch.C)
         self.assertEqual(p, (['^(?s:[\x00-\x7f\\-z])$'], []))
 
-        p = fnmatch.translate(r'[a-[:ascii:]-z]', flags=self.flags | fnmatch.U | fnmatch.C)
+        p = fnmatch.translate(R'[a-[:ascii:]-z]', flags=self.flags | fnmatch.U | fnmatch.C)
         self.assertEqual(p, (['^(?s:[a\\-\x00-\x7f\\-z])$'], []))
 
     @mock.patch('wcmatch.util.is_case_sensitive')
@@ -422,22 +422,22 @@ class TestFnMatchTranslate(unittest.TestCase):
         _wcparse._compile.cache_clear()
 
         p1, p2 = fnmatch.translate(
-            r'test\x70\u0070\U00000070\160\N{LATIN SMALL LETTER P}', flags=flags | fnmatch.R
+            R'test\x70\u0070\U00000070\160\N{LATIN SMALL LETTER P}', flags=flags | fnmatch.R
         )
         self.assertEqual(p1, [r'^(?s:testppppp)$'])
         self.assertEqual(p2, [])
 
         p1, p2 = fnmatch.translate(
-            r'test[\x70][\u0070][\U00000070][\160][\N{LATIN SMALL LETTER P}]', flags=flags | fnmatch.R
+            R'test[\x70][\u0070][\U00000070][\160][\N{LATIN SMALL LETTER P}]', flags=flags | fnmatch.R
         )
         self.assertEqual(p1, [r'^(?s:test[p][p][p][p][p])$'])
         self.assertEqual(p2, [])
 
-        p1, p2 = fnmatch.translate(r'test\t\m', flags=flags | fnmatch.R)
+        p1, p2 = fnmatch.translate(R'test\t\m', flags=flags | fnmatch.R)
         self.assertEqual(p1, [r'^(?s:test\	m)$'])
         self.assertEqual(p2, [])
 
-        p1, p2 = fnmatch.translate(r'test[\\]test', flags=flags | fnmatch.R)
+        p1, p2 = fnmatch.translate(R'test[\\]test', flags=flags | fnmatch.R)
         self.assertEqual(p1, [r'^(?s:test[\\]test)$'])
         self.assertEqual(p2, [])
 
@@ -445,26 +445,26 @@ class TestFnMatchTranslate(unittest.TestCase):
         self.assertEqual(p1, [r'^(?s:test\[)$'])
         self.assertEqual(p2, [])
 
-        p1, p2 = fnmatch.translate(r'test\44test', flags=flags | fnmatch.R)
+        p1, p2 = fnmatch.translate(R'test\44test', flags=flags | fnmatch.R)
         self.assertEqual(p1, [r'^(?s:test\$test)$'])
         self.assertEqual(p2, [])
 
-        p1, p2 = fnmatch.translate(r'test\44', flags=flags | fnmatch.R)
+        p1, p2 = fnmatch.translate(R'test\44', flags=flags | fnmatch.R)
         self.assertEqual(p1, [r'^(?s:test\$)$'])
         self.assertEqual(p2, [])
 
-        p1, p2 = fnmatch.translate(r'test\400', flags=flags | fnmatch.R)
+        p1, p2 = fnmatch.translate(R'test\400', flags=flags | fnmatch.R)
         self.assertEqual(p1, [r'^(?s:testĀ)$'])
         self.assertEqual(p2, [])
 
         with pytest.raises(SyntaxError):
-            fnmatch.translate(r'test\N', flags=flags | fnmatch.R)
+            fnmatch.translate(R'test\N', flags=flags | fnmatch.R)
 
         with pytest.raises(SyntaxError):
-            fnmatch.translate(r'test\Nx', flags=flags | fnmatch.R)
+            fnmatch.translate(R'test\Nx', flags=flags | fnmatch.R)
 
         with pytest.raises(SyntaxError):
-            fnmatch.translate(r'test\N{', flags=flags | fnmatch.R)
+            fnmatch.translate(R'test\N{', flags=flags | fnmatch.R)
 
     def test_default_compile(self):
         """Test default with exclusion."""
@@ -622,8 +622,8 @@ class TestIsMagic(unittest.TestCase):
         self.assertTrue(fnmatch.is_magic("test[", flags=flags))
         self.assertTrue(fnmatch.is_magic("test]", flags=flags))
         self.assertTrue(fnmatch.is_magic("test?", flags=flags))
-        self.assertTrue(fnmatch.is_magic(r"te\\st", flags=flags))
-        self.assertTrue(fnmatch.is_magic(r"te\st", flags=flags))
+        self.assertTrue(fnmatch.is_magic(R"te\\st", flags=flags))
+        self.assertTrue(fnmatch.is_magic(R"te\st", flags=flags))
         self.assertTrue(fnmatch.is_magic("test!", flags=flags))
         self.assertTrue(fnmatch.is_magic("test|", flags=flags))
         self.assertTrue(fnmatch.is_magic("test(", flags=flags))
@@ -690,11 +690,11 @@ class TestFnMatchEscapes(unittest.TestCase):
 
         check = self.check_escape
         check('abc', 'abc')
-        check('[', r'\[')
-        check('?', r'\?')
-        check('*', r'\*')
-        check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_\]\]')
-        check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_\]\]/')
+        check('[', R'\[')
+        check('?', R'\?')
+        check('*', R'\*')
+        check('[[_/*?*/_]]', R'\[\[_/\*\?\*/_\]\]')
+        check('/[[_/*?*/_]]/', R'/\[\[_/\*\?\*/_\]\]/')
 
     @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
     def test_escape_windows(self):
@@ -702,39 +702,39 @@ class TestFnMatchEscapes(unittest.TestCase):
 
         check = self.check_escape
         # `fnmatch` doesn't care about drives
-        check('a:\\?', r'a:\\\?')
-        check('b:\\*', r'b:\\\*')
-        check('\\\\?\\c:\\?', r'\\\\\?\\c:\\\?')
-        check('\\\\*\\*\\*', r'\\\\\*\\\*\\\*')
-        check('//?/c:/?', r'//\?/c:/\?')
-        check('//*/*/*', r'//\*/\*/\*')
-        check('//[^what]/name/temp', r'//\[^what\]/name/temp')
+        check('a:\\?', R'a:\\\?')
+        check('b:\\*', R'b:\\\*')
+        check('\\\\?\\c:\\?', R'\\\\\?\\c:\\\?')
+        check('\\\\*\\*\\*', R'\\\\\*\\\*\\\*')
+        check('//?/c:/?', R'//\?/c:/\?')
+        check('//*/*/*', R'//\*/\*/\*')
+        check('//[^what]/name/temp', R'//\[^what\]/name/temp')
 
     def test_escape_forced_windows(self):
         """Test forced windows escapes."""
 
         check = self.check_escape
         # `fnmatch` doesn't care about drives
-        check('a:\\?', r'a:\\\?', unix=False)
-        check('b:\\*', r'b:\\\*', unix=False)
-        check('\\\\?\\c:\\?', r'\\\\\?\\c:\\\?', unix=True)
-        check('\\\\*\\*\\*', r'\\\\\*\\\*\\\*', unix=True)
-        check('//?/c:/?', r'//\?/c:/\?', unix=True)
-        check('//*/*/*', r'//\*/\*/\*', unix=True)
-        check('//[^what]/name/temp', r'//\[^what\]/name/temp', unix=True)
+        check('a:\\?', R'a:\\\?', unix=False)
+        check('b:\\*', R'b:\\\*', unix=False)
+        check('\\\\?\\c:\\?', R'\\\\\?\\c:\\\?', unix=True)
+        check('\\\\*\\*\\*', R'\\\\\*\\\*\\\*', unix=True)
+        check('//?/c:/?', R'//\?/c:/\?', unix=True)
+        check('//*/*/*', R'//\*/\*/\*', unix=True)
+        check('//[^what]/name/temp', R'//\[^what\]/name/temp', unix=True)
 
     def test_escape_forced_unix(self):
         """Test forced windows Unix."""
 
         check = self.check_escape
         # `fnmatch` doesn't care about drives
-        check('a:\\?', r'a:\\\?', unix=True)
-        check('b:\\*', r'b:\\\*', unix=True)
-        check('\\\\?\\c:\\?', r'\\\\\?\\c:\\\?', unix=True)
-        check('\\\\*\\*\\*', r'\\\\\*\\\*\\\*', unix=True)
-        check('//?/c:/?', r'//\?/c:/\?', unix=True)
-        check('//*/*/*', r'//\*/\*/\*', unix=True)
-        check('//[^what]/name/temp', r'//\[^what\]/name/temp', unix=True)
+        check('a:\\?', R'a:\\\?', unix=True)
+        check('b:\\*', R'b:\\\*', unix=True)
+        check('\\\\?\\c:\\?', R'\\\\\?\\c:\\\?', unix=True)
+        check('\\\\*\\*\\*', R'\\\\\*\\\*\\\*', unix=True)
+        check('//?/c:/?', R'//\?/c:/\?', unix=True)
+        check('//*/*/*', R'//\*/\*/\*', unix=True)
+        check('//[^what]/name/temp', R'//\[^what\]/name/temp', unix=True)
 
 
 class TestExpansionLimit(unittest.TestCase):

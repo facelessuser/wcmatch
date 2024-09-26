@@ -7,6 +7,52 @@ from wcmatch import pathlib, glob, _wcparse
 import pathlib as pypathlib
 import pickle
 import warnings
+import shutil
+
+# Below is general helper stuff that Python uses in `unittests`.  As these
+# not meant for users, and could change without notice, include them
+# ourselves so we aren't surprised later.
+TESTFN = '@test'
+
+# Disambiguate `TESTFN` for parallel testing, while letting it remain a valid
+# module name.
+TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
+
+
+def create_empty_file(filename):
+    """Create an empty file. If the file already exists, truncate it."""
+
+    fd = os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
+    os.close(fd)
+
+
+_can_symlink = None
+
+
+def can_symlink():
+    """Check if we can symlink."""
+
+    global _can_symlink
+    if _can_symlink is not None:
+        return _can_symlink
+    symlink_path = TESTFN + "can_symlink"
+    try:
+        os.symlink(TESTFN, symlink_path)
+        can = True
+    except (OSError, NotImplementedError, AttributeError):
+        can = False
+    else:
+        os.remove(symlink_path)
+    _can_symlink = can
+    return can
+
+
+def skip_unless_symlink(test):
+    """Skip decorator for tests that require functional symlink."""
+
+    ok = can_symlink()
+    msg = "Requires functional symlink implementation"
+    return test if ok else unittest.skip(msg)(test)
 
 
 @contextlib.contextmanager
@@ -144,7 +190,7 @@ class TestPathlibGlobmatch:
         ['.', '', True, 0, "pure"],
 
         # Force a specific platform with a specific `PurePath`.
-        ['//?/C:/**/file.log', r'\\?\C:\Path\path\file.log', True, pathlib.G, "windows"],
+        ['//?/C:/**/file.log', R'\\?\C:\Path\path\file.log', True, pathlib.G, "windows"],
         ['/usr/*/bin', '/usr/local/bin', True, pathlib.G, "unix"]
     ]
 
@@ -199,6 +245,11 @@ class TestPathlibGlobmatch:
         """Test ignore cases."""
 
         self.evaluate(case)
+
+    def test_full_match_alias(self):
+        """Test `full_match` alias."""
+
+        pathlib.PurePath('this/path/here').full_match('**/path/here', flags=pathlib.G)
 
 
 class TestPathlibMatch(TestPathlibGlobmatch):
@@ -383,3 +434,122 @@ class TestExcludes(unittest.TestCase):
 
         self.assertTrue(pathlib.PurePath('path/name').globmatch('*/*', exclude='*/test'))
         self.assertFalse(pathlib.PurePath('path/test').globmatch('*/*', exclude='*/test'))
+
+
+@skip_unless_symlink
+class TestPathlibSymlink(unittest.TestCase):
+    """Test the `pathlib` symlink class."""
+
+    def mktemp(self, *parts):
+        """Make temp directory."""
+
+        filename = self.norm(*parts)
+        base, file = os.path.split(filename)
+        if not os.path.exists(base):
+            retry = 3
+            while retry:
+                try:
+                    os.makedirs(base)
+                    retry = 0
+                except Exception:  # noqa: PERF203
+                    retry -= 1
+        create_empty_file(filename)
+
+    def norm(self, *parts):
+        """Normalizes file path (in relation to temp directory)."""
+        tempdir = os.fsencode(self.tempdir) if isinstance(parts[0], bytes) else self.tempdir
+        return os.path.join(tempdir, *parts)
+
+    def mksymlink(self, original, link):
+        """Make symlink."""
+
+        if not os.path.lexists(link):
+            os.symlink(original, link)
+
+    def setUp(self):
+        """Setup."""
+
+        self.tempdir = TESTFN + "_dir"
+        self.mktemp('subfolder', 'a.txt')
+        self.mktemp('subfolder', 'b.file')
+        self.mktemp('a.txt')
+        self.mktemp('b.file')
+        self.mktemp('c.txt.bak')
+        self.can_symlink = can_symlink()
+        if self.can_symlink:
+            self.mksymlink('subfolder', self.norm('sym1'))
+            self.mksymlink(os.path.join('subfolder', 'a.txt'), self.norm('sym2'))
+
+        self.default_flags = glob.G | glob.P | glob.B
+
+    def tearDown(self):
+        """Cleanup."""
+
+        retry = 3
+        while retry:
+            try:
+                shutil.rmtree(self.tempdir)
+                while os.path.exists(self.tempdir):
+                    pass
+                retry = 0
+            except Exception:  # noqa: PERF203
+                retry -= 1
+
+    @staticmethod
+    def assert_equal(a, b):
+        """Assert equal."""
+
+        assert a == b, "Comparison between objects yielded false."
+
+    @classmethod
+    def assertSequencesEqual_noorder(cls, l1, l2):
+        """Verify lists match (unordered)."""
+
+        l1 = list(l1)
+        l2 = list(l2)
+        cls.assert_equal(set(l1), set(l2))
+        cls.assert_equal(sorted(l1), sorted(l2))
+
+    def test_rglob_globstar(self):
+        """Test `rglob` with `GLOBSTARLONG`."""
+
+        flags = pathlib.GL
+        expected = [pathlib.Path(self.tempdir + '/a.txt'), pathlib.Path(self.tempdir + '/subfolder/a.txt')]
+        result = pathlib.Path(self.tempdir).rglob('a.txt', flags=flags)
+        self.assertSequencesEqual_noorder(expected, result)
+
+    def test_rglob_globstarlong_symlink(self):
+        """Test `rglob` with `GLOBSTARLONG` and `FOLLOW`."""
+
+        flags = pathlib.GL | pathlib.L
+        expected = [
+            pathlib.Path(self.tempdir + '/a.txt'),
+            pathlib.Path(self.tempdir + '/subfolder/a.txt'),
+            pathlib.Path(self.tempdir + '/sym1/a.txt')
+        ]
+        result = pathlib.Path(self.tempdir).rglob('a.txt', flags=flags)
+        self.assertSequencesEqual_noorder(expected, result)
+
+    def test_match_globstarlong_no_follow(self):
+        """Test `match` with `GLOBSTARLONG`."""
+
+        flags = pathlib.GL
+        self.assertTrue(pathlib.Path(self.tempdir + '/sym1/a.txt').match('a.txt', flags=flags))
+
+    def test_match_globstarlong_symlink(self):
+        """Test `match` with `GLOBSTARLONG` and `FOLLOW`."""
+
+        flags = pathlib.GL | pathlib.L
+        self.assertTrue(pathlib.Path(self.tempdir + '/sym1/a.txt').match('a.txt', flags=flags))
+
+    def test_match_globstarlong_no_follow_real_path(self):
+        """Test `match` with `GLOBSTARLONG` and `REALPATH`."""
+
+        flags = pathlib.GL | pathlib.P
+        self.assertFalse(pathlib.Path(self.tempdir + '/sym1/a.txt').match('a.txt', flags=flags))
+
+    def test_match_globstarlong_symlink_real_path(self):
+        """Test `match` with `GLOBSTARLONG` and `FOLLOW` and `REALPATH`."""
+
+        flags = pathlib.GL | pathlib.L | pathlib.P
+        self.assertTrue(pathlib.Path(self.tempdir + '/sym1/a.txt').match('a.txt', flags=flags))

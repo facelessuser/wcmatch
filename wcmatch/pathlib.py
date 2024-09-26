@@ -11,8 +11,8 @@ __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "NEGATE", "MINUSNEGATE", "BRACE",
     "REALPATH", "FOLLOW", "MATCHBASE", "NEGATEALL", "NODIR", "NOUNIQUE",
-    "NODOTDIR", "SCANDOTDIR",
-    "C", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A", "Q", "Z", "SD",
+    "NODOTDIR", "SCANDOTDIR", "GLOBSTARLONG",
+    "C", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A", "Q", "Z", "SD", "GL",
     "Path", "PurePath", "WindowsPath", "PosixPath", "PurePosixPath", "PureWindowsPath"
 )
 
@@ -33,12 +33,12 @@ O = NODIR = glob.NODIR
 A = NEGATEALL = glob.NEGATEALL
 Q = NOUNIQUE = glob.NOUNIQUE
 Z = NODOTDIR = glob.NODOTDIR
+GL = GLOBSTARLONG = glob.GLOBSTARLONG
 
 SD = SCANDOTDIR = glob.SCANDOTDIR
 
 # Internal flags
 _EXTMATCHBASE = _wcparse._EXTMATCHBASE
-_RTL = _wcparse._RTL
 _NOABSOLUTE = _wcparse._NOABSOLUTE
 _PATHNAME = _wcparse.PATHNAME
 _FORCEWIN = _wcparse.FORCEWIN
@@ -53,6 +53,7 @@ FLAG_MASK = (
     DOTMATCH |
     EXTMATCH |
     GLOBSTAR |
+    GLOBSTARLONG |
     NEGATE |
     MINUSNEGATE |
     BRACE |
@@ -65,7 +66,6 @@ FLAG_MASK = (
     NOUNIQUE |
     NODOTDIR |
     _EXTMATCHBASE |
-    _RTL |
     _NOABSOLUTE
 )
 
@@ -124,12 +124,9 @@ class PurePath(pathlib.PurePath):
 
         This uses the same right to left logic that the default `pathlib` object uses.
         Folders and files are essentially matched from right to left.
-
-        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
-
         """
 
-        return self.globmatch(patterns, flags=flags | _RTL, limit=limit, exclude=exclude)
+        return self.globmatch(patterns, flags=flags | _EXTMATCHBASE, limit=limit, exclude=exclude)
 
     def globmatch(
         self,
@@ -139,12 +136,25 @@ class PurePath(pathlib.PurePath):
         limit: int = _wcparse.PATTERN_LIMIT,
         exclude: str | Sequence[str] | None = None
     ) -> bool:
-        """
-        Match patterns using `globmatch`, but without the right to left logic that the default `pathlib` uses.
+        """Match patterns using `globmatch`, but without the right to left logic that the default `pathlib` uses."""
 
-        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
+        return glob.globmatch(
+            self._translate_path(),
+            patterns,
+            flags=self._translate_flags(flags),
+            limit=limit,
+            exclude=exclude
+        )
 
-        """
+    def full_match(  # type: ignore[override, unused-ignore]
+        self,
+        patterns: str | Sequence[str],
+        *,
+        flags: int = 0,
+        limit: int = _wcparse.PATTERN_LIMIT,
+        exclude: str | Sequence[str] | None = None
+    ) -> bool:
+        """Alias for Python 3.13 `full_match`, but redirects to use `globmatch`."""
 
         return glob.globmatch(
             self._translate_path(),
