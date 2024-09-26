@@ -2,9 +2,11 @@
 
 ## 10.0
 
+-   **NEW**: Added `GLOBSTARLONG` which adds support for the Zsh style `***` which acts like `**` with `GLOBSTAR` but
+    but traverses symlinks.
 -   **NEW**: Symlinks should not be traversed when `GLOBSTAR` is enabled unless `FOLLOW` is also enabled, but they
     should still be matched. Prior to this change, symlinks were not traversed _and_ they were ignored from matching
-    which contradicts how Bash works, which is are general target.
+    which contradicts how Bash works, which is our general target.
 -   **FIX**: Fix some inconsistencies with `globmatch` and symlink handling when `REALPATH` is enabled.
 
 ## 9.0

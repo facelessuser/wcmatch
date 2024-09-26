@@ -148,6 +148,7 @@ FORCEUNIX = 0x20000
 GLOBTILDE = 0x40000
 NOUNIQUE = 0x80000
 NODOTDIR = 0x100000
+GLOBSTARLONG = 0x200000
 
 # Internal flag
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
@@ -167,6 +168,7 @@ FLAG_MASK = (
     DOTMATCH |
     EXTMATCH |
     GLOBSTAR |
+    GLOBSTARLONG |
     BRACE |
     REALPATH |
     FOLLOW |
@@ -783,7 +785,7 @@ def compile(  # noqa: A001
     positive, negative = compile_pattern(patterns, flags, limit, exclude)
     return WcRegexp(
         tuple(positive), tuple(negative),
-        bool(flags & REALPATH), bool(flags & PATHNAME), bool(flags & FOLLOW)
+        bool(flags & REALPATH), bool(flags & PATHNAME), bool(flags & FOLLOW) and not bool(flags & GLOBSTARLONG)
     )
 
 
@@ -932,7 +934,9 @@ class WcParse(Generic[AnyStr]):
         self.is_bytes = isinstance(pattern, bytes)
         self.pathname = bool(flags & PATHNAME)
         self.raw_chars = bool(flags & RAWCHARS)
-        self.globstar = self.pathname and bool(flags & GLOBSTAR)
+        self.globstarlong = self.pathname and bool(flags & GLOBSTARLONG)
+        self.globstar = self.pathname and (self.globstarlong or bool(flags & GLOBSTAR))
+        self.follow = bool(flags & FOLLOW)
         self.realpath = bool(flags & REALPATH) and self.pathname
         self.translate = bool(flags & _TRANSLATE)
         self.negate = bool(flags & NEGATE)
@@ -1273,8 +1277,7 @@ class WcParse(Generic[AnyStr]):
             else:
                 star = self.path_star
                 globstar = self.path_gstar_dot1
-            if self.globstar_capture:
-                globstar = f'({globstar})'
+            capture = self.globstar_capture
         else:
             if self.after_start and not self.dot:
                 star = _NO_DOT + _STAR
@@ -1284,15 +1287,29 @@ class WcParse(Generic[AnyStr]):
         value = star
 
         if self.after_start and self.globstar and not self.in_list:
-            skip = False
+            skip = True
             try:
                 c = next(i)
                 if c != '*':
                     i.rewind(1)
                     raise StopIteration
+                skip = False
+
+                # Test for triple star. If found, do not make a capturing group.
+                # Capturing groups are used to filter out symlinks, but triple stars force symlinks.
+                if self.globstarlong:
+                    c = next(i)
+                    if c != '*':
+                        i.rewind(1)
+                        raise StopIteration
+                    capture = False
+
             except StopIteration:
                 # Could not acquire a second star, so assume single star pattern
-                skip = True
+                pass
+
+            if capture:
+                globstar = f'({globstar})'
 
             if not skip:
                 try:
@@ -1633,10 +1650,13 @@ class WcParse(Generic[AnyStr]):
                 self.rtl = False
 
         if self.matchbase or self.extmatchbase:
-            globstar = self.globstar
-            self.globstar = True
-            self.root('**', prepend)
-            self.globstar = globstar
+            if self.globstarlong and self.follow:
+                self.root('***', prepend)
+            else:
+                globstar = self.globstar
+                self.globstar = True
+                self.root('**', prepend)
+                self.globstar = globstar
 
         elif self.rtl:
             # Add a `**` that can capture anything: dots, special directories, symlinks, etc.
@@ -1645,16 +1665,19 @@ class WcParse(Generic[AnyStr]):
             globstar = self.globstar
             dot = self.dot
             gstar = self.path_gstar_dot1
-            globstar_capture = self.globstar_capture
-            self.path_gstar_dot1 = _PATH_GSTAR_RTL_MATCH
             self.dot = True
-            self.globstar = True
-            self.globstar_capture = False
-            self.root('**', prepend)
-            self.globstar = globstar
-            self.dot = dot
+            self.path_gstar_dot1 = _PATH_GSTAR_RTL_MATCH
+            if self.globstarlong and self.follow:
+                self.root('***', prepend)
+            else:
+                globstar_capture = self.globstar_capture
+                self.globstar = True
+                self.globstar_capture = False
+                self.root('**', prepend)
+                self.globstar = globstar
+                self.globstar_capture = globstar_capture
             self.path_gstar_dot1 = gstar
-            self.globstar_capture = globstar_capture
+            self.dot = dot
 
         # We have an escape, but it escapes nothing
         if p == '\\':

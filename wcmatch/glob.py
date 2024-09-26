@@ -19,8 +19,8 @@ __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE", "NOUNIQUE",
     "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX", "GLOBTILDE",
-    "NODOTDIR", "SCANDOTDIR", "SUPPORT_DIR_FD",
-    "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T", "Q", "Z", "SD",
+    "NODOTDIR", "SCANDOTDIR", "SUPPORT_DIR_FD", "GLOBSTARLONG",
+    "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T", "Q", "Z", "SD", "GL",
     "iglob", "glob", "globmatch", "globfilter", "escape", "is_magic"
 )
 
@@ -50,6 +50,7 @@ U = FORCEUNIX = _wcparse.FORCEUNIX
 T = GLOBTILDE = _wcparse.GLOBTILDE
 Q = NOUNIQUE = _wcparse.NOUNIQUE
 Z = NODOTDIR = _wcparse.NODOTDIR
+GL = GLOBSTARLONG = _wcparse.GLOBSTARLONG
 
 K = MARK = 0x1000000
 SD = SCANDOTDIR = 0x2000000
@@ -69,6 +70,7 @@ FLAG_MASK = (
     DOTMATCH |
     EXTMATCH |
     GLOBSTAR |
+    GLOBSTARLONG |
     NEGATE |
     MINUSNEGATE |
     BRACE |
@@ -121,7 +123,7 @@ def _flag_transform(flags: int) -> int:
 
 
 class _GlobPart(
-    namedtuple('_GlobPart', ['pattern', 'is_magic', 'is_globstar', 'dir_only', 'is_drive']),
+    namedtuple('_GlobPart', ['pattern', 'is_magic', 'is_globstar', 'is_globstarlong', 'dir_only', 'is_drive']),
 ):
     """File Glob."""
 
@@ -161,7 +163,9 @@ class _GlobSplit(Generic[AnyStr]):
         self.unix = _wcparse.is_unix_style(flags)
         self.flags = flags
         self.no_abs = bool(flags & _wcparse._NOABSOLUTE)
-        self.globstar = bool(flags & GLOBSTAR)
+        self.globstarlong = bool(flags & GLOBSTARLONG)
+        self.globstar = self.globstarlong or bool(flags & GLOBSTAR)
+        self.follow = bool(flags & FOLLOW)
         self.matchbase = bool(flags & MATCHBASE)
         self.extmatchbase = bool(flags & _wcparse._EXTMATCHBASE)
         self.tilde = bool(flags & GLOBTILDE)
@@ -277,16 +281,17 @@ class _GlobSplit(Generic[AnyStr]):
         if l and value in (b'', ''):
             return
 
-        globstar = value in (b'**', '**') and self.globstar
+        globstarlong = self.globstarlong and value in (b'***', '***')
+        globstar = globstarlong or (self.globstar and value in (b'**', '**'))
         magic = self.is_magic(value)
         if magic:
             v = _wcparse._compile(value, self.flags)  # type: Pattern[AnyStr] | AnyStr
         else:
             v = value
         if globstar and l and l[-1].is_globstar:
-            l[-1] = _GlobPart(v, magic, globstar, dir_only, False)
+            l[-1] = _GlobPart(v, magic, globstar, globstarlong, dir_only, False)
         else:
-            l.append(_GlobPart(v, magic, globstar, dir_only, False))
+            l.append(_GlobPart(v, magic, globstar, globstarlong, dir_only, False))
 
     def split(self) -> list[_GlobPart]:
         """Start parsing the pattern."""
@@ -308,11 +313,11 @@ class _GlobSplit(Generic[AnyStr]):
         if self.win_drive_detect:
             root_specified, drive, slash, end = _wcparse._get_win_drive(pattern)
             if drive is not None:
-                parts.append(_GlobPart(drive.encode('latin-1') if is_bytes else drive, False, False, True, True))
+                parts.append(_GlobPart(drive.encode('latin-1') if is_bytes else drive, False, False, False, True, True))
                 start = end - 1
                 i.advance(start)
             elif drive is None and root_specified:
-                parts.append(_GlobPart(b'\\' if is_bytes else '\\', False, False, True, True))
+                parts.append(_GlobPart(b'\\' if is_bytes else '\\', False, False, False, True, True))
                 if pattern.startswith('/'):
                     start = 0
                     i.advance(1)
@@ -320,7 +325,7 @@ class _GlobSplit(Generic[AnyStr]):
                     start = 1
                     i.advance(2)
         elif not self.win_drive_detect and pattern.startswith('/'):
-            parts.append(_GlobPart(b'/' if is_bytes else '/', False, False, True, True))
+            parts.append(_GlobPart(b'/' if is_bytes else '/', False, False, False, True, True))
             start = 0
             i.advance(1)
 
@@ -357,14 +362,19 @@ class _GlobSplit(Generic[AnyStr]):
                 self.store(value.encode('latin-1') if is_bytes else value, parts, False)  # type: ignore[arg-type]
 
         if len(pattern) == 0:
-            parts.append(_GlobPart(pattern.encode('latin-1') if is_bytes else pattern, False, False, False, False))
+            parts.append(
+                _GlobPart(pattern.encode('latin-1') if is_bytes else pattern, False, False, False, False, False)
+            )
 
         if (
             (self.extmatchbase and not parts[0].is_drive) or
             (self.matchbase and len(parts) == 1 and not parts[0].dir_only)
         ):
-            self.globstar = True
-            parts.insert(0, _GlobPart(b'**' if is_bytes else '**', True, True, True, False))
+            if self.globstarlong and self.follow:
+                gstar = b'***' if is_bytes else '***'  # type: Any
+            else:
+                gstar = b'**' if is_bytes else '**'
+            parts.insert(0, _GlobPart(gstar, True, True, False, True, False))
 
         if self.no_abs and parts and parts[0].is_drive:
             raise ValueError('The pattern must be a relative path pattern')
@@ -419,11 +429,12 @@ class Glob(Generic[AnyStr]):
         if not self.scandotdir and not self.flags & NODOTDIR:
             self.flags |= NODOTDIR
         self.raw_chars = bool(self.flags & RAWCHARS)  # type: bool
-        self.follow_links = bool(self.flags & FOLLOW)  # type: bool
         self.dot = bool(self.flags & DOTMATCH)  # type: bool
         self.unix = not bool(self.flags & FORCEWIN)  # type: bool
         self.negate = bool(self.flags & NEGATE)  # type: bool
-        self.globstar = bool(self.flags & GLOBSTAR)  # type: bool
+        self.globstarlong = bool(self.flags & GLOBSTARLONG)  # type: bool
+        self.globstar = self.globstarlong or bool(self.flags & GLOBSTAR)  # type: bool
+        self.follow_links = bool(self.flags & FOLLOW) and not self.globstarlong  # type: bool
         self.braces = bool(self.flags & BRACE)  # type: bool
         self.matchbase = bool(self.flags & MATCHBASE)  # type: bool
         self.case_sensitive = _wcparse.get_case(self.flags)  # type: bool
@@ -652,7 +663,8 @@ class Glob(Generic[AnyStr]):
         curdir: AnyStr,
         matcher: Callable[..., Any] | None,
         dir_only: bool = False,
-        deep: bool = False
+        deep: bool = False,
+        globstar_follow: bool = False
     ) -> Iterator[tuple[AnyStr, bool]]:
         """Recursive directory glob."""
 
@@ -664,12 +676,12 @@ class Glob(Generic[AnyStr]):
                 continue
 
             path = os.path.join(curdir, file)
-            follow = not is_link or self.follow_links
             if (matcher is None and not hidden) or (matcher and matcher(file)):
                 yield path, is_dir
 
+            follow = not is_link or self.follow_links or globstar_follow
             if deep and not hidden and is_dir and follow:
-                yield from self._glob_dir(path, matcher, dir_only, deep)
+                yield from self._glob_dir(path, matcher, dir_only, deep, globstar_follow)
 
     def _glob(self, curdir: AnyStr, part: _GlobPart, rest: list[_GlobPart]) -> Iterator[tuple[AnyStr, bool]]:
         """
@@ -689,6 +701,7 @@ class Glob(Generic[AnyStr]):
         dir_only = part.dir_only
         target = part.pattern
         is_globstar = part.is_globstar
+        is_globstarlong = part.is_globstarlong
 
         if is_magic and is_globstar:
             # Glob star directory `**`.
@@ -724,7 +737,7 @@ class Glob(Generic[AnyStr]):
                 yield os.path.join(curdir, self.empty), True
 
             # Search
-            for path, is_dir in self._glob_dir(curdir, matcher, dir_only, deep=True):
+            for path, is_dir in self._glob_dir(curdir, matcher, dir_only, deep=True, globstar_follow=is_globstarlong):
                 if this:
                     yield from self._glob(path, this, rest[:])
                 else:

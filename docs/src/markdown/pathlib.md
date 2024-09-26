@@ -446,9 +446,26 @@ When `MINUSNEGATE` is used with [`NEGATE`](#negate), exclusion patterns are reco
 
 `GLOBSTAR` enables the feature where `**` matches zero or more directories.
 
+#### `glob.GLOBSTARLONG, glob.GL` {: #globstarlong}
+
+/// new | New 10.0
+///
+
+When `GLOBSTARLONG` is enabled `***` will act like `**`, but will cause symlinks to be traversed as well.
+
+Enabling `GLOBSTARLONG` automatically enables [`GLOBSTAR`](#globstar).
+
+[`FOLLOW`](#follow) will be ignored and `***` will be required to traverse a symlink. But it should be noted that when
+using [`MATCHBASE`](#matchbase) and [`FOLLOW`](#follow) with `GLOBSTARLONG`, that [`FOLLOW`](#follow) will cause the
+implicit leading `**` that [`MATCHBASE`](#matchbase) applies to act as an implicit `***`.
+
 #### `pathlib.FOLLOW, pathlib.L` {: #follow}
 
 `FOLLOW` will cause `GLOBSTAR` patterns (`**`) to match and traverse symlink directories.
+
+`FOLLOW` will have no affect if using [`GLOBSTARLONG`](#globstarlong) and an explicit `***` will be required to traverse
+a symlink. `FOLLOW` will have an affect if enabled with [`GLOBSTARLONG`](#globstarlong) and [`MATCHBASE`](#matchbase)
+and will cause the implicit leading `**` that `MATCHBASE` applies to act as an implicit `***`.
 
 #### `pathlib.REALPATH, pathlib.P` {: #realpath}
 
@@ -466,6 +483,10 @@ that the path must meet the following in order to match:
 -   Path must exist.
 -   Directories that are symlinks will not be matched by [`GLOBSTAR`](#globstar) patterns (`**`) unless the
     [`FOLLOW`](#follow) flag is enabled.
+-   If [`GLOBSTARLONG`](#globstarlong) is enabled, `***` will traverse symlinks, [`FOLLOW`](#follow) will be ignored
+    except if [`MATCHBASE`](#matchbase) is also enabled, in that case, the implicit leading `**` added by
+    [`MATCHBASE`](#matchbase) will act as `***`. This also affects the implicit leading `**` adding by
+    [`rglob`](#rglob).
 -   When presented with a pattern where the match must be a directory, but the file path being compared doesn't indicate
     the file is a directory with a trailing slash, the command will look at the filesystem to determine if it is a
     directory.
