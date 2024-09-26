@@ -252,22 +252,12 @@ pattern(s).
 
 `match` mimics Python's `pathlib` version of `match`. Python's `match` uses a right to left evaluation. Wildcard Match
 emulates this behavior as well. What this means is that when provided with a path `some/path/name`, the patterns `name`,
-`path/name` and `some/path/name` will all match.
-
-Because the path is evaluated right to left, dot files may not prevent matches when `DOTGLOB` is disabled.
-
-```pycon3
->>> from wcmatch import pathlib
->>> pathlib.PurePath('.dotfile/file').match('file')
-True
->>> pathlib.PurePath('../.dotfile/file').match('file')
-True
-```
+`path/name` and `some/path/name` will all match. Essentially, it matches what [`rglob`](#rglob) returns.
 
 `match` does not access the filesystem, but you can force the path to access the filesystem if you give it the
 [`REALPATH`](#realpath) flag. We do not restrict this, but we do not enable it by default.
-[`REALPATH`](#realpath) simply forces the match to check the filesystem to see if the file exists and is a
-directory or not.
+[`REALPATH`](#realpath) simply forces the match to check the filesystem to see if the file exists, if it is a
+directory or not, and whether it is a symlink.
 
 Since [`Path`](#path) is derived from [`PurePath`](#purepath), this method is also available in
 [`Path`](#path) objects.
@@ -302,8 +292,8 @@ a list of patterns. It will return a boolean indicating whether the objects file
 
 `globmatch` does not access the filesystem, but you can force the path to access the filesystem if you give it the
 [`REALPATH`](#realpath) flag. We do not restrict this, but we do not enable it by default.
-[`REALPATH`](#realpath) simply forces the match to check the filesystem to see if the file exists and is a
-directory or not.
+[`REALPATH`](#realpath) simply forces the match to check the filesystem to see if the file exists, if it is a
+directory or not, and whether it is a symlink.
 
 Since [`Path`](#path) is derived from  [`PurePath`](#purepath), this method is also available in
 [`Path`](#path) objects.
@@ -322,6 +312,19 @@ True
 /// new | New 8.4
 `exclude` parameter was added.
 ///
+
+#### `PurePath.full_match` {: #full_match}
+
+/// new | new 10.0
+///
+
+```py3
+def full_match(self, patterns, *, flags=0, limit=1000, exclude=None):
+```
+
+Python 3.13 added the new `full_match` method to `PurePath` objects. Essentially, this does for normal `pathlib`
+what our existing `PurePath.globmatch` has been doing prior to Python 3.13. We've added an alias for
+`PurePath.full_match` that redirects to [`PurePath.globmatch`](#globmatch) for completeness.
 
 #### `Path.glob` {: #glob}
 

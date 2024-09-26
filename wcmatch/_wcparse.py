@@ -155,8 +155,7 @@ _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we
 _ANCHOR = 0x200000000  # The pattern, if it starts with a slash, is anchored to the working directory; strip the slash.
 _EXTMATCHBASE = 0x400000000  # Like `MATCHBASE`, but works for multiple directory levels.
 _NOABSOLUTE = 0x800000000  # Do not allow absolute patterns
-_RTL = 0x1000000000  # Match from right to left
-_NO_GLOBSTAR_CAPTURE = 0x2000000000  # Disallow `GLOBSTAR` capturing groups.
+_NO_GLOBSTAR_CAPTURE = 0x1000000000  # Disallow `GLOBSTAR` capturing groups.
 
 FLAG_MASK = (
     CASE |
@@ -184,7 +183,6 @@ FLAG_MASK = (
     _TRANSLATE |
     _ANCHOR |
     _EXTMATCHBASE |
-    _RTL |
     _NOABSOLUTE |
     _NO_GLOBSTAR_CAPTURE
 )
@@ -212,8 +210,6 @@ _PATH_STAR_NO_DOTMATCH = _NO_DIR + fr'(?:(?!\.){_PATH_STAR})?'
 _PATH_GSTAR_DOTMATCH = r'(?:(?!(?:[{sep}]|^)(?:\.{{1,2}})($|[{sep}])).)*?'
 # `GLOBSTAR` with `DOTMATCH` disabled. Don't allow a dot to follow /
 _PATH_GSTAR_NO_DOTMATCH = r'(?:(?!(?:[{sep}]|^)\.).)*?'
-# Special right to left matching
-_PATH_GSTAR_RTL_MATCH = r'.*?'
 # Next char cannot be a dot
 _NO_DOT = r'(?![.])'
 # Following char from sequence cannot be a separator or a dot
@@ -945,7 +941,6 @@ class WcParse(Generic[AnyStr]):
         self.extend = bool(flags & EXTMATCH)
         self.matchbase = bool(flags & MATCHBASE)
         self.extmatchbase = bool(flags & _EXTMATCHBASE)
-        self.rtl = bool(flags & _RTL)
         self.anchor = bool(flags & _ANCHOR)
         self.nodotdir = bool(flags & NODOTDIR)
         self.capture = self.translate
@@ -1578,7 +1573,6 @@ class WcParse(Generic[AnyStr]):
         if root_specified:
             self.matchbase = False
             self.extmatchbase = False
-            self.rtl = False
 
         if not root_specified and self.realpath:
             current.append(_NO_WIN_ROOT if self.win_drive_detect else _NO_ROOT)
@@ -1647,7 +1641,6 @@ class WcParse(Generic[AnyStr]):
             if number:
                 self.matchbase = False
                 self.extmatchbase = False
-                self.rtl = False
 
         if self.matchbase or self.extmatchbase:
             if self.globstarlong and self.follow:
@@ -1658,27 +1651,6 @@ class WcParse(Generic[AnyStr]):
                 self.root('**', prepend)
                 self.globstar = globstar
 
-        elif self.rtl:
-            # Add a `**` that can capture anything: dots, special directories, symlinks, etc.
-            # We are simulating right to left, so everything on the left should be accepted without
-            # question.
-            globstar = self.globstar
-            dot = self.dot
-            gstar = self.path_gstar_dot1
-            self.dot = True
-            self.path_gstar_dot1 = _PATH_GSTAR_RTL_MATCH
-            if self.globstarlong and self.follow:
-                self.root('***', prepend)
-            else:
-                globstar_capture = self.globstar_capture
-                self.globstar = True
-                self.globstar_capture = False
-                self.root('**', prepend)
-                self.globstar = globstar
-                self.globstar_capture = globstar_capture
-            self.path_gstar_dot1 = gstar
-            self.dot = dot
-
         # We have an escape, but it escapes nothing
         if p == '\\':
             p = ''
@@ -1686,7 +1658,7 @@ class WcParse(Generic[AnyStr]):
         if p:
             self.root(p, result)
 
-        if p and (self.matchbase or self.extmatchbase or self.rtl):
+        if p and (self.matchbase or self.extmatchbase):
             result = prepend + result
 
         case_flag = 'i' if not self.case_sensitive else ''

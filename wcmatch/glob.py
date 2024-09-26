@@ -59,7 +59,6 @@ _PATHLIB = 0x8000000
 
 # Internal flags
 _EXTMATCHBASE = _wcparse._EXTMATCHBASE
-_RTL = _wcparse._RTL
 _NOABSOLUTE = _wcparse._NOABSOLUTE
 _PATHNAME = _wcparse.PATHNAME
 
@@ -86,7 +85,6 @@ FLAG_MASK = (
     NOUNIQUE |
     NODOTDIR |
     _EXTMATCHBASE |
-    _RTL |
     _NOABSOLUTE
 )
 
@@ -372,9 +370,11 @@ class _GlobSplit(Generic[AnyStr]):
         ):
             if self.globstarlong and self.follow:
                 gstar = b'***' if is_bytes else '***'  # type: Any
+                is_globstarlong = True
             else:
                 gstar = b'**' if is_bytes else '**'
-            parts.insert(0, _GlobPart(gstar, True, True, False, True, False))
+                is_globstarlong = False
+            parts.insert(0, _GlobPart(gstar, True, True, is_globstarlong, True, False))
 
         if self.no_abs and parts and parts[0].is_drive:
             raise ValueError('The pattern must be a relative path pattern')
@@ -421,9 +421,6 @@ class Glob(Generic[AnyStr]):
         self.pathlib = bool(flags & _PATHLIB)  # type: bool
         if self.pathlib:
             flags ^= _PATHLIB
-        # Right to left searching is only for matching
-        if flags & _RTL:  # pragma: no cover
-            flags ^= _RTL
         self.flags = _flag_transform(flags | REALPATH)  # type: int
         self.negate_flags = self.flags | DOTMATCH | _wcparse._NO_GLOBSTAR_CAPTURE  # type: int
         if not self.scandotdir and not self.flags & NODOTDIR:

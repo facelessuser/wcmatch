@@ -39,7 +39,6 @@ SD = SCANDOTDIR = glob.SCANDOTDIR
 
 # Internal flags
 _EXTMATCHBASE = _wcparse._EXTMATCHBASE
-_RTL = _wcparse._RTL
 _NOABSOLUTE = _wcparse._NOABSOLUTE
 _PATHNAME = _wcparse.PATHNAME
 _FORCEWIN = _wcparse.FORCEWIN
@@ -67,7 +66,6 @@ FLAG_MASK = (
     NOUNIQUE |
     NODOTDIR |
     _EXTMATCHBASE |
-    _RTL |
     _NOABSOLUTE
 )
 
@@ -126,12 +124,9 @@ class PurePath(pathlib.PurePath):
 
         This uses the same right to left logic that the default `pathlib` object uses.
         Folders and files are essentially matched from right to left.
-
-        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
-
         """
 
-        return self.globmatch(patterns, flags=flags | _RTL, limit=limit, exclude=exclude)
+        return self.globmatch(patterns, flags=flags | _EXTMATCHBASE, limit=limit, exclude=exclude)
 
     def globmatch(
         self,
@@ -141,12 +136,7 @@ class PurePath(pathlib.PurePath):
         limit: int = _wcparse.PATTERN_LIMIT,
         exclude: str | Sequence[str] | None = None
     ) -> bool:
-        """
-        Match patterns using `globmatch`, but without the right to left logic that the default `pathlib` uses.
-
-        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
-
-        """
+        """Match patterns using `globmatch`, but without the right to left logic that the default `pathlib` uses."""
 
         return glob.globmatch(
             self._translate_path(),
@@ -155,6 +145,8 @@ class PurePath(pathlib.PurePath):
             limit=limit,
             exclude=exclude
         )
+
+    full_match = globmatch
 
 
 class Path(pathlib.Path):
