@@ -30,18 +30,19 @@ is found where Wildcard Match seems to deviate in an illogical way, we'd love to
 
 A quick overview of Wildcard Match's Features:
 
-- Provides an interface comparable to Python's builtin in `fnmatch`, `glob`, and `pathlib`.
-- Allows for a much more configurable experience when matching or globbing with many more features.
-- Adds support for `**` in glob.
-- Adds support for escaping characters with `\`.
-- Add support for POSIX style character classes inside sequences: `[[:alnum:]]`, etc. The `C` locale is used.
-- Adds support for brace expansion: `a{b,{c,d}}` --> `ab ac ad`.
-- Adds support for expanding `~` or `~username` to the appropriate user path.
-- Adds support for extended match patterns: `@(...)`, `+(...)`, `*(...)`, `?(...)`, and `!(...)`.
-- Adds ability to match path names via the path centric `globmatch`.
-- Provides a `pathlib` variant that uses Wildcard Match's `glob` library instead of Python's default.
-- Provides an alternative file crawler called `wcmatch`.
-- And more...
+-   Provides an interface comparable to Python's builtin in `fnmatch`, `glob`, and `pathlib`.
+-   Allows for a much more configurable experience when matching or globbing with many more features.
+-   Adds support for `**` in glob.
+-   Adds support for Zsh style `***` recursive glob for symlinks.
+-   Adds support for escaping characters with `\`.
+-   Add support for POSIX style character classes inside sequences: `[[:alnum:]]`, etc. The `C` locale is used.
+-   Adds support for brace expansion: `a{b,{c,d}}` --> `ab ac ad`.
+-   Adds support for expanding `~` or `~username` to the appropriate user path.
+-   Adds support for extended match patterns: `@(...)`, `+(...)`, `*(...)`, `?(...)`, and `!(...)`.
+-   Adds ability to match path names via the path centric `globmatch`.
+-   Provides a `pathlib` variant that uses Wildcard Match's `glob` library instead of Python's default.
+-   Provides an alternative file crawler called `wcmatch`.
+-   And more...
 
 ## Installation
 

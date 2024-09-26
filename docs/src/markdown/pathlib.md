@@ -47,9 +47,11 @@ matching:
 -   [`glob`](#glob), [`rglob`](#rglob), and [`match`](#match) do not enable [`GLOBSTAR`](#globstar)
     or [`DOTGLOB`](#dotglob) by default. These flags must be passed in to take advantage of this functionality.
 
--   A [`globmatch`](#globmatch) function has been added to `PurePath` classes (and `Path` classes which are
-    derived from `PurePath`) which is like [`match`](#match) except without the right to left behavior. See
-    [`match`](#match) and [`globmatch`](purepathglobmatch) for more information.
+-   A [`globmatch`](#globmatch) function has been added to `PurePath` classes (and `Path` classes which are derived from
+    `PurePath`) which is like [`match`](#match) except performs a "full" match. Python 3.13 added a similar
+    function called [`full_match`](#full_match) which came long after our [`globmatch`](#globmatch) support was added.
+    In recent versions we've also added [`full_match`](#full_match) as an alias to our [`globmatch`](#globmatch)
+    function. See [`match`](#match), [`globmatch`](#globmatch), and [`full_match`](#full_match) for more information.
 
 -   If file searching methods ([`glob`](#glob) and [`rglob`](#rglob)) are given multiple patterns, they will
     ensure duplicate results are filtered out. This only occurs when more than one inclusive pattern is given, or a
@@ -109,7 +111,7 @@ matching:
 
 -   [`rglob`](#rglob) will exhibit the same *recursive* behavior.
 
--   [`match`](#match) will exhibit the same right to left behavior.
+-   [`match`](#match) will match using the same *recursive* behavior as [`rglob`](#rglob).
 
 ## Classes
 
@@ -250,9 +252,10 @@ limit](#multi-pattern-limits). Exclusion patterns can be specified via the `excl
 a list of patterns. It will return a boolean indicating whether the object's file path was matched by the
 pattern(s).
 
-`match` mimics Python's `pathlib` version of `match`. Python's `match` uses a right to left evaluation. Wildcard Match
-emulates this behavior as well. What this means is that when provided with a path `some/path/name`, the patterns `name`,
-`path/name` and `some/path/name` will all match. Essentially, it matches what [`rglob`](#rglob) returns.
+`match` mimics Python's `pathlib` version of `match`. Python's `match` uses a right to left evaluation that behaves
+like [`rglob`](#rglob) but as a matcher instead of a globbing function. Wildcard Match emulates this behavior as well.
+What this means is that when provided with a path `some/path/name`, the patterns `name`, `path/name` and `some/path/name`
+will all match. Essentially, it matches what [`rglob`](#rglob) returns.
 
 `match` does not access the filesystem, but you can force the path to access the filesystem if you give it the
 [`REALPATH`](#realpath) flag. We do not restrict this, but we do not enable it by default.
