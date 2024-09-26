@@ -199,8 +199,8 @@ class TestGlobFilter:
             ]
         ],
 
-        [r'\\.\\./*/', []],
-        [r's/\\..*//', []],
+        [R'\\.\\./*/', []],
+        [R's/\\..*//', []],
 
         # legendary Larry crashes bashes
         ['/^root:/{s/^[^:]*:[^:]*:\\([^:]*\\).*$/\\1/', []],
@@ -307,8 +307,8 @@ class TestGlobFilter:
         ['a/.*/b', ['a/./b', 'a/../b', 'a/.d/b'], 0],
         ['a/.*/b', ['a/.d/b'], glob.Z],
         # Escaped `.` will still be treated as a `.`
-        [r'a/\.*/b', ['a/./b', 'a/../b', 'a/.d/b'], 0],
-        [r'a/\.*/b', ['a/.d/b'], glob.Z],
+        [R'a/\.*/b', ['a/./b', 'a/../b', 'a/.d/b'], 0],
+        [R'a/\.*/b', ['a/.d/b'], glob.Z],
 
         # this also tests that changing the options needs
         # to change the cache key, even if the pattern is
@@ -408,7 +408,7 @@ class TestGlobFilter:
         # it will be treated as a literal, not an exclude pattern.
         Options(skip_split=True),
         [
-            r'!\(a|c)',
+            R'!\(a|c)',
             [
                 '(a|b|c)', '(b|c', '*(b|c', 'a', 'ab', 'ac', 'ad', 'b', 'bc', 'bc,d', 'b|c', 'b|cc',
                 'c', 'c,d', 'c,db', 'cb', 'cb|c', 'd', 'd)', 'x(a|b|c)', 'x(a|c)'
@@ -509,7 +509,7 @@ class TestGlobFilter:
         ],
 
         [
-            r'**\.x/*',
+            R'**\.x/*',
             [
                 'test.x/a', '.x/a'
             ]
@@ -527,7 +527,7 @@ class TestGlobFilter:
             ]
         ),
         ['*//e///*', ['d/e/f', 'a/e/c']],
-        [r'*//\e///*', ['d/e/f', 'a/e/c']],
+        [R'*//\e///*', ['d/e/f', 'a/e/c']],
 
         # Backslash trailing cases
         GlobFiles(
@@ -538,9 +538,9 @@ class TestGlobFilter:
         ['**\\', ['a/b/c/', 'd/e/f/', 'a/e/c/']],
         ['**\\', ['a/b/c/', 'd/e/f/', 'a/e/c/'], glob.U],
         ['**\\', ['a/b/c/', 'd/e/f/', 'a/e/c/'], glob.W],
-        [r'**\\', [] if util.is_case_sensitive() else ['a/b/c/', 'd/e/f/', 'a/e/c/']],
-        [r'**\\', [], glob.U],
-        [r'**\\', ['a/b/c/', 'd/e/f/', 'a/e/c/'], glob.W],
+        [R'**\\', [] if util.is_case_sensitive() else ['a/b/c/', 'd/e/f/', 'a/e/c/']],
+        [R'**\\', [], glob.U],
+        [R'**\\', ['a/b/c/', 'd/e/f/', 'a/e/c/'], glob.W],
 
         # Invalid `extglob` groups
         GlobFiles(
@@ -564,33 +564,33 @@ class TestGlobFilter:
 
         # Basic dot tests
         ['[.]abc', []],
-        [r'[\.]abc', []],
+        [R'[\.]abc', []],
         ['.abc', ['.abc']],
-        [r'\.abc', ['.abc']],
+        [R'\.abc', ['.abc']],
         ['[.]abc', ['.abc'], glob.D],
-        [r'[\.]abc', ['.abc'], glob.D],
+        [R'[\.]abc', ['.abc'], glob.D],
 
         ['.', ['.']],
         ['..', ['..']],
         ['.*', ['.', '..', '.abc', '...', '..abc']],
-        [r'.\a*', ['.abc']],
-        [r'\.', ['.']],
-        [r'\..', ['..']],
-        [r'\.\.', ['..']],
+        [R'.\a*', ['.abc']],
+        [R'\.', ['.']],
+        [R'\..', ['..']],
+        [R'\.\.', ['..']],
         ['..*', ['..', '...', '..abc']],
-        [r'...', ['...']],
-        [r'..\.', ['...']],
+        [R'...', ['...']],
+        [R'..\.', ['...']],
 
         ['.', ['.'], glob.Z],
         ['..', ['..'], glob.Z],
         ['.*', ['.abc', '...', '..abc'], glob.Z],
-        [r'.\a*', ['.abc'], glob.Z],
-        [r'\.', ['.'], glob.Z],
-        [r'\..', ['..'], glob.Z],
-        [r'\.\.', ['..'], glob.Z],
+        [R'.\a*', ['.abc'], glob.Z],
+        [R'\.', ['.'], glob.Z],
+        [R'\..', ['..'], glob.Z],
+        [R'\.\.', ['..'], glob.Z],
         ['..*', ['...', '..abc'], glob.Z],
-        [r'...', ['...'], glob.Z],
-        [r'..\.', ['...'], glob.Z],
+        [R'...', ['...'], glob.Z],
+        [R'..\.', ['...'], glob.Z],
 
         # Dot tests trailing slashes
         GlobFiles(
@@ -604,7 +604,7 @@ class TestGlobFilter:
         ['./', ['./'], glob.Z],
         ['../', ['../'], glob.Z],
         ['..\\', ['../'], glob.Z],
-        [r'.\\', ['./'], glob.W | glob.Z],
+        [R'.\\', ['./'], glob.W | glob.Z],
 
         # Inverse dot tests
         GlobFiles(
@@ -620,8 +620,8 @@ class TestGlobFilter:
         ['.!(test)', ['.', '..', '.abc'], glob.M],
         ['.!(test)', ['.', '..', '.abc'], glob.D | glob.M],
         ['!(.)', ['abc'], glob.M],
-        [r'!(\.)', ['abc'], glob.M],
-        [r'!(\x2e)', ['abc'], glob.M | glob.R],
+        [R'!(\.)', ['abc'], glob.M],
+        [R'!(\x2e)', ['abc'], glob.M | glob.R],
         ['@(!(.))', ['abc'], glob.M],
         ['!(@(.))', ['abc'], glob.M],
         ['+(!(.))', ['abc'], glob.M],
@@ -630,8 +630,8 @@ class TestGlobFilter:
         ['!(*)', [], glob.M],
         ['!([.])', ['abc'], glob.M],
         ['!(.)', ['..', '.abc', 'abc'], glob.M | glob.D],
-        [r'!(\.)', ['..', '.abc', 'abc'], glob.M | glob.D],
-        [r'!(\x2e)', ['..', '.abc', 'abc'], glob.M | glob.R | glob.D],
+        [R'!(\.)', ['..', '.abc', 'abc'], glob.M | glob.D],
+        [R'!(\x2e)', ['..', '.abc', 'abc'], glob.M | glob.R | glob.D],
         ['@(!(.))', ['..', '.abc', 'abc'], glob.M | glob.D],
         ['!(@(.))', ['..', '.abc', 'abc'], glob.M | glob.D],
         ['+(!(.))', ['..', '.abc', 'abc'], glob.M | glob.D],
@@ -645,13 +645,13 @@ class TestGlobFilter:
 
         # More extended pattern dot related tests
         ['*(.)', ['.', '..']],
-        [r'*(\.)', ['.', '..']],
+        [R'*(\.)', ['.', '..']],
         ['*([.])', []],
         ['*(?)', ['abc']],
         ['@(.?)', ['..']],
         ['@(?.)', []],
         ['*(.)', ['.', '..'], glob.D],
-        [r'*(\.)', ['.', '..'], glob.D],
+        [R'*(\.)', ['.', '..'], glob.D],
         ['*([.])', [], glob.D],
         ['*(?)', ['.abc', 'abc'], glob.D],
         ['@(.?)', ['..'], glob.D],
@@ -669,19 +669,19 @@ class TestGlobFilter:
         # Force Unix/Linux
         ['test/test', ['test/test'], glob.U],
         ['test\\/test', ['test/test'], glob.U],
-        [r'test\\/test', ['test\\/test'], glob.U],
+        [R'test\\/test', ['test\\/test'], glob.U],
         ['@(test/test)', [], glob.U],
-        [r'@(test\/test)', [], glob.U],
+        [R'@(test\/test)', [], glob.U],
         ['test[/]test', [], glob.U],
-        [r'test[\/]test', [], glob.U],
+        [R'test[\/]test', [], glob.U],
 
         # Force Windows
         ['test/test', ['test/test', 'test\\/test'], glob.W],
         ['test\\/test', ['test/test', 'test\\/test'], glob.W],
         ['@(test/test)', [], glob.W],
-        [r'@(test\/test)', [], glob.W],
+        [R'@(test\/test)', [], glob.W],
         ['test[/]test', [], glob.W],
-        [r'test[\/]test', [], glob.W],
+        [R'test[\/]test', [], glob.W],
 
         # Case
         ['TEST/test', ['test/test', 'test\\/test'], glob.W],
@@ -692,7 +692,7 @@ class TestGlobFilter:
         ['test\\/test', ['test/test', 'test\\/test'], glob.W | glob.C],
         ['TEST/test', ['test/test'], glob.U | glob.I],
         ['test\\/TEST', ['test/test'], glob.U | glob.I],
-        [r'test\\/TEST', ['test\\/test'], glob.U | glob.I],
+        [R'test\\/TEST', ['test\\/test'], glob.U | glob.I],
         ['TEST/test', [], glob.U],
         ['test\\/TEST', [], glob.U],
 
@@ -1057,42 +1057,42 @@ class TestGlobMatchSpecial(unittest.TestCase):
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na[\\]med/file/test.py',
-                r'**/na[\\]med/file/*.py',
+                R'**/na[\\]med/file/*.py',
                 flags=flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some\\name\\with\\na[\\]med\\file\\test.py',
-                r'**/na[\\]med/file/*.py',
+                R'**/na[\\]med/file/*.py',
                 flags=flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some\\name\\with\\na[\\]med\\file*.py',
-                r'**\\na[\\]med\\file\*.py',
+                R'**\\na[\\]med\\file\*.py',
                 flags=flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some\\name\\with\\na[\\]med\\file\\test.py',
-                r'**\\na[\\]m\ed\\file\\*.py',
+                R'**\\na[\\]m\ed\\file\\*.py',
                 flags=flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some\\name\\with\\na[\\]med\\\\file\\test.py',
-                r'**\\na[\\]m\ed\\/file\\*.py',
+                R'**\\na[\\]m\ed\\/file\\*.py',
                 flags=flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some\\name\\with\\na[\\\\]med\\\\file\\test.py',
-                r'**\\na[\/]m\ed\/file\\*.py',
+                R'**\\na[\/]m\ed\/file\\*.py',
                 flags=flags | glob.R
             )
         )
@@ -1190,14 +1190,14 @@ class TestGlobMatchSpecial(unittest.TestCase):
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na\\med/file/test.py',
-                r'**/na[\\]med/file/*.py',
+                R'**/na[\\]med/file/*.py',
                 flags=flags | glob.R
             )
         )
         self.assertTrue(
             glob.globmatch(
                 'some/name/with/na[\\/]med\\/file/test.py',
-                r'**/na[\\/]med\\/file/*.py',
+                R'**/na[\\/]med\\/file/*.py',
                 flags=flags | glob.R
             )
         )
@@ -1821,7 +1821,7 @@ class TestIsMagic(unittest.TestCase):
 
         self.assertTrue(glob.is_magic('//?/UNC/server/*[]!|(){}|~-/', flags=flags | glob.BRACE))
         self.assertTrue(glob.is_magic('//?/UNC/server/*[]!(){}|~-/', flags=flags | glob.SPLIT))
-        self.assertTrue(glob.is_magic(r'\\\\server\\mount\\', flags=flags))
+        self.assertTrue(glob.is_magic(R'\\\\server\\mount\\', flags=flags))
 
 
 class TestExpansionLimit(unittest.TestCase):

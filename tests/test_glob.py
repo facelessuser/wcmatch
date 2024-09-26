@@ -623,8 +623,8 @@ class Testglob(_TestGlob):
         Options(absolute=True, skip=sys.platform != "win32"),
         [('*:',), []],
         [('?:',), []],
-        [(r'\\\\?\\c:\\',), [('\\\\?\\c:\\',)]],
-        [(r'\\\\*\\*\\',), []],
+        [(R'\\\\?\\c:\\',), [('\\\\?\\c:\\',)]],
+        [(R'\\\\*\\*\\',), []],
         Options(absolute=False, skip=False),
 
         Options(skip=not can_symlink()),
@@ -659,7 +659,7 @@ class Testglob(_TestGlob):
             ]
         ],
         [
-            (r'*\\',),
+            (R'*\\',),
             [
                 ('aab', ''), ('aaa', ''), ('a', '')
             ] if not can_symlink() else [
@@ -675,7 +675,7 @@ class Testglob(_TestGlob):
         [('[a]',), [('a',)]],
         [('[!b]',), [('a',)]],
         [('[^b]',), [('a',)]],
-        [(r'@([\a]|\aaa)',), [('a',), ('aaa',)]],
+        [(R'@([\a]|\aaa)',), [('a',), ('aaa',)]],
 
         Options(absolute=True),
         # Test empty.
@@ -1420,14 +1420,14 @@ class TestGlobCornerCase(_TestGlob):
         [('@(a/b)',), []],
         [('@(a[/]b)',), []],
         [('test[',), [('test[',)]],
-        [(r'a\/b',), [('a', 'b')]],
-        [(r'a[\/]b',), [('a[', ']b')]],
+        [(R'a\/b',), [('a', 'b')]],
+        [(R'a[\/]b',), [('a[', ']b')]],
 
         Options(skip=util.is_case_sensitive()),
         [('a[\\',), [('a[',)]],
         [('@(a[\\',), [('@(a[',)]],
-        [(r'a[\\',), [('a[', '')]],
-        [(r'@(a[\\',), [('@(a[', '')]],
+        [(R'a[\\',), [('a[', '')]],
+        [(R'@(a[\\',), [('@(a[', '')]],
         Options(skip=False)
     ]
 
@@ -1482,53 +1482,53 @@ class TestGlobEscapes(unittest.TestCase):
 
         check = self.check_escape
         check('abc', 'abc')
-        check('[', r'\[')
-        check('?', r'\?')
-        check('*', r'\*')
-        check('[[_/*?*/_]]', r'\[\[_/\*\?\*/_\]\]')
-        check('/[[_/*?*/_]]/', r'/\[\[_/\*\?\*/_\]\]/')
+        check('[', R'\[')
+        check('?', R'\?')
+        check('*', R'\*')
+        check('[[_/*?*/_]]', R'\[\[_/\*\?\*/_\]\]')
+        check('/[[_/*?*/_]]/', R'/\[\[_/\*\?\*/_\]\]/')
 
     @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
     def test_escape_windows(self):
         """Test windows escapes."""
 
         check = self.check_escape
-        check('a:\\?', r'a:\\\?')
-        check('b:\\*', r'b:\\\*')
-        check('\\\\?\\c:\\?', r'\\\\?\\c:\\\?')
-        check('\\\\*\\*\\*', r'\\\\*\\*\\\*')
-        check('//?/c:/?', r'//?/c:/\?')
-        check('//*/*/*', r'//*/*/\*')
-        check('//[^what]/name/temp', r'//[^what]/name/temp')
+        check('a:\\?', R'a:\\\?')
+        check('b:\\*', R'b:\\\*')
+        check('\\\\?\\c:\\?', R'\\\\?\\c:\\\?')
+        check('\\\\*\\*\\*', R'\\\\*\\*\\\*')
+        check('//?/c:/?', R'//?/c:/\?')
+        check('//*/*/*', R'//*/*/\*')
+        check('//[^what]/name/temp', R'//[^what]/name/temp')
 
     def test_escape_forced_windows(self):
         """Test forced windows escapes."""
 
         check = self.check_escape
-        check('a:\\?', r'a:\\\?', unix=False)
-        check('b:\\*', r'b:\\\*', unix=False)
-        check('\\\\?\\c:\\?', r'\\\\?\\c:\\\?', unix=False)
-        check('\\\\*\\*\\*', r'\\\\*\\*\\\*', unix=False)
-        check('//?/c:/?', r'//?/c:/\?', unix=False)
-        check('//*/*/*', r'//*/*/\*', unix=False)
+        check('a:\\?', R'a:\\\?', unix=False)
+        check('b:\\*', R'b:\\\*', unix=False)
+        check('\\\\?\\c:\\?', R'\\\\?\\c:\\\?', unix=False)
+        check('\\\\*\\*\\*', R'\\\\*\\*\\\*', unix=False)
+        check('//?/c:/?', R'//?/c:/\?', unix=False)
+        check('//*/*/*', R'//*/*/\*', unix=False)
         check(
             '//./Volume{b75e2c83-0000-0000-0000-602f00000000}/temp',
-            r'//./Volume\{b75e2c83-0000-0000-0000-602f00000000\}/temp',
+            R'//./Volume\{b75e2c83-0000-0000-0000-602f00000000\}/temp',
             unix=False
         )
-        check('//[^what]/name/temp', r'//[^what]/name/temp', unix=False)
+        check('//[^what]/name/temp', R'//[^what]/name/temp', unix=False)
 
     def test_escape_forced_unix(self):
         """Test forced windows Unix."""
 
         check = self.check_escape
-        check('a:\\?', r'a:\\\?', unix=True)
-        check('b:\\*', r'b:\\\*', unix=True)
-        check('\\\\?\\c:\\?', r'\\\\\?\\c:\\\?', unix=True)
-        check('\\\\*\\*\\*', r'\\\\\*\\\*\\\*', unix=True)
-        check('//?/c:/?', r'//\?/c:/\?', unix=True)
-        check('//*/*/*', r'//\*/\*/\*', unix=True)
-        check('//[^what]/name/temp', r'//\[^what\]/name/temp', unix=True)
+        check('a:\\?', R'a:\\\?', unix=True)
+        check('b:\\*', R'b:\\\*', unix=True)
+        check('\\\\?\\c:\\?', R'\\\\\?\\c:\\\?', unix=True)
+        check('\\\\*\\*\\*', R'\\\\\*\\\*\\\*', unix=True)
+        check('//?/c:/?', R'//\?/c:/\?', unix=True)
+        check('//*/*/*', R'//\*/\*/\*', unix=True)
+        check('//[^what]/name/temp', R'//\[^what\]/name/temp', unix=True)
 
 
 @unittest.skipUnless(sys.platform.startswith('win'), "Windows specific test")
@@ -1658,7 +1658,7 @@ class TestGlobPaths(unittest.TestCase):
         self.assertTrue(len(results) > 0)
         self.assertTrue('\\' not in results)
 
-        results = glob.glob(r'\\*')
+        results = glob.glob(R'\\*')
         self.assertTrue(len(results) > 0)
         self.assertTrue('\\' not in results)
 
