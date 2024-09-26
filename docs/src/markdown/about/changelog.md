@@ -4,8 +4,8 @@
 
 -   **NEW**: Added `GLOBSTARLONG` which adds support for the Zsh style `***` which acts like `**` with `GLOBSTAR` but
     but traverses symlinks.
--   **NEW**: `pathlib.match` will respect symlinks (when the `REALPATH` flag is given) and hidden file rules (enable
-    `DOTALL` to match hidden files).
+-   **NEW**: `pathlib.match` will respect symlink rules (when the `REALPATH` flag is given). Hidden file rules will
+    be respected at all times. Enable `DOTALL` to match hidden files.
 -   **NEW**: Symlinks should not be traversed when `GLOBSTAR` is enabled unless `FOLLOW` is also enabled, but they
     should still be matched. Prior to this change, symlinks were not traversed _and_ they were ignored from matching
     which contradicts how Bash works and could be confusing to users.
