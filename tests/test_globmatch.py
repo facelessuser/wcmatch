@@ -1620,6 +1620,32 @@ class TestGlobmatchSymlink(_TestGlobmatch):
 
         self.assertFalse(glob.globmatch(self.tempdir + '/sym1/a.txt', '**/{*.txt,*.t*}', flags=self.default_flags))
 
+    def test_globmatch_globstarlong(self):
+        """Test `***`."""
+
+        flags = glob.GL | glob.P
+        self.assertTrue(glob.globmatch(self.tempdir + '/sym1/a.txt', '***/*.txt', flags=flags))
+        self.assertFalse(glob.globmatch(self.tempdir + '/sym1/a.txt', '**/*.txt', flags=flags))
+
+    def test_globmatch_globstarlong_follow(self):
+        """Test `***` with `FOLLOW`."""
+
+        flags = glob.GL | glob.P | glob.L
+        self.assertTrue(glob.globmatch(self.tempdir + '/sym1/a.txt', '***/*.txt', flags=flags))
+        self.assertFalse(glob.globmatch(self.tempdir + '/sym1/a.txt', '**/*.txt', flags=flags))
+
+    def test_globmatch_globstarlong_matchbase(self):
+        """Test `***` with `MATCHBASE`."""
+
+        flags = glob.GL | glob.P | glob.X
+        self.assertFalse(glob.globmatch(self.tempdir + '/sym1/a.txt', '*.txt', flags=flags))
+
+    def test_globmatch_globstarlong_matchbase_follow(self):
+        """Test `***` with `MATCHBASE`."""
+
+        flags = glob.GL | glob.P | glob.X | glob.L
+        self.assertTrue(glob.globmatch(self.tempdir + '/sym1/a.txt', '*.txt', flags=flags))
+
 
 @unittest.skipUnless(os.path.expanduser('~') != '~', "Requires expand user functionality")
 class TestTilde(unittest.TestCase):
