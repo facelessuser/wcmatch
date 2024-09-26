@@ -146,7 +146,23 @@ class PurePath(pathlib.PurePath):
             exclude=exclude
         )
 
-    full_match = globmatch
+    def full_match(  # type: ignore[override, unused-ignore]
+        self,
+        patterns: str | Sequence[str],
+        *,
+        flags: int = 0,
+        limit: int = _wcparse.PATTERN_LIMIT,
+        exclude: str | Sequence[str] | None = None
+    ) -> bool:
+        """Alias for Python 3.13 `full_match`, but redirects to use `globmatch`."""
+
+        return glob.globmatch(
+            self._translate_path(),
+            patterns,
+            flags=self._translate_flags(flags),
+            limit=limit,
+            exclude=exclude
+        )
 
 
 class Path(pathlib.Path):
