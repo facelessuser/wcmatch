@@ -132,9 +132,9 @@ class _GlobSplit(Generic[AnyStr]):
 
     Glob pattern return a list of patterns broken down at the directory
     boundary. Each piece will either be a literal file part or a magic part.
-    Each part will will contain info regarding whether they are
-    a directory pattern or a file pattern and whether the part
-    is "magic", etc.: `["pattern", is_magic, is_globstar, dir_only, is_drive]`.
+    Each part will contain info regarding whether they are a directory pattern
+    or a file pattern and whether the part is "magic", etc.:
+    `["pattern", is_magic, is_globstar, dir_only, is_drive]`.
 
     Example:
     -------

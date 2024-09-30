@@ -212,7 +212,7 @@ True
 #### `pathlib.WindowsPath` {: #windowspath}
 
 `WindowsPath` is Wildcard Match's version of Python's `WindowsPath`. The `WindowsPath` class is useful if you'd like to
-have the ease that `pathlib` offers when working with a path and be able to manipulate or gain access to to information
+have the ease that `pathlib` offers when working with a path and be able to manipulate or gain access to information
 about that file. You cannot instantiate this class on a Posix system. This class will utilize Wildcard Match's
 [`glob`](./glob.md) for all glob related actions. The class is subclassed from [`Path`](#path).
 
@@ -227,7 +227,7 @@ WindowsPath('c:/some/path')
 #### `pathlib.PosixPath` {: #posixpath}
 
 `PosixPath` is Wildcard Match's version of Python's `PosixPath`. The `PosixPath` class is useful if you'd like to
-have the ease that `pathlib` offers when working with a path and be able to manipulate or gain access to to information
+have the ease that `pathlib` offers when working with a path and be able to manipulate or gain access to information
 about that file. You cannot instantiate this class on a Windows system. This class will utilize Wildcard Match's
 [`glob`](./glob.md) for all glob related actions. The class is subclassed from [`Path`](#path).
 

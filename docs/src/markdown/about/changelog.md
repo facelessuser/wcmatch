@@ -3,7 +3,7 @@
 ## 10.0
 
 -   **NEW**: Added `GLOBSTARLONG` which adds support for the Zsh style `***` which acts like `**` with `GLOBSTAR` but
-    but traverses symlinks.
+    traverses symlinks.
 -   **NEW**: `pathlib.match` will respect symlink rules (when the `REALPATH` flag is given). Hidden file rules will
     be respected at all times. Enable `DOTALL` to match hidden files.
 -   **NEW**: Symlinks should not be traversed when `GLOBSTAR` is enabled unless `FOLLOW` is also enabled, but they
@@ -124,7 +124,7 @@
 ## 7.0.1
 
 -   **FIX**: Ensure that when using `REALPATH` that all symlinks are evaluated.
--   **FIX**: Fix issue where an extended pattern pattern can't follow right behind an inverse extended pattern.
+-   **FIX**: Fix issue where an extended pattern can't follow right behind an inverse extended pattern.
 -   **FIX**: Fix issues related to nested inverse glob patterns.
 
 ## 7.0
@@ -280,8 +280,8 @@ Check out [Release Notes](./release.md#upgrade-to-7.0) to learn more about upgra
 -   **NEW**: Deprecated `WcMatch` class methods `kill` and `reset`. `WcMatch` should be broken with a simple `break`
     statement instead.
 -   **NEW**: Add a new flag `MARK` to force `glob` to return directories with a trailing slash.
--   **NEW**: Add `MATCHBASE` that causes glob glob related functions and `WcMatch`, when the pattern has no slashes in
-    it, to seek for any file anywhere in the tree with a matching basename.
+-   **NEW**: Add `MATCHBASE` that causes glob related functions and `WcMatch`, when the pattern has no slashes in it, to
+    seek for any file anywhere in the tree with a matching basename.
 -   **NEW**: Add `NODIR` that causes `glob` matchers and crawlers to only match and return files.
 -   **NEW**: Exclusion patterns (enabled with `NEGATE`) now always enable `DOTALL` in the exclusion patterns. They also
     will match symlinks in `**` patterns. Only non `NEGATE` patterns that are paired with a `NEGATE` pattern are subject

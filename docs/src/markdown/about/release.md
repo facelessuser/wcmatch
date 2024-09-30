@@ -101,7 +101,7 @@ patterns, which are used to filter the results, can match `.` or `..` with `.*`:
 []
 ```
 
-If we want to modify the pattern matcher, and not just the the directory scanner, we can use the flag
+If we want to modify the pattern matcher, and not just the directory scanner, we can use the flag
 [`NODITDIR`](../glob.md#nodotdir).
 
 ```pycon3

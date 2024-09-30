@@ -355,9 +355,9 @@ pattern which will perform much better: `@(ab|ac|ad)`.
     still impact performance as each file must get compared against many patterns until one is matched. Sometimes
     patterns like this are needed, so construct patterns thoughtfully and carefully.
 
-2.  Splitting patterns with `|` is built into [`WcMatch`](#wcmatch_1). `BRACE` and and splitting with `|` both
-    expand patterns into multiple patterns. Using these two syntaxes simultaneously can exponential increase in
-    duplicate patterns:
+2.  Splitting patterns with `|` is built into [`WcMatch`](#wcmatch_1). `BRACE` and splitting with `|` both expand
+    patterns into multiple patterns. Using these two syntaxes simultaneously can exponential increase in duplicate
+    patterns:
 
     ```pycon3
     >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
@@ -409,11 +409,10 @@ for convenience.
 
 #### `wcmatch.MATCHBASE, wcmatch.X` {: #matchbase}
 
-When [`FILEPATHNAME`](#filepathname) or [`DIRPATHNAME`](#dirpathname) is enabled, `MATCHBASE` will ensure
-that that the respective file or directory pattern, when there are no slashes in the pattern, seeks for any file
-anywhere in the tree with a matching basename. This is essentially the behavior when
-[`FILEPATHNAME`](#filepathname) and [`DIRPATHNAME`](#dirpathname) is disabled, but with `MATCHBASE`, you
-can toggle the behavior by including slashes in your pattern.
+When [`FILEPATHNAME`](#filepathname) or [`DIRPATHNAME`](#dirpathname) is enabled, `MATCHBASE` will ensure that the
+respective file or directory pattern, when there are no slashes in the pattern, seeks for any file anywhere in the tree
+with a matching basename. This is essentially the behavior when [`FILEPATHNAME`](#filepathname) and
+[`DIRPATHNAME`](#dirpathname) is disabled, but with `MATCHBASE`, you can toggle the behavior by including slashes in your pattern.
 
 When we include no slashes:
 
