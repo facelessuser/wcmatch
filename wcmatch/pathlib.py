@@ -1,3 +1,4 @@
+# noqa: A005
 """Pathlib implementation that uses our own glob."""
 from __future__ import annotations
 import pathlib

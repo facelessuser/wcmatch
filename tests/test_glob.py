@@ -531,17 +531,13 @@ class Testglob(_TestGlob):
         Options(default_negate='sym3/EF'),
         [
             ('**', 'EF'),
-            [
-            ] if not can_symlink() else [
-            ],
+            [],
             glob.N | glob.L
         ],
 
         [
             ('**', 'EF'),
-            [
-            ] if not can_symlink() else [
-            ],
+            [],
             glob.N
         ],
 
@@ -953,9 +949,7 @@ class Testglob(_TestGlob):
         Options(just_negative=True, default_negate='**'),
         [
             ('a*', '**'),
-            [
-            ] if not can_symlink() else [
-            ],
+            [],
             glob.N
         ],
         Options(just_negative=False, cwd_temp=False, absolute=False),

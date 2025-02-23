@@ -776,3 +776,31 @@ class TestTypes(unittest.TestCase):
         """Test `list` matching."""
 
         self.assertTrue(fnmatch.fnmatch('a', ['a']))
+
+
+class TestPrecompile(unittest.TestCase):
+    """Test precompiled match objects."""
+
+    def test_precompiled_match(self):
+        """Test precompiled matching."""
+
+        m = fnmatch.compile('*file')
+        self.assertTrue(m.match('testfile'))
+
+    def test_precompiled_match_empty(self):
+        """Test precompiled matching with empty input."""
+
+        m = fnmatch.compile('*file')
+        self.assertFalse(m.match(''))
+
+    def test_precompiled_filter(self):
+        """Test precompiled filtering."""
+
+        m = fnmatch.compile('*file')
+        self.assertEqual(m.filter(['testfile', 'test_2_file', 'nope']), ['testfile', 'test_2_file'])
+
+    def test_precompiled_filter_empty(self):
+        """Test precompiled filtering with empty input."""
+
+        m = fnmatch.compile('*file')
+        self.assertEqual(m.filter([]), [])

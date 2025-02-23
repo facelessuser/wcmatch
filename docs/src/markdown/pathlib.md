@@ -1,6 +1,6 @@
 # `wcmatch.pathlib`
 
-```py3
+```py
 from wcmatch import pathlib
 ```
 
@@ -243,7 +243,7 @@ PosixPath('/usr/local/bin')
 
 #### `PurePath.match` {: #match}
 
-```py3
+```py
 def match(self, patterns, *, flags=0, limit=1000, exclude=None):
 ```
 
@@ -282,7 +282,7 @@ True
 
 #### `PurePath.globmatch` {: #globmatch}
 
-```py3
+```py
 def globmatch(self, patterns, *, flags=0, limit=1000, exclude=None):
 ```
 
@@ -321,7 +321,7 @@ True
 /// new | new 10.0
 ///
 
-```py3
+```py
 def full_match(self, patterns, *, flags=0, limit=1000, exclude=None):
 ```
 
@@ -331,7 +331,7 @@ what our existing `PurePath.globmatch` has been doing prior to Python 3.13. We'v
 
 #### `Path.glob` {: #glob}
 
-```py3
+```py
 def glob(self, patterns, *, flags=0, limit=1000, exclude=None):
 ```
 
@@ -366,7 +366,7 @@ working directory.
 
 #### `Path.rglob` {: #rglob}
 
-```py3
+```py
 def rglob(self, patterns, *, flags=0, path_limit=1000, exclude=None):
 ```
 
@@ -414,8 +414,8 @@ insensitively, but the rest of the path will have case sensitive logic applied.
 
 #### `glob.RAWCHARS, glob.R` {: #rawchars}
 
-`RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will
-handle standard string escapes and Unicode including `#!py3 r'\N{CHAR NAME}'`.
+`RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py r'\u0040'` --> `#!py r'@'`. This will
+handle standard string escapes and Unicode including `#!py r'\N{CHAR NAME}'`.
 
 #### `pathlib.NEGATE, pathlib.N` {: #negate}
 
