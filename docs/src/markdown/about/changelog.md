@@ -1,5 +1,10 @@
 # Changelog
 
+## 10.1
+
+-   **NEW**: Add `wcmatch.glob.compile(pattern)` and `wcmatch.fnmatch.compile(pattern)` to allow for precompiled matcher
+    objects that can be reused.
+
 ## 10.0
 
 -   **NEW**: Added `GLOBSTARLONG` which adds support for the Zsh style `***` which acts like `**` with `GLOBSTAR` but
@@ -80,7 +85,7 @@
 -   **NEW**: `fnmatch` now has `escape` available via its API. The `fnmatch` variant uses filename logic instead of path
     logic.
 -   **NEW**: Deprecate `raw_escape` in `glob` as it is very niche and the same can be accomplished simply by using
-    `#!py3 codecs.decode(string, 'unicode_escape')` and then using `escape`.
+    `codecs.decode(string, 'unicode_escape')` and then using `escape`.
 -   **FIX**: Use `os.fspath` to convert path-like objects to string/bytes, whatever the return from `__fspath__` is what
     Wildcard Match will accept. Don't try to convert paths via `__str__` or `__bytes__` as not all path-like objects may
     implement both.

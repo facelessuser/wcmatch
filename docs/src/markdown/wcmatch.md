@@ -1,6 +1,6 @@
 # `wcmatch.wcmatch`
 
-```py3
+```py
 from wcmatch import wcmatch
 ```
 
@@ -16,7 +16,7 @@ interface.
 
 ## `wcmatch.WcMatch` {: #wcmatch}
 
-```py3
+```py
 class WcMatch:
     """Finds files by wildcard."""
 
@@ -32,10 +32,10 @@ is matched, skipped, or when there is an error. There are also hooks where you c
 Parameter         | Default       | Description
 ----------------- | ------------- | -----------
 `root_dir`        |               | The root directory to search.
-`file_pattern`    | `#!py3 ''`    | One or more patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#minusnegate) is set). The default is an empty string, but if an empty string is used, all files will be matched.
-`exclude_pattern` | `#!py3 ''`    | Zero or more folder exclude patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#minusnegate) is set).
-`flags`           | `#!py3 0`     | Flags to alter behavior of folder and file matching. See [Flags](#flags) for more info.
-`limit`           | `#!py3 1000`  | Allows configuring the [max pattern limit](#multi-pattern-limits).
+`file_pattern`    | `#!py ''`    | One or more patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#minusnegate) is set). The default is an empty string, but if an empty string is used, all files will be matched.
+`exclude_pattern` | `#!py ''`    | Zero or more folder exclude patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#minusnegate) is set).
+`flags`           | `#!py 0`     | Flags to alter behavior of folder and file matching. See [Flags](#flags) for more info.
+`limit`           | `#!py 1000`  | Allows configuring the [max pattern limit](#multi-pattern-limits).
 
 /// note
 Dots are not treated special in `wcmatch`. When the `HIDDEN` flag is not included, all hidden files (system and dot
@@ -210,7 +210,7 @@ Returns the number of skipped files. Files in skipped folders are not included i
 
 #### `WcMatch.on_init` {: #on_init}
 
-```py3
+```py
    def on_init(self, **kwargs):
         """Handle custom init."""
 ```
@@ -225,7 +225,7 @@ Starting in 8.0, `on_init` only accepts keyword arguments as now `WcMatch` requi
 
 #### `WcMatch.on_validate_directory` {: #on_validate_directory}
 
-```py3
+```py
     def on_validate_directory(self, base, name):
         """Validate folder override."""
 
@@ -237,7 +237,7 @@ overridden to provide additional validation if required.
 
 #### `WcMatch.on_validate_file` {: #on_validate_file}
 
-```py3
+```py
     def on_validate_file(self, base, name):
         """Validate file override."""
 
@@ -249,7 +249,7 @@ provide additional validation if required.
 
 #### `WcMatch.on_skip` {: #on_skip}
 
-```py3
+```py
     def on_skip(self, base, name):
         """On skip."""
 
@@ -263,7 +263,7 @@ a special type for skip returns so that you can identify them when they are retu
 
 #### `WcMatch.on_error` {: #on_error}
 
-```py3
+```py
     def on_error(self, base, name):
         """On error."""
 
@@ -276,7 +276,7 @@ returns so that you can identify them when they are returned via [`match`](#matc
 
 #### `WcMatch.on_match` {: #on_match}
 
-```py3
+```py
     def on_match(self, base, name):
         """On match."""
 
@@ -290,7 +290,7 @@ file meta data. `on_match` must return something, and all results will be return
 
 #### `WcMatch.on_reset` {: #on_reset}
 
-```py3
+```py
     def on_reset(self):
         """On reset."""
         pass
@@ -325,8 +325,8 @@ crawl.
 
 #### `wcmatch.RAWCHARS, wcmatch.R` {: #rawchars}
 
-`RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will
-handle standard string escapes and Unicode (including `#!py3 r'\N{CHAR NAME}'`).
+`RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py r'\u0040'` --> `#!py r'@'`. This will
+handle standard string escapes and Unicode (including `#!py r'\N{CHAR NAME}'`).
 
 #### `wcmatch.EXTMATCH, wcmatch.E` {: #extmatch}
 

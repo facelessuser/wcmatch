@@ -5,7 +5,7 @@ import os
 import stat
 import copyreg
 from . import util
-from typing import Pattern, AnyStr, Generic, Any
+from typing import Pattern, AnyStr, Generic, Iterable, Any
 
 # `O_DIRECTORY` may not always be defined
 DIR_FLAGS = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
@@ -320,20 +320,57 @@ class WcRegexp(util.Immutable, Generic[AnyStr]):
             self._follow != other._follow
         )
 
-    def match(self, filename: AnyStr, root_dir: AnyStr | None = None, dir_fd: int | None = None) -> bool:
-        """Match filename."""
+    def match(
+        self,
+        filename: AnyStr | os.PathLike[AnyStr],
+        root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+        dir_fd: int | None = None
+    ) -> bool:
+        """Filter filenames."""
+
+        if not filename:
+            return False
 
         return _Match(
-            filename,
+            os.fspath(filename),
             self._include,
             self._exclude,
             self._real,
             self._path,
             self._follow
         ).match(
-            root_dir=root_dir,
+            root_dir=os.fspath(root_dir) if root_dir is not None else None,
             dir_fd=dir_fd
         )
+
+    def filter(
+        self,
+        filenames: Iterable[AnyStr | os.PathLike[AnyStr]],
+        root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+        dir_fd: int | None = None
+    ) ->  list[AnyStr | os.PathLike[AnyStr]]:
+        """Filter filenames."""
+
+        if not filenames:
+            return []
+
+        rdir = os.fspath(root_dir) if root_dir is not None else None
+        matches = [
+            filename
+            for filename in filenames
+            if _Match(
+                os.fspath(filename),
+                self._include,
+                self._exclude,
+                self._real,
+                self._path,
+                self._follow
+            ).match(
+                root_dir=rdir,
+                dir_fd=dir_fd
+            )
+        ]
+        return matches
 
 
 def _pickle(p):  # type: ignore[no-untyped-def]

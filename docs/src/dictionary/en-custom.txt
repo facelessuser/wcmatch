@@ -17,6 +17,7 @@ MkDocs
 NONINFRINGEMENT
 POSIX
 Pathlib
+Precompiling
 Preprocess
 PyPI
 Setuptools
@@ -58,6 +59,8 @@ paren
 pathlike
 posix
 pre
+precompile
+precompiled
 prepend
 prepends
 preprocessing

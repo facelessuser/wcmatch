@@ -1,3 +1,4 @@
+# noqa: A005
 """
 Wild Card Match.
 
@@ -13,6 +14,7 @@ import bracex
 from . import _wcparse
 from . import _wcmatch
 from . import util
+from ._wcmatch import WcRegexp
 from typing import Iterator, Iterable, AnyStr, Generic, Pattern, Callable, Any, Sequence
 
 __all__ = (
@@ -21,7 +23,8 @@ __all__ = (
     "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX", "GLOBTILDE",
     "NODOTDIR", "SCANDOTDIR", "SUPPORT_DIR_FD", "GLOBSTARLONG",
     "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T", "Q", "Z", "SD", "GL",
-    "iglob", "glob", "globmatch", "globfilter", "escape", "is_magic"
+    "iglob", "glob", "globmatch", "globfilter", "escape", "is_magic", "compile",
+    "Glob", "WcMatcher"
 )
 
 # We don't use `util.platform` only because we mock it in tests,
@@ -388,6 +391,7 @@ class Glob(Generic[AnyStr]):
     def __init__(
         self,
         pattern: AnyStr | Sequence[AnyStr],
+        *,
         flags: int = 0,
         root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
         dir_fd: int | None = None,
@@ -403,6 +407,10 @@ class Glob(Generic[AnyStr]):
             flags = _wcparse.no_negate_flags(flags)
 
         self.pattern = []  # type: list[list[_GlobPart]]
+
+        if not isinstance(pattern, (str, bytes)) and not pattern:
+            return
+
         self.npatterns = []  # type: list[Pattern[AnyStr]]
         self.seen = set()  # type: set[AnyStr]
         self.dir_fd = dir_fd if SUPPORT_DIR_FD else None  # type: int | None
@@ -597,15 +605,15 @@ class Glob(Generic[AnyStr]):
         """Check if file exists."""
 
         if not self.dir_fd:
-            return os.path.lexists(self.prepend_base(path))
+            return os.path.lexists(self._prepend_base(path))
         try:
-            os.lstat(self.prepend_base(path), dir_fd=self.dir_fd)
+            os.lstat(self._prepend_base(path), dir_fd=self.dir_fd)
         except (OSError, ValueError):  # pragma: no cover
             return False
         else:
             return True
 
-    def prepend_base(self, path: AnyStr) -> AnyStr:
+    def _prepend_base(self, path: AnyStr) -> AnyStr:
         """Join path to base if pattern is not absolute."""
 
         if self.is_abs_pattern:
@@ -777,7 +785,7 @@ class Glob(Generic[AnyStr]):
             results = [(curdir, True)]
         return results
 
-    def is_unique(self, path: AnyStr) -> bool:
+    def _is_unique(self, path: AnyStr) -> bool:
         """Test if path is unique."""
 
         if self.nounique:
@@ -795,11 +803,11 @@ class Glob(Generic[AnyStr]):
         path = self.re_pathlib_norm.sub(self.empty, path)
         return path[:-1] if len(path) > 1 and path[-1:] in self.seps else path
 
-    def format_path(self, path: AnyStr, is_dir: bool, dir_only: bool) -> Iterator[AnyStr]:
+    def _format_path(self, path: AnyStr, is_dir: bool, dir_only: bool) -> Iterator[AnyStr]:
         """Format path."""
 
         path = os.path.join(path, self.empty) if dir_only or (self.mark and is_dir) else path
-        if self.is_unique(self._pathlib_norm(path) if self.pathlib else path):
+        if self._is_unique(self._pathlib_norm(path) if self.pathlib else path):
             yield path
 
     def glob(self) -> Iterator[AnyStr]:
@@ -820,7 +828,7 @@ class Glob(Generic[AnyStr]):
                     curdir = this[0]
 
                     # Abort if we cannot find the drive, or if current directory is empty
-                    if not curdir or (self.is_abs_pattern and not self._lexists(self.prepend_base(curdir))):
+                    if not curdir or (self.is_abs_pattern and not self._lexists(self._prepend_base(curdir))):
                         continue
 
                     # Make sure case matches, but running case insensitive
@@ -838,21 +846,21 @@ class Glob(Generic[AnyStr]):
                                 this = rest.pop(0)
                                 for match, is_dir in self._glob(start, this, rest):
                                     if not self._is_excluded(match, is_dir):
-                                        yield from self.format_path(match, is_dir, dir_only)
+                                        yield from self._format_path(match, is_dir, dir_only)
                             elif not self._is_excluded(start, is_dir):
-                                yield from self.format_path(start, is_dir, dir_only)
+                                yield from self._format_path(start, is_dir, dir_only)
                     else:
                         # Return the file(s) and finish.
                         for match, is_dir in results:
                             if self._lexists(match) and not self._is_excluded(match, is_dir):
-                                yield from self.format_path(match, is_dir, dir_only)
+                                yield from self._format_path(match, is_dir, dir_only)
                 else:
                     # Path starts with a magic pattern, let's get globbing
                     rest = pattern[:]
                     this = rest.pop(0)
                     for match, is_dir in self._glob(curdir if not curdir == self.current else self.empty, this, rest):
                         if not self._is_excluded(match, is_dir):
-                            yield from self.format_path(match, is_dir, dir_only)
+                            yield from self._format_path(match, is_dir, dir_only)
 
 
 def iglob(
@@ -866,10 +874,14 @@ def iglob(
 ) -> Iterator[AnyStr]:
     """Glob."""
 
-    if not isinstance(patterns, (str, bytes)) and not patterns:
-        return
-
-    yield from Glob(patterns, flags, root_dir, dir_fd, limit, exclude).glob()
+    yield from Glob(
+        patterns,
+        flags=flags,
+        root_dir=root_dir,
+        dir_fd=dir_fd,
+        limit=limit,
+        exclude=exclude
+    ).glob()
 
 
 def glob(
@@ -886,6 +898,49 @@ def glob(
     return list(iglob(patterns, flags=flags, root_dir=root_dir, dir_fd=dir_fd, limit=limit, exclude=exclude))
 
 
+class WcMatcher(Generic[AnyStr]):
+    """Pre-compiled matcher object."""
+
+    def __init__(self, matcher: WcRegexp[AnyStr]) -> None:
+        """Initialize."""
+
+        self.matcher = matcher  # type: WcRegexp[AnyStr]
+
+    def match(
+        self,
+        filename: AnyStr | os.PathLike[AnyStr],
+        *,
+        root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+        dir_fd: int | None = None
+    ) -> bool:
+        """Match filename."""
+
+        return self.matcher.match(filename, root_dir, dir_fd)
+
+    def filter(
+        self,
+        filenames: Iterable[AnyStr | os.PathLike[AnyStr]],
+        *,
+        root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+        dir_fd: int | None = None
+    ) -> list[AnyStr | os.PathLike[AnyStr]]:
+        """Match filename."""
+
+        return self.matcher.filter(filenames, root_dir, dir_fd)
+
+
+def compile(  # noqa: A001
+    patterns: AnyStr | Sequence[AnyStr],
+    *,
+    flags: int = 0,
+    limit: int = _wcparse.PATTERN_LIMIT,
+    exclude: AnyStr | Sequence[AnyStr] | None = None
+) -> WcMatcher[AnyStr]:
+    """Pre-compile a matcher object."""
+
+    return WcMatcher(_wcparse.compile(patterns, _flag_transform(flags), limit, exclude=exclude))
+
+
 def translate(
     patterns: AnyStr | Sequence[AnyStr],
     *,
@@ -895,8 +950,7 @@ def translate(
 ) -> tuple[list[AnyStr], list[AnyStr]]:
     """Translate glob pattern."""
 
-    flags = _flag_transform(flags)
-    return _wcparse.translate(patterns, flags, limit, exclude)
+    return _wcparse.translate(patterns, _flag_transform(flags), limit, exclude)
 
 
 def globmatch(
@@ -916,15 +970,7 @@ def globmatch(
     but if `case_sensitive` is set, respect that instead.
     """
 
-    # Shortcut out if we have no patterns
-    if not patterns:
-        return False
-
-    rdir = os.fspath(root_dir) if root_dir is not None else root_dir
-    flags = _flag_transform(flags)
-    fname = os.fspath(filename)
-
-    return bool(_wcparse.compile(patterns, flags, limit, exclude).match(fname, rdir, dir_fd))
+    return _wcparse.compile(patterns, _flag_transform(flags), limit, exclude).match(filename, root_dir, dir_fd)
 
 
 def globfilter(
@@ -939,21 +985,7 @@ def globfilter(
 ) -> list[AnyStr | os.PathLike[AnyStr]]:
     """Filter names using pattern."""
 
-    # Shortcut out if we have no patterns
-    if not patterns:
-        return []
-
-    rdir = os.fspath(root_dir) if root_dir is not None else root_dir
-
-    matches = []  # type: list[AnyStr | os.PathLike[AnyStr]]
-    flags = _flag_transform(flags)
-    obj = _wcparse.compile(patterns, flags, limit, exclude)
-
-    for filename in filenames:
-        temp = os.fspath(filename)
-        if obj.match(temp, rdir, dir_fd):
-            matches.append(filename)
-    return matches
+    return _wcparse.compile(patterns, _flag_transform(flags), limit, exclude).filter(filenames, root_dir, dir_fd)
 
 
 def escape(pattern: AnyStr, unix: bool | None = None) -> AnyStr:

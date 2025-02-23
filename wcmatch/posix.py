@@ -1,3 +1,4 @@
+# noqa: A005
 """Posix Properties."""
 from __future__ import annotations
 

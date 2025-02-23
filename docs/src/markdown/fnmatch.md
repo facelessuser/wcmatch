@@ -1,6 +1,6 @@
 # `wcmatch.fnmatch`
 
-```py3
+```py
 from wcmatch import fnmatch
 ```
 
@@ -13,7 +13,7 @@ default. See [flags](#flags) for more information.
 
 /// tip | Backslashes
 When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a
-character `#!py3 r'\?'`.  If you want to represent a literal backslash, you must use two: `#!py3 r'some\\path'`.
+character `#!py r'\?'`.  If you want to represent a literal backslash, you must use two: `#!py r'some\\path'`.
 ///
 
 Pattern           | Meaning
@@ -51,11 +51,30 @@ be no limit.
 The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
 ///
 
+## Precompiling
+
+While patterns are often cached, auto expanding patterns, such as `'file{a, b, c}'` will have each individual
+permutation cached (up to the cache limit), but not the entire pattern. This is to prevent the cache from exploding with
+really large patterns such as `{1..100}`. Essentially, individual patterns are cached, but not the expansion of a
+pattern into many patterns.
+
+If it is planned to reuse a pattern and the performance hit of recompiling is not desired, you can precompile a matcher
+object via [`fnmatch.compile`](#compile) which returns a [`WcMatcher`](#wcmatcher) object.
+
+```py
+>>> import wcmatch.fnmatch as fnmatch
+>>> m = fnmatch.compile('*.md')
+>>> m.match('README.md')
+True
+>>> m.filter(['test.txt', 'file.md', 'README.md'])
+['file.md', 'README.md']
+```
+
 ## API
 
 #### `fnmatch.fnmatch` {: #fnmatch}
 
-```py3
+```py
 def fnmatch(filename, patterns, *, flags=0, limit=1000, exclude=None)
 ```
 
@@ -128,7 +147,7 @@ True
 
 #### `fnmatch.filter` {: #filter}
 
-```py3
+```py
 def filter(filenames, patterns, *, flags=0, limit=1000, exclude=None):
 ```
 
@@ -151,9 +170,60 @@ pattern or a list of patterns.It returns a list of all files that matched the pa
 `exclude` parameter was added.
 ///
 
+#### `fnmatch.compile` {: #compile}
+
+```py
+def compile(patterns, *, flags=0, limit=1000, exclude=None):
+```
+
+The `compile` function takes a file pattern (or list of patterns) and flags. It also allows configuring the [max pattern
+limit](#multi-pattern-limits). Exclusion patterns can be specified via the `exclude` parameter which takes a pattern or
+a list of patterns. It returns a [`WcMatcher`](#wcmatcher) object which can match or filter file paths depending on
+which method is called.
+
+```pycon3
+>>> import wcmatch.fnmatch as fnmatch
+>>> m = fnmatch.compile('*.md')
+>>> m.match('README.md')
+True
+>>> m.filter(['test.txt', 'file.md', 'README.md'])
+['file.md', 'README.md']
+```
+
+#### `fnmatch.WcMatcher` {: #wcmatcher}
+
+The `WcMatcher` class is returned when a pattern is precompiled with [`compile`](#compile). It has two methods: `match`
+and `filter`.
+
+```py
+def match(self, filename):
+```
+
+This `match` method allows for matching against a precompiled pattern.
+
+```pycon3
+>>> import wcmatch.fnmatch as fnmatch
+>>> m = fnmatch.compile('*.md')
+>>> m.match('README.md')
+True
+```
+
+```py
+def filter(self, filenames):
+```
+
+The `filter` method allows for filtering paths against a precompiled pattern.
+
+```pycon3
+>>> import wcmatch.fnmatch as fnmatch
+>>> m = fnmatch.compile('*.md')
+>>> m.filter(['test.txt', 'file.md', 'README.md'])
+['file.md', 'README.md']
+```
+
 #### `fnmatch.translate` {: #translate}
 
-```py3
+```py
 def translate(patterns, *, flags=0, limit=1000, exclude=None):
 ```
 
@@ -173,8 +243,8 @@ matches at least one inclusion pattern and matches **none** of the exclusion pat
 
 When using [`EXTMATCH`](#extmatch) patterns, patterns will be returned with capturing groups around the groups:
 
-While in regex patterns like `#!py3 r'(a)+'` would capture only the last character, even though multiple where matched,
-we wrap the entire group to be captured: `#!py3 '+(a)'` --> `#!py3 r'((a)+)'`.
+While in regex patterns like `#!py r'(a)+'` would capture only the last character, even though multiple where matched,
+we wrap the entire group to be captured: `#!py '+(a)'` --> `#!py r'((a)+)'`.
 
 ```pycon3
 >>> from wcmatch import fnmatch
@@ -199,7 +269,7 @@ Translate patterns now provide capturing groups for [`EXTMATCH`](#extmatch) grou
 
 #### `fnmatch.escape` {: #escape}
 
-```py3
+```py
 def escape(pattern):
 ```
 
@@ -220,7 +290,7 @@ An `escape` variant for `fnmatch` was made available in 8.1.
 
 ### `fnmatch.is_magic` {: #is_magic}
 
-```py3
+```py
 def is_magic(pattern, *, flags=0):
     """Check if the pattern is likely to be magic."""
 ```
@@ -267,8 +337,8 @@ Added `is_magic` in 8.1.
 
 #### `fnmatch.RAWCHARS, fnmatch.R` {: #rawchars}
 
-`RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will
-handle standard string escapes and Unicode including `#!py3 r'\N{CHAR NAME}'`.
+`RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py r'\u0040'` --> `#!py r'@'`. This will
+handle standard string escapes and Unicode including `#!py r'\N{CHAR NAME}'`.
 
 #### `fnmatch.NEGATE, fnmatch.N` {: #negate}
 

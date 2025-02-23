@@ -13,7 +13,7 @@ The [`WcMatch`](../wcmatch.md#wcmatch) class `on_init` hook was cleaned up. Prio
 Moving forward, the `WcMatch` class will restrict all parameters to `**kwargs`. If you are using the `on_init` hook,
 you will simply need to change your override to accept arguments as `**kwargs`:
 
-```py3
+```py
 # Excplicitly named
 def on_init(self, key1=value, key2=value):
 
@@ -23,7 +23,7 @@ def on_init(self, **kwargs):
 
 Lastly, only pass your custom variables in as keyword arguments:
 
-```py3
+```py
 CustomWcmatch('.', '*.md|*.txt', flags=wcmatch.RECURSIVE, custom_key=value)
 ```
 

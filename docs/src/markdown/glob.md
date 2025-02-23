@@ -1,6 +1,6 @@
 # `wcmatch.glob`
 
-```py3
+```py
 from wcmatch import glob
 ```
 
@@ -13,7 +13,7 @@ what [`glob`](#glob) globs :slight_smile:.
 
 /// tip
 When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a
-character `#!py3 r'\?'`.  If you want to represent a literal backslash, you must use two: `#!py3 r'some\\path'`.
+character `#!py r'\?'`.  If you want to represent a literal backslash, you must use two: `#!py r'some\\path'`.
 ///  
 
 Pattern           | Meaning
@@ -184,11 +184,30 @@ no limit.
 The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
 ///
 
+## Precompiling
+
+While patterns are often cached, auto expanding patterns, such as `'file{a, b, c}'` will have each individual
+permutation cached (up to the cache limit), but not the entire pattern. This is to prevent the cache from exploding with
+really large patterns such as `{1..100}`. Essentially, individual patterns are cached, but not the expansion of a
+pattern into many patterns.
+
+If it is planned to reuse a pattern and the performance hit of recompiling is not desired, you can precompile a matcher
+object via [`glob.compile`](#compile) which returns a [`WcMatcher`](#wcmatcher) object.
+
+```py
+>>> import wcmatch.glob as glob
+>>> m = glob.compile('**/*.py', flags=glob.GLOBSTAR)
+>>> m.match('wcmatch/__init__.py')
+True
+>>> m.filter(['wcmatch/__init__.py', 'wcmatch/glob.py', 'README.md'])
+['wcmatch/__init__.py', 'wcmatch/glob.py']
+```
+
 ## API
 
 #### `glob.glob` {: #glob}
 
-```py3
+```py
 def glob(patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000, exclude=None):
 ```
 
@@ -286,7 +305,7 @@ users with `~user`.
 ```
 
 By default, `glob` uses the current working directory to evaluate relative patterns. Normally you'd have to use
-`#!py3 os.chdir('/new/path')` to evaluate patterns relative to a different path. By setting `root_dir` parameter you can
+`#!py os.chdir('/new/path')` to evaluate patterns relative to a different path. By setting `root_dir` parameter you can
 change the root path without using `os.chdir`.
 
 ```pycon3
@@ -309,10 +328,10 @@ Additionally, you can use `dir_fd` and specify a root directory with a directory
 
 /// warning | Support for Directory Descriptors
 Directory descriptors may not be supported on all systems. You can check whether or not `dir_fd` is supported for a
-your platform referencing the attribute `#!py3 glob.SUPPORT_DIR_FD` which will be `#!py3 True` if it is supported.
+your platform referencing the attribute `#!py glob.SUPPORT_DIR_FD` which will be `#!py True` if it is supported.
 
-Additionally, the `#!py3 os.O_DIRECTORY` may not be defined on some systems. You can likely just use
-`#!py3 os.O_RDONLY`.
+Additionally, the `#!py os.O_DIRECTORY` may not be defined on some systems. You can likely just use
+`#!py os.O_RDONLY`.
 ///
 
 /// new | New 5.1
@@ -333,7 +352,7 @@ Additionally, the `#!py3 os.O_DIRECTORY` may not be defined on some systems. You
 
 #### `glob.iglob` {: #iglob}
 
-```py3
+```py
 def iglob(patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000, exclude=None):
 ```
 
@@ -363,7 +382,7 @@ def iglob(patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000, exclude=
 
 #### `glob.globmatch` {: #globmatch}
 
-```py3
+```py
 def globmatch(filename, patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000, exclude=None):
 ```
 
@@ -482,10 +501,10 @@ True
 
 /// warning | Support for Directory Descriptors
 Directory descriptors may not be supported on all systems. You can check whether or not `dir_fd` is supported for a
-your platform referencing the attribute `#!py3 glob.SUPPORT_DIR_FD` which will be `#!py3 True` if it is supported.
+your platform referencing the attribute `#!py glob.SUPPORT_DIR_FD` which will be `#!py True` if it is supported.
 
-Additionally, the `#!py3 os.O_DIRECTORY` may not be defined on some systems. You can likely just use
-`#!py3 os.O_RDONLY`.
+Additionally, the `#!py os.O_DIRECTORY` may not be defined on some systems. You can likely just use
+`#!py os.O_RDONLY`.
 ///
 
 /// new | New 5.1
@@ -507,7 +526,7 @@ Additionally, the `#!py3 os.O_DIRECTORY` may not be defined on some systems. You
 
 #### `glob.globfilter` {: #globfilter}
 
-```py3
+```py
 def globfilter(filenames, patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000, method=None):
 ```
 
@@ -551,7 +570,7 @@ be traversed by `GLOBSTAR`. See [`globmatch`](#globmatch) for examples.
 
 #### `glob.translate` {: #translate}
 
-```py3
+```py
 def translate(patterns, *, flags=0, limit=1000, exclude=None):
 ```
 
@@ -571,8 +590,8 @@ matches at least one inclusion pattern and matches **none** of the exclusion pat
 
 When using [`EXTGLOB`](#extglob) patterns, patterns will be returned with capturing groups around the groups:
 
-While in regex patterns like `#!py3 r'(a)+'` would capture only the last character, even though multiple where matched,
-we wrap the entire group to be captured: `#!py3 '+(a)'` --> `#!py3 r'((a)+)'`.
+While in regex patterns like `#!py r'(a)+'` would capture only the last character, even though multiple where matched,
+we wrap the entire group to be captured: `#!py '+(a)'` --> `#!py r'((a)+)'`.
 
 ```pycon3
 >>> from wcmatch import glob
@@ -595,9 +614,60 @@ Translate patterns now provide capturing groups for [`EXTGLOB`](#extglob) groups
 `exclude` parameter was added.
 ///
 
+#### `glob.compile` {: #compile}
+
+```py
+def compile(patterns, *, flags=0, limit=1000, exclude=None):
+```
+
+The `compile` function takes a file pattern (or list of patterns) and flags. It also allows configuring the [max pattern
+limit](#multi-pattern-limits). Exclusion patterns can be specified via the `exclude` parameter which takes a pattern or
+a list of patterns. It returns a [`WcMatcher`](#wcmatcher) object which can match or filter file paths depending on
+which method is called. 
+
+```pycon3
+>>> import wcmatch.glob as glob
+>>> m = glob.compile('**/*.py', flags=glob.GLOBSTAR)
+>>> m.match('wcmatch/__init__.py')
+True
+>>> m.filter(['wcmatch/__init__.py', 'wcmatch/glob.py', 'README.md'])
+['wcmatch/__init__.py', 'wcmatch/glob.py']
+```
+
+#### `glob.WcMatcher` {: #wcmatcher}
+
+The `WcMatcher` class is returned when a pattern is precompiled with [`compile`](#compile). It has two methods: `match`
+and `filter`.
+
+```py
+def match(self, filename, *, root_dir=None, dir_fd=None):
+```
+
+This `match` method allows for matching against a precompiled pattern.
+
+```pycon3
+>>> import wcmatch.glob as glob
+>>> m = glob.compile('**/*.py', flags=glob.GLOBSTAR)
+>>> m.match('wcmatch/__init__.py')
+True
+```
+
+```py
+def filter(self, filenames, *, root_dir=None, dir_fd=None):
+```
+
+The `filter` method allows for filtering paths against a precompiled pattern.
+
+```pycon3
+>>> import wcmatch.glob as glob
+>>> m = glob.compile('**/*.py', flags=glob.GLOBSTAR)
+>>> m.filter(['wcmatch/__init__.py', 'wcmatch/glob.py', 'README.md'])
+['wcmatch/__init__.py', 'wcmatch/glob.py']
+```
+
 #### `glob.escape` {: #escape}
 
-```py3
+```py
 def escape(pattern, unix=None):
 ```
 
@@ -615,7 +685,7 @@ True
 
 `escape` can also handle Windows style paths with `/` or `\` path separators. It is usually recommended to use `/` as
 Windows backslashes are only supported via a special escape, but `\` will be expanded to an escaped backslash
-(represented in a raw string as `#!py3 r'\\'` or a normal string as `#!py3 '\\\\'`).
+(represented in a raw string as `#!py r'\\'` or a normal string as `#!py '\\\\'`).
 
 ```pycon3
 >>> from wmcatch import glob
@@ -663,7 +733,7 @@ drives manually in their match patterns as well.
 
 ### `glob.is_magic` {: #is_magic}
 
-```py3
+```py
 def is_magic(pattern, *, flags=0):
     """Check if the pattern is likely to be magic."""
 ```
@@ -729,8 +799,8 @@ insensitively, but the rest of the path will have case sensitive logic applied.
 
 #### `glob.RAWCHARS, glob.R` {: #rawchars}
 
-`RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py3 r'\u0040'` --> `#!py3 r'@'`. This will
-handle standard string escapes and Unicode including `#!py3 r'\N{CHAR NAME}'`.
+`RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py r'\u0040'` --> `#!py r'@'`. This will
+handle standard string escapes and Unicode including `#!py r'\N{CHAR NAME}'`.
 
 #### `glob.NEGATE, glob.N` {: #negate}
 
