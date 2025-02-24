@@ -31,9 +31,9 @@ jobs:
             tox-env: py312
           - python-version: '3.13'
             tox-env: py313
-        exclude:
-          - platform: windows-latest
-            python-version: '3.13'
+        # exclude:
+        #   - platform: windows-latest
+        #     python-version: '3.13'
 
     env:
       TOXENV: ${{ matrix.tox-env }}
