@@ -2,6 +2,7 @@
 
 ## 10.1
 
+-   **NEW**: Drop support for Python 3.8 which is "end of life".
 -   **NEW**: Add `wcmatch.glob.compile(pattern)` and `wcmatch.fnmatch.compile(pattern)` to allow for precompiled matcher
     objects that can be reused.
 
