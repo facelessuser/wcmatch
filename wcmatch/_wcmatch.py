@@ -373,8 +373,47 @@ class WcRegexp(util.Immutable, Generic[AnyStr]):
         return matches
 
 
-def _pickle(p):  # type: ignore[no-untyped-def]
-    return WcRegexp, (p._include, p._exclude, p._real, p._path, p._follow)
+class WcMatcher(util.Immutable, Generic[AnyStr]):
+    """Pre-compiled matcher object."""
+
+    _matcher: WcRegexp[AnyStr]
+    _hash: int
+
+    __slots__ = ('_matcher', '_hash')
+
+    def __init__(self, matcher: WcRegexp[AnyStr]) -> None:
+        """Initialize."""
+
+        super().__init__(
+            _matcher=matcher,
+            _hash=hash(
+                (
+                    type(self),
+                    type(matcher), matcher,
+                )
+            )
+        )
+
+    def __hash__(self) -> int:
+        """Hash."""
+
+        return self._hash
+
+    def __eq__(self, other: Any) -> bool:
+        """Equal."""
+
+        return (
+            isinstance(other, WcMatcher) and
+            self._matcher == other._matcher
+        )
+
+    def __ne__(self, other: Any) -> bool:
+        """Equal."""
+
+        return (
+            not isinstance(other, WcMatcher) or
+            self._matcher != other._matcher
+        )
 
 
-copyreg.pickle(WcRegexp, _pickle)
+copyreg.pickle(WcRegexp, lambda p: (WcRegexp, (p._include, p._exclude, p._real, p._path, p._follow)))

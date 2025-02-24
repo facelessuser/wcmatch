@@ -5,9 +5,10 @@ Wild Card Match.
 A custom implementation of `fnmatch`.
 """
 from __future__ import annotations
-from wcmatch._wcmatch import WcRegexp
+from . import _wcmatch
 from . import _wcparse
-from typing import AnyStr, Iterable, Sequence, Generic
+import copyreg
+from typing import AnyStr, Iterable, Sequence
 
 __all__ = (
     "CASE", "EXTMATCH", "IGNORECASE", "RAWCHARS",
@@ -47,23 +48,21 @@ FLAG_MASK = (
 )
 
 
-class WcMatcher(Generic[AnyStr]):
+class WcMatcher(_wcmatch.WcMatcher[AnyStr]):
     """Pre-compiled matcher object."""
-
-    def __init__(self, matcher: WcRegexp[AnyStr]) -> None:
-        """Initialize."""
-
-        self.matcher = matcher  # type: WcRegexp[AnyStr]
 
     def match(self, filename: AnyStr) -> bool:
         """Match filename."""
 
-        return self.matcher.match(filename)
+        return self._matcher.match(filename)
 
     def filter(self, filenames: Iterable[AnyStr]) -> list[AnyStr]:
         """Match filename."""
 
-        return self.matcher.filter(filenames)  # type: ignore[return-value]
+        return self._matcher.filter(filenames)  # type: ignore[return-value]
+
+
+copyreg.pickle(WcMatcher, lambda p: (WcMatcher, (p._matcher,)))
 
 
 def compile(  # noqa: A001

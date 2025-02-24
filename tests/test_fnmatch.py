@@ -5,6 +5,7 @@ import re
 import sys
 import os
 import pytest
+import copy
 import wcmatch.fnmatch as fnmatch
 from unittest import mock
 from wcmatch import util
@@ -804,3 +805,19 @@ class TestPrecompile(unittest.TestCase):
 
         m = fnmatch.compile('*file')
         self.assertEqual(m.filter([]), [])
+
+    def test_hash(self):
+        """Test hashing."""
+
+        m1 = fnmatch.compile('test', flags=fnmatch.C)
+        m2 = fnmatch.compile('test', flags=fnmatch.C)
+        m3 = fnmatch.compile('test', flags=fnmatch.I)
+        m4 = fnmatch.compile(b'test', flags=fnmatch.C)
+
+        self.assertTrue(m1 == m2)
+        self.assertTrue(m1 != m3)
+        self.assertTrue(m1 != m4)
+
+        m5 = copy.copy(m1)
+        self.assertTrue(m1 == m5)
+        self.assertTrue(m5 in {m1})

@@ -11,10 +11,10 @@ import re
 import functools
 from collections import namedtuple
 import bracex
+import copyreg
 from . import _wcparse
 from . import _wcmatch
 from . import util
-from ._wcmatch import WcRegexp
 from typing import Iterator, Iterable, AnyStr, Generic, Pattern, Callable, Any, Sequence
 
 __all__ = (
@@ -898,13 +898,8 @@ def glob(
     return list(iglob(patterns, flags=flags, root_dir=root_dir, dir_fd=dir_fd, limit=limit, exclude=exclude))
 
 
-class WcMatcher(Generic[AnyStr]):
+class WcMatcher(_wcmatch.WcMatcher[AnyStr]):
     """Pre-compiled matcher object."""
-
-    def __init__(self, matcher: WcRegexp[AnyStr]) -> None:
-        """Initialize."""
-
-        self.matcher = matcher  # type: WcRegexp[AnyStr]
 
     def match(
         self,
@@ -915,7 +910,7 @@ class WcMatcher(Generic[AnyStr]):
     ) -> bool:
         """Match filename."""
 
-        return self.matcher.match(filename, root_dir, dir_fd)
+        return self._matcher.match(filename, root_dir, dir_fd)
 
     def filter(
         self,
@@ -926,7 +921,10 @@ class WcMatcher(Generic[AnyStr]):
     ) -> list[AnyStr | os.PathLike[AnyStr]]:
         """Match filename."""
 
-        return self.matcher.filter(filenames, root_dir, dir_fd)
+        return self._matcher.filter(filenames, root_dir, dir_fd)
+
+
+copyreg.pickle(WcMatcher, lambda p: (WcMatcher, (p._matcher,)))
 
 
 def compile(  # noqa: A001

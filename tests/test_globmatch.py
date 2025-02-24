@@ -2,6 +2,7 @@
 """Tests for `globmatch`."""
 import unittest
 import pytest
+import copy
 import re
 import os
 import sys
@@ -1959,3 +1960,19 @@ class TestPrecompile(unittest.TestCase):
             m.filter(paths),
             glob.globfilter(paths, pattern, flags=glob.GLOBSTAR)
         )
+
+    def test_hash(self):
+        """Test hashing."""
+
+        m1 = glob.compile('test', flags=glob.C)
+        m2 = glob.compile('test', flags=glob.C)
+        m3 = glob.compile('test', flags=glob.I)
+        m4 = glob.compile(b'test', flags=glob.C)
+
+        self.assertTrue(m1 == m2)
+        self.assertTrue(m1 != m3)
+        self.assertTrue(m1 != m4)
+
+        m5 = copy.copy(m1)
+        self.assertTrue(m1 == m5)
+        self.assertTrue(m5 in {m1})
