@@ -4,7 +4,7 @@ repo_url: https://github.com/facelessuser/wcmatch
 edit_uri: tree/main/docs/src/markdown
 site_description: A wildcard file name matching library
 copyright: |
-  Copyright &copy; 2014 - 2024 <a href="https://github.com/facelessuser" target="_blank" rel="noopener">Isaac Muse</a>
+  Copyright &copy; 2014 - 2025 <a href="https://github.com/facelessuser" target="_blank" rel="noopener">Isaac Muse</a>
 
 docs_dir: docs/src/markdown
 theme:
