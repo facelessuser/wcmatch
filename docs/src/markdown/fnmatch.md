@@ -241,7 +241,10 @@ matches at least one inclusion pattern and matches **none** of the exclusion pat
 (['^(?s:(?=.)(?![.]).*?)$'], ['^(?s:(?=.).*?\\.a)$', '^(?s:(?=.).*?\\.b)$', '^(?s:(?=.).*?\\.c)$'])
 ```
 
-When using [`EXTMATCH`](#extmatch) patterns, patterns will be returned with capturing groups around the groups:
+The main goal of `translate` is to return a regex that matches a file path. Advanced regex features, such as extracting
+specific groups, are not really the goal, but, when using [`EXTMATCH`](#extmatch) patterns, extend groups will be
+returned as a capturing group pattern and can be utilized if that is found to be helpful. Advanced regex features such
+as naming groups does not currently fit into the pattern matching syntax is not currently planned.
 
 While in regex, patterns like `#!py r'(a)+'` would capture only the last character, even though multiple where matched,
 we wrap the entire group to be captured: `#!py '+(a)'` --> `#!py r'((a)+)'`.
