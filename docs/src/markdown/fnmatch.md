@@ -243,7 +243,7 @@ matches at least one inclusion pattern and matches **none** of the exclusion pat
 
 When using [`EXTMATCH`](#extmatch) patterns, patterns will be returned with capturing groups around the groups:
 
-While in regex patterns like `#!py r'(a)+'` would capture only the last character, even though multiple where matched,
+While in regex, patterns like `#!py r'(a)+'` would capture only the last character, even though multiple where matched,
 we wrap the entire group to be captured: `#!py '+(a)'` --> `#!py r'((a)+)'`.
 
 ```pycon3
