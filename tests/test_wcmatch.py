@@ -60,7 +60,7 @@ class _TestWcmatch(unittest.TestCase):
         """Make temp directory."""
 
         filename = self.norm(*parts)
-        base, file = os.path.split(filename)
+        base, _ = os.path.split(filename)
         if not os.path.exists(base):
             retry = 3
             while retry:

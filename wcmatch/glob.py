@@ -312,7 +312,7 @@ class _GlobSplit(Generic[AnyStr]):
 
         # Detect and store away windows drive as a literal
         if self.win_drive_detect:
-            root_specified, drive, slash, end = _wcparse._get_win_drive(pattern)
+            root_specified, drive, _, end = _wcparse._get_win_drive(pattern)
             if drive is not None:
                 parts.append(_GlobPart(drive.encode('latin-1') if is_bytes else drive, False, False, False, True, True))
                 start = end - 1
