@@ -186,6 +186,9 @@ The imposed pattern limit and corresponding `limit` option was introduced in 6.0
 
 ## Precompiling
 
+/// new | New 10.1
+///
+
 While patterns are often cached, auto expanding patterns, such as `'file{a, b, c}'` will have each individual
 permutation cached (up to the cache limit), but not the entire pattern. This is to prevent the cache from exploding with
 really large patterns such as `{1..100}`. Essentially, individual patterns are cached, but not the expansion of a
@@ -618,6 +621,9 @@ Translate patterns now provide capturing groups for [`EXTGLOB`](#extglob) groups
 ///
 
 #### `glob.compile` {: #compile}
+
+/// new | New 10.1
+///
 
 ```py
 def compile(patterns, *, flags=0, limit=1000, exclude=None):
