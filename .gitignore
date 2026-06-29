@@ -1,5 +1,8 @@
 .DS_STORE
 
+*.css.map
+*.js.map
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

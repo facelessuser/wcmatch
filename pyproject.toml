@@ -138,8 +138,8 @@ commands=
 deps=
     -r requirements/docs.txt
 commands=
-    {envpython} -m mkdocs build --clean --verbose --strict
-    {envbindir}/pyspelling -j 8
+    "{envpython}" -m zensical.main build -f zensical.yml --clean
+    "{envpython}" -m pyspelling -j 8
 
 [pytest]
 addopts=-p no:warnings
