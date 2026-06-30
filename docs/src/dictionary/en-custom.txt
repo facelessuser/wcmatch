@@ -28,6 +28,7 @@ UNC
 Wcmatch
 Wildcard
 XORed
+Zensical
 Zsh
 accessor
 amongst
