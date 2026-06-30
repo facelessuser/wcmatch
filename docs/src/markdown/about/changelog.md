@@ -374,10 +374,9 @@ Check out [Release Notes](./release.md#upgrade-to-7.0) to learn more about upgra
 
 ## 2.0
 
-/// danger | Breaking Changes
-Version 2.0 introduces breaking changes in regards to flags.  This is meant to bring about consistency amongst the
-provided libraries. Flag names have been changed in some cases, and logic has been inverted in some cases.
-///
+> [!danger] Breaking Changes
+> Version 2.0 introduces breaking changes in regards to flags.  This is meant to bring about consistency amongst the
+> provided libraries. Flag names have been changed in some cases, and logic has been inverted in some cases.
 
 -   **NEW**: Glob's `NOBRACE`, `NOGLOBSTAR`, and `NOEXTGLOB` flags are now `BRACE`, `GLOBSTAR`, and `EXTGLOB` and now
     enable the features instead of disabling the features. This logic matches the provided `fnmatch` and `wcmatch`.

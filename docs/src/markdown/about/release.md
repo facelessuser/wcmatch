@@ -52,7 +52,7 @@ chosen to adopt the Python's behavior as our default behavior, with the option o
 These examples will illustrate the behavior. In the first example, Python's `pathlib` is used to glob a
 directory. We can note that not a single entry in the results is `.` or `..`.
 
-```pycon3
+```pycon
 >>> import pathlib
 >>> list(pathlib.Path('.').glob('.*'))
 [PosixPath('.DS_Store'), PosixPath('.codecov.yml'), PosixPath('.tox'), PosixPath('.coverage'), PosixPath('.coveragerc'), PosixPath('.gitignore'), PosixPath('.github'), PosixPath('.pyspelling.yml'), PosixPath('.git')]
@@ -60,7 +60,7 @@ directory. We can note that not a single entry in the results is `.` or `..`.
 
 We can also show that if we search for the literal pattern of `..` that glob will then return `..` in the results.
 
-```pycon3
+```pycon
 >>> import pathlib
 >>> list(pathlib.Path('.').glob('..'))
 [PosixPath('..')]
@@ -69,7 +69,7 @@ We can also show that if we search for the literal pattern of `..` that glob wil
 When using the `match` function, we see that the pattern can match `..` just fine. This illustrates that it is not the
 pattern logic that restricts this, but a result of the behavior exhibited by `scandir`.
 
-```pycon3
+```pycon
 >>> import pathlib
 >>> pathlib.Path('..').match('.*')
 True
@@ -80,7 +80,7 @@ now turn off injecting `.` and `..` into `scandir` results, but for all intents 
 globbing functions exhibit the same behavior as Python's default glob now.
 
 
-```pycon3
+```pycon
 >>> from wcmatch import glob
 >>> glob.glob('.*')
 ['.DS_Store', '.codecov.yml', '.tox', '.coverage', '.coveragerc', '.gitignore', '.github', '.pyspelling.yml', '.git']
@@ -93,7 +93,7 @@ True
 Because this change only affects how files are returned when iterating the directories, we can notice that exclude
 patterns, which are used to filter the results, can match `.` or `..` with `.*`:
 
-```pycon3
+```pycon
 >>> from wcmatch import glob
 >>> glob.glob('..')
 ['..']
@@ -104,7 +104,7 @@ patterns, which are used to filter the results, can match `.` or `..` with `.*`:
 If we want to modify the pattern matcher, and not just the directory scanner, we can use the flag
 [`NODITDIR`](../glob.md#nodotdir).
 
-```pycon3
+```pycon
 >>> from wcmatch import glob
 >>> glob.glob(['..', '!.*'], flags=glob.NEGATE | glob.NODOTDIR)
 ['..']
@@ -204,14 +204,14 @@ were cleaned up.
 
 [`glob.escape`](../glob.md#escape) is meant to handle the escaping of normal paths so that they can be used in patterns.
 
-```pycon3
+```pycon
 >>> glob.escape(r'my\file-[work].txt', unix=False)
 'my\\\\file\\-\\[work\\].txt'
 ```
 If you are accepting an input from a source that is giving you a representation of a Python string (where `\` is
 represented by two `\`), then [`glob.raw_escape`](../glob.md#raw_escape) is what you want:
 
-```pycon3
+```pycon
 >>> glob.raw_escape(r'my\\file-[work].txt', unix=False)
 'my\\\\file\\-\\[work\\].txt'
 ```
@@ -220,7 +220,7 @@ By default, [`glob.raw_escape`](../glob.md#raw_escape) always translates Python 
 characters, but if this is not needed, a new option called `raw_chars` (`True` by default) has been added to disable
 this behavior:
 
-```pycon3
+```pycon
 >>> glob.raw_escape(r'my\\file-\x31.txt', unix=False)
 'my\\\\file\\-1.txt'
 >>> glob.raw_escape(r'my\\file-\x31.txt', unix=False, raw_chars=False)
@@ -250,7 +250,7 @@ results.
 
 In 7.0, logic was added to detect `pathlib` normalization cases and ensure that redundant results are not returned.
 
-```pycon3
+```pycon
 >>> glob.glob(['docs/./src', 'docs/src/.', 'docs/src'])
 ['docs/./src', 'docs/src/.', 'docs/src']
 >>> list(pathlib.Path('.').glob(['docs/./src', 'docs/src/.', 'docs/src']))

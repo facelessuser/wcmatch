@@ -4,9 +4,8 @@
 from wcmatch import pathlib
 ```
 
-/// new | New 5.0
-`wcmatch.pathlib` was added in `wcmatch` 5.0.
-///
+> [!new] New 5.0
+> `wcmatch.pathlib` was added in `wcmatch` 5.0.
 
 ## Overview
 
@@ -27,9 +26,8 @@ Many of the API functions allow passing in multiple patterns or using either [`B
 you can raise or lower this limit via the keyword option `limit`. If you set `limit` to `0`, there will
 be no limit.
 
-/// new | New 6.0
-The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
-///
+> [!new] New 6.0
+> The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
 
 ### Differences
 
@@ -67,7 +65,7 @@ matching:
 
     Python's default glob:
 
-    ```pycon3
+    ```pycon
     >>> import pathlib
     >>> list(pathlib.Path('.').glob('docs/./src'))
     [PosixPath('docs/src')]
@@ -75,7 +73,7 @@ matching:
 
     Ours:
 
-    ```pycon3
+    ```pycon
     >>> form wcmatch import pathlib
     >>> list(pathlib.Path('.').glob('docs/./src'))
     [PosixPath('docs/src')]
@@ -83,7 +81,7 @@ matching:
 
     Python's default glob:
 
-    ```pycon3
+    ```pycon
     >>> import pathlib
     >>> pathlib.Path('.').match('.')
     Traceback (most recent call last):
@@ -95,7 +93,7 @@ matching:
 
     Ours:
 
-    ```pycon3
+    ```pycon
     >>> from wcmatch import pathlib
     >>> pathlib.Path('.').match('.')
     True
@@ -127,7 +125,7 @@ function the [`REALPATH`](#realpath) flag. We do not restrict this, but we do no
 [`REALPATH`](#realpath) simply forces the match to check the filesystem to see if the file exists and is a
 directory or not.
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> pathlib.PurePath('docs/src')
 PurePosixPath('docs/src')
@@ -135,7 +133,7 @@ PurePosixPath('docs/src')
 
 `PurePath` classes implement the [`match`](#match) and [`globmatch`](#globmatch) methods:
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> p = pathlib.PurePath('docs/src')
 >>> p.match('src')
@@ -151,7 +149,7 @@ you'd like to have the ease that `pathlib` offers when working with a path, but 
 This is also useful if you'd like to manipulate Windows path strings on a Posix system. This class will utilize Wildcard
 Match's [`glob`](./glob.md) for all glob related actions. The class is subclassed from [`PurePath`](#purepath).
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> os.name
 'posix'
@@ -166,7 +164,7 @@ you'd like to have the ease that `pathlib` offers when working with a path, but 
 This is also useful if you'd like to manipulate Posix path strings on a Windows system. This class will utilize Wildcard
 Match's [`glob`](./glob.md) for all glob related actions. The class is subclassed from [`PurePath`](#purepath).
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> os.name
 'nt'
@@ -188,7 +186,7 @@ you can force them to access the filesystem if you give either function the [`RE
 not restrict this, but we do not enable it by default. [`REALPATH`](#realpath) simply forces the match to check
 the filesystem to see if the file exists and is a directory or not.
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> pathlib.PurePath('docs/src')
 PosixPath('docs/src')
@@ -196,7 +194,7 @@ PosixPath('docs/src')
 
 `Path` classes implement the [`glob`](#glob) and [`globmatch`](#rglob) methods:
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> p = pathlib.Path('docs/src')
 >>> p.match('src')
@@ -216,7 +214,7 @@ have the ease that `pathlib` offers when working with a path and be able to mani
 about that file. You cannot instantiate this class on a Posix system. This class will utilize Wildcard Match's
 [`glob`](./glob.md) for all glob related actions. The class is subclassed from [`Path`](#path).
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> os.name
 'posix'
@@ -231,7 +229,7 @@ have the ease that `pathlib` offers when working with a path and be able to mani
 about that file. You cannot instantiate this class on a Windows system. This class will utilize Wildcard Match's
 [`glob`](./glob.md) for all glob related actions. The class is subclassed from [`Path`](#path).
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> os.name
 'posix'
@@ -265,20 +263,18 @@ directory or not, and whether it is a symlink.
 Since [`Path`](#path) is derived from [`PurePath`](#purepath), this method is also available in
 [`Path`](#path) objects.
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> p = pathlib.PurePath('docs/src')
 >>> p.match('src')
 True
 ```
 
-/// new | New 6.0
-`limit` was added in 6.0.
-///
+> [!new] New 6.0
+> `limit` was added in 6.0.
 
-/// new | New 8.4
-`exclude` parameter was added.
-///
+> [!new] New 8.4
+> `exclude` parameter was added.
 
 #### `PurePath.globmatch` {: #globmatch}
 
@@ -301,25 +297,22 @@ directory or not, and whether it is a symlink.
 Since [`Path`](#path) is derived from  [`PurePath`](#purepath), this method is also available in
 [`Path`](#path) objects.
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> p = pathlib.PurePath('docs/src')
 >>> p.globmatch('**/src', flags=pathlib.GLOBSTAR)
 True
 ```
 
-/// new | New 6.0
-`limit` was added in 6.0.
-///
+> [!new] New 6.0
+> `limit` was added in 6.0.
 
-/// new | New 8.4
-`exclude` parameter was added.
-///
+> [!new] New 8.4
+> `exclude` parameter was added.
 
 #### `PurePath.full_match` {: #full_match}
 
-/// new | new 10.0
-///
+> [!new] New 10.0
 
 ```py
 def full_match(self, patterns, *, flags=0, limit=1000, exclude=None):
@@ -349,20 +342,18 @@ The one difference between this `glob` and the [`iglob`](./glob.md#iglob) API is
 the `root_dir` parameter. All searches are relative to the object's path, which is evaluated relative to the current
 working directory.
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> p = pathlib.Path('docs/src')
 >>> list(p.glob('**/*.txt', flags=pathlib.GLOBSTAR))
 [PosixPath('docs/src/dictionary/en-custom.txt'), PosixPath('docs/src/markdown/_snippets/links.txt'), PosixPath('docs/src/markdown/_snippets/refs.txt'), PosixPath('docs/src/markdown/_snippets/abbr.txt'), PosixPath('docs/src/markdown/_snippets/posix.txt')]
 ```
 
-/// new | New 6.0
-`limit` was added in 6.0.
-///
+> [!new] New 6.0
+> `limit` was added in 6.0.
 
-/// new | New 8.4
-`exclude` parameter was added.
-///
+> [!new] New 8.4
+> `exclude` parameter was added.
 
 #### `Path.rglob` {: #rglob}
 
@@ -384,20 +375,18 @@ the beginning of the pattern.
 `rglob` is similar to [`glob`](#glob) except for the use of recursive logic. In all other respects, it behaves
 the same.
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> p = pathlib.Path('docs/src')
 >>> list(p.rglob('*.txt'))
 [PosixPath('docs/src/dictionary/en-custom.txt'), PosixPath('docs/src/markdown/_snippets/links.txt'), PosixPath('docs/src/markdown/_snippets/refs.txt'), PosixPath('docs/src/markdown/_snippets/abbr.txt'), PosixPath('docs/src/markdown/_snippets/posix.txt')]
 ```
 
-/// new | New 6.0
-`limit` was added in 6.0.
-///
+> [!new] New 6.0
+> `limit` was added in 6.0.
 
-/// new | New 8.4
-`exclude` parameter was added.
-///
+> [!new] New 8.4
+> `exclude` parameter was added.
 
 ## Flags
 
@@ -454,8 +443,7 @@ When `MINUSNEGATE` is used with [`NEGATE`](#negate), exclusion patterns are reco
 
 #### `glob.GLOBSTARLONG, glob.GL` {: #globstarlong}
 
-/// new | New 10.0
-///
+> [!new] New 10.0
 
 When `GLOBSTARLONG` is enabled `***` will act like `**`, but will cause symlinks to be traversed as well.
 
@@ -517,7 +505,7 @@ match the special directories of `.` and `..`. In order to match these special d
 literal glob patterns of `.` and `..`. This can be used in all glob API functions that accept flags, and will affect
 inclusion patterns as well as exclusion patterns.
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> pathlib.Path('..').match('.*')
 True
@@ -529,7 +517,7 @@ True
 
 Also affects exclusion patterns:
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> list(pathlib.Path('.').glob(['docs/..', '!*/.*'], flags=pathlib.NEGATE))
 []
@@ -539,17 +527,15 @@ Also affects exclusion patterns:
 []
 ```
 
-/// new | New 7.0
-`NODOTDIR` was added in 7.0.
-///
+> [!new] New 7.0
+> `NODOTDIR` was added in 7.0.
 
 #### `pathlib.SCANDOTDIR, pathlib.SD` {: #scandotdir}
 
-/// warning | Not recommended for `pathlib`
-`pathlib` supports all of the same flags that the [`wcmatch.glob`](./glob.md) library does. But due to how
-`pathlib` normalizes the paths that get returned, enabling `SCANDOTDIR` will only give confusing duplicates if using
-patterns such as `.*`. This is not a bug, but is something to be aware of.
-///
+> [!warning] Not recommended for `pathlib`
+> `pathlib` supports all of the same flags that the [`wcmatch.glob`](./glob.md) library does. But due to how
+> `pathlib` normalizes the paths that get returned, enabling `SCANDOTDIR` will only give confusing duplicates if using
+> patterns such as `.*`. This is not a bug, but is something to be aware of.
 
 `SCANDOTDIR` controls the directory scanning behavior of [`glob`](#glob) and [`rglob`](#rglob). The directory scanner
 of these functions do not return `.` and `..` in their results. This means unless you use an explicit `.` or `..` in
@@ -561,7 +547,7 @@ the returned results via [`NEGATE`](#negate), can still match `.` and `..` with 
 of whether `SCANDOTDIR` is enabled or not. It will also have no affect on [`globmatch`](#globmatch). To fundamentally
 change how glob patterns behave, you can use [`NODOTDIR`](#nodotdir).
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> list(pathlib.Path('temp').glob('**/.*', flags=glob.GLOBSTAR | glob.DOTGLOB))
 [PosixPath('temp/.hidden'), PosixPath('temp/.DS_Store')]
@@ -579,9 +565,8 @@ normalizes directories. When comparing the results to a non-`pathlib` glob, the 
 ['.', '..', '.hidden', '.hidden/.', '.hidden/..', '.DS_Store']
 ```
 
-/// new | New 7.0
-`SCANDOTDIR` was added in 7.0.
-///
+> [!new] New 7.0
+> `SCANDOTDIR` was added in 7.0.
 
 #### `pathlib.EXTGLOB, pathlib.E` {: #extglob}
 
@@ -593,11 +578,10 @@ Alternatively `EXTMATCH` will also be accepted for consistency with the other pr
 the same and are provided as a convenience in case the user finds one more intuitive than the other since `EXTGLOB` is
 often the name used in Bash.
 
-/// tip | EXTGLOB and NEGATE
-When using `EXTGLOB` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
-be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate
-a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
-///
+> [!tip] EXTGLOB and NEGATE
+> When using `EXTGLOB` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
+> be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate
+> a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
 
 #### `pathlib.BRACE, pathlib.B` {: #brace}
 
@@ -612,25 +596,24 @@ such as [`globmatch`](#globmatch) and [`match`](#match).
 For simple patterns, it may make more sense to use [`EXTGLOB`](#extglob) which will only generate a single
 pattern which will perform much better: `@(ab|ac|ad)`.
 
-/// warning | Massive Expansion Risk
-1.  It is important to note that each pattern is crawled separately, so patterns such as `{1..100}` would generate
-    **one hundred** patterns. In a match function ([`globmatch`](#globmatch)), that would cause a hundred
-    compares, and in a file crawling function ([`glob`](#glob)), it would cause the file system to be crawled one
-    hundred times. Sometimes patterns like this are needed, so construct patterns thoughtfully and carefully.
-
-2.  `BRACE` and [`SPLIT`](#split) both expand patterns into multiple patterns. Using these two syntaxes
-    simultaneously can exponential increase duplicate patterns:
-
-    ```pycon3
-    >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
-    ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
-    ```
-
-    This effect is reduced as redundant, identical patterns are optimized away[^1], but when using crawling
-    functions (like in [`glob`](#glob)) *and* [`NOUNIQUE`](#nounique) that optimization is removed, and all
-    of those patterns will be crawled. For this reason, especially when using functions like [`glob`](#glob), it is
-    recommended to use one syntax or the other.
-///
+> [!warning] Massive Expansion Risk
+> 1.  It is important to note that each pattern is crawled separately, so patterns such as `{1..100}` would generate
+>     **one hundred** patterns. In a match function ([`globmatch`](#globmatch)), that would cause a hundred
+>     compares, and in a file crawling function ([`glob`](#glob)), it would cause the file system to be crawled one
+>     hundred times. Sometimes patterns like this are needed, so construct patterns thoughtfully and carefully.
+>
+> 2.  `BRACE` and [`SPLIT`](#split) both expand patterns into multiple patterns. Using these two syntaxes
+>     simultaneously can exponential increase duplicate patterns:
+>
+>     ```pycon
+>     >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
+>     ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
+>     ```
+>
+>     This effect is reduced as redundant, identical patterns are optimized away[^1], but when using crawling
+>     functions (like in [`glob`](#glob)) *and* [`NOUNIQUE`](#nounique) that optimization is removed, and all
+>     of those patterns will be crawled. For this reason, especially when using functions like [`glob`](#glob), it is
+>     recommended to use one syntax or the other.
 
 [^1]: Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
 `[[:alnum:]]` =/= `[[:ALNUM:]]`.
@@ -652,7 +635,7 @@ While `SPLIT` is not as powerful as [`BRACE`](#brace), it's syntax is very easy 
 expansions of patterns with it, except when paired *with* [`BRACE`](#brace). See [`BRACE`](#brace) and
 its warnings related to pairing it with `SPLIT`.
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> list(pathlib.Path('.').glob('README.md|LICENSE.md', flags=pathlib.SPLIT))
 [WindowsPath('README.md'), WindowsPath('LICENSE.md')]
@@ -663,7 +646,7 @@ its warnings related to pairing it with `SPLIT`.
 `NOUNIQUE` is used to disable Wildcard Match's unique results return. This mimics Bash's output behavior if that is
 desired.
 
-```pycon3
+```pycon
 >>> from wcmatch import glob
 >>> glob.glob('{*,README}.md', flags=glob.BRACE | glob.NOUNIQUE)
 ['LICENSE.md', 'README.md', 'README.md']
@@ -689,9 +672,8 @@ normalize two unique results to be the same path, such as `.hidden` and `.hidden
 [`rglob`](#rglob). Functions like [`globmatch`](#globmatch) and [`match`](#match) would get no
 benefit from disabling "unique" optimizations as they only match what they are given.
 
-/// new | New in 6.0
-"Unique" optimizations were added in 6.0, along with `NOUNIQUE`.
-///
+> [!new] New in 6.0
+> "Unique" optimizations were added in 6.0, along with `NOUNIQUE`.
 
 #### `pathlib.MATCHBASE, pathlib.X` {: #matchbase}
 
@@ -700,7 +682,7 @@ the tree with a matching basename, or in the case of [`match`](#match) and [`glo
 path whose basename matches. `MATCHBASE` is sensitive to files and directories that start with `.` and will not match
 such files and directories if [`DOTGLOB`](#dotglob) is not enabled.
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> list(pathlib.Path('.').glob('*.txt', flags=pathlib.MATCHBASE))
 [WindowsPath('docs/src/dictionary/en-custom.txt'), WindowsPath('docs/src/markdown/_snippets/abbr.txt'), WindowsPath('docs/src/markdown/_snippets/links.txt'), WindowsPath('docs/src/markdown/_snippets/posix.txt'), WindowsPath('docs/src/markdown/_snippets/refs.txt'), WindowsPath('requirements/docs.txt'), WindowsPath('requirements/lint.txt'), WindowsPath('requirements/setup.txt'), WindowsPath('requirements/test.txt'), WindowsPath('requirements/tools.txt'), WindowsPath('site/_snippets/abbr.txt'), WindowsPath('site/_snippets/links.txt'), WindowsPath('site/_snippets/posix.txt'), WindowsPath('site/_snippets/refs.txt')]
@@ -712,7 +694,7 @@ such files and directories if [`DOTGLOB`](#dotglob) is not enabled.
 [`PurePath`](#purepath) classes, this may not be possible as those classes do not access the file system, nor
 will they retain trailing slashes.
 
-```pycon3
+```pycon
 >>> from wcmatch import pathlib
 >>> list(pathlib.Path('.').glob('*', flags=pathlib.NODIR))
 [WindowsPath('appveyor.yml'), WindowsPath('LICENSE.md'), WindowsPath('MANIFEST.in'), WindowsPath('mkdocs.yml'), WindowsPath('README.md'), WindowsPath('setup.cfg'), WindowsPath('setup.py'), WindowsPath('tox.ini')] 

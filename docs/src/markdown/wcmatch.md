@@ -37,15 +37,13 @@ Parameter         | Default       | Description
 `flags`           | `#!py 0`     | Flags to alter behavior of folder and file matching. See [Flags](#flags) for more info.
 `limit`           | `#!py 1000`  | Allows configuring the [max pattern limit](#multi-pattern-limits).
 
-/// note
-Dots are not treated special in `wcmatch`. When the `HIDDEN` flag is not included, all hidden files (system and dot
-files) are excluded from the crawling processes, so there is no risk of `*` matching a dot file as it will not show
-up in the crawl. If the `HIDDEN` flag is included, `*`, `?`, and `[.]` will then match dot files.
-///
+> [!note]
+> Dots are not treated special in `wcmatch`. When the `HIDDEN` flag is not included, all hidden files (system and dot
+> files) are excluded from the crawling processes, so there is no risk of `*` matching a dot file as it will not show
+> up in the crawl. If the `HIDDEN` flag is included, `*`, `?`, and `[.]` will then match dot files.
 
-/// new | New 6.0
-`limit` was added in 6.0.
-///
+> [!new] New 6.0
+> `limit` was added in 6.0.
 
 ### Multi-Pattern Limits
 
@@ -53,15 +51,14 @@ The `WcMatch` class allow expanding a pattern into multiple patterns by using `|
 The number of allowed patterns is limited `1000`, but you can raise or lower this limit via the keyword option
 `limit`. If you set `limit` to `0`, there will be no limit.
 
-/// new | New 6.0
-The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
-///
+> [!new] New 6.0
+> The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
 
 ### Examples
 
 Searching for files:
 
-```pycon3
+```pycon
 >>> from wcmatch import wcmatch
 >>> wcmatch.WcMatch('.', '*.md|*.txt').match()
 ['./LICENSE.md', './README.md']
@@ -69,7 +66,7 @@ Searching for files:
 
 Recursively searching for files:
 
-```pycon3
+```pycon
 >>> from wcmatch import wcmatch
 >>> wcmatch.WcMatch('.', '*.md|*.txt', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './docs/src/markdown/changelog.md', './docs/src/markdown/fnmatch.md', './docs/src/markdown/glob.md', './docs/src/markdown/index.md', './docs/src/markdown/installation.md', './docs/src/markdown/license.md', './docs/src/markdown/wcmatch.md', './docs/src/markdown/_snippets/abbr.md', './docs/src/markdown/_snippets/links.md', './docs/src/markdown/_snippets/refs.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
@@ -77,7 +74,7 @@ Recursively searching for files:
 
 Excluding directories:
 
-```pycon3
+```pycon
 >>> from wcmatch import wcmatch
 >>> wcmatch.WcMatch('.', '*.md|*.txt', exclude_pattern='docs', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
@@ -85,7 +82,7 @@ Excluding directories:
 
 Using file negation patterns:
 
-```pycon3
+```pycon
 >>> from wcmatch import wcmatch
 >>> wcmatch.WcMatch('.', '*.md|*.txt|!README*', exclude_pattern='docs', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
@@ -94,7 +91,7 @@ Using file negation patterns:
 You can also use negation patterns in directory exclude. Here we avoid all folders with `*`, but add an exception for
 `requirements`. It should be noted that you cannot add an exception for the child of an excluded folder.
 
-```pycon3
+```pycon
 >>> from wcmatch import wcmatch
 >>> wcmatch.WcMatch('.', '*.md|*.txt', exclude_pattern='*|!requirements', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
@@ -102,7 +99,7 @@ You can also use negation patterns in directory exclude. Here we avoid all folde
 
 Negative patterns can be given by themselves.
 
-```pycon3
+```pycon
 >>> from wcmatch import wcmatch
 >>> wcmatch.WcMatch('.', '*.md|*.txt', exclude_pattern='!requirements', flags=wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
@@ -110,7 +107,7 @@ Negative patterns can be given by themselves.
 
 Enabling hidden files:
 
-```pycon3
+```pycon
 >>> from wcmatch import wcmatch
 >>> wcmatch.WcMatch('.', '*.yml').match()
 ['./appveyor.yml', './mkdocs.yml']
@@ -124,7 +121,7 @@ Enabling hidden files:
 
 Perform match returning files that match the patterns.
 
-```pycon3
+```pycon
 >>> from wcmatch import wcmatch
 >>> wcmatch.WcMatch('.', '*.md|*.txt').match()
 ['./LICENSE.md', './README.md']
@@ -134,7 +131,7 @@ Perform match returning files that match the patterns.
 
 Perform match returning an iterator of files that match the patterns.
 
-```pycon3
+```pycon
 >>> from wcmatch import wcmatch
 >>> list(wcmatch.WcMatch('.', '*.md|*.txt').imatch())
 ['./LICENSE.md', './README.md']
@@ -147,7 +144,7 @@ you can call [`is_aborted`](#is_aborted) to check if a request to abort has been
 being done in an [`on_match`](#on_match), you can check if there has been a request to kill the process, and tie
 up loose ends gracefully.
 
-```pycon3
+```pycon
 >>> from wcmatch import wcmatch
 >>> wcm = wcmatch.WcMatch('.', '*.md|*.txt')
 >>> for f in wcm.imatch():
@@ -166,7 +163,7 @@ conditions depending on how you are using `WcMatch`.
 
 Resets the abort state after running `kill`.
 
-```pycon3
+```pycon
 >>> from wcmatch import wcmatch
 >>> wcm = wcmatch.WcMatch('.', '*.md|*.txt')
 >>> for f in wcm.imatch():
@@ -183,7 +180,7 @@ Resets the abort state after running `kill`.
 
 Checks if an abort has been issued.
 
-```pycon3
+```pycon
 >>> from wcmatch import wcmatch
 >>> wcm = wcmatch.WcMatch('.', '*.md|*.txt')
 >>> for f in wcm.imatch():
@@ -197,7 +194,7 @@ True
 
 Returns the number of skipped files. Files in skipped folders are not included in the count.
 
-```pycon3
+```pycon
 >>> from wcmatch import wcmatch
 >>> wcm = wcmatch.WcMatch('.', '*.md|*.txt')
 >>> list(wcm.imatch())
@@ -218,10 +215,9 @@ Returns the number of skipped files. Files in skipped folders are not included i
 Any keyword arguments not processed by the main initializer are sent to `on_init`. This allows you to
 specify additional arguments when deriving from `WcMatch`.
 
-/// new | Changed 8.0
-Starting in 8.0, `on_init` only accepts keyword arguments as now `WcMatch` requires all parameters (except
-`root_dir` and `file_pattern`) to be keyword parameters and must explicitly be specified in the form `key=value`.
-///
+> [!new] Changed 8.0
+> Starting in 8.0, `on_init` only accepts keyword arguments as now `WcMatch` requires all parameters (except
+> `root_dir` and `file_pattern`) to be keyword parameters and must explicitly be specified in the form `key=value`.
 
 #### `WcMatch.on_validate_directory` {: #on_validate_directory}
 
@@ -333,11 +329,10 @@ handle standard string escapes and Unicode (including `#!py r'\N{CHAR NAME}'`).
 `EXTMATCH` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`,
 etc.
 
-/// tip | EXTMATCH and NEGATE
-When using `EXTMATCH` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
-be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTMATCH` pattern). To
-negate a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
-///
+> [!tip] EXTMATCH and NEGATE
+> When using `EXTMATCH` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
+> be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTMATCH` pattern). To
+> negate a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
 
 #### `wcmatch.BRACE, wcmatch.B` {: #brace}
 
@@ -348,25 +343,24 @@ Redundant, identical patterns are discarded[^1] by default.
 For simple patterns, it may make more sense to use [`EXTMATCH`](#extmatch) which will only generate a single
 pattern which will perform much better: `@(ab|ac|ad)`.
 
-/// warning | Massive Expansion Risk
-1.  It is important to note that each pattern is matched separately, so patterns such as `{1..100}` would generate
-    **one hundred** patterns. Since [`WcMatch`](#wcmatch_1) class is able to crawl the file system one pass
-    accounting for all the patterns, the performance isn't as bad as it may be with [`glob`](./glob.md), but it can
-    still impact performance as each file must get compared against many patterns until one is matched. Sometimes
-    patterns like this are needed, so construct patterns thoughtfully and carefully.
-
-2.  Splitting patterns with `|` is built into [`WcMatch`](#wcmatch_1). `BRACE` and splitting with `|` both expand
-    patterns into multiple patterns. Using these two syntaxes simultaneously can exponential increase in duplicate
-    patterns:
-
-    ```pycon3
-    >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
-    ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
-    ```
-
-    This effect is reduced as redundant, identical patterns are optimized away[^1]. But it is useful to know if
-    trying to construct efficient patterns.
-///
+> [!warning] Massive Expansion Risk
+> 1.  It is important to note that each pattern is matched separately, so patterns such as `{1..100}` would generate
+>     **one hundred** patterns. Since [`WcMatch`](#wcmatch_1) class is able to crawl the file system one pass
+>     accounting for all the patterns, the performance isn't as bad as it may be with [`glob`](./glob.md), but it can
+>     still impact performance as each file must get compared against many patterns until one is matched. Sometimes
+>     patterns like this are needed, so construct patterns thoughtfully and carefully.
+>
+> 2.  Splitting patterns with `|` is built into [`WcMatch`](#wcmatch_1). `BRACE` and splitting with `|` both expand
+>     patterns into multiple patterns. Using these two syntaxes simultaneously can exponential increase in duplicate
+>     patterns:
+>
+>     ```pycon
+>     >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
+>     ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
+>     ```
+>
+>     This effect is reduced as redundant, identical patterns are optimized away[^1]. But it is useful to know if
+>     trying to construct efficient patterns.
 
 [^1]: Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
 `[[:alnum:]]` =/= `[[:ALNUM:]]`.
@@ -383,7 +377,7 @@ folder to exclude. The path name compared will be the entire path relative to th
 root directory folder was `.`, and the folder under evaluation is `./some/folder`, `some/folder` will be matched against
 the pattern.
 
-```pycon3
+```pycon
 >>> from wcmatch import wcmatch
 >>> wcmatch.WcMatch('.', '*.md|*.txt', 'docs/src/markdown', flags=wcmatch.DIRPATHNAME | wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']
@@ -396,7 +390,7 @@ patterns. The path name compared will be the entire path relative to the root di
 directory was `.`, and the file under evaluation is `./some/file.txt`, `some/file.txt` will be matched against the
 pattern.
 
-```pycon3
+```pycon
 >>> from wcmatch import wcmatch
 >>> wcmatch.WcMatch('.', '**/*.md|!**/_snippets/*', flags=wcmatch.FILEPATHNAME | wcmatch.GLOBSTAR | wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './docs/src/markdown/changelog.md', './docs/src/markdown/fnmatch.md', './docs/src/markdown/glob.md', './docs/src/markdown/index.md', './docs/src/markdown/license.md', './docs/src/markdown/wcmatch.md']
@@ -416,14 +410,14 @@ with a matching basename. This is essentially the behavior when [`FILEPATHNAME`]
 
 When we include no slashes:
 
-```pycon3
+```pycon
 >>> wcmatch.WcMatch('.', '*.md', flags=wcmatch.FILEPATHNAME | wcmatch.GLOBSTAR | wcmatch.MATCHBASE | wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './docs/src/markdown/changelog.md', './docs/src/markdown/fnmatch.md', './docs/src/markdown/glob.md', './docs/src/markdown/index.md', './docs/src/markdown/license.md', './docs/src/markdown/wcmatch.md']
 ```
 
 If we include slashes in the pattern, the path, not the basename, must match the pattern:
 
-```pycon3
+```pycon
 >>> wcmatch.WcMatch('.', 'docs/**/*.md', flags=wcmatch.FILEPATHNAME | wcmatch.GLOBSTAR | wcmatch.MATCHBASE | wcmatch.RECURSIVE).match()
 ['./docs/src/markdown/changelog.md', './docs/src/markdown/fnmatch.md', './docs/src/markdown/glob.md', './docs/src/markdown/index.md', './docs/src/markdown/license.md', './docs/src/markdown/wcmatch.md']
 ```
@@ -431,7 +425,7 @@ If we include slashes in the pattern, the path, not the basename, must match the
 If we have a leading slash, the pattern will not perform a match on the basename, but will instead be a normal path
 pattern that is anchored to the current base path, in this case `.`.
 
-```pycon3
+```pycon
 >>> wcmatch.WcMatch('.', '/*.md', flags=wcmatch.FILEPATHNAME | wcmatch.GLOBSTAR | wcmatch.MATCHBASE | wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md']
 ```
@@ -441,7 +435,7 @@ pattern that is anchored to the current base path, in this case `.`.
 When the [`PATHNAME`](#pathname) flag is provided, you can also enable `GLOBSTAR` to enable the recursive
 directory pattern matches with `**`.
 
-```pycon3
+```pycon
 >>> from wcmatch import wcmatch
 >>> wcmatch.WcMatch('.', '*.md|*.txt', '**/markdown', flags=wcmatch.DIRPATHNAME | wcmatch.GLOBSTAR | wcmatch.RECURSIVE).match()
 ['./LICENSE.md', './README.md', './requirements/docs.txt', './requirements/lint.txt', './requirements/setup.txt', './requirements/test.txt']

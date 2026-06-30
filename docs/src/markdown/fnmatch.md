@@ -11,10 +11,9 @@ It is mainly used for matching filenames with glob patterns. For path names, Wil
 [`globmatch`](./glob.md#globmatch) is a more appropriate choice. Not all of the features listed below are enabled by
 default. See [flags](#flags) for more information.
 
-/// tip | Backslashes
-When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a
-character `#!py r'\?'`.  If you want to represent a literal backslash, you must use two: `#!py r'some\\path'`.
-///
+> [!tip] Backslashes
+> When using backslashes, it is helpful to use raw strings. In a raw string, a single backslash is used to escape a
+> character `#!py r'\?'`.  If you want to represent a literal backslash, you must use two: `#!py r'some\\path'`.
 
 Pattern           | Meaning
 ----------------- | -------
@@ -47,14 +46,12 @@ Many of the API functions allow passing in multiple patterns or using either [`B
 you can raise or lower this limit via the keyword option `limit`. If you set `limit` to `0`, there will
 be no limit.
 
-/// new | New 6.0
-The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
-///
+> [!new] New 6.0
+> The imposed pattern limit and corresponding `limit` option was introduced in 6.0.
 
 ## Precompiling
 
-/// new | New 10.1
-///
+> [!new] New 10.1
 
 While patterns are often cached, auto expanding patterns, such as `'file{a, b, c}'` will have each individual
 permutation cached (up to the cache limit), but not the entire pattern. This is to prevent the cache from exploding with
@@ -85,7 +82,7 @@ def fnmatch(filename, patterns, *, flags=0, limit=1000, exclude=None)
 limit](#multi-pattern-limits). Exclusion patterns can be specified via the `exclude` parameter which takes a pattern or
 a list of patterns. It will return a boolean indicating whether the file name was matched by the pattern(s).
 
-```pycon3
+```pycon
 >>> from wcmatch import fnmatch
 >>> fnmatch.fnmatch('test.txt', '@(*.txt|*.py)', flags=fnmatch.EXTMATCH)
 True
@@ -93,7 +90,7 @@ True
 
 When applying multiple patterns, a file matches if it matches any of the patterns:
 
-```pycon3
+```pycon
 >>> from wcmatch import fnmatch
 >>> fnmatch.fnmatch('test.txt', ['*.txt', '*.py'], flags=fnmatch.EXTMATCH)
 True
@@ -102,7 +99,7 @@ True
 Exclusions can be used by taking advantage of the `exclude` parameter. It takes a single exclude pattern or a list of
 patterns. Files that match the exclude pattern will not be matched.
 
-```pycon3
+```pycon
 >>> from wcmatch import fnmatch
 >>> fnmatch.fnmatch('test.py', '*', exclude='*.py')
 False
@@ -115,7 +112,7 @@ a file will be considered matched if one of the inclusion patterns match **and**
 If an exclusion pattern is given without any inclusion patterns, the pattern will match nothing. Exclusion patterns are
 meant to filter other patterns, not match anything by themselves.
 
-```pycon3
+```pycon
 >>> from wcmatch import fnmatch
 >>> fnmatch.fnmatch('test.py', '*|!*.py', flags=fnmatch.NEGATE | fnmatch.SPLIT)
 False
@@ -132,7 +129,7 @@ exclusion patterns to assume all files should be filtered with the exclusion pat
 [`NEGATEALL`](#negateall) flag. Essentially, it means if you use a pattern such as `!*.md`, it will assume two
 pattern were given: `*` and `!*.md`.
 
-```pycon3
+```pycon
 >>> from wcmatch import fnmatch
 >>> fnmatch.fnmatch('test.py', '!*.py', flags=fnmatch.NEGATE | fnmatch.NEGATEALL)
 False
@@ -140,13 +137,11 @@ False
 True
 ```
 
-/// new | New 6.0
-`limit` was added in 6.0.
-///
+> [!new] New 6.0
+> `limit` was added in 6.0.
 
-/// new | New 8.4
-`exclude` parameter was added.
-///
+> [!new] New 8.4
+>`exclude` parameter was added.
 
 #### `fnmatch.filter` {: #filter}
 
@@ -159,24 +154,21 @@ pattern limit](#multi-pattern-limits). Exclusion patterns can be specified via t
 pattern or a list of patterns.It returns a list of all files that matched the pattern(s). The same logic used for
 [`fnmatch`](#fnmatch) is used for `filter`, albeit more efficient for processing multiple files.
 
-```pycon3
+```pycon
 >>> from wcmatch import fnmatch
 >>> fnmatch.filter(['a.txt', 'b.txt', 'c.py'], '*.txt')
 ['a.txt', 'b.txt']
 ```
 
-/// new | New 6.0
-`limit` was added in 6.0.
-///
+> [!new] New 6.0
+> `limit` was added in 6.0.
 
-/// new | New 8.4
-`exclude` parameter was added.
-///
+> [!new] New 8.4
+> `exclude` parameter was added.
 
 #### `fnmatch.compile` {: #compile}
 
-/// new | New 10.1
-///
+> [!new] New 10.1
 
 ```py
 def compile(patterns, *, flags=0, limit=1000, exclude=None):
@@ -187,7 +179,7 @@ limit](#multi-pattern-limits). Exclusion patterns can be specified via the `excl
 a list of patterns. It returns a [`WcMatcher`](#wcmatcher) object which can match or filter file paths depending on
 which method is called.
 
-```pycon3
+```pycon
 >>> import wcmatch.fnmatch as fnmatch
 >>> m = fnmatch.compile('*.md')
 >>> m.match('README.md')
@@ -207,7 +199,7 @@ def match(self, filename):
 
 This `match` method allows for matching against a precompiled pattern.
 
-```pycon3
+```pycon
 >>> import wcmatch.fnmatch as fnmatch
 >>> m = fnmatch.compile('*.md')
 >>> m.match('README.md')
@@ -220,7 +212,7 @@ def filter(self, filenames):
 
 The `filter` method allows for filtering paths against a precompiled pattern.
 
-```pycon3
+```pycon
 >>> import wcmatch.fnmatch as fnmatch
 >>> m = fnmatch.compile('*.md')
 >>> m.filter(['test.txt', 'file.md', 'README.md'])
@@ -239,7 +231,7 @@ a list of patterns. It returns two lists: one for inclusion patterns and one for
 the regular expressions used for matching the given patterns. It should be noted that a file is considered matched if it
 matches at least one inclusion pattern and matches **none** of the exclusion patterns.
 
-```pycon3
+```pycon
 >>> from wcmatch import fnmatch
 >>> fnmatch.translate('*.{a,{b,c}}', flags=fnmatch.BRACE)
 (['^(?s:(?=.)(?![.]).*?\\.a)$', '^(?s:(?=.)(?![.]).*?\\.b)$', '^(?s:(?=.)(?![.]).*?\\.c)$'], [])
@@ -255,7 +247,7 @@ as naming groups does not currently fit into the pattern matching syntax is not 
 While in regex, patterns like `#!py r'(a)+'` would capture only the last character, even though multiple where matched,
 we wrap the entire group to be captured: `#!py '+(a)'` --> `#!py r'((a)+)'`.
 
-```pycon3
+```pycon
 >>> from wcmatch import fnmatch
 >>> import re
 >>> gpat = fnmatch.translate("@(file)+([[:digit:]])@(.*)", flags=fnmatch.EXTMATCH)
@@ -264,17 +256,14 @@ we wrap the entire group to be captured: `#!py '+(a)'` --> `#!py r'((a)+)'`.
 ('file', '33', '.test.txt')
 ```
 
-/// new | New 6.0
-`limit` was added in 6.0.
-///
+> [!new] New 6.0
+> `limit` was added in 6.0.
 
-/// new | New 7.1
-Translate patterns now provide capturing groups for [`EXTMATCH`](#extmatch) groups.
-///
+> [!new] New 7.1
+> Translate patterns now provide capturing groups for [`EXTMATCH`](#extmatch) groups.
 
-/// new | New 8.4
-`exclude` parameter was added.
-///
+> [!new] New 8.4
+> `exclude` parameter was added.
 
 #### `fnmatch.escape` {: #escape}
 
@@ -285,7 +274,7 @@ def escape(pattern):
 The `escape` function will conservatively escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `{`, `}`, and `\` with
 backslashes, regardless of what feature is or is not enabled. It is meant to escape filenames.
 
-```pycon3
+```pycon
 >>> from wcmatch import fnmatch
 >>> fnmatch.escape('**file**{}.txt')
 '\\*\\*file\\*\\*\\{\\}.txt'
@@ -293,9 +282,8 @@ backslashes, regardless of what feature is or is not enabled. It is meant to esc
 True
 ```
 
-/// new | New 8.1
-An `escape` variant for `fnmatch` was made available in 8.1.
-///
+> [!new] New 8.1
+> An `escape` variant for `fnmatch` was made available in 8.1.
 
 ### `fnmatch.is_magic` {: #is_magic}
 
@@ -310,7 +298,7 @@ filenames or patterns for file names only. If you need to check patterns with fu
 that include drive names or UNC sharepoints (which require special logic), it is recommended to use the
 [`glob.escape`](./glob.md#escape) function.
 
-```pycon3
+```pycon
 >>> fnmatch.is_magic('test')
 False
 >>> fnmatch.is_magic('[test]ing?')
@@ -330,9 +318,8 @@ Default                       | `?*[]\`
 [`MINUSNEGATE`](#minusnegate) | `-`
 [`SPLIT`](#split)             | `|`
 
-/// new | New 8.1
-Added `is_magic` in 8.1.
-///
+> [!new] New 8.1
+> Added `is_magic` in 8.1.
 
 ## Flags
 
@@ -389,11 +376,10 @@ other character. Dots will not be matched in `[]`, `*`, or `?`.
 `EXTMATCH` enables extended pattern matching. This includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`,
 etc. See the [syntax overview](#syntax) for more information.
 
-/// tip | EXTMATCH and NEGATE
-When using `EXTMATCH` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
-be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTMATCH` pattern). To
-negate a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
-///
+> [!tip] EXTMATCH and NEGATE
+> When using `EXTMATCH` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
+> be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTMATCH` pattern). To
+> negate a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
 
 #### `fnmatch.BRACE, fnmatch.B` {: #brace}
 
@@ -404,21 +390,20 @@ Redundant, identical patterns are discarded[^1] by default.
 For simple patterns, it may make more sense to use [`EXTMATCH`](#extmatch) which will only generate a single
 pattern which will perform much better: `@(ab|ac|ad)`.
 
-/// warning | Massive Expansion Risk
-1.  It is important to note that each pattern is matched separately, so patterns such as `{1..100}` would generate
-    **one hundred** patterns. Sometimes patterns like this are needed, so construct patterns thoughtfully and carefully.
-
-2.  `BRACE` and [`SPLIT`](#split) both expand patterns into multiple patterns. Using these two syntaxes
-    simultaneously can exponential increase in duplicate patterns:
-
-    ```pycon3
-    >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
-    ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
-    ```
-
-    This effect is reduced as redundant, identical patterns are optimized away[^1]. But it is useful to know if
-    trying to construct efficient patterns.
-///
+> [!warning] Massive Expansion Risk
+> 1.  It is important to note that each pattern is matched separately, so patterns such as `{1..100}` would generate
+>     **one hundred** patterns. Sometimes patterns like this are needed, so construct patterns thoughtfully and carefully.
+>
+> 2.  `BRACE` and [`SPLIT`](#split) both expand patterns into multiple patterns. Using these two syntaxes
+>     simultaneously can exponential increase in duplicate patterns:
+>
+>     ```pycon
+>     >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
+>     ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
+>     ```
+>
+>     This effect is reduced as redundant, identical patterns are optimized away[^1]. But it is useful to know if
+>     trying to construct efficient patterns.
 
 [^1]: Identical patterns are only reduced by comparing case sensitively as POSIX character classes are case sensitive:
 `[[:alnum:]]` =/= `[[:ALNUM:]]`.
@@ -435,7 +420,7 @@ While `SPLIT` is not as powerful as [`BRACE`](#brace), it's syntax is very easy 
 expansions of patterns with it, except when paired *with* [`BRACE`](#brace). See [`BRACE`](#brace) and
 it's warnings related to pairing it with `SPLIT`.
 
-```pycon3
+```pycon
 >>> from wcmatch import fnmatch
 >>> fnmatch.fnmatch('test.txt', '*.txt|*.py', flags=fnmatch.SPLIT)
 True
