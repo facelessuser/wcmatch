@@ -1,5 +1,9 @@
 # Changelog
 
+## 10.2
+
+-   **NEW**: Drop support for Python 3.9 which is "end of life".
+
 ## 10.1
 
 -   **NEW**: Drop support for Python 3.8 which is "end of life".

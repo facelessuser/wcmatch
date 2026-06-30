@@ -9,7 +9,6 @@ from functools import wraps
 import warnings
 from typing import Any, Callable, AnyStr, Match, Pattern
 
-PY310 = (3, 10) <= sys.version_info
 PY312 = (3, 12) <= sys.version_info
 PY313 = (3, 13) <= sys.version_info
 
