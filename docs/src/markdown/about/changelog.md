@@ -2,6 +2,7 @@
 
 ## 10.2
 
+-   **NEW**: Require `bracex` 3.0 for bug fixes.
 -   **NEW**: Drop support for Python 3.9 which is "end of life".
 
 ## 10.1

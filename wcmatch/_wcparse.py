@@ -498,7 +498,7 @@ def expand_braces(patterns: AnyStr, flags: int, limit: int) -> Iterable[AnyStr]:
         for p in ([patterns] if isinstance(patterns, (str, bytes)) else patterns):
             try:
                 # Turn off limit as we are handling it ourselves.
-                yield from bracex.iexpand(p, keep_escapes=True, limit=limit)
+                yield from bracex.iexpand(p, keep_escapes=True, limit=limit, return_empty=True)
             except bracex.ExpansionLimitException:  # noqa: PERF203
                 raise
             except Exception:  # pragma: no cover
