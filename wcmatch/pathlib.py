@@ -178,14 +178,9 @@ class Path(pathlib.Path):
         if cls is Path:
             cls = WindowsPath if win_host else PosixPath
         if not util.PY312:
-            if util.PY310:
-                self = cls._from_parts(args)  # type: ignore[attr-defined]
-            else:
-                self = cls._from_parts(args, init=False)  # type: ignore[attr-defined]
+            self = cls._from_parts(args)  # type: ignore[attr-defined]
             if not self._flavour.is_supported:
                 raise NotImplementedError(f"Cannot instantiate {cls.__name__!r} on your system")
-            if not util.PY310:
-                self._init()
             return self  # type: ignore[no-any-return]
         else:
             if (cls is WindowsPath and not win_host) or (cls is not WindowsPath and win_host):

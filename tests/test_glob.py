@@ -25,8 +25,6 @@ import warnings
 import getpass
 from collections.abc import MutableMapping
 
-PY310 = (3, 10) <= sys.version_info
-
 # Below is general helper stuff that Python uses in `unittests`.  As these
 # not meant for users, and could change without notice, include them
 # ourselves so we aren't surprised later.
@@ -1694,7 +1692,7 @@ class TestTilde(unittest.TestCase):
     def test_tilde_user(self):
         """Test tilde user cases."""
 
-        if sys.platform.startswith('win') and PY310:
+        if sys.platform.startswith('win'):
             # In CI, and maybe on other systems, we cannot be sure we'll be able to get the user.
             # So fake it by using our own user name with the current `USERPROFILE` path.
             with EnvironmentVarGuard() as env:
