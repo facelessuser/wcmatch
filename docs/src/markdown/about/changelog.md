@@ -1,5 +1,9 @@
 # Changelog
 
+## 10.2.1
+
+-   **FIX**: Properly update project requirements to ensure usage of `bracex` 3.0.
+
 ## 10.2
 
 -   **NEW**: Require `bracex` 3.0 for bug fixes.
