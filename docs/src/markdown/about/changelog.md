@@ -1,8 +1,17 @@
 # Changelog
 
-## 10.2.2
+## 11.0
 
+-   **NEW**: Reduce/combine nested `EXTGLOB`/`EXTMATCH` regular expression patterns when possible to reduce deeply
+    nested patterns.
 -   **NEW**: Added ZSH style numerical ranges (`<0-9>`) via new `NUMRANGE` flag.
+-   **BREAK**: Previously, translation would have a capture group for every extended glob pattern when
+    `EXTGLOB`/`EXTMATCH` was enabled. Due to the new feature added that reduces extended glob group nesting, groups no
+    longer appear exactly as specified. Moving forward, capturing groups are not included by default. If you need the
+    old behavior, it can be enabled in a `translate()` call via the `CAPTURE` flag. This flag will cause extended glob
+    reduction to be turned off and for capturing groups to be enabled.
+-   **FIX**: Avoid reparsing sequences that have already been deemed not valid.
+-   **FIX**: Halt `EXTGLOB`/`EXTMATCH` parsing once an unclosed extended glob pattern is encountered.
 -   **FIX**: Fix case where an empty string would not match a pattern targeting an empty string.
 -   **FIX**: Ensure that consecutive stars are collapsed into a single regular expression pattern.
 -   **FIX**: Fix parsing `SPLIT` not accounting for POSIX character class.

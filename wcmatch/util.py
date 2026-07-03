@@ -144,13 +144,26 @@ class StringIter:
     def __next__(self) -> str:
         """Python 3 iterator compatible next."""
 
-        return self.iternext()
+        try:
+            char = self._string[self._index]
+            self._index += 1
+        except IndexError as e:  # pragma: no cover
+            raise StopIteration from e
+        return char
 
-    def match(self, pattern: Pattern[str]) -> Match[str] | None:
+    def match(self, pattern: Pattern[str], update: bool = True) -> Match[str] | None:
+        """Perform regex match at index."""
+
+        m = pattern.match(self._string, self._index - 1)
+        if m and update:
+            self._index = m.end()
+        return m
+
+    def match_next(self, pattern: Pattern[str], update: bool = True) -> Match[str] | None:
         """Perform regex match at index."""
 
         m = pattern.match(self._string, self._index)
-        if m:
+        if m and update:
             self._index = m.end()
         return m
 
@@ -177,17 +190,6 @@ class StringIter:
             raise ValueError("Can't rewind past beginning!")
 
         self._index -= count
-
-    def iternext(self) -> str:
-        """Iterate through characters of the string."""
-
-        try:
-            char = self._string[self._index]
-            self._index += 1
-        except IndexError as e:  # pragma: no cover
-            raise StopIteration from e
-
-        return char
 
 
 class Immutable:

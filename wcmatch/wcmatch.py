@@ -20,13 +20,13 @@ __all__ = (
     "WcMatch"
 )
 
+B = BRACE = _wcparse.BRACE
 C = CASE = _wcparse.CASE
-I = IGNORECASE = _wcparse.IGNORECASE
-R = RAWCHARS = _wcparse.RAWCHARS
 E = EXTMATCH = _wcparse.EXTMATCH
 G = GLOBSTAR = _wcparse.GLOBSTAR
-B = BRACE = _wcparse.BRACE
+I = IGNORECASE = _wcparse.IGNORECASE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
+R = RAWCHARS = _wcparse.RAWCHARS
 X = MATCHBASE = _wcparse.MATCHBASE
 ZN = NUMRANGE = _wcparse.NUMRANGE
 
@@ -146,7 +146,11 @@ class WcMatch(Generic[AnyStr]):
             if self.matchbase:
                 flags |= MATCHBASE
 
-        return _wcparse.compile([pattern], flags, self.limit) if pattern else None
+        return _wcparse.compile(
+            [pattern],
+            flags,
+            self.limit
+        ) if pattern else None
 
     def _compile(self, file_pattern: AnyStr, folder_exclude_pattern: AnyStr) -> None:
         """Compile patterns."""

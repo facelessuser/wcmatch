@@ -17,24 +17,24 @@ __all__ = (
     "Path", "PurePath", "WindowsPath", "PosixPath", "PurePosixPath", "PureWindowsPath"
 )
 
+A = NEGATEALL = glob.NEGATEALL
+B = BRACE = glob.BRACE
 C = CASE = glob.CASE
-I = IGNORECASE = glob.IGNORECASE
-R = RAWCHARS = glob.RAWCHARS
 D = DOTGLOB = DOTMATCH = glob.DOTMATCH
 E = EXTGLOB = EXTMATCH = glob.EXTMATCH
 G = GLOBSTAR = glob.GLOBSTAR
-N = NEGATE = glob.NEGATE
-B = BRACE = glob.BRACE
-M = MINUSNEGATE = glob.MINUSNEGATE
-P = REALPATH = glob.REALPATH
+GL = GLOBSTARLONG = glob.GLOBSTARLONG
+I = IGNORECASE = glob.IGNORECASE
 L = FOLLOW = glob.FOLLOW
+M = MINUSNEGATE = glob.MINUSNEGATE
+N = NEGATE = glob.NEGATE
+O = NODIR = glob.NODIR
+P = REALPATH = glob.REALPATH
+Q = NOUNIQUE = glob.NOUNIQUE
+R = RAWCHARS = glob.RAWCHARS
 S = SPLIT = glob.SPLIT
 X = MATCHBASE = glob.MATCHBASE
-O = NODIR = glob.NODIR
-A = NEGATEALL = glob.NEGATEALL
-Q = NOUNIQUE = glob.NOUNIQUE
 Z = NODOTDIR = glob.NODOTDIR
-GL = GLOBSTARLONG = glob.GLOBSTARLONG
 ZN = NUMRANGE = glob.NUMRANGE
 
 SD = SCANDOTDIR = glob.SCANDOTDIR
@@ -129,7 +129,12 @@ class PurePath(pathlib.PurePath):
         Folders and files are essentially matched from right to left.
         """
 
-        return self.globmatch(patterns, flags=flags | _EXTMATCHBASE, limit=limit, exclude=exclude)
+        return self.globmatch(
+            patterns,
+            flags=flags | _EXTMATCHBASE,
+            limit=limit,
+            exclude=exclude
+        )
 
     def globmatch(
         self,
@@ -209,7 +214,13 @@ class Path(pathlib.Path):
             flags = self._translate_flags(  # type: ignore[attr-defined]
                 flags | _NOABSOLUTE
             ) | ((_PATHLIB | SCANDOTDIR) if scandotdir else _PATHLIB)
-            for filename in glob.iglob(patterns, flags=flags, root_dir=str(self), limit=limit, exclude=exclude):
+            for filename in glob.iglob(
+                patterns,
+                flags=flags,
+                root_dir=str(self),
+                limit=limit,
+                exclude=exclude
+            ):
                 yield self.joinpath(filename)
 
     def rglob(  # type: ignore[override]
@@ -230,7 +241,12 @@ class Path(pathlib.Path):
 
         """
 
-        yield from self.glob(patterns, flags=flags | _EXTMATCHBASE, limit=limit, exclude=exclude)
+        yield from self.glob(
+            patterns,
+            flags=flags | _EXTMATCHBASE,
+            limit=limit,
+            exclude=exclude
+        )
 
 
 class PurePosixPath(PurePath, pathlib.PurePosixPath):

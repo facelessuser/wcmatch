@@ -13,24 +13,25 @@ from typing import AnyStr, Iterable, Sequence
 __all__ = (
     "CASE", "EXTMATCH", "IGNORECASE", "RAWCHARS",
     "NEGATE", "MINUSNEGATE", "DOTMATCH", "BRACE", "SPLIT",
-    "NEGATEALL", "FORCEWIN", "FORCEUNIX", "NUMRANGE",
-    "C", "I", "R", "N", "M", "D", "E", "S", "B", "A", "W", "U", "ZN",
+    "NEGATEALL", "FORCEWIN", "FORCEUNIX", "NUMRANGE", "CAPTURE",
+    "C", "I", "R", "N", "M", "D", "E", "S", "B", "A", "W", "U", "ZN", "TC",
     "translate", "fnmatch", "filter", "escape", "is_magic", "compile",
     "WcMatcher"
 )
 
+A = NEGATEALL = _wcparse.NEGATEALL
+B = BRACE = _wcparse.BRACE
 C = CASE = _wcparse.CASE
-I = IGNORECASE = _wcparse.IGNORECASE
-R = RAWCHARS = _wcparse.RAWCHARS
-N = NEGATE = _wcparse.NEGATE
-M = MINUSNEGATE = _wcparse.MINUSNEGATE
 D = DOTMATCH = _wcparse.DOTMATCH
 E = EXTMATCH = _wcparse.EXTMATCH
-B = BRACE = _wcparse.BRACE
+I = IGNORECASE = _wcparse.IGNORECASE
+M = MINUSNEGATE = _wcparse.MINUSNEGATE
+N = NEGATE = _wcparse.NEGATE
+R = RAWCHARS = _wcparse.RAWCHARS
 S = SPLIT = _wcparse.SPLIT
-A = NEGATEALL = _wcparse.NEGATEALL
-W = FORCEWIN = _wcparse.FORCEWIN
+TC = CAPTURE = _wcparse.CAPTURE
 U = FORCEUNIX = _wcparse.FORCEUNIX
+W = FORCEWIN = _wcparse.FORCEWIN
 ZN = NUMRANGE = _wcparse.NUMRANGE
 
 FLAG_MASK = (
@@ -46,7 +47,8 @@ FLAG_MASK = (
     NEGATEALL |
     FORCEWIN |
     FORCEUNIX |
-    NUMRANGE
+    NUMRANGE |
+    CAPTURE
 )
 
 
@@ -97,7 +99,12 @@ def translate(
 ) -> tuple[list[AnyStr], list[AnyStr]]:
     """Translate `fnmatch` pattern."""
 
-    return _wcparse.translate(patterns, _flag_transform(flags), limit, exclude=exclude)
+    return _wcparse.translate(
+        patterns,
+        _flag_transform(flags),
+        limit,
+        exclude=exclude
+    )
 
 
 def fnmatch(
@@ -115,7 +122,12 @@ def fnmatch(
     but if `case_sensitive` is set, respect that instead.
     """
 
-    return _wcparse.compile(patterns, _flag_transform(flags), limit, exclude=exclude).match(filename)
+    return _wcparse.compile(
+        patterns,
+        _flag_transform(flags),
+        limit,
+        exclude=exclude
+    ).match(filename)
 
 
 def filter(  # noqa A001
@@ -128,7 +140,12 @@ def filter(  # noqa A001
 ) -> list[AnyStr]:
     """Filter names using pattern."""
 
-    return _wcparse.compile(patterns, _flag_transform(flags), limit, exclude=exclude).filter(filenames)  # type: ignore[return-value]
+    return _wcparse.compile(
+        patterns,
+        _flag_transform(flags),
+        limit,
+        exclude=exclude
+    ).filter(filenames)  # type: ignore[return-value]
 
 
 def escape(pattern: AnyStr) -> AnyStr:
