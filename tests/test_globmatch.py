@@ -899,6 +899,8 @@ class TestGlobMatch:
         ['foo-integration-test.js', 'foo-integration-test.js', True, glob.N],
         ['!(*-integration-test.js)', 'foo-integration-test.js', False, glob.N],
 
+        ['*(a|b|c)', '', True, glob.N],
+
         ['*.!(js).js', 'foo.jszzz.js', True, glob.N],
 
         ['*.!(js)', 'asd.jss', True, glob.N],

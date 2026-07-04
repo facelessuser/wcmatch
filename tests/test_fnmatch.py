@@ -199,7 +199,11 @@ class TestFnMatch:
         # Escaped slashes are just slashes as they aren't treated special beyond normalization.
         [R'a\/b', ('a/b' if util.is_case_sensitive() else 'a\\\\b'), True, 0],
         [R'a\/b', 'a/b', True, fnmatch.U],
-        [R'a\/b', 'a\\\\b', True, fnmatch.W]
+        [R'a\/b', 'a\\\\b', True, fnmatch.W],
+
+        # Empty string cases
+        ['*(a|b|c)', '', True, fnmatch.E],
+        ['', '', True, 0]
     ]
 
     @classmethod

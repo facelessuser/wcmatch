@@ -1,5 +1,9 @@
 # Changelog
 
+## 10.2.2
+
+-   **FIX**: Fix case where an empty string would not match a pattern targeting an empty string.
+
 ## 10.2.1
 
 -   **FIX**: Properly update project requirements to ensure usage of `bracex` 3.0.

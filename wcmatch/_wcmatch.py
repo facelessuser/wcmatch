@@ -328,9 +328,6 @@ class WcRegexp(util.Immutable, Generic[AnyStr]):
     ) -> bool:
         """Filter filenames."""
 
-        if not filename:
-            return False
-
         return _Match(
             os.fspath(filename),
             self._include,
