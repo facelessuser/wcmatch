@@ -1164,6 +1164,18 @@ class TestGlobMatchSpecial(unittest.TestCase):
             value
         )
 
+    def test_collapse_trailing_stars(self):
+        """Collapse trailing stars."""
+
+        flags = self.flags
+        flags |= glob.FORCEUNIX
+
+        value = (['^(?s:(?=[^/])(?!(?:\\.{1,2})(?:$|[/]))(?:(?!\\.)[^/]*?)?test[^/]*?[/]*?)$'], [])
+        self.assertEqual(
+            glob.translate('****test****', flags=flags),
+            value
+        )
+
     def test_glob_parsing_nix(self):
         """Test wildcard parsing."""
 

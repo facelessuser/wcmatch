@@ -1336,8 +1336,10 @@ class WcParse(Generic[AnyStr]):
                     # Use double star
                     value = globstar
 
-        if self.after_start and value != globstar:
-            value = self.need_char + value
+        if value != globstar:
+            if self.after_start:
+                value = self.need_char + value
+
             # Consume duplicate starts
             try:
                 c = next(i)

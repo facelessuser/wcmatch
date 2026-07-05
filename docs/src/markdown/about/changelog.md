@@ -3,6 +3,7 @@
 ## 10.2.2
 
 -   **FIX**: Fix case where an empty string would not match a pattern targeting an empty string.
+-   **FIX**: Ensure that consecutive stars are collapsed into a single regular expression pattern.
 
 ## 10.2.1
 
