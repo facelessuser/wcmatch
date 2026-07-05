@@ -203,9 +203,9 @@ class _GlobSplit(Generic[AnyStr]):
         """Handle character group."""
 
         c = next(i)
-        if c == '!':
+        if c in ('!', '^'):
             c = next(i)
-        if c in ('^', '-', '['):
+        if c in ('-', ']'):
             c = next(i)
 
         while c != ']':
@@ -217,6 +217,10 @@ class _GlobSplit(Generic[AnyStr]):
                     raise StopIteration from e
             elif c == '/':
                 raise StopIteration
+            elif c == '[':
+                m = i.match(_wcparse.RE_POSIX)
+                if m:
+                    i.advance(m.end(0) - i.index)
             c = next(i)
 
     def _references(self, i: util.StringIter, sequence: bool = False) -> str:

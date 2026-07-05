@@ -466,6 +466,9 @@ class Testglob(_TestGlob):
         [[os.curdir, '*'], None],
         Options(absolute=False),
 
+        # POSIX
+        [('[[:lower:]]',), [('a',)]],
+
         # Glob one directory
         [('a*',), [('a',), ('aab',), ('aaa',)]],
         [('*a',), [('a',), ('aaa',)]],
@@ -669,6 +672,9 @@ class Testglob(_TestGlob):
         [('[a]',), [('a',)]],
         [('[!b]',), [('a',)]],
         [('[^b]',), [('a',)]],
+        [('[!^]',), [('a',)]],
+        [('[^!]',), [('a',)]],
+        [('[]a]',), [('a',)]],
         [(R'@([\a]|\aaa)',), [('a',), ('aaa',)]],
 
         Options(absolute=True),

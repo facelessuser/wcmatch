@@ -4,6 +4,7 @@
 
 -   **FIX**: Fix case where an empty string would not match a pattern targeting an empty string.
 -   **FIX**: Ensure that consecutive stars are collapsed into a single regular expression pattern.
+-   **FIX**: Fix parsing `SPLIT` not accounting for POSIX character class.
 
 ## 10.2.1
 

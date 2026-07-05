@@ -808,9 +808,9 @@ class WcSplit(Generic[AnyStr]):
         """Handle character group."""
 
         c = next(i)
-        if c == '!':
+        if c in ('!', '^'):
             c = next(i)
-        if c in ('^', '-', '['):
+        if c in ('-', ']'):
             c = next(i)
 
         try:
@@ -821,6 +821,10 @@ class WcSplit(Generic[AnyStr]):
                 elif c == '/':
                     if self.pathname:
                         raise StopIteration
+                elif c == '[':
+                    m = i.match(RE_POSIX)
+                    if m:
+                        i.advance(m.end(0) - i.index)
                 c = next(i)
         except PathNameException as e:
             raise StopIteration from e

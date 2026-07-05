@@ -178,6 +178,8 @@ class TestFnMatch:
         # Negation
         ['[![:alnum:]]bc', '!bc', True, 0],
         ['[^[:alnum:]]bc', '!bc', True, 0],
+        ['[!^]bc', '!bc', True, 0],
+        ['[^!]bc', '^bc', True, 0],
 
         # Negation and extended glob together
         # `!` will be treated as an exclude pattern if it isn't followed by `(`.
@@ -408,6 +410,9 @@ class TestFnMatchTranslate(unittest.TestCase):
 
         p1 = self.split_translate(R'\\u0300', flags=flags | fnmatch.R)[0]
         self.assertEqual(p1, [r'^(?s:\\u0300)$'])
+
+        p1 = self.split_translate('test[[:upper:]|]', flags=flags)[0]
+        self.assertEqual(p1, ['^(?s:test[A-Z\\|])$'])
 
     def test_posix_range(self):
         """Test posix range."""
