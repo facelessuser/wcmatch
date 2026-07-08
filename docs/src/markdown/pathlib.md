@@ -568,6 +568,24 @@ normalizes directories. When comparing the results to a non-`pathlib` glob, the 
 > [!new] New 7.0
 > `SCANDOTDIR` was added in 7.0.
 
+#### `fnmatch.NUMRANGE, fnmatch.ZN` {: #numrange}
+
+`NUMRANGE` enables ZSH style numerical ranges. This can be more preferable in some ways than using [`BRACE`](#brace) as
+`NUMRANGE` generates an inline regular expression that captures the range of numbers, while [`BRACE`](#brace) will
+force pattern expansions. On the other hand, `NUMRANGE` does not allow the same amount of control over the ranges that
+[`BRACE`](#brace) affords.
+
+Ranges are specified using the form `<0-9>` with positive values. The first value in the range must be less than or equal
+to the second number; otherwise, the pattern will match nothing. The minimum or maximum number can be omitted, and if
+so, the range will zero and infinity for the minimum and maximum, respectively. Lastly, numbers greater than 19 digits
+will be truncated.
+
+While numbers can be padding with leading zeros, padding the numbers does not actually control anything. ZSH style
+number ranges always consume leading zeros, regardless of whether numbers are padding with zeros in the input.
+
+> [!new] New 11.0
+> `NUMRANGE` was added in 6.0.
+
 #### `pathlib.EXTGLOB, pathlib.E` {: #extglob}
 
 `EXTGLOB` enables extended pattern matching which includes special pattern lists such as `+(...)`, `*(...)`, `?(...)`,
@@ -593,8 +611,15 @@ unique results. If you need [`glob`](#glob) or [`rglob`](#rglob) to behave more 
 results, you can set [`NOUNIQUE`](#nounique). [`NOUNIQUE`](#nounique) has no effect on matching functions
 such as [`globmatch`](#globmatch) and [`match`](#match).
 
+Brace also allows generating ranges of numbers (`{0..100}`). Number ranges can also be specified at specific increments
+(`{0..6..2}`). If needed, padding with leading zeros can be used for files that pad their values (`{000..006}`). Numbers
+can be positive or negative.
+
+Character ranges can also be specified, with or without numerical increments (`{a..z}`).
+
 For simple patterns, it may make more sense to use [`EXTGLOB`](#extglob) which will only generate a single
-pattern which will perform much better: `@(ab|ac|ad)`.
+pattern which will perform much better: `@(ab|ac|ad)`. Additionally, [`NUMRANGE`](#numrange) can be used for simple
+number ranges.
 
 > [!warning] Massive Expansion Risk
 > 1.  It is important to note that each pattern is crawled separately, so patterns such as `{1..100}` would generate
@@ -606,7 +631,7 @@ pattern which will perform much better: `@(ab|ac|ad)`.
 >     simultaneously can exponential increase duplicate patterns:
 >
 >     ```pycon
->     >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
+>     >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTGLOB)
 >     ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
 >     ```
 >

@@ -5,7 +5,7 @@ import os
 import stat
 import copyreg
 from . import util
-from typing import Pattern, AnyStr, Generic, Iterable, Any
+from typing import Pattern, AnyStr, Generic, Iterable, Any, Literal
 
 # `O_DIRECTORY` may not always be defined
 DIR_FLAGS = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
@@ -58,7 +58,7 @@ class _Match(Generic[AnyStr]):
         self.real = real
         self.path = path
         self.follow = follow
-        self.ptype = util.BYTES if isinstance(self.filename, bytes) else util.UNICODE
+        self.ptype: Literal[0, 1] = util.BYTES if isinstance(self.filename, bytes) else util.UNICODE
 
     def _fs_match(
         self,

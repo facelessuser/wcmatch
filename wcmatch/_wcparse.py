@@ -7,10 +7,7 @@ import os
 from . import util
 from . import posix
 from . _wcmatch import WcRegexp
-from typing import AnyStr, Iterable, Pattern, Generic, Sequence, overload
-
-UNICODE_RANGE = '\u0000-\U0010ffff'
-ASCII_RANGE = '\x00-\xff'
+from typing import AnyStr, Iterable, Pattern, Generic, Sequence, overload, Iterator
 
 PATTERN_LIMIT = 1000
 
@@ -56,33 +53,45 @@ RE_MAGIC_ESCAPE = (
 )
 
 MAGIC_DEF = (
-    frozenset("*?[]\\"),
-    frozenset(b"*?[]\\")
+    {"*", "?", "[", "]", "\\"},
+    {b"*", b"?", b"[", b"]", b"\\"}
 )
 MAGIC_SPLIT = (
-    frozenset("|"),
-    frozenset(b"|")
+    {"|"},
+    {b"|"}
 )
 MAGIC_NEGATE = (
-    frozenset('!'),
-    frozenset(b'!')
+    {'!'},
+    {b'!'}
 )
 MAGIC_MINUS_NEGATE = (
-    frozenset('-'),
-    frozenset(b'-')
+    {'-'},
+    {b'-'}
 )
 MAGIC_TILDE = (
-    frozenset('~'),
-    frozenset(b'~')
+    {'~'},
+    {b'~'}
 )
 MAGIC_EXTMATCH = (
-    frozenset('()'),
-    frozenset(b'()')
+    {'(', ')'},
+    {b'(', b')'}
+)
+MAGIC_NUMRANGE = (
+    {'<', '>'},
+    {b'<', b'>'}
 )
 MAGIC_BRACE = (
-    frozenset("{}"),
-    frozenset(b"{}")
+    {"{", "}"},
+    {b"{", b"}"}
 )
+MAGIC_WIN_DRIVE = (
+    {"\\"},
+    {b"\\"}
+)
+MAGIC_UNIX_DRIVE = (
+    set(),
+    set()
+)  # type: tuple[set[str], set[bytes]]
 
 RE_MAGIC = (
     re.compile(r'([-!~*?(\[|{\\])'),
@@ -117,6 +126,7 @@ TILDE_SYM = (
 RE_ANCHOR = re.compile(r'^/+')
 RE_WIN_ANCHOR = re.compile(r'^(?:\\\\|/)+')
 RE_POSIX = re.compile(r':(alnum|alpha|ascii|blank|cntrl|digit|graph|lower|print|punct|space|upper|word|xdigit):\]')
+RE_NUM_RANGE = re.compile(r'([0-9]*-[0-9]*)>')
 
 SET_OPERATORS = frozenset(('&', '~', '|'))
 NEGATIVE_SYM = frozenset((b'!', '!'))
@@ -149,6 +159,7 @@ GLOBTILDE = 0x40000
 NOUNIQUE = 0x80000
 NODOTDIR = 0x100000
 GLOBSTARLONG = 0x200000
+NUMRANGE = 0x800000
 
 # Internal flag
 _TRANSLATE = 0x100000000  # Lets us know we are performing a translation, and we just want the regex.
@@ -180,6 +191,7 @@ FLAG_MASK = (
     SPLIT |
     NOUNIQUE |
     NODOTDIR |
+    NUMRANGE |
     _TRANSLATE |
     _ANCHOR |
     _EXTMATCHBASE |
@@ -307,17 +319,17 @@ def escape(pattern: AnyStr, unix: bool | None = None, pathname: bool = True) -> 
     """
 
     if isinstance(pattern, bytes):
-        drive_pat = RE_WIN_DRIVE[util.BYTES]  # type: Pattern[AnyStr]  # type: ignore[assignment]
-        magic = RE_MAGIC_ESCAPE[util.BYTES]  # type: Pattern[AnyStr]  # type: ignore[assignment]
-        drive_magic = RE_WIN_DRIVE_MAGIC[util.BYTES]  # type: Pattern[AnyStr]  # type: ignore[assignment]
+        drive_pat = RE_WIN_DRIVE[util.BYTES]  # type: Pattern[AnyStr]
+        magic = RE_MAGIC_ESCAPE[util.BYTES]  # type: Pattern[AnyStr]
+        drive_magic = RE_WIN_DRIVE_MAGIC[util.BYTES]  # type: Pattern[AnyStr]
         replace = br'\\\1'
         slash = b'\\'
         double_slash = b'\\\\'
         drive = b''
     else:
-        drive_pat = RE_WIN_DRIVE[util.UNICODE]  # type: ignore[assignment]
-        magic = RE_MAGIC_ESCAPE[util.UNICODE]  # type: ignore[assignment]
-        drive_magic = RE_WIN_DRIVE_MAGIC[util.UNICODE]  # type: ignore[assignment]
+        drive_pat = RE_WIN_DRIVE[util.UNICODE]
+        magic = RE_MAGIC_ESCAPE[util.UNICODE]
+        drive_magic = RE_WIN_DRIVE_MAGIC[util.UNICODE]
         replace = r'\\\1'
         slash = '\\'
         double_slash = '\\\\'
@@ -393,37 +405,33 @@ def _get_win_drive(
     return root_specified, drive, slash, end
 
 
-def _get_magic_symbols(pattern: AnyStr, unix: bool, flags: int) -> tuple[set[AnyStr], set[AnyStr]]:
+def _get_magic_symbols(
+    pattern: AnyStr,
+    unix: bool,
+    flags: int
+) -> tuple[set[AnyStr], set[AnyStr]]:
     """Get magic symbols."""
 
-    if isinstance(pattern, bytes):
-        ptype = util.BYTES
-        slash = b'\\'  # type: AnyStr
-    else:
-        ptype = util.UNICODE
-        slash = '\\'
-
-    if unix:
-        magic_drive = set()  # type: set[AnyStr]
-    else:
-        magic_drive = {slash}
-
-    magic = set(MAGIC_DEF[ptype])  # type: set[AnyStr]  # type: ignore[arg-type]
+    ptype = util.BYTES if isinstance(pattern, bytes) else util.UNICODE
+    magic_drive = set(MAGIC_UNIX_DRIVE[ptype] if unix else MAGIC_WIN_DRIVE[ptype])
+    magic = set(MAGIC_DEF[ptype])
     if flags & BRACE:
-        magic |= MAGIC_BRACE[ptype]  # type: ignore[arg-type]
-        magic_drive |= MAGIC_BRACE[ptype]  # type: ignore[arg-type]
+        magic |= MAGIC_BRACE[ptype]
+        magic_drive |= MAGIC_BRACE[ptype]
     if flags & SPLIT:
-        magic |= MAGIC_SPLIT[ptype]  # type: ignore[arg-type]
-        magic_drive |= MAGIC_SPLIT[ptype]  # type: ignore[arg-type]
+        magic |= MAGIC_SPLIT[ptype]
+        magic_drive |= MAGIC_SPLIT[ptype]
     if flags & GLOBTILDE:
-        magic |= MAGIC_TILDE[ptype]  # type: ignore[arg-type]
+        magic |= MAGIC_TILDE[ptype]
     if flags & EXTMATCH:
-        magic |= MAGIC_EXTMATCH[ptype]  # type: ignore[arg-type]
+        magic |= MAGIC_EXTMATCH[ptype]
+    if flags & NUMRANGE:
+        magic |= MAGIC_NUMRANGE[ptype]
     if flags & NEGATE:
         if flags & MINUSNEGATE:
-            magic |= MAGIC_MINUS_NEGATE[ptype]  # type: ignore[arg-type]
+            magic |= MAGIC_MINUS_NEGATE[ptype]
         else:
-            magic |= MAGIC_NEGATE[ptype]  # type: ignore[arg-type]
+            magic |= MAGIC_NEGATE[ptype]
 
     return magic, magic_drive
 
@@ -439,7 +447,7 @@ def is_magic(pattern: AnyStr, flags: int = 0) -> bool:
     else:
         ptype = util.UNICODE
 
-    drive_pat = RE_WIN_DRIVE[ptype]  # type: Pattern[AnyStr]  # type: ignore[assignment]
+    drive_pat = RE_WIN_DRIVE[ptype]  # type: Pattern[AnyStr]
 
     magic, magic_drive = _get_magic_symbols(pattern, unix, flags)
     is_path = flags & PATHNAME
@@ -518,8 +526,8 @@ def expand_tilde(pattern: AnyStr, is_unix: bool, flags: int) -> AnyStr:
 
     if pos > -1:
         string_type = util.BYTES if isinstance(pattern, bytes) else util.UNICODE
-        tilde = TILDE_SYM[string_type]  # type: AnyStr  # type: ignore[assignment]
-        re_tilde = RE_WIN_TILDE[string_type] if not is_unix else RE_TILDE[string_type]  # type: Pattern[AnyStr]  # type: ignore[assignment]
+        tilde = TILDE_SYM[string_type]  # type: AnyStr
+        re_tilde = RE_WIN_TILDE[string_type] if not is_unix else RE_TILDE[string_type]  # type: Pattern[AnyStr]
         m = re_tilde.match(pattern, pos)
         if m:
             expanded = os.path.expanduser(m.group(0))
@@ -661,7 +669,7 @@ def translate(
 
     if positive and flags & NODIR:
         index = util.BYTES if isinstance(positive[0], bytes) else util.UNICODE
-        negative.append(_NO_NIX_DIR[index] if is_unix else _NO_WIN_DIR[index])  # type: ignore[arg-type]
+        negative.append(_NO_NIX_DIR[index] if is_unix else _NO_WIN_DIR[index])
 
     return positive, negative
 
@@ -745,7 +753,7 @@ def compile_pattern(
 
     if positive and flags & NODIR:
         ptype = util.BYTES if isinstance(positive[0].pattern, bytes) else util.UNICODE
-        negative.append(RE_NO_DIR[ptype] if is_unix else RE_WIN_NO_DIR[ptype])  # type: ignore[arg-type]
+        negative.append(RE_NO_DIR[ptype] if is_unix else RE_WIN_NO_DIR[ptype])
 
     return positive, negative
 
@@ -947,6 +955,7 @@ class WcParse(Generic[AnyStr]):
         self.extmatchbase = bool(flags & _EXTMATCHBASE)
         self.anchor = bool(flags & _ANCHOR)
         self.nodotdir = bool(flags & NODOTDIR)
+        self.numrange = bool(flags & NUMRANGE)
         self.capture = self.translate
         self.case_sensitive = get_case(flags)
         self.in_list = False
@@ -1032,7 +1041,7 @@ class WcParse(Generic[AnyStr]):
 
     def _sequence_range_check(self, result: list[str], last: str) -> bool:
         """
-        If range backwards, remove it.
+        If range is backwards, remove it.
 
         A bad range will cause the regular expression to fail,
         so we need to remove it, but return that we removed it
@@ -1069,6 +1078,148 @@ class WcParse(Generic[AnyStr]):
                 result[-1] = '\\' + result[-1]
             result.append(posix.get_posix_property(m.group(1), self.is_bytes))
         return last_posix
+
+    def _digit_range_parts(self, lo: str, hi: str) -> Iterator[str]:
+        """Take two equal-length integer strings, return a list of regex fragments that combine to match the numbers."""
+
+        # Single digit number
+        if len(lo) == 1:
+            # Range of an exact numb
+            if lo == hi:
+                yield lo
+
+            # Range of single digit numbers.
+            else:
+                yield f"[{lo}-{hi}]"
+
+        # Range of an exact number.
+        elif lo == hi:
+            yield lo
+
+        # Two different, multi-digit numbers.
+        else:
+
+            lo_digit, lo_rest = lo[0], lo[1:]
+            hi_digit, hi_rest = hi[0], hi[1:]
+
+            # Identical digits
+            if lo_digit == hi_digit:
+                yield from ((lo_digit + s) for s in self._digit_range_parts(lo_rest, hi_rest))
+
+            # Different digits
+            else:
+                rest_len = len(lo_rest)
+                all_zeros = "0" * rest_len
+                all_nines = "9" * rest_len
+
+                # Low piece: `lo_digit` followed by `[lo_rest .. 999...9]`
+                # If `lo_digit` already covers the full span for the tail, fold it into middle.
+                if lo_rest == all_zeros:
+                    low_start = lo_digit
+                else:
+                    yield from (lo_digit + s for s in self._digit_range_parts(lo_rest, all_nines))
+                    low_start = str(int(lo_digit) + 1)
+
+                # High piece: `hi_digit` followed by `[000...0 .. hi_rest]`
+                # If `hi_digit` already covers the full span for the tail, fold it into middle.
+                if hi_rest == all_nines:
+                    high_end = hi_digit
+                else:
+                    yield from (hi_digit + s for s in self._digit_range_parts(all_zeros, hi_rest))
+                    high_end = str(int(hi_digit) - 1)
+
+                # Middle piece: any digit strictly between the adjusted bounds.
+                if low_start <= high_end:
+                    digit_part = low_start if low_start == high_end else f"[{low_start}-{high_end}]"
+                    if rest_len == 1:
+                        tail = "[0-9]"
+                    else:
+                        tail = f"[0-9]{{{rest_len}}}"
+                    yield digit_part + tail
+
+    def range_to_regex(
+        self,
+        mn: int | None = None,
+        mx: int | None = None,
+        leading_zeros: bool = True,
+        limit: int = 19
+    ) -> str:
+        """
+        Convert a non-negative minimum and maximum into a regular expression that matches the range.
+
+        A missing minimum is assumed to be zero and a missing maximum is any number greater than the
+        minimum. Leading zeros are automatically gathered as well.
+
+        A minimum that is greater than the maximum will return an impossible match.
+
+        Explicit values with greater than 19 digits will be truncated.
+        """
+
+        # If no start, zero is the start
+        if mn is None:
+            mn = 0
+
+        # Minimum should be less than the maximum, if not, return an impossible match.
+        if mx is not None and mn > mx:
+            return '(?!)'
+
+        # Minimum range up to an unspecified large number
+        if mx is None:
+            lo = str(mn)
+            lo_len = len(lo)
+
+            # Truncate to 19 digits like ZSH to prevent insanity
+            if lo_len > limit:
+                lo = lo[:limit]
+                lo_len = limit
+
+            parts = [part for part in self._digit_range_parts(lo, "9" * lo_len)]
+            parts.append(f"[1-9][0-9]{{{lo_len},}}")
+
+        # Bounded minimum and maximum
+        else:
+            lo, hi = str(mn), str(mx)
+            lo_len, hi_len = len(lo), len(hi)
+
+            # Truncate to 19 digits like ZSH to prevent insanity
+            if lo_len > limit:
+                lo = lo[:limit]
+                lo_len = limit
+            if hi_len > limit:
+                hi = hi[:limit]
+                hi_len = limit
+
+            if lo_len == hi_len:
+                ranges = [(lo, hi)]
+            else:
+                ranges = [(lo, "9" * lo_len)]
+                for length in range(lo_len + 1, hi_len):
+                    ranges.append(("1" + "0" * (length - 1), "9" * length))
+                ranges.append(("1" + "0" * (hi_len - 1), hi))
+
+            parts = []
+            for lo, hi in ranges:
+                parts.extend([part for part in self._digit_range_parts(lo, hi)])
+
+        # Join the parts together and wrap in a group if needed.
+        pattern = "|".join(parts)
+        if len(parts) > 1:
+            pattern = f"(?:{pattern})"
+
+        # Allow leading zeros.
+        if leading_zeros:
+            pattern = f"0*?{pattern}"
+
+        return pattern
+
+    def _handle_numrange(self, i: util.StringIter) -> str:
+        """Handle ZSH style number range."""
+
+        m = i.match(RE_NUM_RANGE)
+        if m:
+            start, end = [x.strip() for x in m.group(1).split('-')]
+            return self.range_to_regex(int(start) if start else None, int(end) if end else None)
+        return re.escape('<')
 
     def _sequence(self, i: util.StringIter) -> str:
         """Handle character group."""
@@ -1158,12 +1309,12 @@ class WcParse(Generic[AnyStr]):
             if value == '[]':
                 # We specified some ranges, but they are all
                 # out of reach.  Create an impossible sequence to match.
-                result = [f'[^{ASCII_RANGE if self.is_bytes else UNICODE_RANGE}]']
+                result = ['(?!)']
             elif value == '[^]':
-                # We specified some range, but hey are all
+                # We specified some range, but they are all
                 # out of reach. Since this is exclusive
                 # that means we can match *anything*.
-                result = [f'[{ASCII_RANGE if self.is_bytes else UNICODE_RANGE}]']
+                result = [r'[\s\S]']
             else:
                 result = [value]
 
@@ -1454,6 +1605,8 @@ class WcParse(Generic[AnyStr]):
                     extended.append(c)
                     if temp_after_start:
                         self.set_start_dir()
+                elif self.numrange and c == '<':
+                    extended.append(self._handle_numrange(i))
                 elif c == '\\':
                     try:
                         extended.append(self._references(i))
@@ -1605,6 +1758,8 @@ class WcParse(Generic[AnyStr]):
                     self.matchbase = False
                 else:
                     current.append(self.sep)
+            elif self.numrange and c == '<':
+                current.append(self._handle_numrange(i))
             elif c == '\\':
                 index = i.index
                 try:

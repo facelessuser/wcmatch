@@ -747,6 +747,142 @@ class TestFnMatchEscapes(unittest.TestCase):
         check('//[^what]/name/temp', R'//\[^what\]/name/temp', unix=True)
 
 
+class TestZSHNumbers(unittest.TestCase):
+    """Test ZSH numbers."""
+
+    def range_check(self, min_val=None, max_val=None, ceiling = 2000) -> None:
+        """Check cases."""
+
+        print('')
+
+        mn = str(min_val) if min_val is not None else ''
+        mx = str(max_val) if max_val is not None else ''
+
+        p = f'test<{mn}-{mx}>.txt'
+        print('CASE:', p)
+
+        pattern = fnmatch.compile(p, flags=fnmatch.ZN)
+        for n in range(0, ceiling):
+            if max_val is None and min_val is None:
+                expected = 0 <= n
+            elif max_val is None:
+                expected = min_val <= n
+            elif min_val is None:
+                expected = 0 <= n <= max_val
+            else:
+                expected = min_val <= n <= max_val
+            actual = pattern.match(f'test{n}.txt')
+            self.assertEqual(actual, expected)
+
+            actual = pattern.match(f'test00{n}.txt')
+            self.assertEqual(actual, expected)
+
+        if max_val is None and min_val:
+            # spot-check some very large numbers well beyond ceiling
+            for n in [10**6, 10**6 + 1, 10**9, 10**9 - 1, 10**12]:
+                expected = n >= (min_val if min_val is not None else 0)
+                actual = pattern.match(f'test{n}.txt')
+                self.assertEqual(actual, expected)
+
+        if min_val is not None and max_val is not None:
+            # also check some non-numeric / malformed inputs never match
+            for bad in ["", "-5", "1a", " 5", "5 ", "007" if min_val > 7 or max_val < 7 else "abc"]:
+                self.assertFalse(pattern.match(bad))
+
+    def test_range(self):
+        """Test number range."""
+
+        test_ranges = [
+            (1, 9), (0, 9), (5, 9), (1, 100), (5, 1200), (10, 99),
+            (100, 999), (1, 1), (7, 7), (0, 0), (1, 15), (99, 101),
+            (999, 1001), (1, 1000), (250, 750), (1, 3), (17, 5000),
+        ]
+        for lo, hi in test_ranges:
+            self.range_check(lo, hi, ceiling=max(hi + 50, 2000))
+
+    def test_fuzz(self):
+        """Test fuzzed number range."""
+
+        import random
+
+        random.seed(0)
+        for _ in range(200):
+            a = random.randint(0, 5000)
+            b = random.randint(0, 5000)
+            lo, hi = min(a, b), max(a, b)
+            self.range_check(lo, hi, ceiling=5100)
+
+    def test_uncapped_high(self):
+        """Test uncapped high value."""
+
+        for lo in [0, 1, 5, 9, 10, 17, 99, 100, 250, 999, 1000, 4321]:
+            self.range_check(lo, ceiling=6000)
+
+    def test_uncapped_high_fuzz(self):
+        """Test fuzzed uncapped high values."""
+
+        import random
+
+        for _ in range(100):
+            lo = random.randint(0, 6000)
+            self.range_check(lo, ceiling=6100)
+
+    def test_uncapped_low(self):
+        """Test uncapped low value."""
+
+        for hi in [0, 1, 5, 9, 10, 17, 99, 100, 250, 999, 1000, 4321]:
+            self.range_check(max_val=hi, ceiling=6000)
+
+    def test_uncapped_low_fuzz(self):
+        """Test fuzzed uncapped low values."""
+
+        import random
+
+        for _ in range(100):
+            hi = random.randint(0, 6000)
+            self.range_check(max_val=hi, ceiling=6100)
+
+
+    def test_uncapped_low_high(self):
+        """Test uncapped low and high value."""
+
+        self.range_check(ceiling=6000)
+
+    def test_bad_syntax(self):
+        """Test bad syntax."""
+
+        self.assertTrue(fnmatch.fnmatch('test<3-.txt', 'test<3-.txt', flags=fnmatch.ZN))
+
+    def test_escaped(self):
+        """Test bad syntax."""
+
+        self.assertTrue(fnmatch.fnmatch('test<0-9>.txt', R'test<0-9\>.txt', flags=fnmatch.ZN))
+        self.assertTrue(fnmatch.fnmatch('test<0-9>.txt', R'test\<0-9>.txt', flags=fnmatch.ZN))
+
+    def test_bad_range(self):
+        """Test bad range."""
+
+        self.assertFalse(fnmatch.fnmatch('test3.txt', 'test<9-0>.txt', flags=fnmatch.ZN))
+
+    def test_exmatch(self):
+        """Test within `EXTMATCH`."""
+
+        self.assertTrue(fnmatch.fnmatch('test3.txt', '@(test|test<0-9>).txt', flags=fnmatch.ZN | fnmatch.E))
+
+    def test_truncate(self):
+        """Test number truncation."""
+
+        tmax = 0xffff_ffff_ffff_ffff
+        self.assertFalse(fnmatch.fnmatch(f'test{tmax}.txt', f'test<{0}-{tmax}>.txt', flags=fnmatch.ZN))
+        self.assertTrue(fnmatch.fnmatch(f'test{0xFFFF_FFFF}.txt', f'test<{0}-{tmax}>.txt', flags=fnmatch.ZN))
+        self.assertTrue(fnmatch.fnmatch(f'test{tmax}.txt', f'test<{tmax}->.txt', flags=fnmatch.ZN))
+        self.assertFalse(fnmatch.fnmatch(f'test{0xFFFF_FFFF}.txt', f'test<{tmax}->.txt', flags=fnmatch.ZN))
+        self.assertFalse(fnmatch.fnmatch(f'test{0xFFFF_FFFF}.txt', f'test<{tmax}-{tmax}>.txt', flags=fnmatch.ZN))
+        self.assertFalse(fnmatch.fnmatch(f'test{tmax + 10}.txt', f'test<{tmax}-{tmax}>.txt', flags=fnmatch.ZN))
+        self.assertFalse(fnmatch.fnmatch(f'test{tmax}.txt', f'test<{tmax}-{tmax}>.txt', flags=fnmatch.ZN))
+        self.assertTrue(fnmatch.fnmatch(f'test{str(tmax)[:19]}.txt', f'test<{tmax}-{tmax}>.txt', flags=fnmatch.ZN))
+
+
 class TestExpansionLimit(unittest.TestCase):
     """Test expansion limits."""
 

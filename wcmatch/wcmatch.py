@@ -15,8 +15,8 @@ from typing import Any, Iterator, Generic, AnyStr
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "FILEPATHNAME", "DIRPATHNAME", "PATHNAME",
     "EXTMATCH", "GLOBSTAR", "BRACE", "MINUSNEGATE", "SYMLINKS", "HIDDEN", "RECURSIVE",
-    "MATCHBASE",
-    "C", "I", "R", "P", "E", "G", "M", "DP", "FP", "SL", "HD", "RV", "X", "B",
+    "MATCHBASE", "NUMRANGE",
+    "C", "I", "R", "P", "E", "G", "M", "DP", "FP", "SL", "HD", "RV", "X", "B", "ZN",
     "WcMatch"
 )
 
@@ -28,6 +28,7 @@ G = GLOBSTAR = _wcparse.GLOBSTAR
 B = BRACE = _wcparse.BRACE
 M = MINUSNEGATE = _wcparse.MINUSNEGATE
 X = MATCHBASE = _wcparse.MATCHBASE
+ZN = NUMRANGE = _wcparse.NUMRANGE
 
 # Control `PATHNAME` individually for folder exclude and files
 DP = DIRPATHNAME = 0x1000000
@@ -61,6 +62,7 @@ FLAG_MASK = (
     SYMLINKS |
     HIDDEN |
     RECURSIVE |
+    NUMRANGE |
     MATCHBASE
 )
 

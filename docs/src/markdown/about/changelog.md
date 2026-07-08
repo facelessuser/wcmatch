@@ -2,6 +2,7 @@
 
 ## 10.2.2
 
+-   **NEW**: Added ZSH style numerical ranges (`<0-9>`) via new `NUMRANGE` flag.
 -   **FIX**: Fix case where an empty string would not match a pattern targeting an empty string.
 -   **FIX**: Ensure that consecutive stars are collapsed into a single regular expression pattern.
 -   **FIX**: Fix parsing `SPLIT` not accounting for POSIX character class.

@@ -21,8 +21,9 @@ __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE", "NOUNIQUE",
     "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX", "GLOBTILDE",
-    "NODOTDIR", "SCANDOTDIR", "SUPPORT_DIR_FD", "GLOBSTARLONG",
+    "NODOTDIR", "SCANDOTDIR", "SUPPORT_DIR_FD", "GLOBSTARLONG", "NUMRANGE",
     "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T", "Q", "Z", "SD", "GL",
+    "ZN",
     "iglob", "glob", "globmatch", "globfilter", "escape", "is_magic", "compile",
     "Glob", "WcMatcher"
 )
@@ -54,6 +55,7 @@ T = GLOBTILDE = _wcparse.GLOBTILDE
 Q = NOUNIQUE = _wcparse.NOUNIQUE
 Z = NODOTDIR = _wcparse.NODOTDIR
 GL = GLOBSTARLONG = _wcparse.GLOBSTARLONG
+ZN = NUMRANGE = _wcparse.NUMRANGE
 
 K = MARK = 0x1000000
 SD = SCANDOTDIR = 0x2000000
@@ -87,6 +89,7 @@ FLAG_MASK = (
     GLOBTILDE |
     NOUNIQUE |
     NODOTDIR |
+    NUMRANGE |
     _EXTMATCHBASE |
     _NOABSOLUTE
 )
@@ -458,8 +461,8 @@ class Glob(Generic[AnyStr]):
             self.stars = b'**'  # type: AnyStr
             self.sep = b'\\' if forcewin else b'/'  # type: AnyStr
             self.seps = (b'/', self.sep) if forcewin else (self.sep,)  # type: tuple[AnyStr, ...]
-            self.re_pathlib_norm = _RE_WIN_PATHLIB_DOT_NORM[ptype]  # type: Pattern[AnyStr]  # type: ignore[assignment]
-            self.re_no_dir = _wcparse.RE_WIN_NO_DIR[ptype]  # type: Pattern[AnyStr]  # type: ignore[assignment]
+            self.re_pathlib_norm = _RE_WIN_PATHLIB_DOT_NORM[ptype]  # type: Pattern[AnyStr]
+            self.re_no_dir = _wcparse.RE_WIN_NO_DIR[ptype]  # type: Pattern[AnyStr]
         else:
             ptype = util.UNICODE
             self.current = '.'
@@ -468,8 +471,8 @@ class Glob(Generic[AnyStr]):
             self.stars = '**'
             self.sep = '\\' if forcewin else '/'
             self.seps = ('/', self.sep) if forcewin else (self.sep,)
-            self.re_pathlib_norm = _RE_WIN_PATHLIB_DOT_NORM[ptype]  # type: ignore[assignment]
-            self.re_no_dir = _wcparse.RE_WIN_NO_DIR[ptype]  # type: ignore[assignment]
+            self.re_pathlib_norm = _RE_WIN_PATHLIB_DOT_NORM[ptype]
+            self.re_no_dir = _wcparse.RE_WIN_NO_DIR[ptype]
 
         temp = os.fspath(root_dir) if root_dir is not None else self.current
         if not isinstance(temp, bytes if ptype else str):

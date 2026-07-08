@@ -7,13 +7,13 @@ import re
 import unicodedata
 from functools import wraps
 import warnings
-from typing import Any, Callable, AnyStr, Match, Pattern
+from typing import Any, Callable, AnyStr, Match, Pattern, Literal
 
 PY312 = (3, 12) <= sys.version_info
 PY313 = (3, 13) <= sys.version_info
 
-UNICODE = 0
-BYTES = 1
+UNICODE: Literal[0] = 0
+BYTES: Literal[1] = 1
 
 CASE_FS = os.path.normcase('A') != os.path.normcase('a')
 

@@ -13,8 +13,8 @@ from typing import AnyStr, Iterable, Sequence
 __all__ = (
     "CASE", "EXTMATCH", "IGNORECASE", "RAWCHARS",
     "NEGATE", "MINUSNEGATE", "DOTMATCH", "BRACE", "SPLIT",
-    "NEGATEALL", "FORCEWIN", "FORCEUNIX",
-    "C", "I", "R", "N", "M", "D", "E", "S", "B", "A", "W", "U",
+    "NEGATEALL", "FORCEWIN", "FORCEUNIX", "NUMRANGE",
+    "C", "I", "R", "N", "M", "D", "E", "S", "B", "A", "W", "U", "ZN",
     "translate", "fnmatch", "filter", "escape", "is_magic", "compile",
     "WcMatcher"
 )
@@ -31,6 +31,7 @@ S = SPLIT = _wcparse.SPLIT
 A = NEGATEALL = _wcparse.NEGATEALL
 W = FORCEWIN = _wcparse.FORCEWIN
 U = FORCEUNIX = _wcparse.FORCEUNIX
+ZN = NUMRANGE = _wcparse.NUMRANGE
 
 FLAG_MASK = (
     CASE |
@@ -44,7 +45,8 @@ FLAG_MASK = (
     SPLIT |
     NEGATEALL |
     FORCEWIN |
-    FORCEUNIX
+    FORCEUNIX |
+    NUMRANGE
 )
 
 
