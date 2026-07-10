@@ -32,10 +32,10 @@ is matched, skipped, or when there is an error. There are also hooks where you c
 Parameter         | Default       | Description
 ----------------- | ------------- | -----------
 `root_dir`        |               | The root directory to search.
-`file_pattern`    | `#!py ''`    | One or more patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#minusnegate) is set). The default is an empty string, but if an empty string is used, all files will be matched.
-`exclude_pattern` | `#!py ''`    | Zero or more folder exclude patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#minusnegate) is set).
-`flags`           | `#!py 0`     | Flags to alter behavior of folder and file matching. See [Flags](#flags) for more info.
-`limit`           | `#!py 1000`  | Allows configuring the [max pattern limit](#multi-pattern-limits).
+`file_pattern`    | `#!py ''`     | One or more patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#minusnegate) is set). The default is an empty string, but if an empty string is used, all files will be matched.
+`exclude_pattern` | `#!py ''`     | Zero or more folder exclude patterns separated by `|`. You can define exceptions by starting a pattern with `!` (or `-` if [`MINUSNEGATE`](#minusnegate) is set).
+`flags`           | `#!py 0`      | Flags to alter behavior of folder and file matching. See [Flags](#flags) for more info.
+`limit`           | `#!py 1000`   | Allows configuring the [max pattern limit](#multi-pattern-limits).
 
 > [!note]
 > Dots are not treated special in `wcmatch`. When the `HIDDEN` flag is not included, all hidden files (system and dot

@@ -93,7 +93,7 @@ When applying multiple patterns, a file matches if it matches any of the pattern
 
 ```pycon
 >>> from wcmatch import fnmatch
->>> fnmatch.fnmatch('test.txt', ['*.txt', '*.py'], flags=fnmatch.EXTMATCH)
+>>> fnmatch.fnmatch('test.txt', ['*.txt', '*.py'])
 True
 ```
 
@@ -150,7 +150,7 @@ True
 def filter(filenames, patterns, *, flags=0, limit=1000, exclude=None):
 ```
 
-`filter` takes a list of filenames, a pattern (or list of patterns), and flags. It also allows configuring the [max 
+`filter` takes a list of filenames, a pattern (or list of patterns), and flags. It also allows configuring the [max
 pattern limit](#multi-pattern-limits). Exclusion patterns can be specified via the `exclude` parameter which takes a
 pattern or a list of patterns.It returns a list of all files that matched the pattern(s). The same logic used for
 [`fnmatch`](#fnmatch) is used for `filter`, albeit more efficient for processing multiple files.
@@ -241,21 +241,24 @@ matches at least one inclusion pattern and matches **none** of the exclusion pat
 ```
 
 The main goal of `translate` is to return a regex that matches a file path. Advanced regex features, such as extracting
-specific groups, are not really the goal, but, when using [`EXTMATCH`](#extmatch) patterns, extend groups will be
-returned as a capturing group pattern and can be utilized if that is found to be helpful. Advanced regex features such
-as naming groups does not currently fit into the pattern matching syntax is not currently planned.
-
-While in regex, patterns like `#!py r'(a)+'` would capture only the last character, even though multiple where matched,
-we wrap the entire group to be captured: `#!py '+(a)'` --> `#!py r'((a)+)'`.
+specific groups, are not really the goal. When using [`EXTMATCH`](#extmatch) patterns, extend groups will be
+returned as a capturing groups, but only when the [`CAPTURE`](#capture) flag is enabled. [`CAPTURE`](#capture) only
+works with `translate` and will also disable regex pattern optimizations to ensure the regex groups align with the user
+input groups. Advanced regex features such as naming groups does not currently fit into the pattern matching syntax is
+not currently planned.
 
 ```pycon
 >>> from wcmatch import fnmatch
 >>> import re
->>> gpat = fnmatch.translate("@(file)+([[:digit:]])@(.*)", flags=fnmatch.EXTMATCH)
+>>> gpat = fnmatch.translate("@(file)+([[:digit:]])@(.*)", flags=fnmatch.EXTMATCH | fnmatch.CAPTURE)
 >>> pat = re.compile(gpat[0][0])
 >>> pat.match('file33.test.txt').groups()
 ('file', '33', '.test.txt')
 ```
+
+> [!note] Behavior Change in 11.0
+> Capturing groups used to be created for each extended group by default, but now requires the [`CAPTURE`](#capture)
+> flag.
 
 > [!new] New 6.0
 > `limit` was added in 6.0.
@@ -400,6 +403,19 @@ etc. See the [syntax overview](#syntax) for more information.
 > When using `EXTMATCH` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
 > be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTMATCH` pattern). To
 > negate a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
+
+#### `fnmatch.CAPTURE, glob.TC` {: #capture}
+
+> [!new] New 11.0
+> Added in 11.0 and only applies when passed to [`translate()`](#translate).
+
+Wildcard Match employs some optimizations to produce less deeply nested regular expressions. The idea is simply that
+certain patterns are equivalent to more deeply nested patterns: e.g. `+(a|@(b|c)|d)` -> `+(a|b|c|d)`, `+(a|*(b|c))` ->
+`+(a|b|c|)`, or `!(!(a|b))` -> `@(a|b)`.
+
+The [`translate()`](#translate) function will return the regular expression with capturing groups for each extended glob
+group, when [`EXTMATCH`](#extglob) and `CAPTURE`. This has the side effect of disabling some regex optimizations related
+to extended glob patterns, but this is to ensure that the input groups match the output groups.
 
 #### `fnmatch.BRACE, fnmatch.B` {: #brace}
 

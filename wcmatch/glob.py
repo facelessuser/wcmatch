@@ -21,9 +21,9 @@ __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
     "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE", "NOUNIQUE",
     "REALPATH", "FOLLOW", "MATCHBASE", "MARK", "NEGATEALL", "NODIR", "FORCEWIN", "FORCEUNIX", "GLOBTILDE",
-    "NODOTDIR", "SCANDOTDIR", "SUPPORT_DIR_FD", "GLOBSTARLONG", "NUMRANGE",
+    "NODOTDIR", "SCANDOTDIR", "SUPPORT_DIR_FD", "GLOBSTARLONG", "NUMRANGE", "CAPTURE",
     "C", "I", "R", "D", "E", "G", "N", "M", "B", "P", "L", "S", "X", 'K', "O", "A", "W", "U", "T", "Q", "Z", "SD", "GL",
-    "ZN",
+    "ZN", "TC",
     "iglob", "glob", "globmatch", "globfilter", "escape", "is_magic", "compile",
     "Glob", "WcMatcher"
 )
@@ -34,27 +34,30 @@ WIN = sys.platform.startswith('win')
 
 SUPPORT_DIR_FD = _wcmatch.SUPPORT_DIR_FD
 
+EXT_TYPES = _wcparse.EXT_TYPES
+
+A = NEGATEALL = _wcparse.NEGATEALL
+B = BRACE = _wcparse.BRACE
 C = CASE = _wcparse.CASE
-I = IGNORECASE = _wcparse.IGNORECASE
-R = RAWCHARS = _wcparse.RAWCHARS
 D = DOTGLOB = DOTMATCH = _wcparse.DOTMATCH
 E = EXTGLOB = EXTMATCH = _wcparse.EXTMATCH
 G = GLOBSTAR = _wcparse.GLOBSTAR
-N = NEGATE = _wcparse.NEGATE
-M = MINUSNEGATE = _wcparse.MINUSNEGATE
-B = BRACE = _wcparse.BRACE
-P = REALPATH = _wcparse.REALPATH
-L = FOLLOW = _wcparse.FOLLOW
-S = SPLIT = _wcparse.SPLIT
-X = MATCHBASE = _wcparse.MATCHBASE
-O = NODIR = _wcparse.NODIR
-A = NEGATEALL = _wcparse.NEGATEALL
-W = FORCEWIN = _wcparse.FORCEWIN
-U = FORCEUNIX = _wcparse.FORCEUNIX
-T = GLOBTILDE = _wcparse.GLOBTILDE
-Q = NOUNIQUE = _wcparse.NOUNIQUE
-Z = NODOTDIR = _wcparse.NODOTDIR
 GL = GLOBSTARLONG = _wcparse.GLOBSTARLONG
+I = IGNORECASE = _wcparse.IGNORECASE
+L = FOLLOW = _wcparse.FOLLOW
+M = MINUSNEGATE = _wcparse.MINUSNEGATE
+N = NEGATE = _wcparse.NEGATE
+O = NODIR = _wcparse.NODIR
+P = REALPATH = _wcparse.REALPATH
+Q = NOUNIQUE = _wcparse.NOUNIQUE
+R = RAWCHARS = _wcparse.RAWCHARS
+S = SPLIT = _wcparse.SPLIT
+T = GLOBTILDE = _wcparse.GLOBTILDE
+TC = CAPTURE = _wcparse.CAPTURE
+U = FORCEUNIX = _wcparse.FORCEUNIX
+W = FORCEWIN = _wcparse.FORCEWIN
+X = MATCHBASE = _wcparse.MATCHBASE
+Z = NODOTDIR = _wcparse.NODOTDIR
 ZN = NUMRANGE = _wcparse.NUMRANGE
 
 K = MARK = 0x1000000
@@ -90,6 +93,7 @@ FLAG_MASK = (
     NOUNIQUE |
     NODOTDIR |
     NUMRANGE |
+    CAPTURE |
     _EXTMATCHBASE |
     _NOABSOLUTE
 )
@@ -173,6 +177,7 @@ class _GlobSplit(Generic[AnyStr]):
         self.matchbase = bool(flags & MATCHBASE)
         self.extmatchbase = bool(flags & _wcparse._EXTMATCHBASE)
         self.tilde = bool(flags & GLOBTILDE)
+        self.bad_sequence = -1
         if _wcparse.is_negative(self.pattern, flags):  # pragma: no cover
             # This isn't really used, but we'll keep it around
             # in case we find a reason to directly send inverse patterns
@@ -250,35 +255,44 @@ class _GlobSplit(Generic[AnyStr]):
     def parse_extend(self, c: str, i: util.StringIter) -> bool:
         """Parse extended pattern lists."""
 
-        # Start list parsing
-        success = True
         index = i.index
-        list_type = c
+
+        if not i.match(_wcparse.RE_EXT_GROUP):
+            i.rewind(i.index - index)
+            return False
+
+        success = True
+        bad_sequence = self.bad_sequence
+
         try:
-            c = next(i)
-            if c != '(':
-                raise StopIteration
             while c != ')':
                 c = next(i)
 
-                if self.extend and c in _wcparse.EXT_TYPES and self.parse_extend(c, i):
-                    continue
+                if not self.extend:  # pragma: no cover
+                    raise StopIteration
+
+                #See if we should parse a nested extended pattern.
+                if c in EXT_TYPES:
+                    if self.parse_extend(c, i):
+                        continue
 
                 if c == '\\':
                     try:
                         self._references(i)
                     except StopIteration:
                         pass
-                elif c == '[':
-                    index = i.index
+                elif c == '[' and (self.bad_sequence == -1 or i.index > self.bad_sequence):
+                    index2 = i.index
                     try:
                         self._sequence(i)
                     except StopIteration:
-                        i.rewind(i.index - index)
+                        self.bad_sequence = i.index
+                        i.rewind(i.index - index2)
 
         except StopIteration:
             success = False
-            c = list_type
+            self.extend = False
+            self.bad_sequence = bad_sequence
             i.rewind(i.index - index)
 
         return success
@@ -338,7 +352,7 @@ class _GlobSplit(Generic[AnyStr]):
             i.advance(1)
 
         for c in i:
-            if self.extend and c in _wcparse.EXT_TYPES and self.parse_extend(c, i):
+            if self.extend and c in EXT_TYPES and self.parse_extend(c, i):
                 continue
 
             if c == '\\':
@@ -352,11 +366,12 @@ class _GlobSplit(Generic[AnyStr]):
                     i.rewind(i.index - index)
             elif c == '/':
                 split_index.append((i.index - 1, 0))
-            elif c == '[':
+            elif c == '[' and (self.bad_sequence == -1 or i.index > self.bad_sequence):
                 index = i.index
                 try:
                     self._sequence(i)
                 except StopIteration:
+                    self.bad_sequence = i.index
                     i.rewind(i.index - index)
 
         for split, offset in split_index:
@@ -943,7 +958,14 @@ def compile(  # noqa: A001
 ) -> WcMatcher[AnyStr]:
     """Pre-compile a matcher object."""
 
-    return WcMatcher(_wcparse.compile(patterns, _flag_transform(flags), limit, exclude=exclude))
+    return WcMatcher(
+        _wcparse.compile(
+            patterns,
+            _flag_transform(flags),
+            limit,
+            exclude
+        )
+    )
 
 
 def translate(
@@ -955,7 +977,12 @@ def translate(
 ) -> tuple[list[AnyStr], list[AnyStr]]:
     """Translate glob pattern."""
 
-    return _wcparse.translate(patterns, _flag_transform(flags), limit, exclude)
+    return _wcparse.translate(
+        patterns,
+        _flag_transform(flags),
+        limit,
+        exclude
+    )
 
 
 def globmatch(
@@ -975,7 +1002,12 @@ def globmatch(
     but if `case_sensitive` is set, respect that instead.
     """
 
-    return _wcparse.compile(patterns, _flag_transform(flags), limit, exclude).match(filename, root_dir, dir_fd)
+    return _wcparse.compile(
+        patterns,
+        _flag_transform(flags),
+        limit,
+        exclude
+    ).match(filename, root_dir, dir_fd)
 
 
 def globfilter(
@@ -990,7 +1022,12 @@ def globfilter(
 ) -> list[AnyStr | os.PathLike[AnyStr]]:
     """Filter names using pattern."""
 
-    return _wcparse.compile(patterns, _flag_transform(flags), limit, exclude).filter(filenames, root_dir, dir_fd)
+    return _wcparse.compile(
+        patterns,
+        _flag_transform(flags),
+        limit,
+        exclude
+    ).filter(filenames, root_dir, dir_fd)
 
 
 def escape(pattern: AnyStr, unix: bool | None = None) -> AnyStr:

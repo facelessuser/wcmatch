@@ -153,6 +153,11 @@ class TestFnMatch:
         ['!(2)_@(foo|bar)', '1_foo', True, fnmatch.E],
         ['!(!(2|3))_@(foo|bar)', '2_foo', True, fnmatch.E],
 
+        # Nested extended list reduction cases
+        ['!(!(2|3))_@(foo|bar)', '2_foo', True, fnmatch.E],
+        ['@(!(2))_!(!(foo|bar))', '1_foo', True, fnmatch.E],
+        ['@(!(2))_!(!(foo|bar)_test)', '1_foo_test', True, fnmatch.E],
+
         # POSIX style character classes
         ['[[:alnum:]]bc', 'zbc', True, 0],
         ['[[:alnum:]]bc', '1bc', True, 0],
@@ -350,7 +355,7 @@ class TestFnMatchTranslate(unittest.TestCase):
     def test_capture_groups(self):
         """Test capture groups."""
 
-        gpat = fnmatch.translate("test @(this) +(many) ?(meh)*(!) !(not this)@(.md)", flags=fnmatch.E)
+        gpat = fnmatch.translate("test @(this) +(many) ?(meh)*(!) !(not this)@(.md)", flags=fnmatch.E | fnmatch.TC)
         pat = re.compile(gpat[0][0])
         match = pat.match('test this manymanymany meh!!!!! okay.md')
         self.assertEqual(('this', 'manymanymany', 'meh', '!!!!!', 'okay', '.md'), match.groups())
@@ -358,7 +363,7 @@ class TestFnMatchTranslate(unittest.TestCase):
     def test_nested_capture_groups(self):
         """Test nested capture groups."""
 
-        gpat = fnmatch.translate("@(file)@(+([[:digit:]]))@(.*)", flags=fnmatch.E)
+        gpat = fnmatch.translate("@(file)@(+([[:digit:]]))@(.*)", flags=fnmatch.E | fnmatch.TC)
         pat = re.compile(gpat[0][0])
         match = pat.match('file33.test.txt')
         self.assertEqual(('file', '33', '33', '.test.txt'), match.groups())
@@ -366,7 +371,7 @@ class TestFnMatchTranslate(unittest.TestCase):
     def test_list_groups(self):
         """Test capture groups with lists."""
 
-        gpat = fnmatch.translate("+(f|i|l|e)+([[:digit:]])@(.*)", flags=fnmatch.E)
+        gpat = fnmatch.translate("+(f|i|l|e)+([[:digit:]])@(.*)", flags=fnmatch.E | fnmatch.TC)
         pat = re.compile(gpat[0][0])
         match = pat.match('file33.test.txt')
         self.assertEqual(('file', '33', '.test.txt'), match.groups())
@@ -903,6 +908,166 @@ class TestExpansionLimit(unittest.TestCase):
 
         with self.assertRaises(_wcparse.PatternLimitException):
             fnmatch.translate('{1..11}', flags=fnmatch.BRACE, limit=10)
+
+
+class TestExtendedCases(unittest.TestCase):
+    """Test extended match cases."""
+
+    def assert_group_equal(self, pat1, pat2):
+        """Compare equivalent groups."""
+
+        regex1 = fnmatch.translate(pat1, flags=fnmatch.E)[0][0]
+        regex2 = fnmatch.translate(pat2, flags=fnmatch.E)[0][0]
+        try:
+            self.assertEqual(regex1, regex2)
+        except Exception:
+            print(f"{pat1} <=> {pat2}")
+            raise
+
+    def test_and(self):
+        """Test reduction of the `@` group and other groups."""
+
+        self.assert_group_equal('@(@(a|b)|c|d)', '@(a|b|c|d)')
+        self.assert_group_equal('@(a|@(b|c)|d)', '@(a|b|c|d)')
+        self.assert_group_equal('@(a|b|@(c|d))', '@(a|b|c|d)')
+
+        self.assert_group_equal('?(@(a|b)|c|d)', '?(a|b|c|d)')
+        self.assert_group_equal('?(a|@(b|c)|d)', '?(a|b|c|d)')
+        self.assert_group_equal('?(a|b|@(c|d))', '?(a|b|c|d)')
+
+        self.assert_group_equal('*(@(a|b)|c|d)', '*(a|b|c|d)')
+        self.assert_group_equal('*(a|@(b|c)|d)', '*(a|b|c|d)')
+        self.assert_group_equal('*(a|b|@(c|d))', '*(a|b|c|d)')
+
+        self.assert_group_equal('+(@(a|b)|c|d)', '+(a|b|c|d)')
+        self.assert_group_equal('+(a|@(b|c)|d)', '+(a|b|c|d)')
+        self.assert_group_equal('+(a|b|@(c|d))', '+(a|b|c|d)')
+
+        self.assert_group_equal('!(@(a|b)|c|d)', '!(a|b|c|d)')
+        self.assert_group_equal('!(a|@(b|c)|d)', '!(a|b|c|d)')
+        self.assert_group_equal('!(a|b|@(c|d))', '!(a|b|c|d)')
+
+        self.assert_group_equal('@(@(a|b|c))', '@(a|b|c)')
+        self.assert_group_equal('?(@(a|b|c))', '?(a|b|c)')
+        self.assert_group_equal('*(@(a|b|c))', '*(a|b|c)')
+        self.assert_group_equal('+(@(a|b|c))', '+(a|b|c)')
+        self.assert_group_equal('!(@(a|b|c))', '!(a|b|c)')
+
+    def test_one_or_none(self):
+        """Test reduction of the `?` group and other groups."""
+
+        self.assert_group_equal('@(?(a|b)|c|d)', '@(a|b||c|d)')
+        self.assert_group_equal('@(a|?(b|c)|d)', '@(a|b|c||d)')
+        self.assert_group_equal('@(a|b|?(c|d))', '@(a|b|c|d|)')
+
+        self.assert_group_equal('?(?(a|b)|c|d)', '?(a|b|c|d)')
+        self.assert_group_equal('?(a|?(b|c)|d)', '?(a|b|c|d)')
+        self.assert_group_equal('?(a|b|?(c|d))', '?(a|b|c|d)')
+
+        self.assert_group_equal('*(?(a|b)|c|d)', '*(a|b|c|d)')
+        self.assert_group_equal('*(a|?(b|c)|d)', '*(a|b|c|d)')
+        self.assert_group_equal('*(a|b|?(c|d))', '*(a|b|c|d)')
+
+        self.assert_group_equal('+(?(a|b)|c|d)', '+(a|b||c|d)')
+        self.assert_group_equal('+(a|?(b|c)|d)', '+(a|b|c||d)')
+        self.assert_group_equal('+(a|b|?(c|d))', '+(a|b|c|d|)')
+
+        self.assert_group_equal('!(?(a|b)|c|d)', '!(a|b||c|d)')
+        self.assert_group_equal('!(a|?(b|c)|d)', '!(a|b|c||d)')
+        self.assert_group_equal('!(a|b|?(c|d))', '!(a|b|c|d|)')
+
+        self.assert_group_equal('@(?(a|b|c))', '?(a|b|c)')
+        self.assert_group_equal('?(?(a|b|c))', '?(a|b|c)')
+        self.assert_group_equal('*(?(a|b|c))', '*(a|b|c)')
+        self.assert_group_equal('+(?(a|b|c))', '*(a|b|c)')
+
+    def test_more_or_none(self):
+        """Test reduction of the `*` group and other groups."""
+
+        self.assert_group_equal('*(*(a|b)|c|d)', '*(a|b|c|d)')
+        self.assert_group_equal('*(a|*(b|c)|d)', '*(a|b|c|d)')
+        self.assert_group_equal('*(a|b|*(c|d))', '*(a|b|c|d)')
+
+        self.assert_group_equal('+(*(a|b)|c|d)', '+(a|b||c|d)')
+        self.assert_group_equal('+(a|*(b|c)|d)', '+(a|b|c||d)')
+        self.assert_group_equal('+(a|b|*(c|d))', '+(a|b|c|d|)')
+
+        self.assert_group_equal('@(*(a|b|c))', '*(a|b|c)')
+
+    def test_one_or_more(self):
+        """Test reduction of the `+` group and other groups."""
+
+        self.assert_group_equal('*(+(a|b)|c|d)', '*(a|b|c|d)')
+        self.assert_group_equal('*(a|+(b|c)|d)', '*(a|b|c|d)')
+        self.assert_group_equal('*(a|b|+(c|d))', '*(a|b|c|d)')
+
+        self.assert_group_equal('+(+(a|b)|c|d)', '+(a|b|c|d)')
+        self.assert_group_equal('+(a|+(b|c)|d)', '+(a|b|c|d)')
+        self.assert_group_equal('+(a|b|+(c|d))', '+(a|b|c|d)')
+
+        self.assert_group_equal('@(+(a|b|c))', '+(a|b|c)')
+        self.assert_group_equal('?(+(a|b|c))', '*(a|b|c)')
+        self.assert_group_equal('*(+(a|b|c))', '*(a|b|c)')
+
+    def test_not(self):
+        """Test reduction of the `!` group and other groups."""
+
+        self.assert_group_equal('@(!(a|b|c))', '!(a|b|c)')
+        self.assert_group_equal('!(!(a|b|c))', '@(a|b|c)')
+
+    def test_mixed(self):
+        """Test mixed cases."""
+
+        self.assert_group_equal(
+            '!(!(@(@(a|b)|?(@(c|d)|?(e|f))|*(@(f|h)|?(i|j)|*(k|l)|+(m|n)))))',
+            '@(a|b|c|d|e|f||*(f|h|i|j|k|l|m|n))'
+        )
+
+    def test_empty_slots(self):
+        """Test empty slot reduction."""
+
+        self.assert_group_equal('+(||?(a|b)|c|d)', '+(|a|b|c|d)')
+        self.assert_group_equal('+(a|b|?(c|d)|||e)', '+(a|b|c|d||e)')
+        self.assert_group_equal('+(a|b||||?(c|d)|e)', '+(a|b||c|d|e)')
+        self.assert_group_equal('+(a|b|?(c|d)|||)', '+(a|b|c|d|)')
+
+        self.assert_group_equal('@(||||)', '@(|)')
+        self.assert_group_equal('@(|||a|b)', '@(|a|b)')
+        self.assert_group_equal('@(a|b|||)', '@(a|b|)')
+        self.assert_group_equal('@(a||||b)', '@(a||b)')
+
+    def test_parse_halt_split(self):
+        """Test halting of parsing."""
+
+        # Top level
+        p1 = '@(test+(a|b)'
+        p2 = R'@\(test+\(a|b\)'
+        self.assert_group_equal(p1, p2)
+
+        self.assertEqual(
+            len(fnmatch.translate(p1, flags=fnmatch.E | fnmatch.S)[0]),
+            len(fnmatch.translate(p2, flags=fnmatch.E | fnmatch.S)[0])
+        )
+
+        # Nested
+        p1 = '@(@(test+(a|b)'
+        p2 = R'@\(@\(test+\(a|b\)'
+        self.assert_group_equal(p1, p2)
+
+        self.assertEqual(
+            len(fnmatch.translate(p1, flags=fnmatch.E | fnmatch.S)[0]),
+            len(fnmatch.translate(p2, flags=fnmatch.E | fnmatch.S)[0])
+        )
+
+        # Deeply nested
+        p1 = '@(@(@(test+(a|b)'
+        p2 = R'@\(@\(@\(test+\(a|b\)'
+        self.assert_group_equal(p1, p2)
+
+        self.assertEqual(
+            len(fnmatch.translate(p1, flags=fnmatch.E | fnmatch.S)[0]),
+            len(fnmatch.translate(p2, flags=fnmatch.E | fnmatch.S)[0])
+        )
 
 
 class TestTypes(unittest.TestCase):

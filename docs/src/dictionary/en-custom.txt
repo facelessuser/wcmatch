@@ -71,6 +71,7 @@ prereleases
 recurse
 recursing
 regex
+reparsing
 sharepoint
 sharepoints
 sortable
@@ -87,8 +88,10 @@ syntaxes
 tuple
 un
 unclosed
+unfound
 unintuitive
 unordered
+untrusted
 versa
 wildcard
 zsh

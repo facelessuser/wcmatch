@@ -511,11 +511,11 @@ True
 #### `glob.globfilter` {: #globfilter}
 
 ```py
-def globfilter(filenames, patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000, method=None):
+def globfilter(filenames, patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000, exclude=None):
 ```
 
 `globfilter` takes a list of file paths (strings or path-like objects), a pattern (or list of patterns), flags, and an
-optional root directory and/or directory file descriptor. It also allows configuring the 
+optional root directory and/or directory file descriptor. It also allows configuring the
 [max pattern limit](#multi-pattern-limits). Exclusion patterns can be specified via the `exclude` parameter which takes
 a pattern or a list of patterns.It returns a list of all files paths that matched the pattern(s). The same logic used
 for [`globmatch`](#globmatch) is used for `globfilter`, albeit more efficient for processing multiple files.
@@ -568,21 +568,24 @@ matches at least one inclusion pattern and matches **none** of the exclusion pat
 ```
 
 The main goal of `translate` is to return a regex that matches a file path. Advanced regex features, such as extracting
-specific groups, are not really the goal, but, when using [`EXTGLOB`](#extglob) patterns, extend groups will be
-returned as a capturing group pattern and can be utilized if that is found to be helpful. Advanced regex features such
-as naming groups does not currently fit into the pattern matching syntax is not currently planned.
-
-While in regex, patterns like `#!py r'(a)+'` would capture only the last character, even though multiple where matched,
-we wrap the entire group to be captured: `#!py '+(a)'` --> `#!py r'((a)+)'`.
+specific groups, are not really the goal. When using [`EXTGLOB`](#extglob) patterns, extend groups will be
+returned as a capturing groups, but only when the [`CAPTURE`](#capture) flag is enabled. [`CAPTURE`](#capture) only
+works with `translate` and will also disable regex pattern optimizations to ensure the regex groups align with the user
+input groups. Advanced regex features such as naming groups does not currently fit into the pattern matching syntax is
+not currently planned.
 
 ```pycon
 >>> from wcmatch import glob
 >>> import re
->>> gpat = glob.translate("@(file)+([[:digit:]])@(.*)", flags=glob.EXTGLOB)
+>>> gpat = glob.translate("@(file)+([[:digit:]])@(.*)", flags=glob.EXTGLOB | glob.CAPTURE)
 >>> pat = re.compile(gpat[0][0])
 >>> pat.match('file33.test.txt').groups()
 ('file', '33', '.test.txt')
 ```
+
+> [!note] Behavior Change in 11.0
+> Capturing groups used to be created for each extended group by default, but now requires the [`CAPTURE`](#capture)
+> flag.
 
 > [!new] New 6.0
 > `limit` was added in 6.0.
@@ -603,8 +606,8 @@ def compile(patterns, *, flags=0, limit=1000, exclude=None):
 
 The `compile` function takes a file pattern (or list of patterns) and flags. It also allows configuring the [max pattern
 limit](#multi-pattern-limits). Exclusion patterns can be specified via the `exclude` parameter which takes a pattern or
-a list of patterns. It returns a [`WcMatcher`](#wcmatcher) object which can match or filter file paths depending on
-which method is called. 
+a list of patterns. It returns a[`WcMatcher`](#wcmatcher) object which can match or filter file paths depending on which
+method is called.
 
 ```pycon
 >>> import wcmatch.glob as glob
@@ -963,6 +966,19 @@ often the name used in Bash.
 > When using `EXTGLOB` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
 > be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate
 > a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
+
+#### `fnmatch.CAPTURE, glob.TC` {: #capture}
+
+> [!new] New 11.0
+> Added in 11.0 and only applies when passed to [`translate()`](#translate).
+
+Wildcard Match employs some optimizations to produce less deeply nested regular expressions. The idea is simply that
+certain patterns are equivalent to more deeply nested patterns: e.g. `+(a|@(b|c)|d)` -> `+(a|b|c|d)`, `+(a|*(b|c))` ->
+`+(a|b|c|)`, or `!(!(a|b))` -> `@(a|b)`.
+
+The [`translate()`](#translate) function will return the regular expression with capturing groups for each extended glob
+group, when [`EXTGLOB`/`EXTMATCH`](#extglob) and `CAPTURE`. This has the side effect of disabling some regex
+optimizations related to extended glob patterns, but this is to ensure that the input groups match the output groups.
 
 #### `glob.BRACE, glob.B` {: #brace}
 

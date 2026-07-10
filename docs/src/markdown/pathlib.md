@@ -247,8 +247,7 @@ def match(self, patterns, *, flags=0, limit=1000, exclude=None):
 
 `match` takes a pattern (or list of patterns), and flags.  It also allows configuring the [max pattern
 limit](#multi-pattern-limits). Exclusion patterns can be specified via the `exclude` parameter which takes a pattern or
-a list of patterns. It will return a boolean indicating whether the object's file path was matched by the
-pattern(s).
+a list of patterns. It will return a boolean indicating whether the object's file path was matched by the pattern(s).
 
 `match` mimics Python's `pathlib` version of `match`. Python's `match` uses a right to left evaluation that behaves
 like [`rglob`](#rglob) but as a matcher instead of a globbing function. Wildcard Match emulates this behavior as well.
@@ -329,10 +328,10 @@ def glob(self, patterns, *, flags=0, limit=1000, exclude=None):
 ```
 
 `glob` takes a pattern (or list of patterns) and flags. It also allows configuring the [max pattern
-limit](#multi-pattern-limits). It will crawl the file system, relative to the current [`Path`](#path) object,
-returning a generator of [`Path`](#path) objects. If a file/folder matches any regular, inclusion pattern, it is
-considered a match.  If a file matches *any* exclusion pattern (specified via `exclude` or using negation patterns when
-enabling the [`NEGATE`](#negate) flag), then it will not be returned.
+limit](#multi-pattern-limits). It will crawl the file system, relative to the current [`Path`](#path) object, returning
+a generator of [`Path`](#path) objects. If a file/folder matches any regular, inclusion pattern, it is considered a
+match.  If a file matches *any* exclusion pattern (specified via `exclude` or using negation patterns when enabling the
+[`NEGATE`](#negate) flag), then it will not be returned.
 
 This method calls our own [`iglob`](./glob.md#iglob) implementation, and as such, should behave in the same manner
 in respect to features, the one exception being that instead of returning path strings in the generator, it will return
@@ -362,10 +361,10 @@ def rglob(self, patterns, *, flags=0, path_limit=1000, exclude=None):
 ```
 
 `rglob` takes a pattern (or list of patterns) and flags. It also allows configuring the [max pattern
-limit](#multi-pattern-limits). It will crawl the file system, relative to the current [`Path`](#path) object,
-returning a generator of [`Path`](#path) objects. If a file/folder matches any regular patterns, it is considered
-a match.  If a file matches *any* exclusion pattern (specified via `exclude` or using negation patterns when enabling
-the [`NEGATE`](#negate) flag), then it will be not be returned.
+limit](#multi-pattern-limits). It will crawl the file system, relative to the current [`Path`](#path) object, returning
+a generator of [`Path`](#path) objects. If a file/folder matches any regular patterns, it is considered a match.  If a
+file matches *any* exclusion pattern (specified via `exclude` or using negation patterns when enabling the
+[`NEGATE`](#negate) flag), then it will be not be returned.
 
 `rglob` mimics Python's [`pathlib`][pathlib] version of `rglob` in that it uses a recursive logic. What this means is
 that when you are matching a path in the form `some/path/name`, the patterns `name`, `path/name` and `some/path/name`
