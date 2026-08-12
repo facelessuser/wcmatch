@@ -1,5 +1,10 @@
 # Changelog
 
+## 11.0.1
+
+-   **FIX**: Fix an issue where in some cases dot handling was not correct within an extended glob pattern when
+    `EXTGLOB`/`EXTMATCH` was enabled.
+
 ## 11.0
 
 -   **NEW**: Reduce/combine nested `EXTGLOB`/`EXTMATCH` regular expression patterns when possible to reduce deeply

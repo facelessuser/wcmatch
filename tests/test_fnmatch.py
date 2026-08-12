@@ -124,6 +124,9 @@ class TestFnMatch:
         ['*(?|*)abc', '.abc', True, fnmatch.E],
         ['!(test)', '.abc', True, fnmatch.E],
         ['!(test)', '..', True, fnmatch.E],
+        ['+([a.])', '.a', True, fnmatch.E],
+        ['+([a.])', 'a.', True, fnmatch.E],
+        ['+([a.])', 'a..', True, fnmatch.E],
 
         # Turn off `dotmatch` cases
         ['.abc', '.abc', True, fnmatch.D],
@@ -148,6 +151,9 @@ class TestFnMatch:
         ['!(test)', '.abc', False, fnmatch.D | fnmatch.E],
         ['!(test)', 'abc', True, fnmatch.D | fnmatch.E],
         ['!(test)', '..', False, fnmatch.D | fnmatch.E],
+        ['+([a.])', '.a', False, fnmatch.E | fnmatch.D],
+        ['+([a.])', 'a.', True, fnmatch.E | fnmatch.D],
+        ['+([a.])', 'a..', True, fnmatch.E | fnmatch.D],
 
         # Negation list followed by extended list
         ['!(2)_@(foo|bar)', '1_foo', True, fnmatch.E],

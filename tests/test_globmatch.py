@@ -949,6 +949,20 @@ class TestGlobMatch:
         ['!(not)!( this)@( okay)', 'but this okay', True, glob.N],
         ['@(but!( that))@( okay)', "but this okay", True, glob.N],
         ['!(@(but!( that))@( okay))', "but this okay", False, glob.N],
+
+        # Dot logic
+        ['+([a.])', '.a', False],
+        ['+([a.])', 'a.', True],
+        ['+([a.])', 'a..', True],
+        ['/+([a.])', '/.a', False],
+        ['/+([a.])', '/a.', True],
+        ['/+([a.])', '/a..', True],
+        ['+([a.])', '.a', True, glob.D],
+        ['+([a.])', 'a.', True, glob.D],
+        ['+([a.])', 'a..', True, glob.D],
+        ['/+([a.])', '/.a', True, glob.D],
+        ['/+([a.])', '/a.', True, glob.D],
+        ['/+([a.])', '/a..', True, glob.D]
     ]
 
     @classmethod
@@ -1153,8 +1167,8 @@ class TestGlobMatchSpecial(unittest.TestCase):
         value = (
             [
                 '^(?s:(?:(?!(?:[/]|^)\\.).)*?(?:^|$|[/])+' +
-                ('(?!(?:\\.{1,2})(?:$|[/]))(?![/.])[\x00-\x7f][/]+stuff[/]+(?=[^/])') +
-                '(?!(?:\\.{1,2})(?:$|[/]))(?:(?!\\.)[^/]*?)?[/]*?)$'
+                ('(?!(?:(?<=[/])|(?<=^))(?:\\.{1,2})(?:$|[/]))(?![/.])[\x00-\x7f][/]+stuff[/]+(?=[^/])') +
+                '(?!(?:(?<=[/])|(?<=^))(?:\\.{1,2})(?:$|[/]))(?:(?!\\.)[^/]*?)?[/]*?)$'
             ],
             []
         )
@@ -1170,7 +1184,7 @@ class TestGlobMatchSpecial(unittest.TestCase):
         flags = self.flags
         flags |= glob.FORCEUNIX
 
-        value = (['^(?s:(?=[^/])(?!(?:\\.{1,2})(?:$|[/]))(?:(?!\\.)[^/]*?)?test[^/]*?[/]*?)$'], [])
+        value = (['^(?s:(?=[^/])(?!(?:(?<=[/])|(?<=^))(?:\\.{1,2})(?:$|[/]))(?:(?!\\.)[^/]*?)?test[^/]*?[/]*?)$'], [])
         self.assertEqual(
             glob.translate('****test****', flags=flags),
             value

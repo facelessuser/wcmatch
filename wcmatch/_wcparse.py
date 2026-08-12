@@ -213,7 +213,7 @@ _STAR = r'.*?'
 # For paths, allow trailing /
 _PATH_TRAIL = r'{}*?'
 # Disallow . and .. (usually applied right after path separator when needed)
-_NO_DIR = r'(?!(?:\.{{1,2}})(?:$|[{sep}]))'
+_NO_DIR = r'(?!(?:(?<=[{sep}])|(?<=^))(?:\.{{1,2}})(?:$|[{sep}]))'
 # Star for `PATHNAME`
 _PATH_STAR = r'[^{sep}]*?'
 # Star when at start of filename during `DOTMATCH`
@@ -228,6 +228,10 @@ _PATH_GSTAR_DOTMATCH = r'(?:(?!(?:[{sep}]|^)(?:\.{{1,2}})($|[{sep}])).)*?'
 _PATH_GSTAR_NO_DOTMATCH = r'(?:(?!(?:[{sep}]|^)\.).)*?'
 # Next char cannot be a dot
 _NO_DOT = r'(?![.])'
+# Restrict dot in an extended group
+_GROUP_NO_DOT = r'(?!(?<=^)\.)'
+# Restrict dot in an extended path group
+_PATH_GROUP_NO_DOT = r'(?!(?:(?<=[{sep}])|(?<=^))\.)'
 # Following char from sequence cannot be a separator or a dot
 _PATH_NO_SLASH_DOT = r'(?![{sep}.])'
 # Following char from sequence cannot be a separator
@@ -959,6 +963,7 @@ class WcParse(Generic[AnyStr]):
         self.no_dir = _NO_DIR.format(**sep)
         self.seq_path = _PATH_NO_SLASH.format(**sep)
         self.seq_path_dot = _PATH_NO_SLASH_DOT.format(**sep)
+        self.seq_path_group_dot = _PATH_GROUP_NO_DOT.format(**sep)
         self.path_star = _PATH_STAR.format(**sep)
         self.path_star_dot1 = _PATH_STAR_DOTMATCH.format(**sep)
         self.path_star_dot2 = _PATH_STAR_NO_DOTMATCH.format(**sep)
@@ -1010,11 +1015,15 @@ class WcParse(Generic[AnyStr]):
         """Restrict sequence."""
 
         if self.pathname:
-            value = self.seq_path_dot if self.after_start and not self.dot else self.seq_path
+            if self.after_start and not self.dot:
+                value = self.seq_path_dot if not self.in_list else self.seq_path_group_dot
+            else:
+                value = self.seq_path
             if self.after_start:
                 value = self.no_dir + value
         else:
-            value = _NO_DOT if self.after_start and not self.dot else ""
+            value = (_NO_DOT if not self.in_list else _GROUP_NO_DOT) if self.after_start and not self.dot else ""
+
         self.reset_dir_track()
 
         return value
