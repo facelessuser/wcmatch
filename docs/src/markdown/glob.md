@@ -876,7 +876,7 @@ Alternatively `DOTMATCH` will also be accepted for consistency with the other pr
 the same and are provided as a convenience in case the user finds one more intuitive than the other since `DOTGLOB` is
 often the name used in Bash.
 
-#### `glob.NODOTDIR, glob.Z` {: #globnodotdir}
+#### `glob.NODOTDIR, glob.Z` {: #nodotdir}
 
 `NOTDOTDIR` fundamentally changes how glob patterns deal with `.` and `..`. This is great if you'd prefer a more Zsh
 feel when it comes to special directory matching. When `NODOTDIR` is enabled, "magic" patterns, such as `.*`, will not
@@ -966,6 +966,13 @@ often the name used in Bash.
 > When using `EXTGLOB` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
 > be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate
 > a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
+
+> [!warning]
+> When using extended glob patterns, groups are translated from glob groups to regular expression groups: `+(...)` ->
+> `(...)+`, and so they are susceptible to the same kinds of performance based exploits that can occur in normal
+> regular expression. Be thoughtful about the patterns you create with these groups, and if in important, time critical
+> production systems, if the risk is not tolerable, do not enable. Read more about performance based issues in Regular
+> Expressions [here][regular-expression-redos].
 
 #### `fnmatch.CAPTURE, glob.TC` {: #capture}
 

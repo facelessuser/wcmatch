@@ -6,7 +6,29 @@
 [![License][license-image-mit]][license-link]
 # Wildcard Match
 
+> [!warning]
+> **Security Considerations**
+>
+> Wildcard Match translates the more simple, path-centric syntax of glob patterns to regular expression for the purpose
+> of iterating and matching file systems.
+>
+> regular expression engines like those in JavaScript, Python, Java, etc. choose compatibility and expressiveness over
+> guaranteed performance, accepting the risk of catastrophic backtracking when patterns contain nested quantifiers or
+> overlapping alternations.
+>
+> ReDoS (regular expression Denial of Service) cases are those that specifically target the areas where a regular
+> expression engine does not guarantee optimal performance.
+>
+> Because Wildcard Match builds its matching upon the Python regular expression engine, it can take advantage of the
+> engine's power, but it is also susceptible to its weaknesses.
+>
+> Learn more [here](https://github.com/facelessuser/wcmatch/blob/main/docs/src/markdown/index.md#security-considerations),
+> and be thoughtful about what you provide to this library in production systems.
+
 ## Overview
+
+Wildcard Match translates the more simple, path-centric syntax of glob patterns to regular expression for the purpose of
+iterating and matching file systems.
 
 Wildcard Match provides an enhanced `fnmatch`, `glob`, and `pathlib` library in order to provide file matching and
 globbing that more closely follows the features found in Bash. In some ways these libraries are similar to Python's

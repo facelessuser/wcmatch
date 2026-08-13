@@ -196,11 +196,10 @@ Because it can be problematic trying to mix Windows drives that use characters s
 escaping was disallowed, but now you can safely escape `{` and `}` to ensure optimal brace handling. While you can
 safely escape other meta characters in drives as well, it is never actually needed.
 
-Additionally, [`glob.escape`](../glob.md#escape) and [`glob.raw_escape`](../glob.md#raw_escape) will automatically
-escape `{`, `}` and `|` to avoid complications with [`BRACE`](../glob.md#brace) and [`SPLIT`](../glob.md#split).
+Additionally, [`glob.escape`](../glob.md#escape) and `glob.raw_escape` will automatically escape `{`, `}` and `|` to
+avoid complications with [`BRACE`](../glob.md#brace) and [`SPLIT`](../glob.md#split).
 
-In general, a lot of corner cases with [`glob.escape`](../glob.md#escape) and [`glob.raw_escape`](../glob.md#raw_escape)
-were cleaned up.
+In general, a lot of corner cases with [`glob.escape`](../glob.md#escape) and `glob.raw_escape` were cleaned up.
 
 [`glob.escape`](../glob.md#escape) is meant to handle the escaping of normal paths so that they can be used in patterns.
 
@@ -209,16 +208,15 @@ were cleaned up.
 'my\\\\file\\-\\[work\\].txt'
 ```
 If you are accepting an input from a source that is giving you a representation of a Python string (where `\` is
-represented by two `\`), then [`glob.raw_escape`](../glob.md#raw_escape) is what you want:
+represented by two `\`), then `glob.raw_escape` is what you want:
 
 ```pycon
 >>> glob.raw_escape(r'my\\file-[work].txt', unix=False)
 'my\\\\file\\-\\[work\\].txt'
 ```
 
-By default, [`glob.raw_escape`](../glob.md#raw_escape) always translates Python character back references into actual
-characters, but if this is not needed, a new option called `raw_chars` (`True` by default) has been added to disable
-this behavior:
+By default, `glob.raw_escape` always translates Python character back references into actual characters, but if this is
+not needed, a new option called `raw_chars` (`True` by default) has been added to disable this behavior:
 
 ```pycon
 >>> glob.raw_escape(r'my\\file-\x31.txt', unix=False)

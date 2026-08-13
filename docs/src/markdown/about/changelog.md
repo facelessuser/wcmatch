@@ -2,6 +2,9 @@
 
 ## 11.0.1
 
+-   **DOCS**: Provide information in documentation that discloses information about what should or should not be
+    expected from Wildcard Match in regards to security, and provide general information to allow users to make good
+    decisions.
 -   **FIX**: Fix an issue where in some cases dot handling was not correct within an extended glob pattern when
     `EXTGLOB`/`EXTMATCH` was enabled.
 

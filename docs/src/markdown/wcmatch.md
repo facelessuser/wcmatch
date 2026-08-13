@@ -348,9 +348,16 @@ number ranges always consume leading zeros, regardless of whether numbers are pa
 etc.
 
 > [!tip] EXTMATCH and NEGATE
-> When using `EXTMATCH` and [`NEGATE`](#negate) together, if a pattern starts with `!(`, the pattern will not
-> be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTMATCH` pattern). To
-> negate a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
+> When using `EXTMATCH` and `NEGATE` (the default) together, if a pattern starts with `!(`, the pattern will not be
+> treated as a `NEGATE` pattern (even if `!(` doesn't yield a valid `EXTMATCH` pattern). To negate a pattern that starts
+> with a literal `(`, you must escape the bracket: `!\(`.
+
+> [!warning]
+> When using extended glob patterns, groups are translated from glob groups to regular expression groups: `+(...)` ->
+> `(...)+`, and so they are susceptible to the same kinds of performance based exploits that can occur in normal
+> regular expression. Be thoughtful about the patterns you create with these groups, and if in important, time critical
+> production systems, if the risk is not tolerable, do not enable. Read more about performance based issues in Regular
+> Expressions [here][regular-expression-redos].
 
 #### `wcmatch.BRACE, wcmatch.B` {: #brace}
 
@@ -370,12 +377,12 @@ number ranges.
 
 > [!warning] Massive Expansion Risk
 > 1.  It is important to note that each pattern is matched separately, so patterns such as `{1..100}` would generate
->     **one hundred** patterns. Since [`WcMatch`](#wcmatch_1) class is able to crawl the file system one pass
+>     **one hundred** patterns. Since [`WcMatch`](#methods) class is able to crawl the file system one pass
 >     accounting for all the patterns, the performance isn't as bad as it may be with [`glob`](./glob.md), but it can
 >     still impact performance as each file must get compared against many patterns until one is matched. Sometimes
 >     patterns like this are needed, so construct patterns thoughtfully and carefully.
 >
-> 2.  Splitting patterns with `|` is built into [`WcMatch`](#wcmatch_1). `BRACE` and splitting with `|` both expand
+> 2.  Splitting patterns with `|` is built into [`WcMatch`](#methods). `BRACE` and splitting with `|` both expand
 >     patterns into multiple patterns. Using these two syntaxes simultaneously can exponential increase in duplicate
 >     patterns:
 >
@@ -423,7 +430,7 @@ pattern.
 
 #### `wcmatch.PATHNAME, wcmatch.P` {: #pathname}
 
-`PATHNAME` enables both [`DIRPATHNAME`](#dirpathname) and [`FILEPATHNAME`](#wcmathfilepathname). It is provided
+`PATHNAME` enables both [`DIRPATHNAME`](#dirpathname) and [`FILEPATHNAME`](#filepathname). It is provided
 for convenience.
 
 #### `wcmatch.MATCHBASE, wcmatch.X` {: #matchbase}

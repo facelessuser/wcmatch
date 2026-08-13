@@ -20,6 +20,7 @@ Pathlib
 Precompiling
 Preprocess
 PyPI
+ReDoS
 Setuptools
 Symlink
 TODO

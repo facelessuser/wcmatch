@@ -351,7 +351,7 @@ Assuming the `SPLIT` flag, this means using it in a pattern such as `inclusion|!
 If it is desired, you can force exclusion patterns, when no inclusion pattern is provided, to assume all files match
 unless the file matches the excluded pattern. This is done with the [`NEGATEALL`](#negateall) flag.
 
-`NEGATE` enables [`DOTMATCH`](#dotglob) in all exclude patterns, this cannot be disabled. This will not affect the
+`NEGATE` enables [`DOTMATCH`](#dotmatch) in all exclude patterns, this cannot be disabled. This will not affect the
 inclusion patterns.
 
 If `NEGATE` is set and exclusion patterns are passed via a matching function's `exclude` parameter, `NEGATE` will be
@@ -404,6 +404,13 @@ etc. See the [syntax overview](#syntax) for more information.
 > be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTMATCH` pattern). To
 > negate a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
 
+> [!warning]
+> When using extended glob patterns, groups are translated from glob groups to regular expression groups: `+(...)` ->
+> `(...)+`, and so they are susceptible to the same kinds of performance based exploits that can occur in normal
+> regular expression. Be thoughtful about the patterns you create with these groups, and if in important, time critical
+> production systems, if the risk is not tolerable, do not enable. Read more about performance based issues in Regular
+> Expressions [here][regular-expression-redos].
+
 #### `fnmatch.CAPTURE, glob.TC` {: #capture}
 
 > [!new] New 11.0
@@ -414,7 +421,7 @@ certain patterns are equivalent to more deeply nested patterns: e.g. `+(a|@(b|c)
 `+(a|b|c|)`, or `!(!(a|b))` -> `@(a|b)`.
 
 The [`translate()`](#translate) function will return the regular expression with capturing groups for each extended glob
-group, when [`EXTMATCH`](#extglob) and `CAPTURE`. This has the side effect of disabling some regex optimizations related
+group, when [`EXTMATCH`](#extmatch) and `CAPTURE`. This has the side effect of disabling some regex optimizations related
 to extended glob patterns, but this is to ensure that the input groups match the output groups.
 
 #### `fnmatch.BRACE, fnmatch.B` {: #brace}

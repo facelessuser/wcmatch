@@ -600,6 +600,13 @@ often the name used in Bash.
 > be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate
 > a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
 
+> [!warning]
+> When using extended glob patterns, groups are translated from glob groups to regular expression groups: `+(...)` ->
+> `(...)+`, and so they are susceptible to the same kinds of performance based exploits that can occur in normal
+> regular expression. Be thoughtful about the patterns you create with these groups, and if in important, time critical
+> production systems, if the risk is not tolerable, do not enable. Read more about performance based issues in Regular
+> Expressions [here][regular-expression-redos].
+
 #### `pathlib.BRACE, pathlib.B` {: #brace}
 
 `BRACE` enables Bash style brace expansion: `a{b,{c,d}}` --> `ab ac ad`. Brace expansion is applied before anything
