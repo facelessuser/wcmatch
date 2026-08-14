@@ -12,7 +12,7 @@
 > Wildcard Match translates the more simple, path-centric syntax of glob patterns to regular expression for the purpose
 > of iterating and matching file systems.
 >
-> regular expression engines like those in JavaScript, Python, Java, etc. choose compatibility and expressiveness over
+> Regular expression engines like those in JavaScript, Python, Java, etc. choose compatibility and expressiveness over
 > guaranteed performance, accepting the risk of catastrophic backtracking when patterns contain nested quantifiers or
 > overlapping alternations.
 >
@@ -20,7 +20,7 @@
 > expression engine does not guarantee optimal performance.
 >
 > Because Wildcard Match builds its matching upon the Python regular expression engine, it can take advantage of the
-> engine's power, but it is also susceptible to its weaknesses.
+> engine's power, but it is also susceptible the engine's weaknesses.
 >
 > Learn more [here](https://github.com/facelessuser/wcmatch/blob/main/docs/src/markdown/index.md#security-considerations),
 > and be thoughtful about what you provide to this library in production systems.

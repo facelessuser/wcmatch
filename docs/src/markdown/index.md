@@ -75,36 +75,49 @@ ReDoS (Regular Expression Denial of Service) cases are those that specifically t
 expression engine does not guarantee optimal performance.
 
 Because Wildcard Match builds its matching upon the Python regular expression engine, it can take advantage of the
-engine's power, but is also susceptible to its weaknesses.
+engine's power, but is also susceptible to the engine's weaknesses.
 
-Wcmatch takes security seriously, and has taken many measures to reduce cases with less efficient patterns and
-bottlenecks, but it is important to note that it will always be susceptible to some ReDoS cases because it is built on
-an engine that is susceptible to ReDoS cases.
+We take security seriously, and have taken many measures to reduce cases with less efficient patterns and logic, but it
+is important to note that it will always be susceptible to some ReDoS cases because it is built on an engine that is
+susceptible to ReDoS cases.
 
 In general, we try to be transparent about features that we know, or later discover to be, susceptible to performance
 based issues. Often, the more powerful and expressive the feature, the more susceptible it may be to such cases.
 
-- `BRACES` is very powerful and allows a user to quickly generate many pattern combinations. With this power, a single
-   pattern may expand into 10, 100, or even 10000 patterns. By default, we provide limits to pattern expansions, but
-   users are responsible for setting limits that they find appropriate. If the risk of pattern expansions outweighs the
-   usefulness for the given user, the feature is optional and does not need to be enabled.
+-  `EXTGLOB`/`EXTMATCH` flags allow for powerful groups of patterns that align with regular expression groups (e.g.
+    `(...)+`, `(...)*`, `(...)?`, etc.). Extended glob patterns allow for more complex combinations without expanding a
+    pattern into multiple patterns, but with this expressiveness comes the increased possibility of creating patterns
+    that could cause overlapping alternations and/or catastrophic backtracking. The same rules for crafting good regular
+    expression groups should be applied to extend glob patterns in the form: `@(...)`, `+(...)`, `*(...)`, `?(...)`, and
+    `!(...)`.
 
-- `EXTGLOB`/`EXTMATCH` allows for powerful groups of patterns that align with regular expression groups (e.g. `(...)+`,
-   `(...)*`, `(...)?`, etc.). Extended glob patterns allow for more complex combinations without expanding a pattern
-   into multiple patterns, but with this expressiveness comes the increased possibility of creating patterns that could
-   cause overlapping alternations and/or catastrophic backtracking. The same rules for crafting good regular expression
-   groups should be applied to extend glob patterns in the form: `@(...)`, `+(...)`, `*(...)`, `?(...)`, and `!(...)`.
-   If running in an environment where the risk of sub-optimal performance is not tolerable, this behavior is optional
-   and does not need to be enabled.
+    Scanning for potential pattern overlaps within extended glob patterns would be very expensive and error prone to
+    perform on our end. If running in an environment where the risk of sub-optimal performance is not tolerable, this
+    behavior is optional and does not need to be enabled.
 
-Restricting untrusted user pattern lengths and disabling features you don't need or do not want are the best ways to
-improve performance. We do not limit input sizes ourselves and place that responsibility on the users of our library if
-they desire to do so.
+Not all potential performance issues are specifically related to ReDoS.
 
-We will do our best to fix or reduce any issues brought to our attention, especially if the cost is reasonable to
-address on our side, but for any issue that is not practical to fix on our side, and is explicitly caused by the regular
-expression engine, we will redirect reports to this section within our documentation as our official answer.
+-   The `BRACES` flag is very powerful and functionally different than extended glob patterns. Instead of using regular
+    expression branching logic via groups,`BRACES` allows a user to quickly transform a single pattern into multiple,
+    separate pattern combinations. With this power, a single pattern may expand into 10, 100, or even 10000 patterns.
+    Each pattern must be iterated separately. This explosion in patterns is extremely useful if used thoughtfully, but
+    can also impact performance at undesirable times if used carelessly.
+
+    By default, we provide limits to pattern expansions, but users are responsible for setting limits that they find
+    appropriate. If the risk of pattern expansions outweighs the usefulness for the given user, the feature is optional
+    and does not need to be enabled.
+
+In general, restricting untrusted user pattern lengths and disabling features you don't need, or cannot tolerate in a
+specific environment, are good ways to decrease potential performance issues. We do not limit input sizes ourselves and
+place that responsibility on the user. We do not police which features a user can use, but try to be clear about the
+pros and cons of the feature and allow the user to enable/disable them using their own judgement.
+
+We will do our best to fix or reduce any issues brought to our attention, performance or otherwise, especially if the
+cost is reasonable to address on our side, but we do not guarantee performance in all cases. For any issues that are not
+practical to fix on our side, and are explicitly caused by the regular expression engine, we will redirect reports to
+this section within our documentation as our official answer.
 
 Lastly, and to make things abundantly clear, if you create a performance critical system where you take user input and
 use that input as the source of regular expression patterns, **you will be subject to performance based
-vulnerabilities**. Please use this tool in appropriate environments to reduce the risk of exposure.
+vulnerabilities**. Please use this tool in appropriate environments and thoughtfully consider which features to use in
+order to reduce the risk of exposure.
