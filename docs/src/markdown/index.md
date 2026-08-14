@@ -107,10 +107,20 @@ Not all potential performance issues are specifically related to ReDoS.
     appropriate. If the risk of pattern expansions outweighs the usefulness for the given user, the feature is optional
     and does not need to be enabled.
 
-In general, restricting untrusted user pattern lengths and disabling features you don't need, or cannot tolerate in a
-specific environment, are good ways to decrease potential performance issues. We do not limit input sizes ourselves and
-place that responsibility on the user. We do not police which features a user can use, but try to be clear about the
-pros and cons of the feature and allow the user to enable/disable them using their own judgement.
+Below is our general guide for using Wildcard Match safely:
+
+-   Wildcard Match usage should be treated similar to regular expression usage as input patterns into Wildcard Match
+    become regular expression patterns.
+-   The user should make themselves aware of the types of bad patterns that should be avoided when using regular
+    expression groups and apply them to extended glob groups.
+-   If this tool is being deployed in an environment where the risks of using a specific optional feature cannot be
+    tolerated, it should not be enabled.
+-   The user should be thoughtful about where Wildcard Match is deployed.
+-   Limiting the size of user input is always a good practice if the intent is to allow processing untrusted user input.
+
+Wildcard Match does not limit input string sizes ourselves and place that responsibility on the user. We do not restrict
+which features a user can use, but try to be clear about the pros and cons of the feature and allow the user to
+enable/disable them using their own judgement.
 
 We will do our best to fix or reduce any issues brought to our attention, performance or otherwise, especially if the
 cost is reasonable to address on our side, but we do not guarantee performance in all cases. For any issues that are not
