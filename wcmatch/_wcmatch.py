@@ -91,7 +91,6 @@ class _Match(Generic[AnyStr]):
         strip = (RE_WIN_STRIP if is_win else RE_STRIP)[self.ptype]  # type: Any
 
         end = len(filename) - 1
-        base = None
         m = pattern.fullmatch(filename)
         if m:
             matched = True
@@ -103,8 +102,7 @@ class _Match(Generic[AnyStr]):
                         if star:
                             at_end = m.end(i) == end
                             parts = split.split(star.strip(strip))
-                            if base is None:
-                                base = os.path.join(root, filename[:m.start(i)])
+                            base = os.path.join(root, filename[:m.start(i)])
                             last_part = len(parts)
                             for j, part in enumerate(parts, 1):
                                 base = os.path.join(base, part)

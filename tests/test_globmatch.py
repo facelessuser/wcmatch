@@ -1655,6 +1655,16 @@ class TestGlobmatchSymlink(_TestGlobmatch):
 
         self.assertFalse(glob.globmatch(self.tempdir + '/sym1/a.txt', '**/{*.txt,*.t*}', flags=self.default_flags))
 
+    def test_globmatch_multiple_globstars(self):
+        """Check symlinks in each globstar relative to its own prefix."""
+
+        self.mktemp('outer', 'literal', 'target', 'file.txt')
+        self.mksymlink('target', self.norm('outer', 'literal', 'link'))
+        filename = self.tempdir + '/outer/literal/link/file.txt'
+        pattern = '**/literal/**/file.txt'
+        self.assertFalse(glob.globmatch(filename, pattern, flags=self.default_flags))
+        self.assertTrue(glob.globmatch(filename, pattern, flags=self.default_flags | glob.L))
+
     def test_globmatch_globstarlong(self):
         """Test `***`."""
 
