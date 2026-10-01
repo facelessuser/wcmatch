@@ -58,6 +58,30 @@ def skip_unless_symlink(test):
     return test if ok else unittest.skip(msg)(test)
 
 
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('pattern', ['**/literal/**/file.txt', '**/literal/**/leaf/**/file.txt'])
+@pytest.mark.parametrize('link', ['outer/literal/link', 'outer/link'])
+def test_globstar_symlink_prefix(tmp_path, monkeypatch, as_bytes, pattern, link):
+    """Only symlinks on the actual matched path should prevent traversal."""
+
+    filename = 'outer/literal/link/leaf/final/file.txt'
+    file = tmp_path / filename
+    file.parent.mkdir(parents=True)
+    file.write_text('')
+    root = str(tmp_path)
+    link_path = os.path.normpath(str(tmp_path / link))
+    if as_bytes:
+        filename = os.fsencode(filename)
+        pattern = os.fsencode(pattern)
+        root = os.fsencode(root)
+        link_path = os.fsencode(link_path)
+
+    monkeypatch.setattr('wcmatch._wcmatch.os.path.islink', lambda path: os.path.normpath(path) == link_path)
+    flags = glob.GLOBSTAR | glob.REALPATH
+    assert glob.globmatch(filename, pattern, root_dir=root, flags=flags) == (link == 'outer/link')
+    assert glob.globmatch(filename, pattern, root_dir=root, flags=flags | glob.FOLLOW)
+
+
 class _TestGlobmatch(unittest.TestCase):
     """Test the `WcMatch` class."""
 
@@ -1654,6 +1678,16 @@ class TestGlobmatchSymlink(_TestGlobmatch):
         """Use a pattern that exercises the symlink cache."""
 
         self.assertFalse(glob.globmatch(self.tempdir + '/sym1/a.txt', '**/{*.txt,*.t*}', flags=self.default_flags))
+
+    def test_globmatch_multiple_globstars(self):
+        """Check symlinks in each `globstar` relative to its own prefix."""
+
+        self.mktemp('outer', 'literal', 'target', 'file.txt')
+        self.mksymlink('target', self.norm('outer', 'literal', 'link'))
+        filename = self.tempdir + '/outer/literal/link/file.txt'
+        pattern = '**/literal/**/file.txt'
+        self.assertFalse(glob.globmatch(filename, pattern, flags=self.default_flags))
+        self.assertTrue(glob.globmatch(filename, pattern, flags=self.default_flags | glob.L))
 
     def test_globmatch_globstarlong(self):
         """Test `***`."""
