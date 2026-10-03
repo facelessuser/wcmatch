@@ -110,7 +110,7 @@ class PurePath(pathlib.PurePath):
         sep = ''
         name = str(self)
         if isinstance(self, Path) and name and self.is_dir():
-            sep = self.parser.sep if util.PY313 else self._flavour.sep
+            sep = self.parser.sep if util.PY313 else self._flavour.sep  # type: ignore[attr-defined]
 
         return name + sep
 
@@ -190,7 +190,7 @@ class Path(pathlib.Path):
                 raise NotImplementedError(f"Cannot instantiate {cls.__name__!r} on your system")
             return self  # type: ignore[no-any-return]
         else:
-            if (cls is WindowsPath and not win_host) or (cls is not WindowsPath and win_host):
+            if issubclass(cls, WindowsPath) != win_host:
                 raise NotImplementedError(f"Cannot instantiate {cls.__name__!r} on your system")
             return object.__new__(cls)
 

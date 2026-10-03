@@ -1,5 +1,9 @@
 # Changelog
 
+## 11.0.2
+
+-   **FIX**: Fix `WindowsPath` subclass construction on Python 3.12+ (#238).
+
 ## 11.0.1
 
 -   **DOCS**: Provide information in documentation that discloses information about what should or should not be

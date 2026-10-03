@@ -6,6 +6,7 @@ EXTGLOB
 EXTMATCH
 EmojiOne
 Fnmatch
+Formatter
 GUIDs
 GitHub
 Gitter
@@ -48,6 +49,7 @@ filename
 filenames
 filepath
 filesystem
+formatter
 glob
 globbing
 initializer
@@ -79,6 +81,7 @@ sortable
 subclass
 subclassed
 subclasses
+subclassing
 subdirectories
 sublicense
 subpatterns
@@ -93,6 +96,7 @@ unfound
 unintuitive
 unordered
 untrusted
+validator
 versa
 wildcard
 zsh

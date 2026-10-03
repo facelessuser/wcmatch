@@ -151,6 +151,40 @@ class TestGlob(unittest.TestCase):
         self.assertEqual(orig, results)
 
 
+class TestPathSubclass:
+    """Test concrete path subclasses."""
+
+    @pytest.mark.parametrize('base', [pathlib.WindowsPath, pathlib.PosixPath])
+    @pytest.mark.parametrize('depth', [1, 2])
+    def test_subclass(self, base, depth, tmp_path):
+        """Keep platform restrictions and glob functionality when subclassing paths."""
+
+        class CustomPath(base):
+            """A user-defined path class."""
+
+        class ChildPath(CustomPath):
+            """An indirectly derived path class."""
+
+        cls = CustomPath if depth == 1 else ChildPath
+        if (base is pathlib.WindowsPath) != (os.name == 'nt'):
+            with pytest.raises(NotImplementedError):
+                cls(tmp_path)
+            return
+
+        (tmp_path / 'example.txt').touch()
+        (tmp_path / 'other.py').touch()
+        path = cls(tmp_path)
+        child = path / 'example.txt'
+        assert isinstance(path, cls)
+        assert isinstance(child, cls)
+        assert child.is_file()
+        assert child.match('*.txt')
+        assert child.globmatch('**/*.txt', flags=pathlib.GLOBSTAR)
+        for results in (list(path.glob('*.txt')), list(path.rglob('*.txt'))):
+            assert results == [child]
+            assert all(isinstance(result, cls) for result in results)
+
+
 class TestPathlibGlobmatch:
     """
     Tests that are performed against `globmatch`.
