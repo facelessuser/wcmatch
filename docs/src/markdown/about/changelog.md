@@ -1,8 +1,10 @@
 # Changelog
 
-## 11.0.2
+## 11.1
 
+-   **NEW**: Add support for Python 3.15.
 -   **FIX**: Fix `WindowsPath` subclass construction on Python 3.12+ (#238).
+-   **FIX**: Fix symlink prefixes for multiple `GLOBSTAR` captures (#239).
 
 ## 11.0.1
 

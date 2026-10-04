@@ -62,13 +62,11 @@ pattern into many patterns.
 If it is planned to reuse a pattern and the performance hit of recompiling is not desired, you can precompile a matcher
 object via [`fnmatch.compile`](#compile) which returns a [`WcMatcher`](#wcmatcher) object.
 
-```py
->>> import wcmatch.fnmatch as fnmatch
->>> m = fnmatch.compile('*.md')
->>> m.match('README.md')
-True
->>> m.filter(['test.txt', 'file.md', 'README.md'])
-['file.md', 'README.md']
+```py play
+import wcmatch.fnmatch as fnmatch
+m = fnmatch.compile('*.md')
+m.match('README.md')
+m.filter(['test.txt', 'file.md', 'README.md'])
 ```
 
 ## API
@@ -83,29 +81,25 @@ def fnmatch(filename, patterns, *, flags=0, limit=1000, exclude=None)
 limit](#multi-pattern-limits). Exclusion patterns can be specified via the `exclude` parameter which takes a pattern or
 a list of patterns. It will return a boolean indicating whether the file name was matched by the pattern(s).
 
-```pycon
->>> from wcmatch import fnmatch
->>> fnmatch.fnmatch('test.txt', '@(*.txt|*.py)', flags=fnmatch.EXTMATCH)
-True
+```py play
+from wcmatch import fnmatch
+fnmatch.fnmatch('test.txt', '@(*.txt|*.py)', flags=fnmatch.EXTMATCH)
 ```
 
 When applying multiple patterns, a file matches if it matches any of the patterns:
 
-```pycon
->>> from wcmatch import fnmatch
->>> fnmatch.fnmatch('test.txt', ['*.txt', '*.py'])
-True
+```py play
+from wcmatch import fnmatch
+fnmatch.fnmatch('test.txt', ['*.txt', '*.py'])
 ```
 
 Exclusions can be used by taking advantage of the `exclude` parameter. It takes a single exclude pattern or a list of
 patterns. Files that match the exclude pattern will not be matched.
 
-```pycon
->>> from wcmatch import fnmatch
->>> fnmatch.fnmatch('test.py', '*', exclude='*.py')
-False
->>> fnmatch.fnmatch('test.txt', '*', exclude='*.py')
-True
+```py play
+from wcmatch import fnmatch
+fnmatch.fnmatch('test.py', '*', exclude='*.py')
+fnmatch.fnmatch('test.txt', '*', exclude='*.py')
 ```
 
 Inline exclusion patterns are allowed as well. When exclusion patterns are used in conjunction with inclusion patterns,
@@ -113,16 +107,12 @@ a file will be considered matched if one of the inclusion patterns match **and**
 If an exclusion pattern is given without any inclusion patterns, the pattern will match nothing. Exclusion patterns are
 meant to filter other patterns, not match anything by themselves.
 
-```pycon
->>> from wcmatch import fnmatch
->>> fnmatch.fnmatch('test.py', '*|!*.py', flags=fnmatch.NEGATE | fnmatch.SPLIT)
-False
->>> fnmatch.fnmatch('test.txt', '*|!*.py', flags=fnmatch.NEGATE | fnmatch.SPLIT)
-True
->>> fnmatch.fnmatch('test.txt', ['*.txt', '!avoid.txt'], flags=fnmatch.NEGATE)
-True
->>> fnmatch.fnmatch('avoid.txt', ['*.txt', '!avoid.txt'], flags=fnmatch.NEGATE)
-False
+```py play
+from wcmatch import fnmatch
+fnmatch.fnmatch('test.py', '*|!*.py', flags=fnmatch.NEGATE | fnmatch.SPLIT)
+fnmatch.fnmatch('test.txt', '*|!*.py', flags=fnmatch.NEGATE | fnmatch.SPLIT)
+fnmatch.fnmatch('test.txt', ['*.txt', '!avoid.txt'], flags=fnmatch.NEGATE)
+fnmatch.fnmatch('avoid.txt', ['*.txt', '!avoid.txt'], flags=fnmatch.NEGATE)
 ```
 
 As mentioned, exclusion patterns need to be applied to a inclusion pattern to work, but if it is desired, you can force
@@ -130,12 +120,10 @@ exclusion patterns to assume all files should be filtered with the exclusion pat
 [`NEGATEALL`](#negateall) flag. Essentially, it means if you use a pattern such as `!*.md`, it will assume two
 pattern were given: `*` and `!*.md`.
 
-```pycon
->>> from wcmatch import fnmatch
->>> fnmatch.fnmatch('test.py', '!*.py', flags=fnmatch.NEGATE | fnmatch.NEGATEALL)
-False
->>> fnmatch.fnmatch('test.txt', '!*.py', flags=fnmatch.NEGATE | fnmatch.NEGATEALL)
-True
+```py play
+from wcmatch import fnmatch
+fnmatch.fnmatch('test.py', '!*.py', flags=fnmatch.NEGATE | fnmatch.NEGATEALL)
+fnmatch.fnmatch('test.txt', '!*.py', flags=fnmatch.NEGATE | fnmatch.NEGATEALL)
 ```
 
 > [!new] New 6.0
@@ -155,10 +143,9 @@ pattern limit](#multi-pattern-limits). Exclusion patterns can be specified via t
 pattern or a list of patterns.It returns a list of all files that matched the pattern(s). The same logic used for
 [`fnmatch`](#fnmatch) is used for `filter`, albeit more efficient for processing multiple files.
 
-```pycon
->>> from wcmatch import fnmatch
->>> fnmatch.filter(['a.txt', 'b.txt', 'c.py'], '*.txt')
-['a.txt', 'b.txt']
+```py play
+from wcmatch import fnmatch
+fnmatch.filter(['a.txt', 'b.txt', 'c.py'], '*.txt')
 ```
 
 > [!new] New 6.0
@@ -180,13 +167,11 @@ limit](#multi-pattern-limits). Exclusion patterns can be specified via the `excl
 a list of patterns. It returns a [`WcMatcher`](#wcmatcher) object which can match or filter file paths depending on
 which method is called.
 
-```pycon
->>> import wcmatch.fnmatch as fnmatch
->>> m = fnmatch.compile('*.md')
->>> m.match('README.md')
-True
->>> m.filter(['test.txt', 'file.md', 'README.md'])
-['file.md', 'README.md']
+```py play
+import wcmatch.fnmatch as fnmatch
+m = fnmatch.compile('*.md')
+m.match('README.md')
+m.filter(['test.txt', 'file.md', 'README.md'])
 ```
 
 #### `fnmatch.WcMatcher` {: #wcmatcher}
@@ -200,11 +185,10 @@ def match(self, filename):
 
 This `match` method allows for matching against a precompiled pattern.
 
-```pycon
->>> import wcmatch.fnmatch as fnmatch
->>> m = fnmatch.compile('*.md')
->>> m.match('README.md')
-True
+```py play
+import wcmatch.fnmatch as fnmatch
+m = fnmatch.compile('*.md')
+m.match('README.md')
 ```
 
 ```py
@@ -213,11 +197,10 @@ def filter(self, filenames):
 
 The `filter` method allows for filtering paths against a precompiled pattern.
 
-```pycon
->>> import wcmatch.fnmatch as fnmatch
->>> m = fnmatch.compile('*.md')
->>> m.filter(['test.txt', 'file.md', 'README.md'])
-['file.md', 'README.md']
+```py play
+import wcmatch.fnmatch as fnmatch
+m = fnmatch.compile('*.md')
+m.filter(['test.txt', 'file.md', 'README.md'])
 ```
 
 #### `fnmatch.translate` {: #translate}
@@ -232,12 +215,10 @@ a list of patterns. It returns two lists: one for inclusion patterns and one for
 the regular expressions used for matching the given patterns. It should be noted that a file is considered matched if it
 matches at least one inclusion pattern and matches **none** of the exclusion patterns.
 
-```pycon
->>> from wcmatch import fnmatch
->>> fnmatch.translate('*.{a,{b,c}}', flags=fnmatch.BRACE)
-(['^(?s:(?=.)(?![.]).*?\\.a)$', '^(?s:(?=.)(?![.]).*?\\.b)$', '^(?s:(?=.)(?![.]).*?\\.c)$'], [])
->>> fnmatch.translate('**|!*.{a,{b,c}}', flags=fnmatch.BRACE | fnmatch.NEGATE | fnmatch.SPLIT)
-(['^(?s:(?=.)(?![.]).*?)$'], ['^(?s:(?=.).*?\\.a)$', '^(?s:(?=.).*?\\.b)$', '^(?s:(?=.).*?\\.c)$'])
+```py play
+from wcmatch import fnmatch
+fnmatch.translate('*.{a,{b,c}}', flags=fnmatch.BRACE)
+fnmatch.translate('**|!*.{a,{b,c}}', flags=fnmatch.BRACE | fnmatch.NEGATE | fnmatch.SPLIT)
 ```
 
 The main goal of `translate` is to return a regex that matches a file path. Advanced regex features, such as extracting
@@ -247,13 +228,12 @@ works with `translate` and will also disable regex pattern optimizations to ensu
 input groups. Advanced regex features such as naming groups does not currently fit into the pattern matching syntax is
 not currently planned.
 
-```pycon
->>> from wcmatch import fnmatch
->>> import re
->>> gpat = fnmatch.translate("@(file)+([[:digit:]])@(.*)", flags=fnmatch.EXTMATCH | fnmatch.CAPTURE)
->>> pat = re.compile(gpat[0][0])
->>> pat.match('file33.test.txt').groups()
-('file', '33', '.test.txt')
+```py play
+from wcmatch import fnmatch
+import re
+gpat = fnmatch.translate("@(file)+([[:digit:]])@(.*)", flags=fnmatch.EXTMATCH | fnmatch.CAPTURE)
+pat = re.compile(gpat[0][0])
+pat.match('file33.test.txt').groups()
 ```
 
 > [!note] Behavior Change in 11.0
@@ -278,12 +258,10 @@ def escape(pattern):
 The `escape` function will conservatively escape `-`, `!`, `*`, `?`, `(`, `)`, `[`, `]`, `|`, `{`, `}`, and `\` with
 backslashes, regardless of what feature is or is not enabled. It is meant to escape filenames.
 
-```pycon
->>> from wcmatch import fnmatch
->>> fnmatch.escape('**file**{}.txt')
-'\\*\\*file\\*\\*\\{\\}.txt'
->>> fnmatch.fnmatch('**file**{}.txt', fnmatch.escape('**file**{}.txt'))
-True
+```py play
+from wcmatch import fnmatch
+fnmatch.escape('**file**{}.txt')
+fnmatch.fnmatch('**file**{}.txt', fnmatch.escape('**file**{}.txt'))
 ```
 
 > [!new] New 8.1
@@ -302,11 +280,9 @@ filenames or patterns for file names only. If you need to check patterns with fu
 that include drive names or UNC sharepoints (which require special logic), it is recommended to use the
 [`glob.escape`](./glob.md#escape) function.
 
-```pycon
->>> fnmatch.is_magic('test')
-False
->>> fnmatch.is_magic('[test]ing?')
-True
+```py play
+fnmatch.is_magic('test')
+fnmatch.is_magic('[test]ing?')
 ```
 
 The table below illustrates which symbols are searched for based on the given feature. Each feature adds to the
@@ -447,9 +423,9 @@ number ranges.
 > 2.  `BRACE` and [`SPLIT`](#split) both expand patterns into multiple patterns. Using these two syntaxes
 >     simultaneously can exponential increase in duplicate patterns:
 >
->     ```pycon
->     >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTMATCH)
->     ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
+>     ```py play
+>     from wcmatch import _wcparse
+>     list(_wcparse.expand('test@(this{|that,|other})|*.py', fnmatch.BRACE | fnmatch.SPLIT | fnmatch.EXTMATCH, 1000))
 >     ```
 >
 >     This effect is reduced as redundant, identical patterns are optimized away[^1]. But it is useful to know if
@@ -470,12 +446,10 @@ While `SPLIT` is not as powerful as [`BRACE`](#brace), it's syntax is very easy 
 expansions of patterns with it, except when paired *with* [`BRACE`](#brace). See [`BRACE`](#brace) and
 it's warnings related to pairing it with `SPLIT`.
 
-```pycon
->>> from wcmatch import fnmatch
->>> fnmatch.fnmatch('test.txt', '*.txt|*.py', flags=fnmatch.SPLIT)
-True
->>> fnmatch.fnmatch('test.py', '*.txt|*.py', flags=fnmatch.SPLIT)
-True
+```py play
+from wcmatch import fnmatch
+fnmatch.fnmatch('test.txt', '*.txt|*.py', flags=fnmatch.SPLIT)
+fnmatch.fnmatch('test.py', '*.txt|*.py', flags=fnmatch.SPLIT)
 ```
 
 #### `fnmatch.FORCEWIN, fnmatch.W` {: #forcewin}

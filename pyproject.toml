@@ -108,40 +108,49 @@ lint.ignore = [
     "RUF100"
 ]
 
-[tool.tox]
-legacy_tox_ini = """
-[tox]
-isolated_build = true
-skipsdist=true
-envlist=
-    py39,py310,py311,py312,py313,py314,
-    lint
+[tool.hatch.envs.dev]
+dependencies = [
+    "pytest",
+    "pytest-cov",
+    "coverage",
+    "mypy",
+    "ruff",
+    "build"
+]
 
-[testenv]
-passenv=LANG
-deps=
-    .
-    -r requirements/test.txt
-commands=
-    {envpython} -m mypy
-    {envpython} -m pytest --cov wcmatch --cov-append tests
-    {envpython} -m coverage html -d {envtmpdir}/coverage
-    {envpython} -m coverage xml
-    {envpython} -m coverage report --show-missing
+[tool.hatch.envs.docs]
+dependencies = [
+    "zensical",
+    "markdown",
+    "pymdown-extensions",
+    "zensical-pymdownx @ git+https://github.com/facelessuser/pymdownx-zensical-theme.git",
+    "pymdown_lexers @ git+https://github.com/facelessuser/pymdown-lexers.git",
+    "pyspelling",
+    "build",
+    "python-minifier"
+]
 
-[testenv:lint]
-deps=
-    -r requirements/lint.txt
-commands=
-    "{envbindir}"/ruff check .
+[[tool.hatch.envs.dev.matrix]]
+python = ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
 
-[testenv:documents]
-deps=
-    -r requirements/docs.txt
-commands=
-    "{envpython}" -m zensical.main build -f zensical.yml --clean
-    "{envpython}" -m pyspelling -j 8
+[[tool.hatch.envs.dev-stdlib.matrix]]
+python = ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
 
-[pytest]
-addopts=-p no:warnings
-"""
+[tool.hatch.envs.dev.scripts]
+types = "mypy"
+tests = "pytest --cov wcmatch --cov-append --cov-report term-missing --cov-report xml --cov-report html:.cov tests"
+lint = 'ruff check .'
+
+[tool.hatch.envs.docs.scripts]
+spellcheck = [
+    "python -m zensical.main build -f zensical.yml --clean --strict; pyspelling"
+]
+clean = [
+    "python -m zensical.main build -f zensical.yml --clean"
+]
+serve = [
+    "python -m zensical.main serve -f zensical.yml"
+]
+build = [
+    "python -m zensical.main build -f zensical.yml --clean"
+]

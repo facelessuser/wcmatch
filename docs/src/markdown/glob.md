@@ -74,73 +74,57 @@ Pattern           | Meaning
 
 -   In general, Wildcard Match's behavior is modeled off of Bash's, and prior to version 7.0, unlike Python's default
     [`glob`][glob], Wildcard Match's [`glob`](#glob) would match and return `.` and `..` for magic patterns like `.*`.
-    This is because our directory scanning logic inserts `.` and `..` into results to be faithful to Bash. While this
-    emulates Bash's behavior, it can be surprising to the user, especially if they are used to Python's default glob. In
-    7.0 we now avoid returning `.` and `..` in our directory scanner. This does not affect how patterns are matched, just
-    what is returned via our directory scan logic. You can once again enable the old Bash-like behavior with the flag
-    [`SCANDOTDIR`](#scandotdir) if this old behavior is desired.
+    This is because our directory scanning logic inserts `.` and `..` into results to be faithful to Bash (or at least
+    earlier versions of Bash). It could be surprising to the user, and recent versions of Bash no longer return these by
+    default. In 7.0 we now avoid returning `.` and `..` in our directory scanner. This does not affect how patterns are
+    matched, just what is returned via our directory scan logic. You can once again enable the old Bash-like behavior
+    with the flag [`SCANDOTDIR`](#scandotdir) if this old behavior is desired.
 
     Python's default:
 
-    ```pycon
-    >>> import glob
-    >>> glob.glob('docs/.*')
-    []
+    ```py play
+    import glob
+    glob.glob('docs/.*')
     ```
 
     Wildcard Match:
 
-    ```pycon
-    >>> from wcmatch import glob
-    >>> glob.glob('docs/.*')
-    []
+    ```py play
+    from wcmatch import glob
+    glob.glob('docs/.*')
     ```
 
-    Bash:
+    Older Bash-like behavior restored in Wildcard Match [`SCANDOTDIR`](#scandotdir):
 
-    ```shell-session
-    $ echo docs/.*
-    docs/. docs/..
-    ```
-
-    Bash-like behavior restored in Wildcard Match [`SCANDOTDIR`](#scandotdir):
-
-    ```pycon
-    >>> from wcmatch import glob
-    >>> glob.glob('docs/.*', flags=glob.SCANDOTDIR)
-    ['docs/.', 'docs/..']
+    ```py play
+    from wcmatch import glob
+    glob.glob('docs/.*', flags=glob.SCANDOTDIR)
     ```
 
     It is important to stress that this logic only relates to directory scanning and does not fundamentally alter glob
     patterns.  We can still match a path of `..` with `.*` when strictly doing a match:
 
-    ```pycon
-    >>> from wcmatch import glob
-    >>> glob.globmatch('..', '.*')
-    True
+    ```py play
+    from wcmatch import glob
+    glob.globmatch('..', '.*')
     ```
 
     Nor does it affect exclude results as they are used to filter the results after directory scanning:
 
-    ```pycon
-    >>> from wcmatch import glob
-    >>> glob.glob('..')
-    ['..']
-    >>> glob.glob(['..', '!.*'], flags=glob.NEGATE)
-    []
+    ```py play
+    from wcmatch import glob
+    glob.glob('..')
+    glob.glob(['..', '!.*'], flags=glob.NEGATE)
     ```
 
     If we wish to fundamentally alter the pattern matching behavior, we can use [`NODOTDIR`](#nodotdir). This would
     provide a more Zsh feel.
 
-    ```pycon
-    >>> from wcmatch import glob
-    >>> glob.glob(['..', '!.*'], flags=glob.NEGATE | glob.NODOTDIR)
-    ['..']
-    >>> glob.glob(['..', '!..'], flags=glob.NEGATE | glob.NODOTDIR)
-    []
-    >>> glob.globmatch('..', '.*', flags=glob.NODOTDIR)
-    False
+    ```py play
+    from wcmatch import glob
+    glob.glob(['..', '!.*'], flags=glob.NEGATE | glob.NODOTDIR)
+    glob.glob(['..', '!..'], flags=glob.NEGATE | glob.NODOTDIR)
+    glob.globmatch('..', '.*', flags=glob.NODOTDIR)
     ```
 
     > [!new] Changes 7.0
@@ -193,13 +177,11 @@ pattern into many patterns.
 If it is planned to reuse a pattern and the performance hit of recompiling is not desired, you can precompile a matcher
 object via [`glob.compile`](#compile) which returns a [`WcMatcher`](#wcmatcher) object.
 
-```py
->>> import wcmatch.glob as glob
->>> m = glob.compile('**/*.py', flags=glob.GLOBSTAR)
->>> m.match('wcmatch/__init__.py')
-True
->>> m.filter(['wcmatch/__init__.py', 'wcmatch/glob.py', 'README.md'])
-['wcmatch/__init__.py', 'wcmatch/glob.py']
+```py play
+import wcmatch.glob as glob
+m = glob.compile('**/*.py', flags=glob.GLOBSTAR)
+m.match('wcmatch/__init__.py')
+m.filter(['wcmatch/__init__.py', 'wcmatch/glob.py', 'README.md'])
 ```
 
 ## API
@@ -218,26 +200,23 @@ file system returning matching files.
 > [!warning] Path-like Input Support
 > Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
 
-```pycon
->>> from wcmatch import glob
->>> glob.glob('**/*.md')
-['docs/src/markdown/_snippets/abbr.md', 'docs/src/markdown/_snippets/links.md', 'docs/src/markdown/_snippets/refs.md', 'docs/src/markdown/changelog.md', 'docs/src/markdown/fnmatch.md', 'docs/src/markdown/glob.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md', 'README.md']
+```py play
+from wcmatch import glob
+glob.glob('*.md', flags=glob.GLOBSTAR)
 ```
 
 Using a list, we can add exclusion patterns and also exclude directories and/or files:
 
-```pycon
->>> from wcmatch import glob
->>> glob.glob(['**/*.md', '!README.md', '!**/_snippets'], flags=glob.NEGATE)
-['docs/src/markdown/changelog.md', 'docs/src/markdown/fnmatch.md', 'docs/src/markdown/glob.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md']
+```py play
+from wcmatch import glob
+glob.glob(['**/*.md', '!README.md', '!docs/**'], flags=glob.NEGATE | glob.GLOBSTAR)
 ```
 
 When a glob pattern ends with a slash, it will only return directories:
 
-```pycon
->>> from wcmatch import glob
->>> glob.glob('**/')
-['__pycache__/', 'docs/', 'docs/src/', 'docs/src/markdown/', 'docs/src/markdown/_snippets/', 'docs/theme/', 'requirements/', 'stuff/', 'tests/', 'tests/__pycache__/', 'wcmatch/', 'wcmatch/__pycache__/']
+```py play
+from wcmatch import glob
+glob.glob('**/', flags=glob.GLOBSTAR)
 ```
 
 When providing a list, all patterns are run in the same context, but will not be run in the same pass. Each pattern is
@@ -247,48 +226,44 @@ researched multiple times. In Bash, duplicate files can be returned:
 
 ```console
 $ echo *.md README.md
-LICENSE.md README.md README.md
+LICENSE.md README.md SECURITY.md README.md
 ```
 
 And we see that Wildcard Match's `glob` behaves the same, except it only returns unique results.
 
-```pycon
->>> from wcmatch import glob
->>> glob.glob(['*.md', 'README.md'])
-['LICENSE.md', 'README.md']
+```py play
+from wcmatch import glob
+glob.glob(['*.md', 'README.md'])
 ```
 
 If we wanted to completely match Bash's results, we would turn off unique results with the [`NOUNIQUE`](#nounique)
 flag.
 
-```pycon
->>> from wcmatch import glob
->>> glob.glob(['*.md', 'README.md'], flags=glob.NOUNIQUE)
-['LICENSE.md', 'README.md', 'README.md']
+```py play
+from wcmatch import glob
+glob.glob(['*.md', 'README.md'], flags=glob.NOUNIQUE)
 ```
 
 And if we apply an exclusion pattern, since the patterns share the same context, the exclusion applies to both:
 
-```pycon
->>> from wcmatch import glob
->>> glob.glob(['*.md', , 'README.md', '!README.md'], flags=glob.NEGATE | glob.NOUNIQUE)
-['LICENSE.md']
+```py play
+from wcmatch import glob
+glob.glob(['*.md', 'README.md', '!README.md'], flags=glob.NEGATE | glob.NOUNIQUE)
 ```
 
 Features like [`BRACE`](#brace) and [`SPLIT`](#split) actually take a single string and breaks them up into
 multiple patterns. These features, when enabled and used, will also exhibit this behavior:
 
-```pycon
->>> from wcmatch import glob
->>> glob.glob('{*,README}.md', flags=glob.BRACE | glob.NOUNIQUE)
-['LICENSE.md', 'README.md', 'README.md']
+```py play
+from wcmatch import glob
+glob.glob('{*,README}.md', flags=glob.BRACE | glob.NOUNIQUE)
 ```
 
 This also aligns with Bash's behavior:
 
 ```console
 $ echo {*,README}.md
-LICENSE.md README.md README.md
+LICENSE.md README.md SECURITY.md README.md
 ```
 
 You can resolve user paths with `~` if the [`GLOBTILDE`](#globtilde) flag is enabled. You can also target specific
@@ -306,22 +281,19 @@ By default, `glob` uses the current working directory to evaluate relative patte
 `#!py os.chdir('/new/path')` to evaluate patterns relative to a different path. By setting `root_dir` parameter you can
 change the root path without using `os.chdir`.
 
-```pycon
->>> from wcmatch import glob
->>> glob.glob('*')
-['appveyor.yml', 'docs', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'requirements', 'setup.cfg', 'setup.py', 'tests', 'tox.ini', 'wcmatch']
->>> glob.glob('*', root_dir='docs/src')
-['dictionary', 'markdown']
+```py play
+from wcmatch import glob
+glob.glob('*')
+glob.glob('*', root_dir='docs/src')
 ```
 
 Additionally, you can use `dir_fd` and specify a root directory with a directory file descriptor.
 
-```pycon
->>> import os
->>> from wcmatch import glob
->>> dir_fd = os.open('docs/src', os.O_RDONLY | os.O_DIRECTORY)
->>> glob.glob('*', dir_fd=dir_fd)
-['markdown', 'dictionary']
+```py play
+import os
+from wcmatch import glob
+dir_fd = os.open('docs/src', os.O_RDONLY | os.O_DIRECTORY)
+glob.glob('*', dir_fd=dir_fd)
 ```
 
 > [!warning] Support for Directory Descriptors
@@ -351,10 +323,9 @@ def iglob(patterns, *, flags=0, root_dir=None, dir_fd=None, limit=1000, exclude=
 
 `iglob` is just like [`glob`](#glob) except it returns an iterator.
 
-```pycon
->>> from wcmatch import glob
->>> list(glob.iglob('**/*.md'))
-['docs/src/markdown/_snippets/abbr.md', 'docs/src/markdown/_snippets/links.md', 'docs/src/markdown/_snippets/refs.md', 'docs/src/markdown/changelog.md', 'docs/src/markdown/fnmatch.md', 'docs/src/markdown/glob.md', 'docs/src/markdown/index.md', 'docs/src/markdown/installation.md', 'docs/src/markdown/license.md', 'README.md']
+```py play
+from wcmatch import glob
+list(glob.iglob('*'))
 ```
 
 > [!new] New 5.1
@@ -380,18 +351,16 @@ directory and/or file descriptor.  It also allows configuring the [max pattern l
 patterns can be specified via the `exclude` parameter which takes a pattern or a list of patterns. It will return a
 boolean indicating whether the file path was matched by the pattern(s).
 
-```pycon
->>> from wcmatch import glob
->>> glob.globmatch('some/path/test.txt', '**/*/@(*.txt|*.py)', flags=glob.EXTGLOB)
-True
+```py play
+from wcmatch import glob
+glob.globmatch('some/path/test.txt', '**/*/@(*.txt|*.py)', flags=glob.EXTGLOB)
 ```
 
 When applying multiple patterns, a file path matches if it matches any of the patterns:
 
-```pycon
->>> from wcmatch import glob
->>> glob.globmatch('some/path/test.txt', ['**/*/*.txt', '**/*/*.py'])
-True
+```py play
+from wcmatch import glob
+glob.globmatch('some/path/test.txt', ['**/*/*.txt', '**/*/*.py'])
 ```
 
 Exclusion patterns are allowed as well. When exclusion patterns are used in conjunction with other patterns, a path will
@@ -399,16 +368,12 @@ be considered matched if one of the positive patterns match **and** none of the 
 exclusion pattern is given without any inclusion patterns, the pattern will match nothing. Exclusion patterns are meant
 to filter other patterns, not match anything by themselves.
 
-```pycon
->>> from wcmatch import glob
->>> glob.globmatch('some/path/test.py', '**|!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.SPLIT)
-True
->>> glob.globmatch('some/path/test.txt', '**|!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.SPLIT)
-False
->>> glob.globmatch('some/path/test.txt', ['*/*/*.txt', '!*/*/avoid.txt'], flags=glob.NEGATE)
-True
->>> glob.globmatch('some/path/avoid.txt', ['*/*/*.txt', '!*/*/avoid.txt'], flags=glob.NEGATE)
-False
+```py play
+from wcmatch import glob
+glob.globmatch('some/path/test.py', '**|!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.SPLIT)
+glob.globmatch('some/path/test.txt', '**|!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.SPLIT)
+glob.globmatch('some/path/test.txt', ['*/*/*.txt', '!*/*/avoid.txt'], flags=glob.NEGATE)
+glob.globmatch('some/path/avoid.txt', ['*/*/*.txt', '!*/*/avoid.txt'], flags=glob.NEGATE)
 ```
 
 As mentioned, exclusion patterns need to be applied to a inclusion pattern to work, but if it is desired, you can force
@@ -417,12 +382,10 @@ exclusion patterns to assume all files should be filtered with the exclusion pat
 pattern such as `!*.md`, it will assume two pattern were given: `*` and `!*.md` (where `**` is specifically treated as
 if [`GLOBSTAR`](#globstar) was enabled).
 
-```pycon
->>> from wcmatch import glob
->>> glob.globmatch('some/path/test.py', '!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.NEGATEALL)
-True
->>> glob.globmatch('some/path/test.txt', '!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.NEGATEALL)
-False
+```py play
+from wcmatch import glob
+glob.globmatch('some/path/test.py', '!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.NEGATEALL)
+glob.globmatch('some/path/test.txt', '!**/*.txt', flags=glob.NEGATE | glob.GLOBSTAR | glob.NEGATEALL)
 ```
 
 By default, `globmatch` and [`globfilter`](#globfilter) do not operate on the file system. This is to allow you to
@@ -432,10 +395,9 @@ directory. It also won't be able to evaluate whether a directory is a symlink or
 Here we see that `globmatch` fails to match the filepath as the pattern is explicitly looking for a directory and our
 filepath does not end with `/`.
 
-```pycon
->>> from wcmatch import glob
->>> glob.globmatch('docs', '*/')
-False
+```py play
+from wcmatch import glob
+glob.globmatch('docs', '*/')
 ```
 
 If you would like for `globmatch` (or [`globfilter`](#globfilter)) to operate on your current filesystem directly,
@@ -446,10 +408,9 @@ what the pattern is looking vs the current working directory, or if it has symli
 
 Here we use [`REALPATH`](#realpath) and can see that `globmatch` now knows that `doc` is a directory.
 
-```pycon
->>> from wcmatch import glob
->>> glob.globmatch('docs', '*/', flags=glob.REALPATH)
-True
+```py play
+from wcmatch import glob
+glob.globmatch('docs', '*/', flags=glob.REALPATH)
 ```
 
 It also can tell if a file doesn't exist or is out of scope compared to what is being asked. For instance, the below
@@ -457,35 +418,29 @@ example fails because the pattern is looking for any folder that is relative to 
 When we disable [`REALPATH`](#realpath), it will match just fine. Both cases can be useful depending on how you plan
 to use `globmatch`.
 
-```pycon
->>> from wcmatch import glob
->>> glob.globmatch('/usr', '**/', flags=glob.G | glob.REALPATH)
-False
->>> glob.globmatch('/usr', '**/', flags=glob.G)
-True
+```py play
+from wcmatch import glob
+glob.globmatch('/usr', '**/', flags=glob.G | glob.REALPATH)
+glob.globmatch('/usr', '**/', flags=glob.G)
 ```
 
 If you are using [`REALPATH`](#realpath) and want to evaluate the paths relative to a different directory, you can
 set the `root_dir` parameter.
 
-```pycon
->>> from wcmatch import glob
->>> glob.globmatch('markdown', 'markdown', flags=glob.REALPATH)
-False
->>> glob.globmatch('markdown', 'markdown', flags=glob.REALPATH, root_dir='docs/src')
-True
+```py play
+from wcmatch import glob
+glob.globmatch('markdown', 'markdown', flags=glob.REALPATH)
+glob.globmatch('markdown', 'markdown', flags=glob.REALPATH, root_dir='docs/src')
 ```
 
 Additionally, you could also provide a root directory using a file descriptor.
 
-```pycon
->>> import os
->>> from wcmatch import glob
->>> dir_fd = os.open('docs/src', os.O_RDONLY | os.O_DIRECTORY)
->>> glob.globmatch('markdown', 'markdown', flags=glob.REALPATH)
-False
->>> glob.globmatch('markdown', 'markdown', flags=glob.REALPATH, dir_fd=dir_fd)
-True
+```py play
+import os
+from wcmatch import glob
+dir_fd = os.open('docs/src', os.O_RDONLY | os.O_DIRECTORY)
+glob.globmatch('markdown', 'markdown', flags=glob.REALPATH)
+glob.globmatch('markdown', 'markdown', flags=glob.REALPATH, dir_fd=dir_fd)
 ```
 
 > [!warning] Support for Directory Descriptors
@@ -523,10 +478,9 @@ for [`globmatch`](#globmatch) is used for `globfilter`, albeit more efficient fo
 > [!warning] Path-like Input Support
 > Path-like object input support is only available in Python 3.6+ as the path-like protocol was added in Python 3.6.
 
-```pycon
->>> from wcmatch import glob
->>> glob.globfilter(['some/path/a.txt', 'b.txt', 'another/path/c.py'], '**/*.txt')
-['some/path/a.txt', 'b.txt']
+```py play
+from wcmatch import glob
+glob.globfilter(['some/path/a.txt', 'b.txt', 'another/path/c.py'], '**/*.txt', flags=glob.GLOBSTAR)
 ```
 
 Like [`globmatch`](#globmatch), `globfilter` does not operate directly on the file system, with all the caveats
@@ -559,12 +513,10 @@ a list of patterns. It returns two lists: one for inclusion patterns and one for
 the regular expressions used for matching the given patterns. It should be noted that a file is considered matched if it
 matches at least one inclusion pattern and matches **none** of the exclusion patterns.
 
-```pycon
->>> from wcmatch import glob
->>> glob.translate('**/*.{py,txt}')
-(['^(?s:(?=[^/])(?!(?:\\.{1,2})(?:$|[/]))(?:(?!\\.)[^/]*?)?[/]+(?=[^/])(?!(?:\\.{1,2})(?:$|[/]))(?:(?!\\.)[^/]*?)?\\.\\{py,txt\\}[/]*?)$'], [])
->>> glob.translate('**|!**/*.{py,txt}', flags=glob.NEGATE | glob.SPLIT)
-(['^(?s:(?=[^/])(?!(?:\\.{1,2})(?:$|[/]))(?:(?!\\.)[^/]*?)?[/]*?)$'], ['^(?s:(?=[^/])(?!(?:\\.{1,2})(?:$|[/]))[^/]*?[/]+(?=[^/])(?!(?:\\.{1,2})(?:$|[/]))[^/]*?\\.\\{py,txt\\}[/]*?)$'])
+```py play
+from wcmatch import glob
+glob.translate('**/*.{py,txt}')
+glob.translate('**|!**/*.{py,txt}', flags=glob.NEGATE | glob.SPLIT)
 ```
 
 The main goal of `translate` is to return a regex that matches a file path. Advanced regex features, such as extracting
@@ -574,13 +526,12 @@ works with `translate` and will also disable regex pattern optimizations to ensu
 input groups. Advanced regex features such as naming groups does not currently fit into the pattern matching syntax is
 not currently planned.
 
-```pycon
->>> from wcmatch import glob
->>> import re
->>> gpat = glob.translate("@(file)+([[:digit:]])@(.*)", flags=glob.EXTGLOB | glob.CAPTURE)
->>> pat = re.compile(gpat[0][0])
->>> pat.match('file33.test.txt').groups()
-('file', '33', '.test.txt')
+```py play
+from wcmatch import glob
+import re
+gpat = glob.translate("@(file)+([[:digit:]])@(.*)", flags=glob.EXTGLOB | glob.CAPTURE)
+pat = re.compile(gpat[0][0])
+pat.match('file33.test.txt').groups()
 ```
 
 > [!note] Behavior Change in 11.0
@@ -609,13 +560,11 @@ limit](#multi-pattern-limits). Exclusion patterns can be specified via the `excl
 a list of patterns. It returns a[`WcMatcher`](#wcmatcher) object which can match or filter file paths depending on which
 method is called.
 
-```pycon
->>> import wcmatch.glob as glob
->>> m = glob.compile('**/*.py', flags=glob.GLOBSTAR)
->>> m.match('wcmatch/__init__.py')
-True
->>> m.filter(['wcmatch/__init__.py', 'wcmatch/glob.py', 'README.md'])
-['wcmatch/__init__.py', 'wcmatch/glob.py']
+```py play
+import wcmatch.glob as glob
+m = glob.compile('**/*.py', flags=glob.GLOBSTAR)
+m.match('wcmatch/__init__.py')
+m.filter(['wcmatch/__init__.py', 'wcmatch/glob.py', 'README.md'])
 ```
 
 #### `glob.WcMatcher` {: #wcmatcher}
@@ -629,11 +578,10 @@ def match(self, filename, *, root_dir=None, dir_fd=None):
 
 This `match` method allows for matching against a precompiled pattern.
 
-```pycon
->>> import wcmatch.glob as glob
->>> m = glob.compile('**/*.py', flags=glob.GLOBSTAR)
->>> m.match('wcmatch/__init__.py')
-True
+```py play
+import wcmatch.glob as glob
+m = glob.compile('**/*.py', flags=glob.GLOBSTAR)
+m.match('wcmatch/__init__.py')
 ```
 
 ```py
@@ -642,11 +590,10 @@ def filter(self, filenames, *, root_dir=None, dir_fd=None):
 
 The `filter` method allows for filtering paths against a precompiled pattern.
 
-```pycon
->>> import wcmatch.glob as glob
->>> m = glob.compile('**/*.py', flags=glob.GLOBSTAR)
->>> m.filter(['wcmatch/__init__.py', 'wcmatch/glob.py', 'README.md'])
-['wcmatch/__init__.py', 'wcmatch/glob.py']
+```py play
+import wcmatch.glob as glob
+m = glob.compile('**/*.py', flags=glob.GLOBSTAR)
+m.filter(['wcmatch/__init__.py', 'wcmatch/glob.py', 'README.md'])
 ```
 
 #### `glob.escape` {: #escape}
@@ -659,28 +606,22 @@ The `escape` function will conservatively escape `-`, `!`, `*`, `?`, `(`, `)`, `
 backslashes, regardless of what feature is or is not enabled. It is meant to escape path parts (filenames, Windows
 drives, UNC sharepoints) or full paths.
 
-```pycon
->>> from wcmatch import glob
->>> glob.escape('some/path?/**file**{}.txt')
-'some/path\\?/\\*\\*file\\*\\*\\{}.txt'
->>> glob.globmatch('some/path?/**file**{}.txt', glob.escape('some/path?/**file**{}.txt'))
-True
+```py play
+from wcmatch import glob
+glob.escape('some/path?/**file**{}.txt')
+glob.globmatch('some/path?/**file**{}.txt', glob.escape('some/path?/**file**{}.txt'))
 ```
 
 `escape` can also handle Windows style paths with `/` or `\` path separators. It is usually recommended to use `/` as
 Windows backslashes are only supported via a special escape, but `\` will be expanded to an escaped backslash
 (represented in a raw string as `#!py r'\\'` or a normal string as `#!py '\\\\'`).
 
-```pycon
->>> from wmcatch import glob
->>> glob.escape('some\\path?\\**file**{}.txt', unix=False)
-'some\\\\path\\?\\\\\\*\\*file\\*\\*\\{\\}.txt'
->>> glob.globmatch('some\\path?\\**file**{}.txt', glob.escape('some\\path?\\**file**{}.txt'), flags=glob.FORCEWIN)
-True
->>> glob.escape('some/path?/**file**{}.txt', unix=False)
-'some/path\\?/\\*\\*file\\*\\*\\{\\}.txt'
->>> glob.globmatch('some\\path?\\**file**{}.txt', glob.escape('some/path?/**file**{}.txt'), flags=glob.FORCEWIN)
-True
+```py play
+from wcmatch import glob
+glob.escape('some\\path?\\**file**{}.txt', unix=False)
+glob.globmatch('some\\path?\\**file**{}.txt', glob.escape('some\\path?\\**file**{}.txt'), flags=glob.FORCEWIN)
+glob.escape('some/path?/**file**{}.txt', unix=False)
+glob.globmatch('some\\path?\\**file**{}.txt', glob.escape('some/path?/**file**{}.txt'), flags=glob.FORCEWIN)
 ```
 
 On a Windows system, meta characters are not processed in drives or UNC sharepoints except for pattern expansion meta
@@ -689,10 +630,9 @@ characters that can affect drives and UNC sharepoints; therefore, they are the o
 `escape`, when it detects or is informed that it is processing a Windows path, `escape` will properly find and handle
 drives and UNC sharepoints.
 
-```pycon
->>> from wmcatch import glob
->>> glob.escape('//./Volume{b75e2c83-0000-0000-0000-602f00000000}\Test\Foo.txt', unix=False)
-'//./Volume\\{b75e2c83-0000-0000-0000-602f00000000\\}\\\\Test\\\\Foo.txt'
+```py play
+from wcmatch import glob
+glob.escape(r'//./Volume{b75e2c83-0000-0000-0000-602f00000000}\Test\Foo.txt', unix=False)
 ```
 
 `escape` will detect the system it is running on and pick Windows escape logic or Linux/Unix logic. Since
@@ -701,8 +641,8 @@ Unix style escaping or Windows style escaping via the `unix` parameter. When `un
 detected, when `unix` is `True` Linux/Unix style escaping will be used, and when `unix` is `False` Windows style
 escaping will be used.
 
-```pycon
->>> glob.escape('some/path?/**file**{}.txt', unix=True)
+```py play
+glob.escape('some/path?/**file**{}.txt', unix=True)
 ```
 
 > [!new] New 5.0
@@ -725,11 +665,9 @@ features via `flags`. Paths and patterns are expected to be/target full paths, f
 UNC sharepoints. If `is_magic` is run on a Windows path it will always flag it as "magic" unless you convert the
 directory separators to `/` as `\` is a "magic" symbol.
 
-```pycon
->>> glob.is_magic('test')
-False
->>> glob.is_magic('[test]ing?')
-True
+```py play
+glob.is_magic('test')
+glob.is_magic('[test]ing?')
 ```
 
 When `is_magic` is called, the system it is called on is detected automatically and/or inferred from flags such as
@@ -741,11 +679,9 @@ sharepoints, so they are treated differently and cannot contain magic except in 
 2.  [`BRACE`](#brace) is enabled and either `{` or `}` are found in the drive name or UNC sharepoint.
 3.  [`SPLIT`](#split) is enabled and `|` is found in the drive name or UNC sharepoint.
 
-```pycon
->>> glob.is_magic('//?/UNC/server/mount{}/', flags=glob.FORCEWIN)
-False
->>> glob.is_magic('//?/UNC/server/mount{}/', flags=glob.FORCEWIN | glob.BRACE)
-True
+```py play
+glob.is_magic('//?/UNC/server/mount{}/', flags=glob.FORCEWIN)
+glob.is_magic('//?/UNC/server/mount{}/', flags=glob.FORCEWIN | glob.BRACE)
 ```
 
 The table below illustrates which symbols are searched for based on the given feature. Each feature adds to the
@@ -884,28 +820,21 @@ match the special directories of `.` and `..`. In order to match these special d
 literal glob patterns of `.` and `..`. This can be used in all glob API functions that accept flags, and will affect
 inclusion patterns as well as exclusion patterns.
 
-```pycon
->>> from wcmatch import glob
->>> glob.globfilter(['.', '..'], '.*')
-['.', '..']
->>> glob.globfilter(['.', '..'], '.*', flags=glob.NODOTDIR)
-[]
->>> glob.globfilter(['.', '..'], '.', flags=glob.NODOTDIR)
-['.']
->>> glob.globfilter(['.', '..'], '..', flags=glob.NODOTDIR)
-['..']
+```py play
+from wcmatch import glob
+glob.globfilter(['.', '..'], '.*')
+glob.globfilter(['.', '..'], '.*', flags=glob.NODOTDIR)
+glob.globfilter(['.', '..'], '.', flags=glob.NODOTDIR)
+glob.globfilter(['.', '..'], '..', flags=glob.NODOTDIR)
 ```
 
 Also affects exclusion patterns:
 
-```pycon
->>> from wcmatch import glob
->>> glob.glob(['..', '!.*'], flags=glob.NEGATE)
-[]
->>> glob.glob(['..', '!.*'], flags=glob.NEGATE | glob.NODOTDIR)
-['..']
->>> glob.glob(['..', '!..'], flags=glob.NEGATE | glob.NODOTDIR)
-[]
+```py play
+from wcmatch import glob
+glob.glob(['..', '!.*'], flags=glob.NEGATE)
+glob.glob(['..', '!.*'], flags=glob.NEGATE | glob.NODOTDIR)
+glob.glob(['..', '!..'], flags=glob.NEGATE | glob.NODOTDIR)
 ```
 
 > [!new] New 7.0
@@ -923,12 +852,10 @@ the returned results via [`NEGATE`](#negate), can still match `.` and `..` with 
 of whether `SCANDOTDIR` is enabled or not. It will also have no affect on [`globmatch`](#globmatch). To fundamentally
 change how glob patterns behave, you can use [`NODOTDIR`](#nodotdir).
 
-```pycon
->>> from wcmatch import glob
->>> glob.glob('.*')
-['.codecov.yml', '.tox', '.coverage', '.coveragerc', '.gitignore', '.github', '.pyspelling.yml', '.git']
->>> glob.glob('.*', flags=glob.SCANDOTDIR)
-['.', '..', '.codecov.yml', '.tox', '.coverage', '.coveragerc', '.gitignore', '.github', '.pyspelling.yml', '.git']
+```py play
+from wcmatch import glob
+glob.glob('.*')
+glob.glob('.*', flags=glob.SCANDOTDIR)
 ```
 
 > [!new] New 7.0
@@ -1016,9 +943,9 @@ number ranges.
 > 2.  `BRACE` and [`SPLIT`](#split) both expand patterns into multiple patterns. Using these two syntaxes
 >     simultaneously can exponential increase duplicate patterns:
 >
->     ```pycon
->     >>> expand('test@(this{|that,|other})|*.py', BRACE | SPLIT | EXTGLOB)
->     ['test@(this|that)', 'test@(this|other)', '*.py', '*.py']
+>     ```py play
+>     from wcmatch import _wcparse
+>     list(_wcparse.expand('test@(this{|that,|other})|*.py', glob.BRACE | glob.SPLIT | glob.EXTMATCH, 1000))
 >     ```
 >
 >     This effect is reduced as redundant, identical patterns are optimized away[^1], but when using crawling
@@ -1046,12 +973,10 @@ While `SPLIT` is not as powerful as [`BRACE`](#brace), it's syntax is very easy 
 of patterns with it, except when paired *with* [`BRACE`](#brace). See [`BRACE`](#brace) and its warnings
 related to pairing it with `SPLIT`.
 
-```pycon
->>> from wcmatch import glob
->>> glob.globmatch('test.txt', '*.txt|*.py', flags=fnmatch.SPLIT)
-True
->>> glob.globmatch('test.py', '*.txt|*.py', flags=fnmatch.SPLIT)
-True
+```py play
+from wcmatch import glob
+glob.globmatch('test.txt', '*.txt|*.py', flags=fnmatch.SPLIT)
+glob.globmatch('test.py', '*.txt|*.py', flags=fnmatch.SPLIT)
 ```
 
 #### `glob.NOUNIQUE, glob.Q` {: #nounique}
@@ -1059,12 +984,10 @@ True
 `NOUNIQUE` is used to disable Wildcard Match's unique results return. This mimics Bash's output behavior if that is
 desired.
 
-```pycon
->>> from wcmatch import glob
->>> glob.glob('{*,README}.md', flags=glob.BRACE | glob.NOUNIQUE)
-['LICENSE.md', 'README.md', 'README.md']
->>> glob.glob('{*,README}.md', flags=glob.BRACE )
-['LICENSE.md', 'README.md']
+```py play
+from wcmatch import glob
+glob.glob('{*,README}.md', flags=glob.BRACE | glob.NOUNIQUE)
+glob.glob('{*,README}.md', flags=glob.BRACE )
 ```
 
 By default, only unique paths are returned in [`glob`](#glob) and [`iglob`](#iglob). Normally this is what a
@@ -1108,9 +1031,9 @@ user name must be followed by a directory slash: `~user/more-pattern`.
 be using [`REALPATH`](#realpath) or the user path will not be expanded.
 
 ```pycon
-from wcmatch import glob
+>>> from wcmatch import glob
 >>> glob.globmatch('/home/facelessuser/', '~', flags=glob.GLOBTILDE | glob.REALPATH)
-True
+False
 ```
 
 > [!new] New 6.0
@@ -1128,12 +1051,10 @@ directory otherwise (except when [`REALPATH`](#realpath) is enabled). If you hav
 enabled, ensuring the files have trailing slashes can still save you a call to `os.path.isdir` as
 [`REALPATH`](#realpath) resorts to calling it if there is no trailing slash.
 
-```pycon
->>> from wcmatch import glob
->>> glob.glob('*', flags=glob.MARK)
-['appveyor.yml', 'base.patch', 'basematch.diff', 'docs/', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'requirements/', 'setup.cfg', 'setup.py', 'tests/', 'tools/', 'tox.ini', 'wcmatch/']
->>> glob.glob('*')
-['appveyor.yml', 'base.patch', 'basematch.diff', 'docs', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'requirements', 'setup.cfg', 'setup.py', 'tests', 'tools', 'tox.ini', 'wcmatch']
+```py play
+from wcmatch import glob
+glob.glob('*', flags=glob.MARK)
+glob.glob('*')
 ```
 
 #### `glob.MATCHBASE, glob.X` {: #matchbase}
@@ -1144,22 +1065,19 @@ any file anywhere in the tree with a matching basename. When enabled for [`globf
 start with `.` and will not match such files and directories if [`DOTGLOB`](#dotglob) is not enabled.
 
 
-```pycon
->>> from wcmatch import glob
->>> glob.glob('*.txt', flags=glob.MATCHBASE)
-['docs/src/dictionary/en-custom.txt', 'docs/src/markdown/_snippets/abbr.txt', 'docs/src/markdown/_snippets/links.txt', 'docs/src/markdown/_snippets/posix.txt', 'docs/src/markdown/_snippets/refs.txt', 'requirements/docs.txt', 'requirements/lint.txt', 'requirements/setup.txt', 'requirements/test.txt', 'requirements/tools.txt']
+```py play
+from wcmatch import glob
+glob.glob('*.txt', flags=glob.MATCHBASE)
 ```
 
 #### `glob.NODIR, glob.O` {: #nodir}
 
 `NODIR` will cause [`glob`](#glob), [`iglob`](#iglob), [`globmatch`](#globmatch), and [`globfilter`](#globfilter) to return only matched files.
 
-```pycon
->>> from wcmatch import glob
->>> glob.glob('*', flags=glob.NODIR)
-['appveyor.yml', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'setup.cfg', 'setup.py', 'spell.log', 'tox.ini']
->>> glob.glob('*')
-['appveyor.yml', 'docs', 'LICENSE.md', 'MANIFEST.in', 'mkdocs.yml', 'README.md', 'requirements', 'setup.cfg', 'setup.py', 'spell.log', 'tests', 'tools', 'tox.ini', 'wcmatch']
+```py play
+from wcmatch import glob
+glob.glob('*', flags=glob.NODIR)
+glob.glob('*')
 ```
 
 #### `glob.FORCEWIN, glob.W` {: #forcewin}

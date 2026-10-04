@@ -1,6 +1,5 @@
 # Wildcard Match
 
-
 > [!warning] Important Security Considerations!
 > Learn more [here](#security-considerations), and be thoughtful about what you provide to this library in production
 > systems.
