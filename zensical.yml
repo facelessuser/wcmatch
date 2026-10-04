@@ -8,37 +8,8 @@ copyright: |
 
 docs_dir: docs/src/markdown
 theme:
+  name: zensical_pymdownx
   custom_dir: docs/theme
-  name: material
-  icon:
-    logo: material/book-open-page-variant
-  palette:
-    # Palette toggle for system
-    - media: "(prefers-color-scheme)"
-      toggle:
-        icon: material/brightness-auto
-        name: Switch to light mode
-
-    # Palette toggle for light mode
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: deep purple
-      accent: deep purple
-      toggle:
-        icon: lucide/sun
-        name: Switch to dark mode
-
-    # Palette toggle for dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: deep purple
-      accent: deep purple
-      toggle:
-        icon: lucide/moon
-        name: Switch to light mode
-  font:
-    text: Roboto
-    code: Roboto Mono
   features:
     - announce.dismiss
     - navigation.tabs
@@ -198,12 +169,9 @@ markdown_extensions:
   - pymdownx.quotes:
       callouts: true
 
-extra_css:
-  - assets/pymdownx-extras/extra-95634471d6.css
-extra_javascript:
-  - assets/pymdownx-extras/extra-loader-Ccztcqfq.js
-
 extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/facelessuser
+  zensical_pymdownx:
+    sponsor: https://github.com/sponsors/facelessuser
