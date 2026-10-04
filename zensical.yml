@@ -87,6 +87,29 @@ markdown_extensions:
   - pymdownx.betterem:
   - pymdownx.superfences:
       preserve_tabs: true
+      custom_fences:
+        - name: py
+          class: 'highlight'
+          format: !!python/object/apply:tools.pycon.py_command_formatter
+            kwds:
+              init: |
+                import wcmatch
+                from wcmatch import fnmatch
+                from wcmatch import glob
+                from wcmatch import wcmatch
+                from wcmatch import pathlib
+          validator: !!python/name:tools.pycon.py_command_validator
+        - name: python
+          class: 'highlight'
+          format: !!python/object/apply:tools.pycon.py_command_formatter
+            kwds:
+              init: |
+                import wcmatch
+                from wcmatch import fnmatch
+                from wcmatch import glob
+                from wcmatch import wcmatch
+                from wcmatch import pathlib
+          validator: !!python/name:tools.pycon.py_command_validator
   - pymdownx.highlight:
       line_spans: __codeline
       line_anchors: __codelineno
