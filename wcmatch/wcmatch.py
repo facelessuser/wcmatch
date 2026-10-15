@@ -76,7 +76,7 @@ class WcMatch(Generic[AnyStr]):
         file_pattern: AnyStr | None = None,
         exclude_pattern: AnyStr | None = None,
         flags: int = 0,
-        limit: int = _wcparse.PATHNAME,
+        limit: int = _wcparse.PATTERN_LIMIT,
         **kwargs: Any
     ):
         """Initialize the directory walker object."""

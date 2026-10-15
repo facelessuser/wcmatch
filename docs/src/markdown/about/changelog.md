@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+-   **FIX**: Use the documented default limit of 1000 patterns in `WcMatch` instead of 32.
+
 ## 11.1
 
 -   **NEW**: Add support for Python 3.15.

@@ -572,6 +572,45 @@ class TestWcmatchSymlink(_TestWcmatch):
 class TestExpansionLimit(unittest.TestCase):
     """Test expansion limits."""
 
+    def test_default_limit_file_pattern(self):
+        """Accept file patterns up to the documented default limit."""
+
+        for count in (33, 1000):
+            for as_bytes in (False, True):
+                with self.subTest(count=count, as_bytes=as_bytes):
+                    pattern = '{1..' + str(count) + '}'
+                    root = b'.' if as_bytes else '.'
+                    if as_bytes:
+                        pattern = pattern.encode('ascii')
+                    matcher = wcmatch.WcMatch(root, pattern, flags=wcmatch.BRACE)
+                    name = str(count).encode('ascii') if as_bytes else str(count)
+                    self.assertTrue(matcher.compare_file(name))
+
+    def test_default_limit_exclude_pattern(self):
+        """Accept directory exclusions up to the documented default limit."""
+
+        for count in (33, 1000):
+            for as_bytes in (False, True):
+                with self.subTest(count=count, as_bytes=as_bytes):
+                    pattern = '{1..' + str(count) + '}'
+                    root = b'.' if as_bytes else '.'
+                    if as_bytes:
+                        pattern = pattern.encode('ascii')
+                    matcher = wcmatch.WcMatch(root, exclude_pattern=pattern, flags=wcmatch.BRACE)
+                    name = str(count).encode('ascii') if as_bytes else str(count)
+                    self.assertFalse(matcher.compare_directory(name))
+
+    def test_default_limit_exceeded(self):
+        """Reject file and exclusion patterns beyond the default limit."""
+
+        for parameter in ('file_pattern', 'exclude_pattern'):
+            for as_bytes in (False, True):
+                with self.subTest(parameter=parameter, as_bytes=as_bytes):
+                    root = b'.' if as_bytes else '.'
+                    pattern = b'{1..1001}' if as_bytes else '{1..1001}'
+                    with self.assertRaises(_wcparse.PatternLimitException):
+                        wcmatch.WcMatch(root, flags=wcmatch.BRACE, **{parameter: pattern})
+
     def test_limit_wcmatch(self):
         """Test expansion limit of `globmatch`."""
 
