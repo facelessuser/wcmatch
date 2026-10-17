@@ -3,7 +3,65 @@
 import unittest
 import re
 import copy
+import pytest
 import wcmatch._wcparse as _wcparse
+
+
+@pytest.mark.parametrize('parse', [_wcparse.compile_pattern, _wcparse.translate])
+@pytest.mark.parametrize('limit', [0, -1])
+@pytest.mark.parametrize('binary', [False, True])
+def test_unlimited_patterns_with_exclusions(parse, limit, binary):
+    """Exclusions must not enable a limit for later brace expansions."""
+
+    patterns = ['a', '{b,c}', '{d,e}']
+    exclude = ['x', '{y,z}']
+    if binary:
+        patterns = [p.encode() for p in patterns]
+        exclude = [p.encode() for p in exclude]
+    positive, negative = parse(patterns, _wcparse.BRACE, limit, exclude=exclude)
+    assert len(positive) == 5
+    assert len(negative) == 3
+
+
+@pytest.mark.parametrize('parse', [_wcparse.compile_pattern, _wcparse.translate])
+@pytest.mark.parametrize('pattern', ['a', '{a,b}'])
+@pytest.mark.parametrize('binary', [False, True])
+def test_exclusions_exhaust_pattern_limit(parse, pattern, binary):
+    """An exhausted finite budget must not become the unlimited sentinel."""
+
+    exclude = 'x'
+    if binary:
+        pattern = pattern.encode()
+        exclude = exclude.encode()
+    with pytest.raises(_wcparse.PatternLimitException):
+        parse(pattern, _wcparse.BRACE, 1, exclude=exclude)
+
+
+@pytest.mark.parametrize('parse', [_wcparse.compile_pattern, _wcparse.translate])
+@pytest.mark.parametrize('binary', [False, True])
+def test_combined_pattern_limit_boundary(parse, binary):
+    """Include and exclude patterns share a finite budget."""
+
+    patterns = ['a', '{b,c}']
+    exclude = 'x'
+    if binary:
+        patterns = [p.encode() for p in patterns]
+        exclude = exclude.encode()
+    positive, negative = parse(patterns, _wcparse.BRACE, 4, exclude=exclude)
+    assert len(positive) == 3
+    assert len(negative) == 1
+    with pytest.raises(_wcparse.PatternLimitException):
+        parse(patterns, _wcparse.BRACE, 3, exclude=exclude)
+
+
+@pytest.mark.parametrize('parse', [_wcparse.compile_pattern, _wcparse.translate])
+@pytest.mark.parametrize('binary', [False, True])
+def test_exclusion_only_at_pattern_limit(parse, binary):
+    """Using the entire budget is valid when there are no include patterns."""
+
+    positive, negative = parse([], 0, 1, exclude=b'x' if binary else 'x')
+    assert positive == []
+    assert len(negative) == 1
 
 
 class TestWcparse(unittest.TestCase):
