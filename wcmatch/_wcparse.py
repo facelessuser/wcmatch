@@ -642,15 +642,14 @@ def translate(
             flags=flags | DOTMATCH | _NO_GLOBSTAR_CAPTURE,
             limit=limit
         )[0]
-        limit -= len(negative)
 
     flags = (flags | _TRANSLATE) & FLAG_MASK
     is_unix = is_unix_style(flags)
     seen = set()
 
     try:
-        current_limit = limit
-        total = 0
+        total = len(negative)
+        current_limit = max(1, limit - total) if limit > 0 else limit
         for pattern in iter_patterns(patterns):
             pattern = util.norm_pattern(pattern, not is_unix, bool(flags & RAWCHARS))
             count = 0
@@ -665,7 +664,7 @@ def translate(
                         negative.append(WcParse(expanded[1:], flags | _NO_GLOBSTAR_CAPTURE | DOTMATCH).parse())
                     else:
                         positive.append(WcParse(expanded, flags).parse())
-            if limit:
+            if limit > 0:
                 current_limit -= count
                 if current_limit < 1:
                     current_limit = 1
@@ -707,14 +706,13 @@ def compile_pattern(
     if exclude is not None:
         flags = no_negate_flags(flags)
         negative = compile_pattern(exclude, flags=flags | DOTMATCH | _NO_GLOBSTAR_CAPTURE, limit=limit)[0]
-        limit -= len(negative)
 
     is_unix = is_unix_style(flags)
     seen = set()
 
     try:
-        current_limit = limit
-        total = 0
+        total = len(negative)
+        current_limit = max(1, limit - total) if limit > 0 else limit
         for pattern in iter_patterns(patterns):
             pattern = util.norm_pattern(pattern, not is_unix, bool(flags & RAWCHARS))
             count = 0
@@ -729,7 +727,7 @@ def compile_pattern(
                         negative.append(_compile(expanded[1:], flags | _NO_GLOBSTAR_CAPTURE | DOTMATCH))
                     else:
                         positive.append(_compile(expanded, flags))
-            if limit:
+            if limit > 0:
                 current_limit -= count
                 if current_limit < 1:
                     current_limit = 1

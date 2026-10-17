@@ -3,6 +3,8 @@
 ## Unreleased
 
 -   **FIX**: Use the documented default limit of 1000 patterns in `WcMatch` instead of 32.
+-   **FIX**: Preserve unlimited pattern expansion with exclusions in compiled matchers and translation, and enforce
+    finite limits when exclusions consume the entire pattern budget.
 
 ## 11.1
 
