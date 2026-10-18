@@ -1539,7 +1539,6 @@ class WcParse(Generic[AnyStr]):
                     (_EXCLA_GROUP_CLOSE.format(str(current[index])))
                 )
             index -= 1
-        self.inv_ext = 0
 
     def parse_extend(
         self,
