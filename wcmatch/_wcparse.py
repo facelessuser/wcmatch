@@ -1538,6 +1538,7 @@ class WcParse(Generic[AnyStr]):
                     (''.join(content).replace('(?#)', '?:') if self.capture else ''.join(content)) +
                     (_EXCLA_GROUP_CLOSE.format(str(current[index])))
                 )
+                self.inv_ext -= 1
             index -= 1
 
     def parse_extend(
