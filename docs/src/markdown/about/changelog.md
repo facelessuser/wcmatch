@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+-   **FIX**: Apply one pattern limit to includes and exclusions when scanning with `glob` and `iglob`, and preserve
+    unlimited expansion across multiple patterns with negative limits.
 -   **FIX**: Use the documented default limit of 1000 patterns in `WcMatch` instead of 32.
 -   **FIX**: Preserve unlimited pattern expansion with exclusions in compiled matchers and translation, and enforce
     finite limits when exclusions consume the entire pattern budget.

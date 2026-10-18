@@ -1779,6 +1779,74 @@ class TestExpansionLimit(unittest.TestCase):
             )
 
 
+@pytest.mark.parametrize('globber', [glob.glob, glob.iglob], ids=['glob', 'iglob'])
+@pytest.mark.parametrize('encode', [str, os.fsencode], ids=['str', 'bytes'])
+@pytest.mark.parametrize(
+    'patterns, exclude, flags, limit',
+    [
+        (['a'], ['b'], 0, 1),
+        (['a', 'b'], ['c'], 0, 2),
+        (['a'], ['b', 'c'], 0, 2),
+        (['a'], ['a'], 0, 1),
+        (['a', 'a'], ['b'], 0, 2),
+        (['{a,b}'], ['c'], glob.BRACE, 2),
+        (['a'], ['{b,c}'], glob.BRACE, 2),
+        (['a|b'], ['c'], glob.SPLIT, 2),
+        (['a'], ['b|c'], glob.SPLIT, 2)
+    ],
+    ids=['single', 'includes', 'excludes', 'overlap', 'duplicates',
+         'brace-includes', 'brace-excludes', 'split-includes', 'split-excludes']
+)
+def test_glob_exclude_shares_limit(globber, encode, patterns, exclude, flags, limit, tmp_path):
+    """Count include and exclude expansions against one budget before scanning."""
+
+    with pytest.raises(_wcparse.PatternLimitException):
+        list(globber(
+            [encode(p) for p in patterns],
+            exclude=[encode(p) for p in exclude],
+            root_dir=encode(str(tmp_path)),
+            flags=flags,
+            limit=limit
+        ))
+
+
+@pytest.mark.parametrize('globber', [glob.glob, glob.iglob], ids=['glob', 'iglob'])
+@pytest.mark.parametrize('encode', [str, os.fsencode], ids=['str', 'bytes'])
+@pytest.mark.parametrize('limit', [0, -1], ids=['zero', 'negative'])
+@pytest.mark.parametrize('exclude', [None, 'c'], ids=['without-exclude', 'with-exclude'])
+def test_glob_unlimited_multiple_patterns(globber, encode, limit, exclude, tmp_path):
+    """Keep unlimited brace expansion after processing an earlier pattern."""
+
+    for name in ('a', 'b', 'c'):
+        (tmp_path / name).touch()
+    results = list(globber(
+        [encode('a'), encode('{b,c}')],
+        exclude=encode(exclude) if exclude is not None else None,
+        root_dir=encode(str(tmp_path)),
+        flags=glob.BRACE,
+        limit=limit
+    ))
+    expected = ('a', 'b', 'c') if exclude is None else ('a', 'b')
+    assert sorted(results) == [encode(name) for name in expected]
+
+
+@pytest.mark.parametrize('globber', [glob.glob, glob.iglob], ids=['glob', 'iglob'])
+@pytest.mark.parametrize('encode', [str, os.fsencode], ids=['str', 'bytes'])
+@pytest.mark.parametrize('extra_flags', [0, glob.NODIR], ids=['default', 'nodir'])
+def test_glob_exclude_limit_boundary(globber, encode, extra_flags, tmp_path):
+    """Allow the exact budget and do not charge an implicit directory filter."""
+
+    for name in ('a', 'b', 'c'):
+        (tmp_path / name).touch()
+    assert list(globber(
+        encode('{a,b}'),
+        exclude=encode('b'),
+        root_dir=encode(str(tmp_path)),
+        flags=glob.BRACE | extra_flags,
+        limit=3
+    )) == [encode('a')]
+
+
 class TestInputTypes(unittest.TestCase):
     """Test input types."""
 
