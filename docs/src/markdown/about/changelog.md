@@ -7,6 +7,8 @@
 -   **FIX**: Use the documented default limit of 1000 patterns in `WcMatch` instead of 32.
 -   **FIX**: Preserve unlimited pattern expansion with exclusions in compiled matchers and translation, and enforce
     finite limits when exclusions consume the entire pattern budget.
+-   **FIX**: Fix an invalid regular expression error when an `EXTGLOB`/`EXTMATCH` inverse group, `!(...)`, is followed
+    by an extended group that contains another extended group, e.g. `!(a)@(b|*(c))`.
 
 ## 11.1
 

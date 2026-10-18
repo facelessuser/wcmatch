@@ -159,6 +159,11 @@ class TestFnMatch:
         ['!(2)_@(foo|bar)', '1_foo', True, fnmatch.E],
         ['!(!(2|3))_@(foo|bar)', '2_foo', True, fnmatch.E],
 
+        # Negation list followed by extended list that contains another extended list
+        ['!(2)_@(foo|*(bar))', '1_foo', True, fnmatch.E],
+        ['!(2)_@(foo|*(bar))', '2_foo', False, fnmatch.E],
+        ['!(2)_@(foo|!(bar))', '1_foo', True, fnmatch.E],
+
         # Nested extended list reduction cases
         ['!(!(2|3))_@(foo|bar)', '2_foo', True, fnmatch.E],
         ['@(!(2))_!(!(foo|bar))', '1_foo', True, fnmatch.E],

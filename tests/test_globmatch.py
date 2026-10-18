@@ -972,6 +972,8 @@ class TestGlobMatch:
         ['!(but !(this ))@(okay)', 'but this okay', True, glob.N],
         ['!(not)!( this)@( okay)', 'but this okay', True, glob.N],
         ['@(but!( that))@( okay)', "but this okay", True, glob.N],
+        ['!(not )@(this|+(that))', 'but this', True, glob.N],
+        ['!(not )@(this|+(that))', 'not this', False, glob.N],
         ['!(@(but!( that))@( okay))', "but this okay", False, glob.N],
 
         # Dot logic
