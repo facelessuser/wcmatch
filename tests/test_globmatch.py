@@ -976,6 +976,13 @@ class TestGlobMatch:
         ['!(not )@(this|+(that))', 'not this', False, glob.N],
         ['!(@(but!( that))@( okay))', "but this okay", False, glob.N],
 
+        # A star directly before an extended star list does not swallow the list
+        ['a**(b)', 'abb', True],
+        ['**(a|b)b', 'b', True],
+        ['x/**(a|b)b', 'x/b', True],
+        ['***(a|b)b', 'b', True, glob.GL],
+        ['x/***(a|b)b', 'x/b', True, glob.GL],
+
         # Dot logic
         ['+([a.])', '.a', False],
         ['+([a.])', 'a.', True],

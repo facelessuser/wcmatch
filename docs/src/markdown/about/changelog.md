@@ -12,6 +12,8 @@
     finite limits when exclusions consume the entire pattern budget.
 -   **FIX**: Fix an invalid regular expression error when an `EXTGLOB`/`EXTMATCH` inverse group, `!(...)`, is followed
     by an extended group that contains another extended group, e.g. `!(a)@(b|*(c))`.
+-   **FIX**: Fix an `EXTGLOB`/`EXTMATCH` star group, `*(...)`, being matched as literal text when it directly follows
+    another `*`, e.g. `a**(b)`.
 
 ## 11.1
 
