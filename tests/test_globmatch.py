@@ -1210,11 +1210,93 @@ class TestGlobMatchSpecial(unittest.TestCase):
         flags = self.flags
         flags |= glob.FORCEUNIX
 
-        value = (['^(?s:(?=[^/])(?!(?:(?<=[/])|(?<=^))(?:\\.{1,2})(?:$|[/]))(?:(?!\\.)[^/]*?)?test[^/]*?[/]*?)$'], [])
+        value = (
+            ['^(?s:(?>(?=[^/])(?!(?:(?<=[/])|(?<=^))(?:\\.{1,2})(?:$|[/]))(?:(?!\\.)[^/]*?)?test)[^/]*?[/]*?)$'],
+            []
+        )
         self.assertEqual(
             glob.translate('****test****', flags=flags),
             value
         )
+
+    def test_atomic_stars_inverse_with_separator(self):
+        """Test that atomic stars do not break `!(...)` groups when followed by a path separator."""
+
+        flags = self.flags | glob.FORCEUNIX
+
+        for pattern, path in (
+            ('*!(a)*b*c/d', 'xbyc/d'),
+            ('*!(a)*b*c/d', 'xyb c/d'),
+            ('*!(a)b*c/d', 'xbyc/d'),
+            ('!(a)*b*c/d', 'xbyc/d'),
+            ('*!(a)*b*c*d/x', 'xbycd/x')
+        ):
+            with self.subTest(pattern=pattern, path=path):
+                self.assertTrue(glob.globmatch(path, pattern, flags=flags))
+
+        self.assertFalse(glob.globmatch('xbyc/e', '*!(a)*b*c/d', flags=flags))
+        self.assertFalse(glob.globmatch('xyc/d', '*!(a)*b*c/d', flags=flags))
+
+    def test_atomic_stars_variable_length_groups(self):
+        """Test that atomic stars are not applied to segments containing variable length extended groups."""
+
+        flags = self.flags | glob.FORCEUNIX
+
+        for pattern, path in (
+            ('*@(abcd|b)*c*', 'abcd'),
+            ('*?(ab)*b*', 'ab'),
+            ('*+(ab|a)*b*', 'ab'),
+            ('*@(abcd|b)*c*/d', 'abcd/d'),
+            ('*?(ab)*b*/d', 'ab/d'),
+            ('*(ab)*b*c*', 'abc'),
+            ('**?(ab)*b**', 'ab')
+        ):
+            with self.subTest(pattern=pattern, path=path):
+                self.assertTrue(glob.globmatch(path, pattern, flags=flags))
+
+        self.assertFalse(glob.globmatch('abcd', '*@(abcd|b)*e*', flags=flags))
+
+    def test_atomic_stars_translate_with_extglob(self):
+        """Test that only segments without extended groups are made atomic."""
+
+        flags = self.flags | glob.FORCEUNIX | glob.NEGATE
+
+        def translate(pattern):
+            return glob.translate(pattern, flags=flags)[0][0]
+
+        # The first segment contains an extended group, so it is left alone (the leading star is where the
+        # atomic group would begin), but the following segment is still atomic.
+        for pattern in ('*@(abcd|b)*c*', '*?(ab)*b*', '*+(ab|a)*b*', '*!(a)*b*c'):
+            with self.subTest(pattern=pattern):
+                regex = translate(pattern)
+                self.assertNotIn('(?>(?=', regex)
+                self.assertIn('(?>[^/]*?', regex)
+
+        # Extended group before the first star or after the last star does not matter.
+        self.assertEqual(translate('@(a|b)*c*d*e').count('(?>'), 2)
+        self.assertEqual(translate('*c*d*e@(a|b)').count('(?>'), 2)
+
+        # Segments without extended groups are still atomic, even if another segment has one.
+        self.assertEqual(translate('*a*@(b|c)*d*e').count('(?>'), 2)
+        self.assertIn('(?>(?=', translate('*a*b*@(b|c)*d*e'))
+
+        # Stars inside extended groups are never atomic.
+        self.assertNotIn('(?>', translate('@(*a*b*c)'))
+
+    def test_atomic_stars_extglob_equivalence(self):
+        """Test patterns with extended groups produce the same results as the unoptimized expression."""
+
+        flags = self.flags | glob.FORCEUNIX
+
+        # These are only expected to behave as the plain regular expression would.
+        for pattern, path, expected in (
+            ('a*@(b|c)*d*e', 'abxdyze', True),
+            ('a*@(b|c)*d*e', 'axxdyze', False),
+            ('*a*!(b)*c*d', 'xaybzcwd', True),
+            ('*+(a)*+(b)*c', 'aabbc', True),
+        ):
+            with self.subTest(pattern=pattern, path=path):
+                self.assertEqual(glob.globmatch(path, pattern, flags=flags), expected)
 
     def test_glob_parsing_nix(self):
         """Test wildcard parsing."""
@@ -2090,6 +2172,38 @@ class TestPerformance(unittest.TestCase):
         dt = None
         try:
             glob.compile("@(" * 900, flags=glob.E)
+            dt = time.perf_counter() - t
+        except Timeout:
+            pass
+        finally:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+
+        hung = dt is None
+        print(
+            f"{'> %.0f s (HANG)' % LIMIT if hung else '%.3f s' % dt}"
+        )
+        self.assertTrue(not hung and dt < 1.0)
+
+    def test_performance_consecutive_stars(self):
+        """Test performance of multiple stars separated by literals."""
+
+        if sys.version_info < (3, 11):
+            self.skipTest('atomic groups require Python 3.11+')
+
+        import signal
+        import time
+
+        LIMIT = 5.0
+
+        class Timeout(Exception):
+            pass
+
+        signal.signal(signal.SIGALRM, lambda *_: (_ for _ in ()).throw(Timeout()))
+        signal.setitimer(signal.ITIMER_REAL, LIMIT)
+        t = time.perf_counter()
+        dt = None
+        try:
+            self.assertFalse(glob.globmatch('_' * 1000, '*_*_*_*_*.csv', flags=glob.FORCEUNIX))
             dt = time.perf_counter() - t
         except Timeout:
             pass

@@ -87,4 +87,7 @@ matrix:
       # Ignore text between inline back ticks
       - open: '(?P<open>`+)'
         close: '(?P=open)'
+      # Ignore `'s`'
+      - open: '(?<=\w)''s(?!\w)'
+        close: '\b'
   - pyspelling.filters.url:

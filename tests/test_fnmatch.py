@@ -935,6 +935,23 @@ class TestExtendedCases(unittest.TestCase):
             print(f"{pat1} <=> {pat2}")
             raise
 
+    def test_atomic_stars_with_extended_groups(self):
+        """Test that atomic stars do not cause lost matches or broken expressions with extended groups."""
+
+        flags = fnmatch.E
+
+        for pattern, name in (
+            ('*@(abcd|b)*c*', 'abcd'),
+            ('*?(ab)*b*', 'ab'),
+            ('*+(ab|a)*b*', 'ab'),
+            ('*!(a)*b*c/d', 'xbyc/d'),
+            ('*!(a)b*c/d', 'xbyc/d'),
+        ):
+            with self.subTest(pattern=pattern, name=name):
+                self.assertTrue(fnmatch.fnmatch(name, pattern, flags=flags))
+
+        self.assertFalse(fnmatch.fnmatch('abcd', '*@(abcd|b)*e*', flags=flags))
+
     def test_and(self):
         """Test reduction of the `@` group and other groups."""
 

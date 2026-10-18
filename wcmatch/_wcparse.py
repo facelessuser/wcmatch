@@ -314,7 +314,15 @@ class ExtPromote(str):
 
 
 class InvPlaceholder(str):
-    """Placeholder for inverse pattern !(...)."""
+    """Placeholder for inverse pattern `!(...)`."""
+
+
+class AtomicStar(str):
+    """Track `*` as needing to be an atomic `*`."""
+
+
+class ExtGroup(str):
+    """Track a top level extended glob group."""
 
 
 class PathNameException(Exception):
@@ -939,6 +947,7 @@ class WcParse(Generic[AnyStr]):
         self.capture = self.translate and bool(flags & CAPTURE)
         self.case_sensitive = get_case(flags)
         self.in_list = False
+        self.emitted_star = -1
         self.inv_nest = False
         self.flags = flags
         self.inv_ext = 0
@@ -1508,6 +1517,10 @@ class WcParse(Generic[AnyStr]):
                 current.append(sep)
             self.set_start_dir()
         else:
+            if not self.in_list:
+                if self.emitted_star == -1:
+                    self.emitted_star = len(current)
+                value = AtomicStar(value)
             current.append(value)
 
     def clean_up_inverse(self, current: list[str], nested: bool = False) -> None:
@@ -1692,18 +1705,27 @@ class WcParse(Generic[AnyStr]):
                     temp_ext_empty = True
 
             # Finalize groups of varying types.
+            # Groups at the top level are tracked so atomic `*` segments can avoid them.
             elif list_type == '?':
-                current.append((_QMARK_CAPTURE_GROUP if self.capture else _QMARK_GROUP).format(''.join(extended)))
+                current.append(
+                    ExtGroup((_QMARK_CAPTURE_GROUP if self.capture else _QMARK_GROUP).format(''.join(extended)))
+                )
             elif list_type == '*':
-                current.append((_STAR_CAPTURE_GROUP if self.capture else _STAR_GROUP).format(''.join(extended)))
+                current.append(
+                    ExtGroup((_STAR_CAPTURE_GROUP if self.capture else _STAR_GROUP).format(''.join(extended)))
+                )
             elif list_type == '+':
-                current.append((_PLUS_CAPTURE_GROUP if self.capture else _PLUS_GROUP).format(''.join(extended)))
+                current.append(
+                    ExtGroup((_PLUS_CAPTURE_GROUP if self.capture else _PLUS_GROUP).format(''.join(extended)))
+                )
             elif list_type == '@':
-                current.append((_CAPTURE_GROUP if self.capture else _GROUP).format(''.join(extended)))
+                current.append(ExtGroup((_CAPTURE_GROUP if self.capture else _GROUP).format(''.join(extended))))
             elif list_type == '!':
                 self.inv_ext += 1
                 # If pattern is at the end, anchor the match to the end.
-                current.append((_EXCLA_CAPTURE_GROUP if self.capture else _EXCLA_GROUP).format(''.join(extended)))
+                current.append(
+                    ExtGroup((_EXCLA_CAPTURE_GROUP if self.capture else _EXCLA_GROUP).format(''.join(extended)))
+                )
                 if self.pathname:
                     if not temp_after_start or self.match_dot_dir:
                         star = self.path_star
@@ -1770,6 +1792,50 @@ class WcParse(Generic[AnyStr]):
         except StopIteration:
             pass
 
+    def atomic_stars(self, parts: list[str]) -> None:
+        """
+        Wrap non-extended-glob single stars, except the last, in atomic groups.
+
+        Similar to CPython's `fnmatch` fix for multi-`*` backtracking.
+
+        A star and everything up to the next star is made atomic only if it is of fixed length.
+        Only then is the first match of the segment guaranteed to be as good as any other,
+        as the next star can absorb any difference.
+
+        Extended glob patterns are variable by nature, so if the segments contains
+        extended glob groups, the star is left as is.
+        """
+
+        # No stars were emitted; nothing to do.
+        if self.emitted_star == -1:
+            return
+
+        # Create atomic groups that contain the current star up to the next star
+        start = -1
+        for r in range(self.emitted_star, len(parts)):
+            part = parts[r]
+            # Start an atomic star
+            if start == -1:
+                if isinstance(part, AtomicStar):
+                    start = r
+            # Reject a segment if it contains extended glob groups
+            elif isinstance(part, ExtGroup):
+                parts[start] = str(parts[start])
+                start = -1
+            # Found next star; complete atomic group and start next atomic star
+            elif isinstance(part, AtomicStar):
+                end = r - 1
+                parts[start] = f'(?>{parts[start]}'
+                parts[end] = f'{parts[end]})'
+                start = r
+
+        # Current star is the last star; no need to create an atomic star
+        if start > -1:
+            parts[start] = str(parts[start])
+
+        # All valid atomic stars handled
+        self.emitted_star = -1
+
     def root(self, pattern: str, current: list[str]) -> None:
         """Start parsing the pattern."""
 
@@ -1818,6 +1884,7 @@ class WcParse(Generic[AnyStr]):
             elif c == '/':
                 if self.pathname:
                     self.set_start_dir()
+                    self.atomic_stars(current)
                     self.clean_up_inverse(current)
                     current.append(self.sep + _ONE_OR_MORE)
                     self.consume_path_sep(i)
@@ -1831,6 +1898,7 @@ class WcParse(Generic[AnyStr]):
                 try:
                     value = self._references(i)
                     if self.dir_start:
+                        self.atomic_stars(current)
                         self.clean_up_inverse(current)
                         self.consume_path_sep(i)
                         self.matchbase = False
@@ -1853,6 +1921,7 @@ class WcParse(Generic[AnyStr]):
 
             self.update_dir_state()
 
+        self.atomic_stars(current)
         self.clean_up_inverse(current)
 
         if self.pathname:

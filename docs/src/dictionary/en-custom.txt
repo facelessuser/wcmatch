@@ -1,6 +1,7 @@
 API
 Accessors
 Backport
+CPython
 Changelog
 EXTGLOB
 EXTMATCH
@@ -94,6 +95,7 @@ un
 unclosed
 unfound
 unintuitive
+unoptimized
 unordered
 untrusted
 validator

@@ -1,7 +1,10 @@
 # Changelog
 
-## Unreleased
+## 11.2
 
+-   **NEW**: Drop support for Python 3.10.
+-   **FIX**: Improve performance when multiple `*` are used for file name matching. Performance is only improved in
+    cases where variable length `EXTGLOB` patterns would not interfere with matching. Issue found by (@gistrec).
 -   **FIX**: Apply one pattern limit to includes and exclusions when scanning with `glob` and `iglob`, and preserve
     unlimited expansion across multiple patterns with negative limits.
 -   **FIX**: Use the documented default limit of 1000 patterns in `WcMatch` instead of 32.
