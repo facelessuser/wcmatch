@@ -1030,7 +1030,7 @@ class WcParse(Generic[AnyStr]):
                 value = self.seq_path_group_dot + self.seq_path
             else:
                 value = self.seq_path
-            if self.after_start:
+            if self.after_start and not after_ext:
                 value = self.no_dir + value
         else:
             value = (_NO_DOT if not self.in_list else _GROUP_NO_DOT) if self.after_start and not self.dot else ""
@@ -1429,8 +1429,8 @@ class WcParse(Generic[AnyStr]):
                 globstar = self.path_gstar_dot1
             else:
                 star = self.path_star
-                if after_ext:
-                    current.append(self.no_dir + (self.seq_path_group_dot if not self.dot else ''))
+                if after_ext and not self.dot:
+                    current.append(self.seq_path_group_dot)
                 globstar = self.path_gstar_dot1
             capture = self.globstar_capture
         else:
