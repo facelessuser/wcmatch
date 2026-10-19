@@ -814,8 +814,10 @@ class Glob(Generic[AnyStr]):
             return True
 
         unique = False
-        if (path.lower() if not self.case_sensitive else path) not in self.seen:
-            self.seen.add(path)
+        # Paths that only differ by case are the same file only when the file system ignores case.
+        key = path if _wcparse.is_case_sensitive(self.flags) else path.lower()
+        if key not in self.seen:
+            self.seen.add(key)
             unique = True
         return unique
 
