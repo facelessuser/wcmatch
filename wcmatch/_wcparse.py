@@ -1436,7 +1436,7 @@ class WcParse(Generic[AnyStr]):
             skip = True
             try:
                 c = next(i)
-                if c != '*':
+                if c != '*' or (self.extend and i.match(RE_EXT_GROUP, False)):
                     i.rewind(1)
                     raise StopIteration
                 skip = False
@@ -1445,7 +1445,7 @@ class WcParse(Generic[AnyStr]):
                 # Capturing groups are used to filter out symlinks, but triple stars force symlinks.
                 if self.globstarlong:
                     c = next(i)
-                    if c != '*':
+                    if c != '*' or (self.extend and i.match(RE_EXT_GROUP, False)):
                         i.rewind(1)
                         raise StopIteration
                     capture = False
@@ -1491,10 +1491,10 @@ class WcParse(Generic[AnyStr]):
             if self.after_start:
                 value = self.need_char + value
 
-            # Consume duplicate starts
+            # Consume duplicate starts, but leave a star that opens an extended group
             try:
                 c = next(i)
-                while c == '*':
+                while c == '*' and not (self.extend and i.match(RE_EXT_GROUP, False)):
                     c = next(i)
                 i.rewind(1)
             except StopIteration:

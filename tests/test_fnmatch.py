@@ -164,6 +164,11 @@ class TestFnMatch:
         ['!(2)_@(foo|*(bar))', '2_foo', False, fnmatch.E],
         ['!(2)_@(foo|!(bar))', '1_foo', True, fnmatch.E],
 
+        # A star directly before an extended star list does not swallow the list
+        ['**(a|b)b', 'b', True, fnmatch.E],
+        ['a**(b)', 'a', True, fnmatch.E],
+        ['a**(b)', 'abb', True, fnmatch.E],
+
         # Nested extended list reduction cases
         ['!(!(2|3))_@(foo|bar)', '2_foo', True, fnmatch.E],
         ['@(!(2))_!(!(foo|bar))', '1_foo', True, fnmatch.E],
