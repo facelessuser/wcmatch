@@ -489,6 +489,9 @@ class Testglob(_TestGlob):
         # Glob with braces and "unique" turned off
         [('{a*,a*}',), [('a',), ('aab',), ('aaa',), ('a',), ('aab',), ('aaa',)], glob.Q],
 
+        # Glob with braces and "unique" on while ignoring case
+        [('{E*,*F}',), [('EF',)], glob.I],
+
         # Test recursive glob logic with no symlink following.
         [
             ('**', '*'),
@@ -1403,6 +1406,15 @@ class TestCase(_TestGlob):
             pytest.skip("Skipped")
         else:
             assert len(glob.glob('*', root_dir=self.tempdir)) == 2
+
+    @pytest.mark.parametrize('patterns', ['*', ['a*', 'A*']], ids=['single', 'multiple'])
+    def test_case_unique(self, patterns):
+        """Test files that only differ by case are both returned when ignoring case."""
+
+        if len(os.listdir(self.tempdir)) == 1:
+            pytest.skip("Skipped")
+        else:
+            assert sorted(glob.glob(patterns, flags=glob.I, root_dir=self.tempdir)) == ['A', 'a']
 
 
 class TestGlobCornerCase(_TestGlob):

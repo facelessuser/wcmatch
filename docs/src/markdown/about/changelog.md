@@ -14,6 +14,9 @@
     by an extended group that contains another extended group, e.g. `!(a)@(b|*(c))`.
 -   **FIX**: Fix an `EXTGLOB`/`EXTMATCH` star group, `*(...)`, being matched as literal text when it directly follows
     another `*`, e.g. `a**(b)`.
+-   **FIX**: Fix `glob` and `iglob` returning the same path twice when two patterns find it and case is ignored, e.g.
+    `['A*', '*b']` with `IGNORECASE` and a file named `Ab`. Files that only differ by case are no longer treated as
+    duplicates when the file system is case sensitive.
 
 ## 11.1
 
