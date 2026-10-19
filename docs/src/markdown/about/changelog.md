@@ -17,6 +17,9 @@
 -   **FIX**: Fix `glob` and `iglob` returning the same path twice when two patterns find it and case is ignored, e.g.
     `['A*', '*b']` with `IGNORECASE` and a file named `Ab`. Files that only differ by case are no longer treated as
     duplicates when the file system is case sensitive.
+-   **FIX**: According to Bash, a file name that starts with an extended group should never match `.` or `..`.
+-   **FIX**: Preserve leading-dot restrictions for wildcards after extended groups that can match an empty string,
+    such as `?(a)*`, and avoid returning `.` and `..` from these directory scans.
 
 ## 11.1
 

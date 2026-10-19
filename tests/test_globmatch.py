@@ -655,32 +655,32 @@ class TestGlobFilter:
         ['!(?)', ['abc'], glob.M],
         ['!(*)', [], glob.M],
         ['!([.])', ['abc'], glob.M],
-        ['!(.)', ['..', '.abc', 'abc'], glob.M | glob.D],
-        [R'!(\.)', ['..', '.abc', 'abc'], glob.M | glob.D],
-        [R'!(\x2e)', ['..', '.abc', 'abc'], glob.M | glob.R | glob.D],
-        ['@(!(.))', ['..', '.abc', 'abc'], glob.M | glob.D],
-        ['!(@(.))', ['..', '.abc', 'abc'], glob.M | glob.D],
-        ['+(!(.))', ['..', '.abc', 'abc'], glob.M | glob.D],
+        ['!(.)', ['.abc', 'abc'], glob.M | glob.D],
+        [R'!(\.)', ['.abc', 'abc'], glob.M | glob.D],
+        [R'!(\x2e)', ['.abc', 'abc'], glob.M | glob.R | glob.D],
+        ['@(!(.))', ['.abc', 'abc'], glob.M | glob.D],
+        ['!(@(.))', ['.abc', 'abc'], glob.M | glob.D],
+        ['+(!(.))', ['.abc', 'abc'], glob.M | glob.D],
         ['+(!(.))', ['.abc', 'abc'], glob.M | glob.D | glob.Z],
         ['!(+(.))', ['.abc', 'abc'], glob.M | glob.D],
         ['!(?)', ['.abc', 'abc'], glob.M | glob.D],
         ['!(*)', [], glob.M | glob.D],
         ['!([.])', ['.abc', 'abc'], glob.M | glob.D],
-        ['@(..|.)', ['.', '..']],
-        ['@(..|.)', ['.', '..'], glob.Z],
+        ['@(..|.)', []],
+        ['@(..|.)', [], glob.Z],
 
         # More extended pattern dot related tests
-        ['*(.)', ['.', '..']],
-        [R'*(\.)', ['.', '..']],
+        ['*(.)', []],
+        [R'*(\.)', []],
         ['*([.])', []],
         ['*(?)', ['abc']],
-        ['@(.?)', ['..']],
+        ['@(.?)', []],
         ['@(?.)', []],
-        ['*(.)', ['.', '..'], glob.D],
-        [R'*(\.)', ['.', '..'], glob.D],
+        ['*(.)', [], glob.D],
+        [R'*(\.)', [], glob.D],
         ['*([.])', [], glob.D],
         ['*(?)', ['.abc', 'abc'], glob.D],
-        ['@(.?)', ['..'], glob.D],
+        ['@(.?)', [], glob.D],
         ['@(?.)', [], glob.D],
 
         GlobFiles(['folder/abc', 'directory/abc', 'dir/abc']),
@@ -2222,3 +2222,51 @@ class TestPerformance(unittest.TestCase):
             f"{'> %.0f s (HANG)' % LIMIT if hung else '%.3f s' % dt}"
         )
         self.assertTrue(not hung and dt < 1.0)
+
+
+@pytest.mark.parametrize('pattern', ['?(a)*', '*(a)?hidden', '@(a|)[.]hidden', '+(a|)*'])
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('capture', [False, True])
+@pytest.mark.parametrize('dotmatch', [False, True])
+def test_optional_group_wildcard_dotmatch(pattern, as_bytes, capture, dotmatch):
+    """Wildcards still need `DOTMATCH` when an earlier group consumes no text."""
+
+    flags = glob.EXTMATCH | glob.FORCEUNIX
+    if capture:
+        flags |= glob.CAPTURE
+    if dotmatch:
+        flags |= glob.DOTMATCH
+    hidden, visible = '.hidden', 'a.hidden'
+    if as_bytes:
+        pattern, hidden, visible = pattern.encode(), hidden.encode(), visible.encode()
+
+    assert glob.globmatch(hidden, pattern, flags=flags) is dotmatch
+    assert glob.globmatch(visible, pattern, flags=flags)
+
+
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('capture', [False, True])
+def test_optional_group_literal_dot(as_bytes, capture):
+    """A literal dot after an empty group continues to match hidden names."""
+
+    flags = glob.EXTMATCH | glob.FORCEUNIX
+    if capture:
+        flags |= glob.CAPTURE
+    pattern, hidden, visible = '?(a).hidden', '.hidden', 'a.hidden'
+    if as_bytes:
+        pattern, hidden, visible = pattern.encode(), hidden.encode(), visible.encode()
+
+    assert glob.globmatch(hidden, pattern, flags=flags)
+    assert glob.globmatch(visible, pattern, flags=flags)
+
+
+@pytest.mark.parametrize('windows', [False, True])
+@pytest.mark.parametrize('pattern', ['?(a)*', '*(a)?hidden', '@(a|)[.]hidden', '+(a|)*'])
+def test_optional_group_after_separator(pattern, windows):
+    """Dot restrictions also apply at the start of later path components."""
+
+    flags = glob.EXTGLOB | (glob.FORCEWIN if windows else glob.FORCEUNIX)
+    separator = '\\' if windows else '/'
+
+    assert not glob.globmatch('root' + separator + '.hidden', 'root/' + pattern, flags=flags)
+    assert glob.globmatch('root' + separator + 'a.hidden', 'root/' + pattern, flags=flags)

@@ -1859,6 +1859,26 @@ def test_glob_exclude_limit_boundary(globber, encode, extra_flags, tmp_path):
     )) == [encode('a')]
 
 
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('dotmatch', [False, True])
+def test_optional_group_glob_directory(tmp_path, as_bytes, dotmatch):
+    """Directory scans omit hidden entries unless `DOTMATCH` is requested."""
+
+    for name in ['.hidden', 'a.hidden', 'visible']:
+        (tmp_path / name).touch()
+    flags = glob.EXTGLOB
+    expected = ['a.hidden', 'visible']
+    if dotmatch:
+        flags |= glob.DOTMATCH
+        expected.insert(0, '.hidden')
+    pattern, root_dir = '?(a)*', str(tmp_path)
+    if as_bytes:
+        pattern, root_dir = pattern.encode(), os.fsencode(root_dir)
+        expected = [name.encode() for name in expected]
+
+    assert sorted(glob.glob(pattern, root_dir=root_dir, flags=flags)) == expected
+
+
 class TestInputTypes(unittest.TestCase):
     """Test input types."""
 

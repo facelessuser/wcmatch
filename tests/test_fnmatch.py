@@ -123,7 +123,7 @@ class TestFnMatch:
         ['*(?|.)abc', '.abc', True, fnmatch.E],
         ['*(?|*)abc', '.abc', True, fnmatch.E],
         ['!(test)', '.abc', True, fnmatch.E],
-        ['!(test)', '..', True, fnmatch.E],
+        ['!(test)', '..', False, fnmatch.E],
         ['+([a.])', '.a', True, fnmatch.E],
         ['+([a.])', 'a.', True, fnmatch.E],
         ['+([a.])', 'a..', True, fnmatch.E],
@@ -1164,3 +1164,39 @@ class TestPrecompile(unittest.TestCase):
         m5 = copy.copy(m1)
         self.assertTrue(m1 == m5)
         self.assertTrue(m5 in {m1})
+
+
+@pytest.mark.parametrize('pattern', ['?(a)*', '*(a)?hidden', '@(a|)[.]hidden', '+(a|)*'])
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('capture', [False, True])
+@pytest.mark.parametrize('dotmatch', [False, True])
+def test_optional_group_wildcard_dotmatch(pattern, as_bytes, capture, dotmatch):
+    """Wildcards still need `DOTMATCH` when an earlier group consumes no text."""
+
+    flags = fnmatch.EXTMATCH | fnmatch.FORCEUNIX
+    if capture:
+        flags |= fnmatch.CAPTURE
+    if dotmatch:
+        flags |= fnmatch.DOTMATCH
+    hidden, visible = '.hidden', 'a.hidden'
+    if as_bytes:
+        pattern, hidden, visible = pattern.encode(), hidden.encode(), visible.encode()
+
+    assert fnmatch.fnmatch(hidden, pattern, flags=flags) is dotmatch
+    assert fnmatch.fnmatch(visible, pattern, flags=flags)
+
+
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('capture', [False, True])
+def test_optional_group_literal_dot(as_bytes, capture):
+    """A literal dot after an empty group continues to match hidden names."""
+
+    flags = fnmatch.EXTMATCH | fnmatch.FORCEUNIX
+    if capture:
+        flags |= fnmatch.CAPTURE
+    pattern, hidden, visible = '?(a).hidden', '.hidden', 'a.hidden'
+    if as_bytes:
+        pattern, hidden, visible = pattern.encode(), hidden.encode(), visible.encode()
+
+    assert fnmatch.fnmatch(hidden, pattern, flags=flags)
+    assert fnmatch.fnmatch(visible, pattern, flags=flags)
