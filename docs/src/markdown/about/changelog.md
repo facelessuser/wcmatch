@@ -2,6 +2,8 @@
 
 ## 11.2
 
+-   **FIX**: Preserve leading-dot restrictions for wildcards after extended groups that can match an empty string,
+    such as `?(a)*`, and avoid returning `.` and `..` from these directory scans.
 -   **NEW**: Drop support for Python 3.10.
 -   **FIX**: Improve performance when multiple `*` are used for file name matching. Performance is only improved in
     cases where variable length `EXTGLOB` patterns would not interfere with matching. Issue found by (@gistrec).

@@ -1018,18 +1018,24 @@ class WcParse(Generic[AnyStr]):
 
         return self.seq_path if self.pathname else ''
 
-    def _restrict_sequence(self) -> str:
+    def _restrict_sequence(self, current: list[str]) -> str:
         """Restrict sequence."""
 
+        # An extended group may consume nothing, leaving the wildcard at the start of a name.
+        after_ext = bool(current and isinstance(current[-1], ExtGroup))
         if self.pathname:
             if self.after_start and not self.dot:
                 value = self.seq_path_dot if not self.in_list else self.seq_path_group_dot
+            elif after_ext and not self.dot:
+                value = self.seq_path_group_dot + self.seq_path
             else:
                 value = self.seq_path
-            if self.after_start:
+            if self.after_start or after_ext:
                 value = self.no_dir + value
         else:
             value = (_NO_DOT if not self.in_list else _GROUP_NO_DOT) if self.after_start and not self.dot else ""
+            if after_ext and not self.dot and not self.after_start:
+                value = _GROUP_NO_DOT
 
         self.reset_dir_track()
 
@@ -1217,7 +1223,7 @@ class WcParse(Generic[AnyStr]):
             return self.range_to_regex(int(start) if start else None, int(end) if end else None)
         return re.escape('<')
 
-    def _sequence(self, i: util.StringIter) -> str:
+    def _sequence(self, i: util.StringIter, current: list[str]) -> str:
         """Handle character group."""
 
         result = ['[']
@@ -1314,8 +1320,8 @@ class WcParse(Generic[AnyStr]):
             else:
                 result = [value]
 
-        if self.pathname or self.after_start:
-            return self._restrict_sequence() + ''.join(result)
+        if self.pathname or self.after_start or (current and isinstance(current[-1], ExtGroup)):
+            return self._restrict_sequence(current) + ''.join(result)
 
         return ''.join(result)
 
@@ -1413,6 +1419,7 @@ class WcParse(Generic[AnyStr]):
     def _handle_star(self, i: util.StringIter, current: list[str]) -> None:
         """Handle star."""
 
+        after_ext = bool(current and isinstance(current[-1], ExtGroup))
         if self.pathname:
             if self.after_start and not self.dot:
                 star = self.path_star_dot2
@@ -1422,11 +1429,16 @@ class WcParse(Generic[AnyStr]):
                 globstar = self.path_gstar_dot1
             else:
                 star = self.path_star
+                if after_ext:
+                    current.append(self.no_dir + (self.seq_path_group_dot if not self.dot else ''))
                 globstar = self.path_gstar_dot1
             capture = self.globstar_capture
         else:
             if self.after_start and not self.dot:
                 star = _NO_DOT + _STAR
+            elif after_ext and not self.dot:
+                current.append(_GROUP_NO_DOT)
+                star = _STAR
             else:
                 star = _STAR
             globstar = ''
@@ -1610,7 +1622,7 @@ class WcParse(Generic[AnyStr]):
                         self.match_dot_dir = self.dot and not self.nodotdir
                         self.reset_dir_track()
                 elif c == '?':
-                    extended.append(self._restrict_sequence() + _QMARK)
+                    extended.append(self._restrict_sequence(extended) + _QMARK)
                 elif c == '/':
                     if self.pathname:
                         extended.append(self._restrict_extended_slash())
@@ -1643,7 +1655,7 @@ class WcParse(Generic[AnyStr]):
                 elif c == '[' and (self.bad_sequence == -1 or i.index > self.bad_sequence):
                     subindex = i.index
                     try:
-                        extended.append(self._sequence(i))
+                        extended.append(self._sequence(i, extended))
                     except StopIteration:
                         self.bad_sequence = i.index
                         i.rewind(i.index - subindex)
@@ -1880,7 +1892,7 @@ class WcParse(Generic[AnyStr]):
             elif c == '*':
                 self._handle_star(i, current)
             elif c == '?':
-                current.append(self._restrict_sequence() + _QMARK)
+                current.append(self._restrict_sequence(current) + _QMARK)
             elif c == '/':
                 if self.pathname:
                     self.set_start_dir()
@@ -1911,7 +1923,7 @@ class WcParse(Generic[AnyStr]):
             elif c == '[' and (self.bad_sequence == -1 or i.index > self.bad_sequence):
                 index = i.index
                 try:
-                    current.append(self._sequence(i))
+                    current.append(self._sequence(i, current))
                 except StopIteration:
                     self.bad_sequence = i.index
                     i.rewind(i.index - index)
