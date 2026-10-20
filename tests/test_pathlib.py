@@ -552,6 +552,28 @@ class TestPathlibSymlink(unittest.TestCase):
         result = pathlib.Path(self.tempdir).rglob('a.txt', flags=flags)
         self.assertSequencesEqual_noorder(expected, result)
 
+    def test_rglob_leading_globstar(self):
+        """Test `rglob` with a pattern that starts with `**`."""
+
+        expected = [pathlib.Path(self.tempdir + '/a.txt'), pathlib.Path(self.tempdir + '/subfolder/a.txt')]
+        result = pathlib.Path(self.tempdir).rglob('**/a.txt', flags=pathlib.G)
+        self.assertSequencesEqual_noorder(expected, result)
+
+    def test_rglob_leading_globstarlong_symlink(self):
+        """Test `rglob` with a pattern that starts with `***` or `**` and `GLOBSTARLONG` with `FOLLOW`."""
+
+        flags = pathlib.GL | pathlib.L
+        expected = [
+            pathlib.Path(self.tempdir + '/a.txt'),
+            pathlib.Path(self.tempdir + '/subfolder/a.txt'),
+            pathlib.Path(self.tempdir + '/sym1/a.txt')
+        ]
+        result = pathlib.Path(self.tempdir).rglob('***/a.txt', flags=flags)
+        self.assertSequencesEqual_noorder(expected, result)
+
+        result = pathlib.Path(self.tempdir).rglob('**/a.txt', flags=flags)
+        self.assertSequencesEqual_noorder(expected[:2], result)
+
     def test_rglob_globstarlong_symlink(self):
         """Test `rglob` with `GLOBSTARLONG` and `FOLLOW`."""
 

@@ -390,7 +390,7 @@ class _GlobSplit(Generic[AnyStr]):
             )
 
         if (
-            (self.extmatchbase and not parts[0].is_drive) or
+            (self.extmatchbase and not parts[0].is_drive and not parts[0].is_globstar) or
             (self.matchbase and len(parts) == 1 and not parts[0].dir_only)
         ):
             if self.globstarlong and self.follow:

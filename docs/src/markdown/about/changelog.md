@@ -20,6 +20,8 @@
 -   **FIX**: According to Bash, a file name that starts with an extended group should never match `.` or `..`.
 -   **FIX**: Preserve leading-dot restrictions for wildcards after extended groups that can match an empty string,
     such as `?(a)*`, and avoid returning `.` and `..` from these directory scans.
+-   **FIX**: Fix `rglob` treating a pattern that starts with `**` or `***` as if it started with `*`, e.g. `**/a.txt`
+    with `GLOBSTAR` missed `a.txt` in the searched folder and returned `a.txt` from inside a symlinked folder.
 
 ## 11.1
 
