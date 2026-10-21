@@ -3,6 +3,8 @@
 ## 11.2
 
 -   **NEW**: Drop support for Python 3.10.
+-   **FIX**: Filter filename iterables without evaluating their "truthiness", allowing collections such as `numpy`
+    arrays (@Lushiyao5).
 -   **FIX**: Improve performance when multiple `*` are used for file name matching. Performance is only improved in
     cases where variable length `EXTGLOB` patterns would not interfere with matching. Issue found by (@gistrec).
 -   **FIX**: Apply one pattern limit to includes and exclusions when scanning with `glob` and `iglob`, and preserve

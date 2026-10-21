@@ -1200,3 +1200,38 @@ def test_optional_group_literal_dot(as_bytes, capture):
 
     assert fnmatch.fnmatch(hidden, pattern, flags=flags)
     assert fnmatch.fnmatch(visible, pattern, flags=flags)
+
+
+class NoTruthIterable:
+    """Model collections such as `numpy` arrays without importing `numpy`."""
+
+    def __init__(self, names):
+        """Store the filenames to iterate over."""
+
+        self.names = names
+
+    def __iter__(self):
+        """Iterate over filenames without testing the collection's truth value."""
+
+        return iter(self.names)
+
+    def __bool__(self):
+        """Reject truth testing, as array collections do."""
+
+        raise ValueError('The truth value of this collection is ambiguous')
+
+
+@pytest.mark.parametrize('precompiled', [False, True], ids=['direct', 'compiled'])
+@pytest.mark.parametrize('names, expected', [
+    ([], []),
+    (['keep.txt', 'skip.txt', 'readme.md'], ['keep.txt'])
+], ids=['empty', 'nonempty'])
+def test_filter_iterable_without_truth_value(precompiled, names, expected):
+    """Filter names and exclusions using iteration alone."""
+
+    values = NoTruthIterable(names)
+    if precompiled:
+        actual = fnmatch.compile('*.txt', exclude='skip.txt').filter(values)
+    else:
+        actual = fnmatch.filter(values, '*.txt', exclude='skip.txt')
+    assert actual == expected

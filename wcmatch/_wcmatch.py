@@ -346,9 +346,6 @@ class WcRegexp(util.Immutable, Generic[AnyStr]):
     ) ->  list[AnyStr | os.PathLike[AnyStr]]:
         """Filter filenames."""
 
-        if not filenames:
-            return []
-
         rdir = os.fspath(root_dir) if root_dir is not None else None
         matches = [
             filename
