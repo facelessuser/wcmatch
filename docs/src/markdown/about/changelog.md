@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+-   **FIX**: Fix `glob` and `iglob` missing a file name without a directory part, e.g. `a.txt`, when `dir_fd` is file
+    descriptor `0`, which a directory can get when it is opened while standard input is closed.
+
 ## 11.2
 
 -   **NEW**: Drop support for Python 3.10.
@@ -25,8 +30,6 @@
     such as `?(a)*`, and avoid returning `.` and `..` from these directory scans.
 -   **FIX**: Fix `rglob` treating a pattern that starts with `**` or `***` as if it started with `*`, e.g. `**/a.txt`
     with `GLOBSTAR` missed `a.txt` in the searched folder and returned `a.txt` from inside a symlinked folder.
--   **FIX**: Fix `glob` and `iglob` missing a file name without a directory part, e.g. `a.txt`, when `dir_fd` is file
-    descriptor `0`, which a directory can get when it is opened while standard input is closed.
 
 ## 11.1
 
