@@ -3,6 +3,7 @@
 ## 11.2
 
 -   **NEW**: Drop support for Python 3.10.
+-   **FIX**: Require `bracex` 3.2 for various bug fixes.
 -   **FIX**: Filter filename iterables without evaluating their "truthiness", allowing collections such as `numpy`
     arrays (@Lushiyao5).
 -   **FIX**: Improve performance when multiple `*` are used for file name matching. Performance is only improved in
