@@ -1328,6 +1328,20 @@ class TestCWD(_TestGlob):
         os.close(dir_fd)
 
     @pytest.mark.skipif(not glob.SUPPORT_DIR_FD, reason="dir_fd is not supported on this system")
+    def test_cwd_fd_dir_zero(self):
+        """Test file descriptor `0`, which is a valid directory descriptor when standard input was closed."""
+
+        dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
+        stdin = os.dup(0)
+        try:
+            os.dup2(dir_fd, 0)
+            self.assert_equal(glob.glob('EF', dir_fd=0), ['EF'])
+        finally:
+            os.dup2(stdin, 0)
+            os.close(stdin)
+            os.close(dir_fd)
+
+    @pytest.mark.skipif(not glob.SUPPORT_DIR_FD, reason="dir_fd is not supported on this system")
     def test_cwd_dir_fd_globmatch(self):
         """Test file descriptor on `globmatch`."""
 

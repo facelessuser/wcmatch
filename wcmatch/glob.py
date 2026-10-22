@@ -626,7 +626,7 @@ class Glob(Generic[AnyStr]):
     def _lexists(self, path: AnyStr) -> bool:
         """Check if file exists."""
 
-        if not self.dir_fd:
+        if self.dir_fd is None:
             return os.path.lexists(self._prepend_base(path))
         try:
             os.lstat(self._prepend_base(path), dir_fd=self.dir_fd)
