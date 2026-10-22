@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+-   **FIX**: Fix `glob` and `iglob` missing a file name without a directory part, e.g. `a.txt`, when `dir_fd` is file
+    descriptor `0`, which a directory can get when it is opened while standard input is closed.
+
 ## 11.2
 
 -   **NEW**: Drop support for Python 3.10.
