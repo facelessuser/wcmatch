@@ -280,11 +280,11 @@ class WcMatch(Generic[AnyStr]):
                     if value is not None:  # pragma: no cover
                         yield value
 
-                if self.is_aborted():  # pragma: no cover
+                if self.is_aborted():
                     break
 
             # Search files if they were found
-            if files:
+            if files and not self.is_aborted():
                 # Only search files that are in the include rules
                 for name in files:
                     try:

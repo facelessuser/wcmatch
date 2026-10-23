@@ -4,6 +4,8 @@
 
 -   **FIX**: Fix `glob` and `iglob` missing a file name without a directory part, e.g. `a.txt`, when `dir_fd` is file
     descriptor `0`, which a directory can get when it is opened while standard input is closed.
+-   **FIX**: Fix `WcMatch` returning a file after `kill` is called from a directory validation hook or its error
+    handler.
 
 ## 11.2
 

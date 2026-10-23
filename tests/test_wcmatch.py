@@ -297,6 +297,35 @@ class TestWcmatch(_TestWcmatch):
         self.crawl_files(walker)
         self.assertEqual(sorted(self.files), self.norm_list(['.hidden/a.txt', 'a.txt']))
 
+    def test_abort_directory(self):
+        """Test aborting from directory validation."""
+
+        def validate(base, name):
+            walker.kill()
+            return True
+
+        walker = wcmatch.WcMatch(
+            self.tempdir, '*', flags=self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
+        )
+        walker.on_validate_directory = validate
+
+        self.crawl_files(walker)
+        self.assertEqual(self.files, [])
+        self.assertTrue(walker.is_aborted())
+
+    def test_abort_directory_error(self):
+        """Test aborting from a directory error."""
+
+        walker = wcmatch.WcMatch(
+            self.tempdir, '*', flags=self.default_flags | wcmatch.RECURSIVE | wcmatch.HIDDEN
+        )
+        walker.on_validate_directory = lambda base, name: self.force_err()
+        walker.on_error = lambda base, name: walker.kill()
+
+        self.crawl_files(walker)
+        self.assertEqual(self.files, [])
+        self.assertTrue(walker.is_aborted())
+
     def test_abort_early(self):
         """Test aborting early."""
 
