@@ -1024,9 +1024,11 @@ class WcParse(Generic[AnyStr]):
         # An extended group may consume nothing, leaving the wildcard at the start of a name.
         after_ext = bool(current and isinstance(current[-1], ExtGroup))
         if self.pathname:
+            # A star at the start of a name may also match nothing.
+            after_star = not self.in_list and bool(current and current[-1].endswith(self.path_star_dot2))
             if self.after_start and not self.dot:
                 value = self.seq_path_dot if not self.in_list else self.seq_path_group_dot
-            elif after_ext and not self.dot:
+            elif (after_ext or after_star) and not self.dot:
                 value = self.seq_path_group_dot + self.seq_path
             else:
                 value = self.seq_path

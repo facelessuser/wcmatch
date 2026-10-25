@@ -6,6 +6,8 @@
     descriptor `0`, which a directory can get when it is opened while standard input is closed.
 -   **FIX**: Fix `WcMatch` returning a file after `kill` is called from a directory validation hook or its error
     handler.
+-   **FIX**: Fix a `?` or bracket expression after a leading `*` matching the leading dot of a file name, e.g. `*?a`
+    matching `.a`.
 
 ## 11.2
 
