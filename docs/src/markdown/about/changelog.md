@@ -8,6 +8,8 @@
     handler.
 -   **FIX**: Fix a `?` or bracket expression after a leading `*` matching the leading dot of a file name, e.g. `*?a`
     matching `.a`.
+-   **FIX**: Fix a wildcard in an extended group matching the leading dot of a file name when only a `*` or an optional
+    group comes before it, e.g. `?(old-)@(*)` matching `.a`.
 
 ## 11.2
 

@@ -954,6 +954,8 @@ class WcParse(Generic[AnyStr]):
         self.unix = is_unix_style(self.flags)
         self.bad_sequence = -1
         self.ext_empty = False
+        self.ext_start = False
+        self.in_inv = False
         if not self.unix:
             self.win_drive_detect = self.pathname
             self.char_avoid = (ord('\\'), ord('/'), ord('.'))  # type: tuple[int, ...]
@@ -1018,17 +1020,27 @@ class WcParse(Generic[AnyStr]):
 
         return self.seq_path if self.pathname else ''
 
+    def _open_start(self, current: list[str], star: bool = False) -> bool:
+        """Check if a wildcard may be at the start of a name because only text that can be empty comes before it."""
+
+        if current and isinstance(current[-1], ExtGroup):
+            return True
+        # A guard inside an inverse group would narrow what it excludes and let more names through.
+        if self.in_list and (self.in_inv or self.inv_ext):
+            return False
+        if not current or current[-1] == '|':
+            return self.ext_start
+        return star and current[-1].endswith(self.path_star_dot2)
+
     def _restrict_sequence(self, current: list[str]) -> str:
         """Restrict sequence."""
 
-        # An extended group may consume nothing, leaving the wildcard at the start of a name.
-        after_ext = bool(current and isinstance(current[-1], ExtGroup))
+        # An extended group or a star may consume nothing, leaving the wildcard at the start of a name.
+        after_ext = self._open_start(current, True)
         if self.pathname:
-            # A star at the start of a name may also match nothing.
-            after_star = not self.in_list and bool(current and current[-1].endswith(self.path_star_dot2))
             if self.after_start and not self.dot:
                 value = self.seq_path_dot if not self.in_list else self.seq_path_group_dot
-            elif (after_ext or after_star) and not self.dot:
+            elif after_ext and not self.dot:
                 value = self.seq_path_group_dot + self.seq_path
             else:
                 value = self.seq_path
@@ -1322,7 +1334,7 @@ class WcParse(Generic[AnyStr]):
             else:
                 result = [value]
 
-        if self.pathname or self.after_start or (current and isinstance(current[-1], ExtGroup)):
+        if self.pathname or self.after_start or self._open_start(current, True):
             return self._restrict_sequence(current) + ''.join(result)
 
         return ''.join(result)
@@ -1421,7 +1433,7 @@ class WcParse(Generic[AnyStr]):
     def _handle_star(self, i: util.StringIter, current: list[str]) -> None:
         """Handle star."""
 
-        after_ext = bool(current and isinstance(current[-1], ExtGroup))
+        after_ext = self._open_start(current)
         if self.pathname:
             if self.after_start and not self.dot:
                 star = self.path_star_dot2
@@ -1593,9 +1605,13 @@ class WcParse(Generic[AnyStr]):
         temp_in_list = self.in_list
         temp_inv_ext = self.inv_ext
         temp_inv_nest = self.inv_nest
+        temp_ext_start = self.ext_start
+        temp_in_inv = self.in_inv
         self.ext_empty = False
         self.in_list = True
         self.inv_nest = list_type == '!'
+        self.in_inv = temp_in_inv or self.inv_nest
+        self.ext_start = self._open_start(current, True)
 
         if reset_dot:
             self.match_dot_dir = False
@@ -1779,6 +1795,8 @@ class WcParse(Generic[AnyStr]):
         self.in_list = temp_in_list
         self.inv_nest = temp_inv_nest
         self.ext_empty = temp_ext_empty
+        self.ext_start = temp_ext_start
+        self.in_inv = temp_in_inv
 
         if success:
             self.reset_dir_track()

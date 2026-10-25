@@ -602,6 +602,15 @@ class TestGlobFilter:
         ['!(x)?abc', [], glob.M],
         ['*?abc', ['.abc', '..abc'], glob.D],
 
+        # The same applies at the start of an extended group and after text that can be empty
+        ['@(*?abc)', []],
+        ['*@(*)', ['abc']],
+        ['?(old-)@(*)', ['abc']],
+        ['?(old-)@(*)', ['.abc', '...', '..abc', 'abc'], glob.D],
+        ['*@(x@(y)|?abc)', []],
+        ['?(x|!(y))@(*)abc', ['abc']],
+        ['*!(*)', []],
+
         ['.', ['.']],
         ['..', ['..']],
         ['.*', ['.', '..', '.abc', '...', '..abc']],
