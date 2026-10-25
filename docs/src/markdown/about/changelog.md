@@ -2,12 +2,18 @@
 
 ## Unreleased
 
+-   **FIX**: A leading `*` can no longer match nothing so that a literal dot can match the leading dot of a file name,
+    e.g. `*.env` no longer matches `.env` unless `DOTGLOB`/`DOTMATCH` is enabled. This agrees with Bash, Python's
+    `glob`, and `fnmatch`, which already behaved this way. Use `.*env` to explicitly match hidden names.
 -   **FIX**: Fix `glob` and `iglob` missing a file name without a directory part, e.g. `a.txt`, when `dir_fd` is file
     descriptor `0`, which a directory can get when it is opened while standard input is closed.
 -   **FIX**: Fix `WcMatch` returning a file after `kill` is called from a directory validation hook or its error
     handler.
 -   **FIX**: Fix a `?` or bracket expression after a leading `*` matching the leading dot of a file name, e.g. `*?a`
     matching `.a`.
+-   **FIX**: Fix a wildcard in an `EXTGLOB`/`EXTMATCH` group, such as `?(old-)@(*)`, matching the leading dot of a file
+    name when the text before it, e.g. an optional group or the start of another group slot, matched nothing. Wildcards
+    in later iterations of a repeated group, e.g. `+(.?|*)` and `.a.`, are no longer wrongly restricted.
 
 ## 11.2
 

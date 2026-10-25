@@ -1893,6 +1893,27 @@ def test_optional_group_glob_directory(tmp_path, as_bytes, dotmatch):
     assert sorted(glob.glob(pattern, root_dir=root_dir, flags=flags)) == expected
 
 
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('dotmatch', [False, True])
+@pytest.mark.parametrize('pattern', ['*.env', '?(old-)@(*.env)', '@(*).env', '?(a)*.env', '*@(*.env)'])
+def test_wildcard_start_glob_directory(tmp_path, as_bytes, dotmatch, pattern):
+    """Directory scans do not let a wildcard that matches nothing reveal a hidden entry."""
+
+    for name in ['.env', 'a.env', '.notes.env']:
+        (tmp_path / name).touch()
+    flags = glob.EXTGLOB
+    expected = ['a.env']
+    if dotmatch:
+        flags |= glob.DOTMATCH
+        expected = ['.env', '.notes.env', 'a.env']
+    root_dir = str(tmp_path)
+    if as_bytes:
+        pattern, root_dir = pattern.encode(), os.fsencode(root_dir)
+        expected = [name.encode() for name in expected]
+
+    assert sorted(glob.glob(pattern, root_dir=root_dir, flags=flags)) == expected
+
+
 class TestInputTypes(unittest.TestCase):
     """Test input types."""
 

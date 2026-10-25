@@ -527,17 +527,18 @@ class TestGlobFilter:
             ]
         ],
 
+        # A leading `*` cannot match nothing to let a literal dot match the leading dot of a name.
         [
             '**.x/*',
             [
-                'test.x/a', '.x/a'
+                'test.x/a'
             ]
         ],
 
         [
             R'**\.x/*',
             [
-                'test.x/a', '.x/a'
+                'test.x/a'
             ]
         ],
 
@@ -1207,7 +1208,7 @@ class TestGlobMatchSpecial(unittest.TestCase):
             [
                 '^(?s:(?:(?!(?:[/]|^)\\.).)*?(?:^|$|[/])+' +
                 ('(?!(?:(?<=[/])|(?<=^))(?:\\.{1,2})(?:$|[/]))(?![/.])[\x00-\x7f][/]+stuff[/]+(?=[^/])') +
-                '(?!(?:(?<=[/])|(?<=^))(?:\\.{1,2})(?:$|[/]))(?:(?!\\.)[^/]*?)?[/]*?)$'
+                '(?!(?:(?<=[/])|(?<=^))(?:\\.{1,2})(?:$|[/]))(?!\\.)[^/]*?[/]*?)$'
             ],
             []
         )
@@ -1224,7 +1225,7 @@ class TestGlobMatchSpecial(unittest.TestCase):
         flags |= glob.FORCEUNIX
 
         value = (
-            ['^(?s:(?>(?=[^/])(?!(?:(?<=[/])|(?<=^))(?:\\.{1,2})(?:$|[/]))(?:(?!\\.)[^/]*?)?test)[^/]*?[/]*?)$'],
+            ['^(?s:(?>(?=[^/])(?!(?:(?<=[/])|(?<=^))(?:\\.{1,2})(?:$|[/]))(?!\\.)[^/]*?test)[^/]*?[/]*?)$'],
             []
         )
         self.assertEqual(
@@ -2212,6 +2213,77 @@ def test_optional_group_literal_dot(as_bytes, capture):
 
     assert glob.globmatch(hidden, pattern, flags=flags)
     assert glob.globmatch(visible, pattern, flags=flags)
+
+
+@pytest.mark.parametrize(
+    ('pattern', 'visible'),
+    [
+        ('*.env', 'a.env'),
+        ('**.env', 'a.env'),
+        ('?(old-)@(*)', 'a.env'),
+        ('*@(*)', 'a.env'),
+        ('@(*?env)', 'a.env'),
+        ('@(*).env', 'a.env'),
+        ('+(*).env', 'a.env'),
+        ('*@(*.env)', 'a.env'),
+        ('?(a)@(*.env)', 'a.env'),
+        ('?(a)*.env', 'a.env'),
+        ('*(a)*.env', 'a.env'),
+        ('@(a|*).env', 'a.env'),
+        ('@(?(a)*).env', 'a.env'),
+        ('!(a).env', 'b.env'),
+        ('?(x)!(a).env', 'b.env'),
+    ]
+)
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('capture', [False, True])
+@pytest.mark.parametrize('dotmatch', [False, True])
+def test_wildcard_start_leading_dot_glob(pattern, visible, as_bytes, capture, dotmatch):
+    """A wildcard at the start of a name never matches the leading dot, even when it matches nothing."""
+
+    flags = glob.EXTMATCH | glob.FORCEUNIX
+    if capture:
+        flags |= glob.CAPTURE
+    if dotmatch:
+        flags |= glob.DOTMATCH
+    hidden = '.env'
+    if as_bytes:
+        pattern, hidden, visible = pattern.encode(), hidden.encode(), visible.encode()
+
+    assert glob.globmatch(hidden, pattern, flags=flags) is dotmatch
+    assert glob.globmatch(visible, pattern, flags=flags)
+
+
+@pytest.mark.parametrize('pattern', ['+(.?|*)', '*(.?|*)', '+(*|.?)', '+(.|*)'])
+def test_group_loop_wildcard_after_first_iteration_glob(pattern):
+    """Only the first iteration of a group at the start of a name is restricted from matching a leading dot."""
+
+    flags = glob.EXTMATCH | glob.FORCEUNIX
+
+    assert glob.globmatch('.a.', pattern, flags=flags)
+    assert glob.globmatch('.a..', pattern, flags=flags)
+    assert not glob.globmatch('..', pattern, flags=flags)
+
+
+@pytest.mark.parametrize('windows', [False, True])
+@pytest.mark.parametrize(
+    ('pattern', 'visible'),
+    [
+        ('*.env', 'a.env'),
+        ('?(old-)@(*)', 'a.env'),
+        ('@(*).env', 'a.env'),
+        ('?(a)@(*.env)', 'a.env'),
+        ('!(a).env', 'b.env'),
+    ]
+)
+def test_wildcard_start_leading_dot_after_separator(pattern, visible, windows):
+    """Wildcards at the start of later path components do not match a leading dot either."""
+
+    flags = glob.EXTGLOB | (glob.FORCEWIN if windows else glob.FORCEUNIX)
+    separator = '\\' if windows else '/'
+
+    assert not glob.globmatch('root' + separator + '.env', 'root/' + pattern, flags=flags)
+    assert glob.globmatch('root' + separator + visible, 'root/' + pattern, flags=flags)
 
 
 @pytest.mark.parametrize('windows', [False, True])

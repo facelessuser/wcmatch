@@ -452,7 +452,8 @@ that the path must meet the following in order to match:
 
 By default, globbing and matching functions will not match file or directory names that start with dot `.` unless
 matched with a literal dot. `DOTGLOB` allows the meta characters (such as `*`) to glob dots like any other character.
-Dots will not be matched in `[]`, `*`, or `?`.
+Dots will not be matched in `[]`, `*`, or `?`. Additionally, a wildcard at the start of a name cannot match nothing to
+let a literal dot match instead, e.g. `*.env` will not match `.env`.
 
 Alternatively `DOTMATCH` will also be accepted for consistency with the other provided libraries. Both flags are exactly
 the same and are provided as a convenience in case the user finds one more intuitive than the other since `DOTGLOB` is

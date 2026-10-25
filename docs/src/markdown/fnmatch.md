@@ -348,9 +348,10 @@ When `MINUSNEGATE` is used with [`NEGATE`](#negate), exclusion patterns are reco
 
 #### `fnmatch.DOTMATCH, fnmatch.D` {: #dotmatch}
 
-By default, [`fnmatch`](#fnmatch) and related functions will not match file or directory names that start with
-dot `.` unless matched with a literal dot. `DOTMATCH` allows the meta characters (such as `*`) to match dots like any
-other character. Dots will not be matched in `[]`, `*`, or `?`.
+By default, [`fnmatch`](#fnmatch) and related functions will not match file or directory names that start with dot `.`
+unless matched with a literal dot. `DOTMATCH` allows the meta characters (such as `*`) to match dots like any other
+character. Dots will not be matched in `[]`, `*`, or `?`. Additionally, a wildcard at the start of a name cannot match
+nothing to let a literal dot match instead, e.g. `*.env` will not match `.env`.
 
 #### `fnmatch.NUMRANGE, fnmatch.ZN` {: #numrange}
 

@@ -1202,6 +1202,56 @@ def test_optional_group_literal_dot(as_bytes, capture):
     assert fnmatch.fnmatch(visible, pattern, flags=flags)
 
 
+@pytest.mark.parametrize(
+    ('pattern', 'visible'),
+    [
+        ('*.env', 'a.env'),
+        ('**.env', 'a.env'),
+        ('?(old-)@(*)', 'a.env'),
+        ('*@(*)', 'a.env'),
+        ('@(*?env)', 'a.env'),
+        ('@(*).env', 'a.env'),
+        ('+(*).env', 'a.env'),
+        ('*@(*.env)', 'a.env'),
+        ('?(a)@(*.env)', 'a.env'),
+        ('?(a)*.env', 'a.env'),
+        ('*(a)*.env', 'a.env'),
+        ('@(a|*).env', 'a.env'),
+        ('@(?(a)*).env', 'a.env'),
+        ('!(a).env', 'b.env'),
+        ('?(x)!(a).env', 'b.env'),
+    ]
+)
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('capture', [False, True])
+@pytest.mark.parametrize('dotmatch', [False, True])
+def test_wildcard_start_leading_dot_fnmatch(pattern, visible, as_bytes, capture, dotmatch):
+    """A wildcard at the start of a name never matches the leading dot, even when it matches nothing."""
+
+    flags = fnmatch.EXTMATCH | fnmatch.FORCEUNIX
+    if capture:
+        flags |= fnmatch.CAPTURE
+    if dotmatch:
+        flags |= fnmatch.DOTMATCH
+    hidden = '.env'
+    if as_bytes:
+        pattern, hidden, visible = pattern.encode(), hidden.encode(), visible.encode()
+
+    assert fnmatch.fnmatch(hidden, pattern, flags=flags) is dotmatch
+    assert fnmatch.fnmatch(visible, pattern, flags=flags)
+
+
+@pytest.mark.parametrize('pattern', ['+(.?|*)', '*(.?|*)', '+(*|.?)', '+(.|*)'])
+def test_group_loop_wildcard_after_first_iteration_fnmatch(pattern):
+    """Only the first iteration of a group at the start of a name is restricted from matching a leading dot."""
+
+    flags = fnmatch.EXTMATCH | fnmatch.FORCEUNIX
+
+    assert fnmatch.fnmatch('.a.', pattern, flags=flags)
+    assert fnmatch.fnmatch('.a..', pattern, flags=flags)
+    assert not fnmatch.fnmatch('..', pattern, flags=flags)
+
+
 class NoTruthIterable:
     """Model collections such as `numpy` arrays without importing `numpy`."""
 

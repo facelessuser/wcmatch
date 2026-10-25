@@ -221,7 +221,7 @@ _PATH_STAR = r'[^{sep}]*?'
 _PATH_STAR_DOTMATCH = _NO_DIR + _PATH_STAR
 # Star for `PATHNAME` when `DOTMATCH` is disabled and start is at start of file.
 # Disallow . and .. and don't allow match to start with a dot.
-_PATH_STAR_NO_DOTMATCH = _NO_DIR + fr'(?:(?!\.){_PATH_STAR})?'
+_PATH_STAR_NO_DOTMATCH = _NO_DIR + fr'(?!\.){_PATH_STAR}'
 # `GLOBSTAR` during `DOTMATCH`. Avoid directory match /./ or /../
 _PATH_GSTAR_DOTMATCH = r'(?:(?!(?:[{sep}]|^)(?:\.{{1,2}})($|[{sep}])).)*?'
 # `GLOBSTAR` with `DOTMATCH` disabled. Don't allow a dot to follow /
@@ -1022,13 +1022,13 @@ class WcParse(Generic[AnyStr]):
         """Restrict sequence."""
 
         # An extended group may consume nothing, leaving the wildcard at the start of a name.
+        # Group slots do not know what came before the group, so they check the position at match time.
         after_ext = bool(current and isinstance(current[-1], ExtGroup))
+        check_start = (after_ext or self.in_list) and not self.dot
         if self.pathname:
-            # A star at the start of a name may also match nothing.
-            after_star = not self.in_list and bool(current and current[-1].endswith(self.path_star_dot2))
             if self.after_start and not self.dot:
                 value = self.seq_path_dot if not self.in_list else self.seq_path_group_dot
-            elif (after_ext or after_star) and not self.dot:
+            elif check_start:
                 value = self.seq_path_group_dot + self.seq_path
             else:
                 value = self.seq_path
@@ -1036,7 +1036,7 @@ class WcParse(Generic[AnyStr]):
                 value = self.no_dir + value
         else:
             value = (_NO_DOT if not self.in_list else _GROUP_NO_DOT) if self.after_start and not self.dot else ""
-            if after_ext and not self.dot and not self.after_start:
+            if check_start and not self.after_start:
                 value = _GROUP_NO_DOT
 
         self.reset_dir_track()
@@ -1322,7 +1322,7 @@ class WcParse(Generic[AnyStr]):
             else:
                 result = [value]
 
-        if self.pathname or self.after_start or (current and isinstance(current[-1], ExtGroup)):
+        if self.pathname or self.after_start or self.in_list or (current and isinstance(current[-1], ExtGroup)):
             return self._restrict_sequence(current) + ''.join(result)
 
         return ''.join(result)
@@ -1422,23 +1422,27 @@ class WcParse(Generic[AnyStr]):
         """Handle star."""
 
         after_ext = bool(current and isinstance(current[-1], ExtGroup))
+        check_start = (after_ext or self.in_list) and not self.dot
         if self.pathname:
             if self.after_start and not self.dot:
-                star = self.path_star_dot2
+                if self.in_list:
+                    star = self.no_dir + self.seq_path_group_dot + self.path_star
+                else:
+                    star = self.path_star_dot2
                 globstar = self.path_gstar_dot2
             elif self.after_start:
                 star = self.path_star_dot1
                 globstar = self.path_gstar_dot1
             else:
                 star = self.path_star
-                if after_ext and not self.dot:
+                if check_start:
                     current.append(self.seq_path_group_dot)
                 globstar = self.path_gstar_dot1
             capture = self.globstar_capture
         else:
             if self.after_start and not self.dot:
-                star = _NO_DOT + _STAR
-            elif after_ext and not self.dot:
+                star = (_NO_DOT if not self.in_list else _GROUP_NO_DOT) + _STAR
+            elif check_start:
                 current.append(_GROUP_NO_DOT)
                 star = _STAR
             else:
@@ -1740,22 +1744,29 @@ class WcParse(Generic[AnyStr]):
                 current.append(ExtGroup((_CAPTURE_GROUP if self.capture else _GROUP).format(''.join(extended))))
             elif list_type == '!':
                 self.inv_ext += 1
+                # The star may land at the start of a name when it is in a group slot or follows a group.
+                check_start = (temp_in_list or bool(current and isinstance(current[-1], ExtGroup))) and not self.dot
                 # If pattern is at the end, anchor the match to the end.
                 current.append(
                     ExtGroup((_EXCLA_CAPTURE_GROUP if self.capture else _EXCLA_GROUP).format(''.join(extended)))
                 )
                 if self.pathname:
                     if not temp_after_start or self.match_dot_dir:
-                        star = self.path_star
+                        star = (self.seq_path_group_dot if check_start else '') + self.path_star
                     elif temp_after_start and not self.dot:
-                        star = self.path_star_dot2
+                        if temp_in_list:
+                            star = self.no_dir + self.seq_path_group_dot + self.path_star
+                        else:
+                            star = self.path_star_dot2
                     else:
                         star = self.path_star_dot1
                 else:
-                    if not temp_after_start or self.dot:
+                    if self.dot:
                         star = _STAR
+                    elif not temp_after_start:
+                        star = (_GROUP_NO_DOT if check_start else '') + _STAR
                     else:
-                        star = _NO_DOT + _STAR
+                        star = (_NO_DOT if not temp_in_list else _GROUP_NO_DOT) + _STAR
 
                 if temp_after_start:
                     star = self.need_char + star
