@@ -596,6 +596,12 @@ class TestGlobFilter:
         ['[.]abc', ['.abc'], glob.D],
         [R'[\.]abc', ['.abc'], glob.D],
 
+        # A `?` or bracket expression after a leading `*` is not a literal dot
+        ['*?abc', []],
+        ['*[.]abc', []],
+        ['!(x)?abc', [], glob.M],
+        ['*?abc', ['.abc', '..abc'], glob.D],
+
         ['.', ['.']],
         ['..', ['..']],
         ['.*', ['.', '..', '.abc', '...', '..abc']],
