@@ -16,6 +16,9 @@
     in later iterations of a repeated group, e.g. `+(.?|*)` and `.a.`, are no longer wrongly restricted.
 -   **FIX**: Fix a `?` or bracket expression at the start of a repeated `EXTGLOB` group matching a path separator in
     `globmatch` and related functions, e.g. `+(?)` matching `a/b`. This was a regression in 11.0.1.
+-   **FIX**: Fix an `EXTGLOB`/`EXTMATCH` group that is simplified to a different group type, e.g. `@(+(b))` or
+    `@(!(b))`, losing its meaning when it is then reduced into its parent group. Repeats and negations were dropped,
+    e.g. `@(a|@(!(b)))` matched `b` and not `c`, and `!(@(+(a)))` matched `aa`. This was a regression in 11.0.
 
 ## 11.2
 

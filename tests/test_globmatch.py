@@ -2328,6 +2328,32 @@ def test_optional_group_after_separator(pattern, windows):
     assert glob.globmatch('root' + separator + 'a.hidden', 'root/' + pattern, flags=flags)
 
 
+@pytest.mark.parametrize(
+    ('pattern', 'plain', 'matches', 'excludes'),
+    [
+        ('@(a|@(!(b)))', '@(a|!(b))', ['a', 'c', 'bb'], ['b']),
+        ('@(a|@(+(b)))', '@(a|+(b))', ['a', 'b', 'bb'], ['c']),
+        ('@(a|@(*(b)))', '@(a|*(b))', ['a', 'b', 'bb'], ['c']),
+        ('@(a|@(?(b)))', '@(a|?(b))', ['a', 'b'], ['bb', 'c']),
+        ('+(a|@(+(b)))', '+(a|+(b))', ['a', 'bb', 'ab'], ['c']),
+        ('!(@(+(a)))', '!(+(a))', ['ab', 'b'], ['a', 'aa']),
+        ('!(@(?(a)))', '!(?(a))', ['aa', 'b'], ['a']),
+        ('?(a|@(!(b)))', '?(a|!(b))', ['a', 'c'], ['b']),
+    ]
+)
+def test_promoted_group_reduction_glob(pattern, plain, matches, excludes):
+    """A group that is promoted to another type must keep its meaning when it is reduced into its parent."""
+
+    flags = glob.EXTMATCH | glob.FORCEUNIX
+
+    for name in matches:
+        assert glob.globmatch(name, pattern, flags=flags), (pattern, name)
+        assert glob.globmatch(name, plain, flags=flags), (plain, name)
+    for name in excludes:
+        assert not glob.globmatch(name, pattern, flags=flags), (pattern, name)
+        assert not glob.globmatch(name, plain, flags=flags), (plain, name)
+
+
 class NoTruthIterable:
     """Model collections such as `numpy` arrays without importing `numpy`."""
 

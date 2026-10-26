@@ -1691,7 +1691,6 @@ class WcParse(Generic[AnyStr]):
                 pass
             empty_slot = slot_start and slot_end
             only_child = parent and group_start and group_end
-            ext_reduce = EXT_REDUCE[list_type]
             promote_ext = EXT_PROMOTE.get(parent, {})
 
             # Promote the group type to a different type before final processing.
@@ -1700,6 +1699,8 @@ class WcParse(Generic[AnyStr]):
                 t = str(extended.pop(-1))
                 list_type = t
                 self.inv_nest = t == '!'
+
+            ext_reduce = EXT_REDUCE[list_type]
 
             # Extended groups cannot match `.` or `..` ever.
             if not temp_in_list and temp_after_start:
