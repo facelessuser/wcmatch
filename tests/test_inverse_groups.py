@@ -6,7 +6,8 @@ of the ways the rest could match would make the consumed text match one of the g
 pattern includes what follows the group inside its slot, and what follows the enclosing group.
 
 Inside `+(...)` and `*(...)` groups, the rest only includes the remainder of the group's slot and whatever follows the
-loop, it does not consider further iterations.
+loop, it does not consider further iterations. Each iteration is judged as though it were the last one. This means
+`+(!(foo))` does not match `foo`, just like `!(foo)`, even though `f` and `oo` each match `!(foo)`.
 
 An inverse group inside the patterns of another inverse group follows the same rule, the text it can consume has to end
 where the text consumed by the outer group ends. This is exact when what follows the outer group has a fixed length,
@@ -52,15 +53,20 @@ def model_match(nodes, name):
 
     end = len(name)
 
-    def seq(items, pos, k):
-        """Match a sequence of nodes at `pos`, then call the continuation `k`."""
+    def seq(items, pos, k, kl):
+        """
+        Match a sequence of nodes at `pos`, then call the continuation `k`.
+
+        Inverse groups use `kl` to find the places where the rest of the pattern can match. It is the same as `k`,
+        except in loops, where it skips any further iterations.
+        """
 
         if not items:
             return k(pos)
         node, rest = items[0], items[1:]
 
         def cont(q):
-            return seq(rest, q, k)
+            return seq(rest, q, k, kl)
 
         kind = node[0]
         if kind == 'lit':
@@ -72,28 +78,49 @@ def model_match(nodes, name):
 
         alts = node[2]
 
-        def alts_match(start, k2):
-            return any(seq(a, start, k2) for a in alts)
+        def alts_match(start, k2, kl2):
+            return any(seq(a, start, k2, kl2) for a in alts)
 
         if kind == 'grp':
             t = node[1]
+
+            def here(q):
+                """The rest after this group, up to the local end."""
+
+                return cont(q) if kl is k else seq(rest, q, kl, kl)
+
             if t == '@':
-                return alts_match(pos, cont)
+                return alts_match(pos, cont, here)
             if t == '?':
-                return cont(pos) or alts_match(pos, cont)
+                return cont(pos) or alts_match(pos, cont, here)
 
             def loop(start):
-                return cont(start) or alts_match(start, lambda q: q > start and loop(q))
+                def again(q):
+                    return q > start and loop(q)
+
+                return cont(start) or alts_match(start, again, here)
 
             if t == '*':
                 return loop(pos)
-            return alts_match(pos, lambda q: cont(q) or (q > pos and loop(q)))
 
-        # Inverse group: all the places where the rest can match, none may be matched by one of the group's patterns
-        ends = [e for e in range(pos, end + 1) if cont(e)]
-        return bool(ends) and not any(alts_match(pos, lambda q, e=e: q == e) for e in ends)
+            def first(q):
+                return cont(q) or (q > pos and loop(q))
 
-    return seq(nodes, 0, lambda q: q == end)
+            return alts_match(pos, first, here)
+
+        # Inverse group: none of the places where the rest can match may end a match of the group's patterns
+        real_ends = [e for e in range(pos, end + 1) if cont(e)]
+        local_ends = real_ends if kl is k else [e for e in range(pos, end + 1) if seq(rest, e, kl, kl)]
+
+        def ends_at(e):
+            return lambda q: q == e
+
+        return bool(real_ends) and not any(alts_match(pos, ends_at(e), ends_at(e)) for e in local_ends)
+
+    def top(q):
+        return q == end
+
+    return seq(nodes, 0, top, top)
 
 
 def generate(rng, depth=0):
@@ -136,15 +163,15 @@ def inverse_placement(nodes, ancestors=()):
 NAMES = [''.join(p) for n in range(1, 5) for p in itertools.product('abc', repeat=n)]
 
 
-def generate_patterns(seed, count):
-    """Generate patterns with inverse groups that are not in a loop and not in another inverse group."""
+def generate_patterns(seed, count, placement=frozenset()):
+    """Generate patterns whose inverse groups are all in a loop, all in an inverse group, or all in neither."""
 
     rng = random.Random(seed)
     patterns = []
     seen = set()
     while len(patterns) < count:
         p = generate(rng)
-        if '!(' in p and p not in seen and not inverse_placement(parse(p)[0]):
+        if '!(' in p and p not in seen and inverse_placement(parse(p)[0]) == placement:
             seen.add(p)
             patterns.append(p)
     return patterns
@@ -196,6 +223,10 @@ CASES = [
     # Groups that are merged into their parent keep the same meaning
     ('@(a|@(!(b)c))d', ['xcd', 'ad', 'cd'], ['bcd']),
     ('@(@(!(a)b))', ['xb', 'b'], ['ab']),
+    ('@(a|@(!(b)c|d))e', ['xce', 'de', 'ae', 'ce'], ['bce', 'e', 'bde']),
+    ('?(a|@(!(b)c|d))e', ['xce', 'de', 'ae', 'e'], ['bce']),
+    ('+(a|@(!(b)c|d))e', ['xce', 'de', 'ade', 'ae'], ['bce']),
+    ('@(@(!(b)c|d)|a)e', ['xce', 'de', 'ae'], ['bce']),
     # Inverse groups inside inverse groups
     ('!(!(a))', ['a'], ['aa', 'b', 'ab']),
     ('!(!(a)|b)', ['a'], ['aa', 'ab', 'b', 'c']),
@@ -205,6 +236,12 @@ CASES = [
     ('!(a!(b)c)d', ['abcd', 'ad', 'xacd'], ['acd']),
     ('!(x|!(a)b)c', ['abc', 'c', 'yc'], ['xc', 'bc', 'aabc']),
     ('@(a|!(b!(c)))d', ['bcd', 'ad', 'xd'], ['bd', 'bxd']),
+    # Each iteration is judged as though it were the last, so repeating names that match does not always match
+    ('+(!(foo))', ['foobar', 'bar', 'f', 'fo', 'oo'], ['foo']),
+    ('*(!(foo))', ['bar', 'fo'], ['foo']),
+    ('+(!(ba))', ['a', 'b', 'bab', 'baa'], ['ba']),
+    ('*(!(ab)|x)', ['aab', 'xab', 'x', 'b'], ['ab']),
+    ('+(!(foo)|x)', ['xfoo', 'foox', 'xx'], ['foo']),
     # Inside loops, the rest is the remainder of the slot and what follows the loop
     ('+(!(a))', ['ab', 'b', 'aa'], ['a']),
     ('*(!(a)|b)', ['ab', 'b'], ['a']),
@@ -275,6 +312,41 @@ def test_inverse_in_group_model(seed):
             if model_match(nodes, name) != fn_match(name, pattern):
                 bad.append((pattern, name))
                 break
+    assert not bad, bad[:5]
+
+
+@pytest.mark.parametrize('seed', [12, 13])
+def test_inverse_in_loop_model(seed):
+    """Check random inverse groups inside loops against the reference model."""
+
+    bad = []
+    for pattern in generate_patterns(seed, 40, frozenset({'in loop'})):
+        nodes = parse(pattern)[0]
+        for name in NAMES:
+            if model_match(nodes, name) != fn_match(name, pattern):
+                bad.append((pattern, name))
+                break
+    assert not bad, bad[:5]
+
+
+@pytest.mark.parametrize('seed', [14, 15])
+def test_inverse_in_loop_properties(seed):
+    """
+    Loops keep the properties that do not depend on how iterations are judged.
+
+    A name that matches the loop's patterns on its own still matches when it is repeated once, and `+(...)` and
+    `?(...)` can only match what `*(...)` does.
+    """
+
+    bad = []
+    for pattern in generate_patterns(seed, 60):
+        names = [n for n in NAMES if len(n) <= 3]
+        single = {n for n in names if fn_match(n, pattern)}
+        plus = {n for n in NAMES if fn_match(n, '+(' + pattern + ')')}
+        star = {n for n in NAMES if fn_match(n, '*(' + pattern + ')')}
+        optional = {n for n in NAMES if fn_match(n, '?(' + pattern + ')')}
+        if not (single <= plus and single <= star and single <= optional and plus <= star and optional <= star):
+            bad.append(pattern)
     assert not bad, bad[:5]
 
 
