@@ -24,6 +24,10 @@
     same rule as inverse groups that are not in a group. Inside `+(...)` and `*(...)` groups, the rest is the remainder
     of the alternative and the text after the loop. The rest of the alternative was ignored since 7.0.1, and the text
     after the group since 2.2.1.
+-   **FIX**: Fix an `EXTGLOB`/`EXTMATCH` inverse group, `!(...)`, inside another inverse group not ending where the text
+    consumed by the outer group ends, e.g. `!(!(a)|b)` matched `aa` and `!(a!(b))` matched `aba`. This also caused
+    `translate()` with `CAPTURE` to match differently than without it for these patterns. This was a regression in
+    7.0.1.
 
 ## 11.2
 

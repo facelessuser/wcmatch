@@ -8,6 +8,10 @@ pattern includes what follows the group inside its slot, and what follows the en
 Inside `+(...)` and `*(...)` groups, the rest only includes the remainder of the group's slot and whatever follows the
 loop, it does not consider further iterations.
 
+An inverse group inside the patterns of another inverse group follows the same rule, the text it can consume has to end
+where the text consumed by the outer group ends. This is exact when what follows the outer group has a fixed length,
+as only one place is left for it to end.
+
 The reference model below implements the first rule directly with a simple backtracking matcher. It is used to check
 that the regular expressions produced by the parser follow the rule.
 """
@@ -146,6 +150,23 @@ def generate_patterns(seed, count):
     return patterns
 
 
+def generate_nested_patterns(seed, count):
+    """Generate patterns with an inverse group inside another one, followed by text of a fixed length."""
+
+    rng = random.Random(seed)
+    patterns = []
+    seen = set()
+    while len(patterns) < count:
+        inner = '|'.join(generate(rng, 1) for _ in range(rng.choice([1, 2, 2, 3])))
+        pattern = rng.choice(['', 'a', 'b?', '?']) + '!(' + inner + ')' + rng.choice(['', 'a', 'b', 'ab', '?', 'c?'])
+        if rng.random() < 0.3:
+            pattern = '@(' + pattern + ')'
+        if pattern not in seen and inverse_placement(parse(pattern)[0]) == {'in inverse'}:
+            seen.add(pattern)
+            patterns.append(pattern)
+    return patterns
+
+
 def fn_match(name, pattern, flags=0):
     """Match with `fnmatch`."""
 
@@ -175,6 +196,15 @@ CASES = [
     # Groups that are merged into their parent keep the same meaning
     ('@(a|@(!(b)c))d', ['xcd', 'ad', 'cd'], ['bcd']),
     ('@(@(!(a)b))', ['xb', 'b'], ['ab']),
+    # Inverse groups inside inverse groups
+    ('!(!(a))', ['a'], ['aa', 'b', 'ab']),
+    ('!(!(a)|b)', ['a'], ['aa', 'ab', 'b', 'c']),
+    ('!(a!(b))', ['ab', 'b', 'ba'], ['a', 'aa', 'aba', 'abb']),
+    ('!(!(a)b)', ['ab', 'a', 'c'], ['b', 'xb', 'abb']),
+    ('!(a!(b)c)', ['abc', 'xac', 'a'], ['ac', 'abac']),
+    ('!(a!(b)c)d', ['abcd', 'ad', 'xacd'], ['acd']),
+    ('!(x|!(a)b)c', ['abc', 'c', 'yc'], ['xc', 'bc', 'aabc']),
+    ('@(a|!(b!(c)))d', ['bcd', 'ad', 'xd'], ['bd', 'bxd']),
     # Inside loops, the rest is the remainder of the slot and what follows the loop
     ('+(!(a))', ['ab', 'b', 'aa'], ['a']),
     ('*(!(a)|b)', ['ab', 'b'], ['a']),
@@ -248,6 +278,20 @@ def test_inverse_in_group_model(seed):
     assert not bad, bad[:5]
 
 
+@pytest.mark.parametrize('seed', [10, 11])
+def test_inverse_nested_model(seed):
+    """Check random inverse groups inside inverse groups against the reference model."""
+
+    bad = []
+    for pattern in generate_nested_patterns(seed, 100):
+        nodes = parse(pattern)[0]
+        for name in NAMES:
+            if model_match(nodes, name) != fn_match(name, pattern):
+                bad.append((pattern, name))
+                break
+    assert not bad, bad[:5]
+
+
 @pytest.mark.parametrize('seed', [4, 5])
 def test_inverse_in_group_wrapped_random(seed):
     """Wrapping random patterns in a group, including ones with loops, does not change what they match."""
@@ -269,10 +313,16 @@ def test_inverse_in_group_wrapped_random(seed):
 
 @pytest.mark.parametrize('seed', [6, 7])
 def test_inverse_in_group_capture_random(seed):
-    """The capture flag does not change what random patterns match."""
+    """The capture flag does not change what random patterns match, including nested groups and loops."""
 
+    rng = random.Random(seed)
     bad = []
-    for pattern in generate_patterns(seed, 80):
+    count = 0
+    while count < 100:
+        pattern = generate(rng)
+        if '!(' not in pattern:
+            continue
+        count += 1
         regex = re.compile(fnmatch.translate(pattern, flags=fnmatch.EXTMATCH | fnmatch.CAPTURE)[0][0])
         for name in NAMES:
             if bool(regex.match(name)) != fn_match(name, pattern):

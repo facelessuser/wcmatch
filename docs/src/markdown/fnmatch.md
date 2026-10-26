@@ -389,7 +389,8 @@ etc. See the [syntax overview](#syntax) for more information.
 >
 > The rest of the pattern includes what follows the group in its own alternative and what follows the enclosing group,
 > so `@(!(a)b)` and `@(x|!(a))b` both reject `ab`. In `+(...)` and `*(...)` groups, only what follows the group in its
-> alternative and what follows the loop are considered, further iterations are not.
+> alternative and what follows the loop are considered, further iterations are not. An inverse group inside another
+> inverse group follows the same rule for the text the outer group consumes, so `!(!(a)|b)` only matches `a`.
 
 > [!warning]
 > When using extended glob patterns, groups are translated from glob groups to regular expression groups: `+(...)` ->
