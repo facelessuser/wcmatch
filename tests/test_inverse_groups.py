@@ -1,20 +1,26 @@
 """
-Test inverse extended groups, `!(...)`, that sit inside other extended groups.
+Test inverse extended groups, `!(...)`.
 
-An inverse group that consumes some text is only valid if the rest of the pattern can match what is left, and if none
-of the ways the rest could match would make the consumed text match one of the group's own patterns. The rest of the
-pattern includes what follows the group inside its slot, and what follows the enclosing group.
+If the patterns in an inverse group can only match text up to some length, the group matches any other text, whatever
+follows it. `!(a)*` matches `a`, as the group can match nothing and `*` can match `a`. This is the case when the
+patterns are made of characters, `?`, `[...]`, and groups such as `@(...)` and `?(...)` of those.
+
+Patterns that can match text of any length, with `*`, `+(...)`, `*(...)`, or inverse groups, must be translated with
+what follows them. An inverse group that consumes some text is only valid if the rest of the pattern can match what is
+left, and if none of the ways the rest could match would make the consumed text match one of the group's own
+patterns. The rest of the pattern includes what follows the group inside its slot, and what follows the enclosing
+group.
 
 Inside `+(...)` and `*(...)` groups, the rest only includes the remainder of the group's slot and whatever follows the
 loop, it does not consider further iterations. Each iteration is judged as though it were the last one. This means
-`+(!(foo))` does not match `foo`, just like `!(foo)`, even though `f` and `oo` each match `!(foo)`.
+`+(!(a*b))` does not match `axb`, even though `ax` and `b` each match `!(a*b)`.
 
 An inverse group inside the patterns of another inverse group follows the same rule, the text it can consume has to end
 where the text consumed by the outer group ends. This is exact when what follows the outer group has a fixed length,
 as only one place is left for it to end.
 
-The reference model below implements the first rule directly with a simple backtracking matcher. It is used to check
-that the regular expressions produced by the parser follow the rule.
+The reference model below implements these rules directly with a simple backtracking matcher. It is used to check
+that the regular expressions produced by the parser follow them.
 """
 import itertools
 import os
@@ -48,17 +54,27 @@ def parse(pattern, i=0, stop=''):
     return nodes, i
 
 
+def bounded(alts):
+    """Check if the patterns can only match text up to some length."""
+
+    for alt in alts:
+        for node in alt:
+            if node[0] in ('*', 'inv') or (node[0] == 'grp' and (node[1] in '*+' or not bounded(node[2]))):
+                return False
+    return True
+
+
 def model_match(nodes, name):
     """Match with the reference model."""
 
     end = len(name)
 
-    def seq(items, pos, k, kl):
+    def seq(items, pos, k, kl, inv):
         """
         Match a sequence of nodes at `pos`, then call the continuation `k`.
 
         Inverse groups use `kl` to find the places where the rest of the pattern can match. It is the same as `k`,
-        except in loops, where it skips any further iterations.
+        except in loops, where it skips any further iterations. `inv` is set inside inverse groups.
         """
 
         if not items:
@@ -66,7 +82,7 @@ def model_match(nodes, name):
         node, rest = items[0], items[1:]
 
         def cont(q):
-            return seq(rest, q, k, kl)
+            return seq(rest, q, k, kl, inv)
 
         kind = node[0]
         if kind == 'lit':
@@ -78,8 +94,8 @@ def model_match(nodes, name):
 
         alts = node[2]
 
-        def alts_match(start, k2, kl2):
-            return any(seq(a, start, k2, kl2) for a in alts)
+        def alts_match(start, k2, kl2, inv2=inv):
+            return any(seq(a, start, k2, kl2, inv2) for a in alts)
 
         if kind == 'grp':
             t = node[1]
@@ -87,7 +103,7 @@ def model_match(nodes, name):
             def here(q):
                 """The rest after this group, up to the local end."""
 
-                return cont(q) if kl is k else seq(rest, q, kl, kl)
+                return cont(q) if kl is k else seq(rest, q, kl, kl, inv)
 
             if t == '@':
                 return alts_match(pos, cont, here)
@@ -108,19 +124,22 @@ def model_match(nodes, name):
 
             return alts_match(pos, first, here)
 
-        # Inverse group: none of the places where the rest can match may end a match of the group's patterns
-        real_ends = [e for e in range(pos, end + 1) if cont(e)]
-        local_ends = real_ends if kl is k else [e for e in range(pos, end + 1) if seq(rest, e, kl, kl)]
-
         def ends_at(e):
             return lambda q: q == e
 
-        return bool(real_ends) and not any(alts_match(pos, ends_at(e), ends_at(e)) for e in local_ends)
+        if not inv and bounded(alts):
+            # Patterns of a limited length: the group can match any text that they do not match
+            return any(cont(e) and not alts_match(pos, ends_at(e), ends_at(e), True) for e in range(pos, end + 1))
+
+        # Otherwise none of the places where the rest can match may end a match of the group's patterns
+        real_ends = [e for e in range(pos, end + 1) if cont(e)]
+        local_ends = real_ends if kl is k else [e for e in range(pos, end + 1) if seq(rest, e, kl, kl, inv)]
+        return bool(real_ends) and not any(alts_match(pos, ends_at(e), ends_at(e), True) for e in local_ends)
 
     def top(q):
         return q == end
 
-    return seq(nodes, 0, top, top)
+    return seq(nodes, 0, top, top, False)
 
 
 def generate(rng, depth=0):
@@ -210,16 +229,38 @@ MATCHERS = pytest.mark.parametrize('matcher', [fn_match, glob_match])
 
 # Pattern, names that match, names that do not match.
 CASES = [
-    # The rest of the slot is part of what follows the inverse group
+    # Patterns that can only match text of a limited length: the group matches any other text, whatever follows it
+    ('!(a)', ['b', 'ab', 'aa'], ['a']),
+    ('!(a)b', ['xb', 'b', 'abb'], ['ab']),
+    ('!(a)*', ['a', 'ab', 'b', 'xa'], []),
+    ('!(foo)*.txt', ['foo.txt', 'foobar.txt', 'bar.txt'], ['foo.js']),
+    ('!(foo).txt', ['x.txt', 'foox.txt'], ['foo.txt']),
+    ('!(a|bc)*', ['a', 'bc', 'b', 'x'], []),
+    ('!(a|)*', ['x', 'ab'], ['a']),
+    ('!(?(a))*', ['b', 'aab'], ['a']),
+    ('!(?(a))', ['aa', 'b'], ['a']),
+    ('!(?(a)b)*', ['b', 'ab', 'x', 'abb'], []),
+    ('!(@(a|bc)d)*', ['ad', 'bcd', 'x', 'bd'], []),
+    ('!(a?)*', ['ab', 'a', 'x'], []),
+    ('!()', ['a'], []),
     ('@(!(a)b)', ['b', 'xb', 'abb'], ['ab', 'a']),
-    ('@(!(a)*)', ['b', 'xa'], ['ab', 'a']),
+    ('@(!(a)*)', ['a', 'ab', 'b', 'xa'], []),
     ('@(!(a)b|c)d', ['bd', 'xbd', 'cd'], ['abd', 'ab']),
     ('@(!(ab)?)c', ['xyc', 'ac', 'abc'], ['abxc']),
-    # What follows the enclosing group is part of what follows the inverse group
     ('@(x|!(a))b', ['b', 'xb', 'cb', 'aab'], ['ab']),
     ('?(!(a))b', ['b', 'cb'], ['ab']),
-    ('@(!(a)*)c', ['bc', 'xac', 'c'], ['abc']),
+    ('@(!(a)*)c', ['abc', 'bc', 'xac', 'c'], ['ab']),
     ('@(!(a)b)@(!(c)d)', ['xbxd', 'bd'], ['abxd', 'bcd', 'xbcd']),
+    ('@(!(a|b)+(c))d', ['cd', 'ccd', 'accd', 'bccd'], ['acd', 'ad']),
+    # Brackets, escapes, and character classes are a character each
+    ('!([ab])*', ['a', 'ab', 'b', 'c', 'x1'], []),
+    ('!([ab])', ['ab', 'c', 'x1'], ['a', 'b']),
+    (r'!(\*)', ['**', 'a', 'x1'], ['*']),
+    (r'!(a\.b)', ['a.bc', 'a', '*'], ['a.b']),
+    ('!(a.b)*', ['a', 'a.b', 'a.bc'], []),
+    ('!([[:digit:]])', ['12', 'a', 'x1'], ['1']),
+    ('!([[:digit:]])*', ['1', '12', 'a'], []),
+    ('!(?)', ['ab', '12', 'x1', '**'], ['a', '1', '*']),
     # Groups that are merged into their parent keep the same meaning
     ('@(a|@(!(b)c))d', ['xcd', 'ad', 'cd'], ['bcd']),
     ('@(@(!(a)b))', ['xb', 'b'], ['ab']),
@@ -227,6 +268,26 @@ CASES = [
     ('?(a|@(!(b)c|d))e', ['xce', 'de', 'ae', 'e'], ['bce']),
     ('+(a|@(!(b)c|d))e', ['xce', 'de', 'ade', 'ae'], ['bce']),
     ('@(@(!(b)c|d)|a)e', ['xce', 'de', 'ae'], ['bce']),
+    # Repeating names that match, matches
+    ('+(!(foo))', ['foo', 'foobar', 'f'], []),
+    ('*(!(foo))', ['foo', 'bar'], []),
+    ('+(!(ba))', ['ba', 'a', 'bab'], []),
+    ('*(!(ab)|x)', ['ab', 'aab', 'x'], []),
+    ('+(!(foo)|x)', ['foo', 'xfoo', 'xx'], []),
+    ('+(!(a))', ['ab', 'b', 'aa'], ['a']),
+    ('*(!(a)|b)', ['ab', 'b'], ['a']),
+    ('+(!(a)b)c', ['xbc', 'xbxbc', 'bc'], ['abc']),
+    # Patterns that can match text of any length: the rest of the pattern is part of what makes the text match
+    ('!(a*)b', ['b', 'cb'], ['ab', 'abb']),
+    ('!(*.js)*', ['x'], ['a.js', 'a.json', 'a.js.js']),
+    ('!(*a)*', ['bb'], ['a', 'ba', 'xab']),
+    ('@(!(a*)b)', ['b', 'xb'], ['ab']),
+    ('@(x|!(a*))b', ['b', 'xb'], ['ab', 'aab']),
+    # Inside loops, each iteration is judged as though it were the last
+    ('+(!(a*))', ['ba'], ['ab', 'a']),
+    ('+(!(a*b))', ['ax', 'b', 'xaxb'], ['axb']),
+    ('*(!(a*)|b)', ['ba', 'b'], ['ab']),
+    ('+(!(a*)b)c', ['xbc', 'xbxbc'], ['abc']),
     # Inverse groups inside inverse groups
     ('!(!(a))', ['a'], ['aa', 'b', 'ab']),
     ('!(!(a)|b)', ['a'], ['aa', 'ab', 'b', 'c']),
@@ -236,16 +297,6 @@ CASES = [
     ('!(a!(b)c)d', ['abcd', 'ad', 'xacd'], ['acd']),
     ('!(x|!(a)b)c', ['abc', 'c', 'yc'], ['xc', 'bc', 'aabc']),
     ('@(a|!(b!(c)))d', ['bcd', 'ad', 'xd'], ['bd', 'bxd']),
-    # Each iteration is judged as though it were the last, so repeating names that match does not always match
-    ('+(!(foo))', ['foobar', 'bar', 'f', 'fo', 'oo'], ['foo']),
-    ('*(!(foo))', ['bar', 'fo'], ['foo']),
-    ('+(!(ba))', ['a', 'b', 'bab', 'baa'], ['ba']),
-    ('*(!(ab)|x)', ['aab', 'xab', 'x', 'b'], ['ab']),
-    ('+(!(foo)|x)', ['xfoo', 'foox', 'xx'], ['foo']),
-    # Inside loops, the rest is the remainder of the slot and what follows the loop
-    ('+(!(a))', ['ab', 'b', 'aa'], ['a']),
-    ('*(!(a)|b)', ['ab', 'b'], ['a']),
-    ('+(!(a)b)c', ['xbc', 'xbxbc', 'bc'], ['abc']),
 ]
 
 
@@ -419,6 +470,87 @@ def test_inverse_in_group_leaves_no_placeholders(seed, flags):
                     re.compile(regex)
 
 
+@MATCHERS
+@pytest.mark.parametrize('dotmatch', [False, True])
+@pytest.mark.parametrize(
+    ('pattern', 'hidden', 'visible'),
+    [
+        ('!(a)*', '.x', 'x'),
+        ('!(.hid)*', '.hid', 'x'),
+        ('@(!(a)b)', '.b', 'xb'),
+    ]
+)
+def test_inverse_exact_dotmatch(matcher, dotmatch, pattern, hidden, visible):
+    """Names that start with a dot still need `DOTMATCH` unless they are matched with a literal dot."""
+
+    flags = fnmatch.DOTMATCH if dotmatch else 0
+
+    assert matcher(visible, pattern, flags=flags)
+    assert matcher(hidden, pattern, flags=flags) is dotmatch
+
+
+@MATCHERS
+def test_inverse_exact_dot_in_patterns(matcher):
+    """A literal dot is matched by the patterns, but a hidden name still needs `DOTMATCH`."""
+
+    assert not matcher('.hid', '!(.hid)')
+    assert matcher('.a', '!(.hid)', flags=fnmatch.DOTMATCH)
+    assert not matcher('.hid', '!(.hid)', flags=fnmatch.DOTMATCH)
+    assert matcher('.b', '!(a)', flags=fnmatch.DOTMATCH)
+    assert not matcher('.b', '!(a)')
+
+
+def test_inverse_exact_many_optional_parts():
+    """Patterns that are too long to track the lengths of still work, and do not grow without bound."""
+
+    letters = 'abcdefghij'
+    pattern = '!(' + ''.join('?({})'.format(c) for c in letters) + ')'
+    regex = fnmatch.translate(pattern, flags=fnmatch.EXTMATCH)[0][0]
+
+    assert len(regex) < 1000
+    assert fn_match('ca', pattern)
+    assert fn_match('x', pattern)
+    assert fn_match(letters + 'k', pattern)
+    assert not fn_match('ac', pattern)
+    assert not fn_match(letters, pattern)
+
+
+@pytest.mark.parametrize(
+    ('pattern', 'name', 'groups'),
+    [
+        ('a!(b)c', 'axyc', ('xy',)),
+        ('a!(b)c', 'ac', ('',)),
+        ('!(a)*', 'ab', ('',)),
+        ('x!(?(a))y', 'xaby', ('ab', None)),
+        ('@(!(a|b)+(c))d', 'xccd', ('xcc', 'x', 'cc')),
+        ('!(a|bc)@(d)', 'xyd', ('xy', 'd')),
+        ('+(!(a)b)', 'xbyb', ('xbyb', 'y')),
+    ]
+)
+def test_inverse_exact_capture(pattern, name, groups):
+    """Extended groups are capturing groups in the order of the pattern, and an inverse group captures its text."""
+
+    regex = re.compile(fnmatch.translate(pattern, flags=fnmatch.EXTMATCH | fnmatch.CAPTURE)[0][0])
+
+    assert regex.match(name).groups() == groups
+
+
+@pytest.mark.parametrize('seed', [16, 17])
+def test_inverse_exact_capture_groups_in_order(seed):
+    """Random patterns get one capturing group for each extended group, whether or not the lengths are tracked."""
+
+    rng = random.Random(seed)
+    count = 0
+    while count < 150:
+        pattern = generate(rng)
+        if '!(' not in pattern:
+            continue
+        count += 1
+        groups = sum(1 for i in range(len(pattern) - 1) if pattern[i] in '@?*+!' and pattern[i + 1] == '(')
+        regex = fnmatch.translate(pattern, flags=fnmatch.EXTMATCH | fnmatch.CAPTURE)[0][0]
+        assert re.compile(regex).groups == groups, pattern
+
+
 @pytest.mark.parametrize('literal', ['\x001\x00', '\\(\\?#tail0\\)', '\x00\\(\\?#tail1\\)\x00'])
 def test_inverse_in_group_placeholder_lookalikes(literal):
     """Text in a pattern that looks like a placeholder is just text."""
@@ -440,6 +572,9 @@ def test_inverse_in_group_placeholder_lookalikes(literal):
         ('x/@(!(a)b)', ['x/xb', 'x/b'], ['x/ab']),
         ('@(x|!(a))/b', ['x/b', 'c/b'], ['a/b']),
         ('@(!(a)b)/@(!(c)d)', ['xb/xd', 'b/d'], ['ab/xd', 'xb/cd']),
+        ('!(a)*/x', ['a/x', 'ab/x', 'b/x'], ['a/b/x', 'a/y']),
+        ('!(a)/x', ['b/x', 'ab/x'], ['a/x']),
+        ('!(a)/@(!(b)*)', ['b/a', 'x/b', 'x/y'], ['a/b']),
     ]
 )
 def test_inverse_in_group_path_segments(matcher, windows, pattern, matches, excludes):

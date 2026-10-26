@@ -28,6 +28,11 @@
     consumed by the outer group ends, e.g. `!(!(a)|b)` matched `aa` and `!(a!(b))` matched `aba`. This also caused
     `translate()` with `CAPTURE` to match differently than without it for these patterns. This was a regression in
     7.0.1.
+-   **FIX**: An `EXTGLOB`/`EXTMATCH` inverse group, `!(...)`, whose patterns can only match text up to some length,
+    e.g. `!(foo)`, `!(a|bc)`, or `!(?(a)b)`, now matches any other text, whatever follows it, as it does in Bash. For
+    instance, `!(foo)*.txt` now matches `foo.txt` and `foobar.txt`, `!(a)*` matches `a`, and `+(!(foo))` matches `foo`.
+    Inverse groups with patterns that can match text of any length, e.g. `!(*.js)`, still need to know what follows them
+    and behave as before.
 
 ## 11.2
 

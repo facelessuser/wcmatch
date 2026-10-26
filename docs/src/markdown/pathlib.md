@@ -545,16 +545,23 @@ often the name used in Bash.
 > be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate
 > a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
 
-> [!note] Inverse groups and the rest of the pattern
-> With `EXTGLOB`, an inverse group, `!(...)`, only matches text when the rest of the pattern can match what is left,
-> and none of the ways the rest could match would make that text match one of the group's patterns. `!(a)` matches
-> `ab`, but `!(a)*` does not, as the `*` could match `b`, leaving `a` for the group. Likewise, `!(foo)*.txt` does not
-> match `foo.txt` or `foobar.txt`.
+> [!note] Inverse groups
+> With `EXTGLOB`, an inverse group, `!(...)`, matches any text that none of its patterns match, and what follows it
+> does not matter. `!(a)` matches `ab` but not `a`, `!(a)*` matches `a` and `ab`, and `!(foo)*.txt` matches `foo.txt`
+> and `foobar.txt`. This is the case as long as the patterns can only match text up to some length, which is when they
+> are made of characters, `?`, `[...]`, and groups such as `@(...)` and `?(...)` of those.
+>
+> If a pattern can match text of any length, because it uses `*`, `+(...)`, `*(...)`, or an inverse group, the group
+> has to be translated along with what follows it. Such a group only matches text when the rest of the pattern can
+> match what is left, and none of the ways the rest could match would make that text match one of the group's
+> patterns. `!(a*)b` does not match `ab` or `abb`, and `!(*.js)*` does not match `a.js` or `a.json`.
 >
 > The rest of the pattern includes what follows the group in its own alternative and what follows the enclosing group,
-> so `@(!(a)b)` and `@(x|!(a))b` both reject `ab`. In `+(...)` and `*(...)` groups, only what follows the group in its
-> alternative and what follows the loop are considered, further iterations are not. An inverse group inside another
-> inverse group follows the same rule for the text the outer group consumes, so `!(!(a)|b)` only matches `a`.
+> so `@(!(a*)b)` and `@(x|!(a*))b` both reject `ab`. In `+(...)` and `*(...)` groups, only what follows the group in
+> its alternative and what follows the loop are considered, further iterations are not. Each iteration is judged as
+> though it were the last one, so `+(!(a*b))` does not match `axb`, even though `ax` and `b` each match `!(a*b)`. An
+> inverse group inside another inverse group follows the same rule for the text the outer group consumes, so
+> `!(!(a)|b)` only matches `a`.
 
 > [!warning]
 > When using extended glob patterns, groups are translated from glob groups to regular expression groups: `+(...)` ->
