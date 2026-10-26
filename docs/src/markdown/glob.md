@@ -895,6 +895,16 @@ often the name used in Bash.
 > be treated as a [`NEGATE`](#negate) pattern (even if `!(` doesn't yield a valid `EXTGLOB` pattern). To negate
 > a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
 
+> [!note] Inverse groups and the rest of the pattern
+> With `EXTGLOB`, an inverse group, `!(...)`, only matches text when the rest of the pattern can match what is left,
+> and none of the ways the rest could match would make that text match one of the group's patterns. `!(a)` matches
+> `ab`, but `!(a)*` does not, as the `*` could match `b`, leaving `a` for the group. Likewise, `!(foo)*.txt` does not
+> match `foo.txt` or `foobar.txt`.
+>
+> The rest of the pattern includes what follows the group in its own alternative and what follows the enclosing group,
+> so `@(!(a)b)` and `@(x|!(a))b` both reject `ab`. In `+(...)` and `*(...)` groups, only what follows the group in its
+> alternative and what follows the loop are considered, further iterations are not.
+
 > [!warning]
 > When using extended glob patterns, groups are translated from glob groups to regular expression groups: `+(...)` ->
 > `(...)+`, and so they are susceptible to the same kinds of performance based exploits that can occur in normal

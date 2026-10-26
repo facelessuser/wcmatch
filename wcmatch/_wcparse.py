@@ -129,6 +129,10 @@ RE_POSIX = re.compile(r'\[:(alnum|alpha|ascii|blank|cntrl|digit|graph|lower|prin
 RE_NUM_RANGE = re.compile(r'([0-9]*-[0-9]*)>')
 RE_EMPTY_EXT_SLOTS = re.compile(r'[|]+')
 RE_EXT_GROUP = re.compile(r'[@*+?!]\(')
+# Marks the spot in an inverse group's lookahead where the text following its enclosing group goes. It is a regular
+# expression comment, and `re.escape()` always escapes `(`, `?`, and `#`, so it can never be confused with pattern
+# content. Should one ever be left behind, it does nothing.
+RE_TAIL = re.compile(r'\(\?#tail[0-9]+\)')
 
 SET_OPERATORS = frozenset(('&', '~', '|'))
 NEGATIVE_SYM = frozenset((b'!', '!'))
@@ -951,6 +955,8 @@ class WcParse(Generic[AnyStr]):
         self.inv_nest = False
         self.flags = flags
         self.inv_ext = 0
+        self.tail_id = 0
+        self.tails_open = False
         self.unix = is_unix_style(self.flags)
         self.bad_sequence = -1
         self.ext_empty = False
@@ -1012,6 +1018,65 @@ class WcParse(Generic[AnyStr]):
             self.set_after_start()
         elif not self.dir_start and self.after_start:
             self.reset_dir_track()
+
+    def _resolve_tails(self, items: list[str], tail: str, skip: str = '') -> None:
+        """
+        Fill in the tail of inverse groups that sit inside groups.
+
+        An inverse group inside a group is closed once its slot ends, but the text that follows the enclosing group
+        is not known yet, so a tail token was left in its place. For every group in `items` that has such a token,
+        the token becomes the rest of the slot after that group followed by `tail`. Tokens that match `skip` belong
+        to the group that owns `items` and are resolved by the group's parent.
+        """
+
+        if not self.tails_open:
+            return
+
+        for k in range(len(items) - 1, -1, -1):
+            item = items[k]
+            if '(?#tail' not in item:
+                continue
+            end = k + 1
+            while end < len(items) and items[end] != '|':
+                end += 1
+            rest = ''.join(items[k + 1:end]) + tail
+            if self.capture:
+                # The tail only goes inside a lookahead, which must not capture
+                rest = rest.replace('(?#)', '?:')
+            items[k] = type(item)(self._fill_tail(item, rest, skip))
+
+    @staticmethod
+    def _fill_tail(item: str, rest: str, skip: str) -> str:
+        """Replace every tail token in `item` with `rest`, except for the one that matches `skip`."""
+
+        def replace(m: re.Match[str]) -> str:
+            return m.group(0) if m.group(0) == skip else rest
+
+        return RE_TAIL.sub(replace, item)
+
+    @staticmethod
+    def _retoken(items: list[str], token: str, new_token: str) -> None:
+        """Replace one tail token with another, as the group that owned `token` has been merged into its parent."""
+
+        for k, item in enumerate(items):
+            if token in item:
+                items[k] = type(item)(item.replace(token, new_token))
+
+    def _finish_group(self, extended: list[str], token: str) -> None:
+        """Close the inverse groups that sit directly in the slots of a group that is now complete."""
+
+        self.clean_up_inverse(extended, self.inv_nest, token)
+        self._resolve_tails(extended, '' if self.inv_nest else token, token)
+        if self.inv_nest:
+            # An inverse group's contents are followed by its own lookahead, which already provides the tail
+            self._retoken(extended, token, '')
+
+    def _close_root(self, current: list[str]) -> None:
+        """Close the inverse groups at the end of a path segment or pattern."""
+
+        self.clean_up_inverse(current)
+        self._resolve_tails(current, _EOP if not self.pathname else self.path_eop)
+        self.tails_open = False
 
     def _restrict_extended_slash(self) -> str:
         """Restrict extended slash."""
@@ -1541,7 +1606,7 @@ class WcParse(Generic[AnyStr]):
                 value = AtomicStar(value)
             current.append(value)
 
-    def clean_up_inverse(self, current: list[str], nested: bool = False) -> None:
+    def clean_up_inverse(self, current: list[str], nested: bool = False, token: str | None = None) -> None:
         """
         Clean up current.
 
@@ -1563,8 +1628,17 @@ class WcParse(Generic[AnyStr]):
         while index >= 0:
             if isinstance(current[index], InvPlaceholder):
                 content = current[index + 1:]
+                tail = ''
                 if not nested:
-                    content.append(_EOP if not self.pathname else self.path_eop)
+                    if token is not None:
+                        # Tail is not known yet, it is filled in when the text after the enclosing group is known
+                        tail = token
+                        self.tails_open = True
+                    else:
+                        tail = _EOP if not self.pathname else self.path_eop
+                # Groups after this one are copied into the lookahead, so they must know what follows them first
+                self._resolve_tails(content, tail, token or '')
+                content.append(tail)
                 current[index] = (
                     (''.join(content).replace('(?#)', '?:') if self.capture else ''.join(content)) +
                     (_EXCLA_GROUP_CLOSE.format(str(current[index])))
@@ -1578,7 +1652,8 @@ class WcParse(Generic[AnyStr]):
         i: util.StringIter,
         current: list[str],
         reset_dot: bool = False,
-        parent: str = ''
+        parent: str = '',
+        parent_token: str = ''
     ) -> bool:
         """Parse extended pattern lists."""
 
@@ -1588,6 +1663,9 @@ class WcParse(Generic[AnyStr]):
         if not i.match(RE_EXT_GROUP):
             i.rewind(i.index - index)
             return False
+
+        gtoken = '(?#tail%d)' % self.tail_id
+        self.tail_id += 1
 
         # Save state
         temp_ext_empty = self.ext_empty
@@ -1617,7 +1695,7 @@ class WcParse(Generic[AnyStr]):
 
                 # See if we should parse a nested extended pattern.
                 if c in EXT_TYPES:
-                    if self.parse_extend(c, i, extended, parent=list_type):
+                    if self.parse_extend(c, i, extended, parent=list_type, parent_token=gtoken):
                         continue
 
                 if c == '*':
@@ -1634,6 +1712,7 @@ class WcParse(Generic[AnyStr]):
                         extended.append(self._restrict_extended_slash())
                     extended.append(self.sep)
                 elif c == '|':
+                    self.clean_up_inverse(extended, self.inv_nest, gtoken)
                     # Add a new slot, but avoid adding more empty slots if we have a known one
                     if not extended or extended[-1] == '|':
                         if not self.ext_empty:
@@ -1709,6 +1788,7 @@ class WcParse(Generic[AnyStr]):
             # Reduce child group into the parent and notify the parent type should change.
             # Groups must be compatible. e.g. `!(!(a|b))` -> `@(a|b)`.
             if not self.capture and only_child and list_type in promote_ext:
+                self._retoken(extended, gtoken, parent_token)
                 current.extend(extended)
                 t = promote_ext[list_type]
                 current.append(ExtPromote(t))
@@ -1720,6 +1800,7 @@ class WcParse(Generic[AnyStr]):
             # slot. e.g. `+(a|@(b|c)|d)` not `+(a|test@(b|c)|d)`.
             # Certain groups cannot be reduced without adding a blank entry.
             elif not self.capture and parent in ext_reduce['parent'] and empty_slot:
+                self._retoken(extended, gtoken, parent_token)
                 current.extend(extended)
                 if parent in ext_reduce['empty'] and not temp_ext_empty:
                     current.append('|')
@@ -1730,20 +1811,25 @@ class WcParse(Generic[AnyStr]):
             # Finalize groups of varying types.
             # Groups at the top level are tracked so atomic `*` segments can avoid them.
             elif list_type == '?':
+                self._finish_group(extended, gtoken)
                 current.append(
                     ExtGroup((_QMARK_CAPTURE_GROUP if self.capture else _QMARK_GROUP).format(''.join(extended)))
                 )
             elif list_type == '*':
+                self._finish_group(extended, gtoken)
                 current.append(
                     ExtGroup((_STAR_CAPTURE_GROUP if self.capture else _STAR_GROUP).format(''.join(extended)))
                 )
             elif list_type == '+':
+                self._finish_group(extended, gtoken)
                 current.append(
                     ExtGroup((_PLUS_CAPTURE_GROUP if self.capture else _PLUS_GROUP).format(''.join(extended)))
                 )
             elif list_type == '@':
+                self._finish_group(extended, gtoken)
                 current.append(ExtGroup((_CAPTURE_GROUP if self.capture else _GROUP).format(''.join(extended))))
             elif list_type == '!':
+                self._finish_group(extended, gtoken)
                 self.inv_ext += 1
                 # The star may land at the start of a name when it is in a group slot or follows a group.
                 check_start = (temp_in_list or bool(current and isinstance(current[-1], ExtGroup))) and not self.dot
@@ -1774,10 +1860,6 @@ class WcParse(Generic[AnyStr]):
                 # Place holder for closing, but store the proper star
                 # so we know which one to use
                 current.append(InvPlaceholder(star))
-
-            # Clean up nested inverse group placeholders and finalize the inverse lookaheads.
-            if temp_in_list:
-                self.clean_up_inverse(current, temp_inv_nest and self.inv_nest)
 
         except StopIteration:
             success = False
@@ -1915,7 +1997,7 @@ class WcParse(Generic[AnyStr]):
                 if self.pathname:
                     self.set_start_dir()
                     self.atomic_stars(current)
-                    self.clean_up_inverse(current)
+                    self._close_root(current)
                     current.append(self.sep + _ONE_OR_MORE)
                     self.consume_path_sep(i)
                     self.matchbase = False
@@ -1929,7 +2011,7 @@ class WcParse(Generic[AnyStr]):
                     value = self._references(i)
                     if self.dir_start:
                         self.atomic_stars(current)
-                        self.clean_up_inverse(current)
+                        self._close_root(current)
                         self.consume_path_sep(i)
                         self.matchbase = False
                     current.append(value)
@@ -1952,7 +2034,7 @@ class WcParse(Generic[AnyStr]):
             self.update_dir_state()
 
         self.atomic_stars(current)
-        self.clean_up_inverse(current)
+        self._close_root(current)
 
         if self.pathname:
             current.append(_PATH_TRAIL.format(self.sep))
