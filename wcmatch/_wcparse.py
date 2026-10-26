@@ -1027,7 +1027,7 @@ class WcParse(Generic[AnyStr]):
         check_start = (after_ext or self.in_list) and not self.dot
         if self.pathname:
             if self.after_start and not self.dot:
-                value = self.seq_path_dot if not self.in_list else self.seq_path_group_dot
+                value = self.seq_path_dot if not self.in_list else self.seq_path_group_dot + self.seq_path
             elif check_start:
                 value = self.seq_path_group_dot + self.seq_path
             else:

@@ -2287,6 +2287,36 @@ def test_wildcard_start_leading_dot_after_separator(pattern, visible, windows):
 
 
 @pytest.mark.parametrize('windows', [False, True])
+@pytest.mark.parametrize('dotmatch', [False, True])
+@pytest.mark.parametrize(
+    ('pattern', 'single', 'split'),
+    [
+        ('+(?)', 'ab', 'a/b'),
+        ('*(?)', 'ab', 'a/b'),
+        ('*(a|?)', 'ab', 'a/b'),
+        ('+([!x])', 'ab', 'a/b'),
+        ('+(?b)', 'abab', 'ab/b'),
+        ('*(??)', 'abab', 'aa/a'),
+        ('+(?)?', 'ab', 'a/b'),
+        ('x/+(?)', 'x/ab', 'x/a/b'),
+        ('+(?)/x', 'ab/x', 'a/b/x'),
+        ('**/x/+(?)', 'q/x/ab', 'q/x/a/b'),
+    ]
+)
+def test_group_wildcard_does_not_match_separator(pattern, single, split, dotmatch, windows):
+    """A wildcard at the start of a repeated group cannot match a path separator."""
+
+    flags = glob.EXTGLOB | glob.GLOBSTAR | (glob.FORCEWIN if windows else glob.FORCEUNIX)
+    if dotmatch:
+        flags |= glob.DOTMATCH
+    if windows:
+        single, split = single.replace('/', '\\'), split.replace('/', '\\')
+
+    assert glob.globmatch(single, pattern, flags=flags)
+    assert not glob.globmatch(split, pattern, flags=flags)
+
+
+@pytest.mark.parametrize('windows', [False, True])
 @pytest.mark.parametrize('pattern', ['?(a)*', '*(a)?hidden', '@(a|)[.]hidden', '+(a|)*'])
 def test_optional_group_after_separator(pattern, windows):
     """Dot restrictions also apply at the start of later path components."""

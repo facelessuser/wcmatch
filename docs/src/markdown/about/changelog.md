@@ -14,6 +14,8 @@
 -   **FIX**: Fix a wildcard in an `EXTGLOB`/`EXTMATCH` group, such as `?(old-)@(*)`, matching the leading dot of a file
     name when the text before it, e.g. an optional group or the start of another group slot, matched nothing. Wildcards
     in later iterations of a repeated group, e.g. `+(.?|*)` and `.a.`, are no longer wrongly restricted.
+-   **FIX**: Fix a `?` or bracket expression at the start of a repeated `EXTGLOB` group matching a path separator in
+    `globmatch` and related functions, e.g. `+(?)` matching `a/b`. This was a regression in 11.0.1.
 
 ## 11.2
 
