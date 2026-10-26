@@ -901,10 +901,13 @@ often the name used in Bash.
 > and `foobar.txt`. This is the case as long as the patterns can only match text up to some length, which is when they
 > are made of characters, `?`, `[...]`, and groups such as `@(...)` and `?(...)` of those.
 >
-> If a pattern can match text of any length, because it uses `*`, `+(...)`, `*(...)`, or an inverse group, the group
-> has to be translated along with what follows it. Such a group only matches text when the rest of the pattern can
-> match what is left, and none of the ways the rest could match would make that text match one of the group's
-> patterns. `!(a*)b` does not match `ab` or `abb`, and `!(*.js)*` does not match `a.js` or `a.json`.
+> If a pattern can match text of any length, because it uses `*`, `+(...)`, `*(...)`, or an inverse group, the group has
+> to be translated along with what follows it. If the patterns cannot match nothing, the group may match nothing
+> whenever the rest of the pattern matches, so `!(*.js)*` matches any name that does not start with a dot, including
+> `a.js`. Otherwise, such a group only matches text when the rest of the pattern can match what is left, and none of the
+> ways the rest could match would make that text match one of the group's patterns. `!(a*)b` does not match `ab` or
+> `abb`. If the patterns can match nothing, like `*(a)`, the group never matches when the rest of the pattern could
+> match all of the text, so `!(*(a))*` does not match anything.
 >
 > The rest of the pattern includes what follows the group in its own alternative and what follows the enclosing group,
 > so `@(!(a*)b)` and `@(x|!(a*))b` both reject `ab`. In `+(...)` and `*(...)` groups, only what follows the group in

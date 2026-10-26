@@ -33,6 +33,11 @@
     instance, `!(foo)*.txt` now matches `foo.txt` and `foobar.txt`, `!(a)*` matches `a`, and `+(!(foo))` matches `foo`.
     Inverse groups with patterns that can match text of any length, e.g. `!(*.js)`, still need to know what follows them
     and behave as before.
+-   **BREAK**: An `EXTGLOB`/`EXTMATCH` inverse group, `!(...)`, whose patterns cannot match nothing can now match nothing
+    whenever the rest of the pattern matches, as it does in Bash, even when its patterns can match text of any length.
+    For instance, `!(*.js)*` and `!(a*)*` now match any name that does not start with a dot, where `!(*.js)*` rejected
+    `a.js` and `a.json`. Names that start with a dot still need `DOTMATCH`/`DOTGLOB`. Inverse groups inside other
+    inverse groups are not affected.
 
 ## 11.2
 

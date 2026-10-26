@@ -324,12 +324,14 @@ class InvPlaceholder(str):
     """Placeholder for inverse pattern `!(...)`, and the tail token of the group its contents are in."""
 
     token: str
+    shortcut: bool
 
-    def __new__(cls, value: str, token: str = '') -> InvPlaceholder:
+    def __new__(cls, value: str, token: str = '', shortcut: bool = False) -> InvPlaceholder:
         """Create the placeholder."""
 
         placeholder = super().__new__(cls, value)
         placeholder.token = token
+        placeholder.shortcut = shortcut
         return placeholder
 
 
@@ -341,6 +343,7 @@ class ExtGroup(str):
     """Track a top level extended glob group, and the lengths of text it can match when they are known."""
 
     lens: dict[int, str] | None = None
+    needs = False
 
 
 class Sized(str):
@@ -1135,6 +1138,26 @@ class WcParse(Generic[AnyStr]):
         self.tails_open = False
 
     @staticmethod
+    def _maybe_empty(extended: list[str]) -> bool:
+        """
+        Check if the patterns of a group may match nothing.
+
+        A pattern can only be shown to match something if one of its pieces always matches a character.
+        """
+
+        needs = False
+        for item in [*extended, '|']:
+            if item == '|':
+                if not needs:
+                    return True
+                needs = False
+                continue
+            lens = getattr(item, 'lens', None)
+            if getattr(item, 'needs', False) or (lens is not None and 0 not in lens):
+                needs = True
+        return False
+
+    @staticmethod
     def _group_lengths(extended: list[str]) -> dict[int, str] | None:
         """
         Get the lengths of text that the patterns of a group can match, along with the regular expression for each.
@@ -1783,6 +1806,15 @@ class WcParse(Generic[AnyStr]):
                 if index and holder.token and holder.token in current[index - 1]:
                     # Groups in the inverse group's own patterns are followed by the same thing
                     current[index - 1] = type(current[index - 1])(current[index - 1].replace(holder.token, value))
+                if holder.shortcut:
+                    # The patterns cannot match nothing, so the group matches nothing if the rest of the pattern
+                    # matches. Matching nothing has the same restrictions as matching anything, like a leading dot.
+                    base = self.path_star if self.pathname else _STAR
+                    opening = current[index - 1]
+                    size = len('((?#)') if opening.startswith('((?#)') else len('(?:')
+                    current[index - 1] = type(opening)(
+                        opening[:size] + str(holder)[:-len(base)] + '(?=' + value + ')|' + opening[size:]
+                    )
                 current[index] = value + _EXCLA_GROUP_CLOSE.format(str(holder))
                 self.inv_ext -= 1
             index -= 1
@@ -1969,13 +2001,14 @@ class WcParse(Generic[AnyStr]):
                 )
             elif list_type == '+':
                 self._finish_group(extended, gtoken)
-                current.append(
-                    ExtGroup((_PLUS_CAPTURE_GROUP if self.capture else _PLUS_GROUP).format(''.join(extended)))
-                )
+                group = ExtGroup((_PLUS_CAPTURE_GROUP if self.capture else _PLUS_GROUP).format(''.join(extended)))
+                group.needs = not self._maybe_empty(extended)
+                current.append(group)
             elif list_type == '@':
                 self._finish_group(extended, gtoken)
                 group = ExtGroup((_CAPTURE_GROUP if self.capture else _GROUP).format(''.join(extended)))
                 group.lens = self._group_lengths(extended)
+                group.needs = not self._maybe_empty(extended)
                 current.append(group)
             elif list_type == '!':
                 # The star may land at the start of a name when it is in a group slot or follows a group.
@@ -2015,7 +2048,11 @@ class WcParse(Generic[AnyStr]):
                     )
                     # Place holder for closing, but store the proper star
                     # so we know which one to use
-                    current.append(InvPlaceholder(star, gtoken))
+                    shortcut = (
+                        not temp_in_inv and star.endswith(self.path_star if self.pathname else _STAR) and
+                        not self._maybe_empty(extended)
+                    )
+                    current.append(InvPlaceholder(star, gtoken, shortcut))
 
         except StopIteration:
             success = False

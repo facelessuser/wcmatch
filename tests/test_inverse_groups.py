@@ -6,10 +6,11 @@ follows it. `!(a)*` matches `a`, as the group can match nothing and `*` can matc
 patterns are made of characters, `?`, `[...]`, and groups such as `@(...)` and `?(...)` of those.
 
 Patterns that can match text of any length, with `*`, `+(...)`, `*(...)`, or inverse groups, must be translated with
-what follows them. An inverse group that consumes some text is only valid if the rest of the pattern can match what is
-left, and if none of the ways the rest could match would make the consumed text match one of the group's own
-patterns. The rest of the pattern includes what follows the group inside its slot, and what follows the enclosing
-group.
+what follows them. If the patterns cannot match nothing, the group can match nothing whenever the rest of the pattern
+matches, so `!(*.js)*` matches everything. Otherwise, an inverse group that consumes some text is only valid if the
+rest of the pattern can match what is left, and if none of the ways the rest could match would make the consumed text
+match one of the group's own patterns. The rest of the pattern includes what follows the group inside its slot, and
+what follows the enclosing group.
 
 Inside `+(...)` and `*(...)` groups, the rest only includes the remainder of the group's slot and whatever follows the
 loop, it does not consider further iterations. Each iteration is judged as though it were the last one. This means
@@ -17,7 +18,8 @@ loop, it does not consider further iterations. Each iteration is judged as thoug
 
 An inverse group inside the patterns of another inverse group follows the same rule, the text it can consume has to end
 where the text consumed by the outer group ends. This is exact when what follows the outer group has a fixed length,
-as only one place is left for it to end.
+as only one place is left for it to end. Such a group does not get to match nothing just because the rest matches, as
+that could make the patterns of the outer group match nothing too.
 
 The reference model below implements these rules directly with a simple backtracking matcher. It is used to check
 that the regular expressions produced by the parser follow them.
@@ -62,6 +64,20 @@ def bounded(alts):
             if node[0] in ('*', 'inv') or (node[0] == 'grp' and (node[1] in '*+' or not bounded(node[2]))):
                 return False
     return True
+
+
+def needs_character(node):
+    """Check if a node always matches at least a character, as far as the parser can tell."""
+
+    if node[0] in ('lit', '?'):
+        return True
+    return node[0] == 'grp' and node[1] in '@+' and not maybe_empty(node[2])
+
+
+def maybe_empty(alts):
+    """Check if the patterns may match nothing, which is when one has no piece that always matches a character."""
+
+    return any(not any(needs_character(node) for node in alt) for alt in alts)
 
 
 def model_match(nodes, name):
@@ -130,6 +146,11 @@ def model_match(nodes, name):
         if not inv and bounded(alts):
             # Patterns of a limited length: the group can match any text that they do not match
             return any(cont(e) and not alts_match(pos, ends_at(e), ends_at(e), True) for e in range(pos, end + 1))
+
+        if not inv and not maybe_empty(alts):
+            # The patterns cannot match nothing, so the group can if the rest of the pattern matches
+            if cont(pos) and (kl is k or seq(rest, pos, kl, kl, inv)):
+                return True
 
         # Otherwise none of the places where the rest can match may end a match of the group's patterns
         real_ends = [e for e in range(pos, end + 1) if cont(e)]
@@ -279,8 +300,17 @@ CASES = [
     ('+(!(a)b)c', ['xbc', 'xbxbc', 'bc'], ['abc']),
     # Patterns that can match text of any length: the rest of the pattern is part of what makes the text match
     ('!(a*)b', ['b', 'cb'], ['ab', 'abb']),
-    ('!(*.js)*', ['x'], ['a.js', 'a.json', 'a.js.js']),
-    ('!(*a)*', ['bb'], ['a', 'ba', 'xab']),
+    ('!(a*)*b', ['ab', 'abb', 'axb', 'b', 'cb'], ['a', 'ba', 'bc']),
+    ('!(a*)b*', ['b', 'bx', 'cb', 'xb'], ['a', 'ab', 'abb', 'c', 'x']),
+    ('!(a*|b*)c*', ['c', 'cb', 'cc'], ['a', 'b', 'ab', 'bc', 'x']),
+    ('!(+(a)*)b*', ['b', 'ba', 'cb'], ['a', 'ab', 'c']),
+    # Patterns that cannot match nothing leave the group free to match nothing, if the rest of the pattern matches
+    ('!(*.js)*', ['x', 'a.js', 'a.json', 'a.js.js'], []),
+    ('!(*a)*', ['bb', 'a', 'ba', 'xab'], []),
+    ('!(a*)*', ['a', 'ab', 'b'], []),
+    ('@(!(a*)*|x)', ['a', 'ab', 'x'], []),
+    ('!(@(a*))*', ['a', 'ab', 'b'], []),
+    ('!(@(a*)|b+(c))*', ['a', 'bc', 'b'], []),
     ('@(!(a*)b)', ['b', 'xb'], ['ab']),
     ('@(x|!(a*))b', ['b', 'xb'], ['ab', 'aab']),
     # Inside loops, each iteration is judged as though it were the last
@@ -288,6 +318,8 @@ CASES = [
     ('+(!(a*b))', ['ax', 'b', 'xaxb'], ['axb']),
     ('*(!(a*)|b)', ['ba', 'b'], ['ab']),
     ('+(!(a*)b)c', ['xbc', 'xbxbc'], ['abc']),
+    ('+(!(a*)b)', ['b', 'bb', 'cb', 'xb'], ['ab', 'a', 'ba']),
+    ('@(!(a*)b|x)*', ['b', 'x', 'xb', 'bx'], ['a', 'ab', 'c']),
     # Inverse groups inside inverse groups
     ('!(!(a))', ['a'], ['aa', 'b', 'ab']),
     ('!(!(a)|b)', ['a'], ['aa', 'ab', 'b', 'c']),
@@ -498,6 +530,167 @@ def test_inverse_exact_dot_in_patterns(matcher):
     assert not matcher('.hid', '!(.hid)', flags=fnmatch.DOTMATCH)
     assert matcher('.b', '!(a)', flags=fnmatch.DOTMATCH)
     assert not matcher('.b', '!(a)')
+
+
+DOT_NAMES = ['x', 'b', 'a.js', 'a.json', '.env', '.js', '.a.js', '.x.txt', 'b.txt', 'ab']
+HIDDEN_FREE = ['x', 'b', 'a.js', 'a.json', 'b.txt', 'ab']
+
+# What Bash matches without and with `dotglob`. A group that matches nothing is still at the start of a name.
+DOT_CASES = [
+    ('!(*.js)*', HIDDEN_FREE, DOT_NAMES),
+    ('!(a*)*', HIDDEN_FREE, DOT_NAMES),
+    ('!(*.js).*', ['a.js', 'a.json', 'b.txt'], ['a.js', 'a.json', '.env', '.js', '.a.js', '.x.txt', 'b.txt']),
+    ('!(*.js)*.txt', ['b.txt'], ['.x.txt', 'b.txt']),
+    ('!(a*)b*', ['b', 'b.txt'], ['b', 'b.txt']),
+    ('@(!(*.js)*|x)', HIDDEN_FREE, DOT_NAMES),
+    ('+(!(*.js)*)', HIDDEN_FREE, DOT_NAMES),
+    ('*(!(*.js)*)', HIDDEN_FREE, DOT_NAMES),
+    ('?(!(*.js)*)', HIDDEN_FREE, DOT_NAMES),
+    ('@(a|!(*.js)*)', HIDDEN_FREE, DOT_NAMES),
+    ('!(*.js)@(*)', HIDDEN_FREE, DOT_NAMES),
+    ('@(!(a*)*)@(*)', HIDDEN_FREE, DOT_NAMES),
+    ('!(a*)@(.js|*)', HIDDEN_FREE, DOT_NAMES),
+]
+
+
+@MATCHERS
+@pytest.mark.parametrize(('pattern', 'default', 'dotmatch'), DOT_CASES)
+def test_inverse_dot_handling(matcher, pattern, default, dotmatch):
+    """A leading dot needs `DOTMATCH`, even if an inverse group matches nothing or is followed by a wildcard."""
+
+    for wrap in ('{}', '@({})'):
+        for flags, expected in ((0, default), (fnmatch.DOTMATCH, dotmatch)):
+            names = [name for name in DOT_NAMES if matcher(name, wrap.format(pattern), flags=flags)]
+            assert names == expected, (wrap.format(pattern), flags)
+
+
+@pytest.mark.parametrize(('pattern', 'default', 'dotmatch'), DOT_CASES)
+def test_inverse_dot_handling_capture(pattern, default, dotmatch):
+    """The capture flag does not change which names are hidden."""
+
+    for flags, expected in ((0, default), (fnmatch.DOTMATCH, dotmatch)):
+        regex = re.compile(fnmatch.translate(pattern, flags=fnmatch.EXTMATCH | fnmatch.CAPTURE | flags)[0][0])
+        assert [name for name in DOT_NAMES if regex.match(name)] == expected, (pattern, flags)
+
+
+@pytest.mark.parametrize('as_bytes', [False, True])
+def test_inverse_dot_handling_bytes(as_bytes):
+    """Bytes and strings hide the same names."""
+
+    pattern = '!(*.js)*'
+    names = DOT_NAMES
+    expected = HIDDEN_FREE
+    if as_bytes:
+        pattern, names, expected = pattern.encode(), [n.encode() for n in names], [n.encode() for n in expected]
+
+    flags = fnmatch.EXTMATCH | fnmatch.FORCEUNIX
+    assert [n for n in names if fnmatch.fnmatch(n, pattern, flags=flags)] == expected
+
+
+PATH_NAMES = ['.d', '.d/.env', '.d/x', '.env', 'a.js', 'd', 'd/.env', 'd/.env.txt', 'd/a.js', 'd/b.txt', 'd/x', 'x']
+VISIBLE = ['d/a.js', 'd/b.txt', 'd/x']
+EVERY_D = ['.d/.env', '.d/x', 'd/.env', 'd/.env.txt', 'd/a.js', 'd/b.txt', 'd/x']
+RECURSIVE = ['a.js', 'd', 'd/a.js', 'd/b.txt', 'd/x', 'x']
+EVERYWHERE = [
+    '.d', '.d/.env', '.d/x', '.env', 'a.js', 'd', 'd/.env', 'd/.env.txt', 'd/a.js', 'd/b.txt', 'd/x', 'x'
+]
+
+# What Bash matches in this tree without and with `dotglob`, every segment follows the same rules
+PATH_CASES = [
+    ('!(*.js)*', ['a.js', 'd', 'x'], ['.d', '.env', 'a.js', 'd', 'x']),
+    ('d/!(*.js)*', VISIBLE, ['d/.env', 'd/.env.txt', 'd/a.js', 'd/b.txt', 'd/x']),
+    ('!(*.js)*/x', ['d/x'], ['.d/x', 'd/x']),
+    ('!(*.js)/*', VISIBLE, EVERY_D),
+    ('*/!(*.js)*', VISIBLE, EVERY_D),
+    ('!(*.js)*/!(*.js)*', VISIBLE, EVERY_D),
+    ('d/!(*.js)*.txt', ['d/b.txt'], ['d/.env.txt', 'd/b.txt']),
+    ('d/!(a*)*', VISIBLE, ['d/.env', 'd/.env.txt', 'd/a.js', 'd/b.txt', 'd/x']),
+    ('.d/!(*.js)*', ['.d/x'], ['.d/.env', '.d/x']),
+    ('**/!(*.js)*', RECURSIVE, EVERYWHERE),
+    ('**/!(a*)*', RECURSIVE, EVERYWHERE),
+    ('**/d/!(*.js)*', VISIBLE, ['d/.env', 'd/.env.txt', 'd/a.js', 'd/b.txt', 'd/x']),
+    ('@(!(*.js)*)/x', ['d/x'], ['.d/x', 'd/x']),
+    ('+(!(*.js)*)/*', VISIBLE, EVERY_D),
+    ('!(*.js)@(*)/x', ['d/x'], ['.d/x', 'd/x']),
+]
+
+
+@pytest.mark.parametrize(('pattern', 'default', 'dotglob'), PATH_CASES)
+def test_inverse_dot_handling_paths(pattern, default, dotglob):
+    """Every segment of a path hides names that start with a dot, including a segment that matches nothing."""
+
+    flags = glob.EXTGLOB | glob.GLOBSTAR | glob.FORCEUNIX
+    assert [p for p in PATH_NAMES if glob.globmatch(p, pattern, flags=flags)] == default, pattern
+    assert [p for p in PATH_NAMES if glob.globmatch(p, pattern, flags=flags | glob.DOTGLOB)] == dotglob, pattern
+
+
+@pytest.mark.parametrize(('pattern', 'default', 'dotglob'), PATH_CASES)
+def test_inverse_dot_handling_file_system(tmp_path, pattern, default, dotglob):
+    """Walking the file system hides the same names as matching paths."""
+
+    for name in ('x', 'a.js', '.env', 'd/x', 'd/.env', 'd/a.js', 'd/.env.txt', 'd/b.txt', '.d/x', '.d/.env'):
+        path = tmp_path / name
+        path.parent.mkdir(exist_ok=True)
+        path.touch()
+
+    flags = glob.EXTGLOB | glob.GLOBSTAR
+    assert sorted(glob.glob(pattern, flags=flags, root_dir=tmp_path)) == default, pattern
+    assert sorted(glob.glob(pattern, flags=flags | glob.DOTGLOB, root_dir=tmp_path)) == dotglob, pattern
+
+
+DOT_ALPHABET = [''.join(p) for n in range(1, 4) for p in itertools.product('ab.', repeat=n) if set(p) != {'.'}]
+
+
+@pytest.mark.parametrize('seed', [20, 21])
+def test_inverse_dot_handling_model(seed):
+    """
+    Only a leading dot is special when the patterns have no dot, so names are matched like the model, less hidden names.
+
+    With `DOTMATCH` the dot is like any other character. This includes the capture flag and names in a directory.
+    """
+
+    patterns = list(generate_patterns(seed, 40)) + list(generate_patterns(seed, 40, frozenset({'in loop'})))
+    patterns += list(generate_nested_patterns(seed, 40))
+
+    bad = []
+    for pattern in patterns:
+        nodes = parse(pattern)[0]
+        plain = re.compile(fnmatch.translate(pattern, flags=fnmatch.EXTMATCH | fnmatch.CAPTURE)[0][0])
+        dotted = re.compile(
+            fnmatch.translate(pattern, flags=fnmatch.EXTMATCH | fnmatch.CAPTURE | fnmatch.DOTMATCH)[0][0]
+        )
+        for name in DOT_ALPHABET:
+            matches = model_match(nodes, name)
+            expected = matches and not name.startswith('.')
+            results = (
+                fn_match(name, pattern) is expected,
+                glob_match('x/' + name, 'x/' + pattern) is expected,
+                bool(plain.match(name)) is expected,
+                fn_match(name, pattern, flags=fnmatch.DOTMATCH) is matches,
+                glob_match('x/' + name, 'x/' + pattern, flags=fnmatch.DOTMATCH) is matches,
+                bool(dotted.match(name)) is matches,
+            )
+            if not all(results):
+                bad.append((pattern, name, results))
+                break
+    assert not bad, bad[:5]
+
+
+@pytest.mark.parametrize('seed', [30, 31])
+def test_inverse_never_matches_hidden_names(seed):
+    """Patterns without a dot never match a name that starts with one, without `DOTMATCH`."""
+
+    rng = random.Random(seed)
+    count = 0
+    while count < 150:
+        pattern = generate(rng)
+        if '!(' not in pattern:
+            continue
+        count += 1
+        for name in ('.a', '.ab', '.abc', '.b', '.'):
+            assert not fn_match(name, pattern), (pattern, name)
+            assert not glob_match(name, pattern), (pattern, name)
+            assert not glob_match('x/' + name, 'x/' + pattern), (pattern, name)
 
 
 def test_inverse_exact_many_optional_parts():
