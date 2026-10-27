@@ -316,6 +316,18 @@ EXT_PROMOTE = {
 }
 
 
+class PathNameException(Exception):
+    """Path name exception."""
+
+
+class DotException(Exception):
+    """Dot exception."""
+
+
+class PatternLimitException(Exception):
+    """Pattern limit exception."""
+
+
 class ExtPromote(str):
     """Promote extended group object."""
 
@@ -343,7 +355,8 @@ class ExtGroup(str):
     """Track a top level extended glob group, and the lengths of text it can match when they are known."""
 
     lens: dict[int, str] | None = None
-    needs = False
+    # The group always matches at least a character, as far as we can tell. This is only set for `+` and `@` groups.
+    non_empty = False
 
 
 class Sized(str):
@@ -389,18 +402,6 @@ def union_lengths(first: dict[int, str], second: dict[int, str]) -> dict[int, st
         for length, regex in lengths.items():
             table.setdefault(length, []).append(regex)
     return join_lengths(table)
-
-
-class PathNameException(Exception):
-    """Path name exception."""
-
-
-class DotException(Exception):
-    """Dot exception."""
-
-
-class PatternLimitException(Exception):
-    """Pattern limit exception."""
 
 
 def iter_patterns(patterns: AnyStr | Sequence[AnyStr]) -> Iterable[AnyStr]:
@@ -1145,16 +1146,16 @@ class WcParse(Generic[AnyStr]):
         A pattern can only be shown to match something if one of its pieces always matches a character.
         """
 
-        needs = False
+        non_empty = False
         for item in [*extended, '|']:
             if item == '|':
-                if not needs:
+                if not non_empty:
                     return True
-                needs = False
+                non_empty = False
                 continue
             lens = getattr(item, 'lens', None)
-            if getattr(item, 'needs', False) or (lens is not None and 0 not in lens):
-                needs = True
+            if getattr(item, 'non_empty', False) or (lens is not None and 0 not in lens):
+                non_empty = True
         return False
 
     @staticmethod
@@ -2001,13 +2002,13 @@ class WcParse(Generic[AnyStr]):
             elif list_type == '+':
                 self._finish_group(extended, gtoken)
                 group = ExtGroup((_PLUS_CAPTURE_GROUP if self.capture else _PLUS_GROUP).format(''.join(extended)))
-                group.needs = not self._maybe_empty(extended)
+                group.non_empty = not self._maybe_empty(extended)
                 current.append(group)
             elif list_type == '@':
                 self._finish_group(extended, gtoken)
                 group = ExtGroup((_CAPTURE_GROUP if self.capture else _GROUP).format(''.join(extended)))
                 group.lens = self._group_lengths(extended)
-                group.needs = not self._maybe_empty(extended)
+                group.non_empty = not self._maybe_empty(extended)
                 current.append(group)
             elif list_type == '!':
                 # The star may land at the start of a name when it is in a group slot or follows a group.

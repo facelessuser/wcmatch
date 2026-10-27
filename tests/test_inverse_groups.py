@@ -66,7 +66,7 @@ def bounded(alts):
     return True
 
 
-def needs_character(node):
+def is_non_empty(node):
     """Check if a node always matches at least a character, as far as the parser can tell."""
 
     if node[0] in ('lit', '?'):
@@ -77,7 +77,7 @@ def needs_character(node):
 def maybe_empty(alts):
     """Check if the patterns may match nothing, which is when one has no piece that always matches a character."""
 
-    return any(not any(needs_character(node) for node in alt) for alt in alts)
+    return any(not any(is_non_empty(node) for node in alt) for alt in alts)
 
 
 def model_match(nodes, name):
