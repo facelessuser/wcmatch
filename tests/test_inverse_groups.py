@@ -34,7 +34,7 @@ import re
 
 import pytest
 
-from wcmatch import fnmatch, glob
+from wcmatch import _wcparse, fnmatch, glob
 
 
 def parse(pattern, i=0, stop=''):
@@ -345,6 +345,9 @@ CASES = [
     ('!([[:digit:]])', ['12', 'a', 'x1'], ['1']),
     ('!([[:digit:]])*', ['1', '12', 'a'], []),
     ('!(?)', ['ab', '12', 'x1', '**'], ['a', '1', '*']),
+    # A bracket that is never closed is a character too
+    ('!([)', ['a', 'ab', 'b['], ['[']),
+    ('!(a[)', ['a', 'ab', '['], ['a[']),
     # Groups that are merged into their parent keep the same meaning
     ('@(a|@(!(b)c))d', ['xcd', 'ad', 'cd'], ['bcd']),
     ('@(@(!(a)b))', ['xb', 'b'], ['ab']),
@@ -796,6 +799,67 @@ def test_inverse_exact_many_optional_parts_in_alternatives(matcher):
     assert matcher('ca', pattern)
     assert matcher('x', pattern)
     assert matcher('abcdefghij', pattern)
+
+
+START = r'^(?s:(?!(?:(?<=[/])|(?<=^))(?:\.{1,2})(?:$|[/]))'
+
+# The lengths of text that groups match are only kept for inverse groups, other groups translate the same without them
+UNTRACKED = [
+    ('@(foo|bar)*.txt', r'(?:foo|bar)(?!(?<=^)\.).*?\.txt', r'(foo|bar)(?!(?<=^)\.).*?\.txt'),
+    ('?(a)b', r'(?:a)?b', r'((?:a)?)b'),
+    ('+(a|b)c', r'(?:a|b)+c', r'((?:a|b)+)c'),
+    ('*(x|y)z', r'(?:x|y)*z', r'((?:x|y)*)z'),
+    ('@(a|?(b))*', r'(?:a|b|)(?!(?<=^)\.).*?', r'(a|((?:b)?))(?!(?<=^)\.).*?'),
+    ('+(?(a)b)', r'(?:(?:a)?b)+', r'((?:((?:a)?)b)+)'),
+    ('@(a|@(b|c))d', r'(?:a|b|c)d', r'(a|(b|c))d'),
+]
+
+
+@pytest.mark.parametrize(('pattern', 'regex', 'capture_regex'), UNTRACKED)
+def test_groups_without_inverse_groups_translate_the_same(pattern, regex, capture_regex):
+    """Groups that are not in an inverse group do not change because lengths are tracked for inverse groups."""
+
+    assert fnmatch.translate(pattern, flags=fnmatch.EXTMATCH)[0][0] == START + regex + ')$'
+    assert fnmatch.translate(pattern, flags=fnmatch.EXTMATCH | fnmatch.CAPTURE)[0][0] == START + capture_regex + ')$'
+
+
+@pytest.mark.parametrize(
+    ('pattern', 'tracked'),
+    [
+        ('@(foo|bar)*.txt', 0),
+        ('+(a|b)c?(d)', 0),
+        ('?(a)@(b|?(c))+(?(d)e)', 0),
+        ('!(a)', 1),
+        ('@(!(a)bc)', 1),
+        ('!(a?(b))', 2),
+        ('!(a)@(b|c)!(d)', 2),
+    ]
+)
+def test_lengths_are_only_tracked_in_inverse_groups(monkeypatch, pattern, tracked):
+    """Only inverse groups, and the pieces they are made of, have their lengths worked out."""
+
+    sized = []
+    groups = []
+    original_sized = _wcparse.Sized
+    original_lengths = _wcparse.WcParse._group_lengths
+
+    def spy_sized(value):
+        sized.append(value)
+        return original_sized(value)
+
+    def spy_lengths(extended):
+        groups.append(extended)
+        return original_lengths(extended)
+
+    monkeypatch.setattr(_wcparse, 'Sized', spy_sized)
+    monkeypatch.setattr(_wcparse.WcParse, '_group_lengths', staticmethod(spy_lengths))
+    _wcparse.WcParse(pattern, _wcparse.EXTMATCH).parse()
+
+    # Each inverse group works out its lengths, and nothing outside of one does
+    assert len(groups) == tracked
+    assert (not sized) is (pattern.count('!(') == 0)
+    if pattern == '@(!(a)bc)':
+        assert sized == ['a']
 
 
 def test_inverse_exact_many_optional_parts():

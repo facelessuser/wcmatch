@@ -1886,6 +1886,11 @@ class WcParse(Generic[AnyStr]):
                 self.inv_ext -= 1
             index -= 1
 
+    def _sized(self, value: str) -> str:
+        """Track that a piece matches a single character, which is only needed in the patterns of an inverse group."""
+
+        return Sized(value) if self.in_inv else value
+
     def parse_extend(
         self,
         c: str,
@@ -1945,12 +1950,12 @@ class WcParse(Generic[AnyStr]):
                     size = len(extended)
                     self._handle_dot(i, extended)
                     if len(extended) == size + 1:
-                        extended[-1] = Sized(extended[-1])
+                        extended[-1] = self._sized(extended[-1])
                     if self.after_start:
                         self.match_dot_dir = self.dot and not self.nodotdir
                         self.reset_dir_track()
                 elif c == '?':
-                    extended.append(Sized(self._restrict_sequence(extended) + _QMARK))
+                    extended.append(self._sized(self._restrict_sequence(extended) + _QMARK))
                 elif c == '/':
                     if self.pathname:
                         extended.append(self._restrict_extended_slash())
@@ -1976,7 +1981,7 @@ class WcParse(Generic[AnyStr]):
                     try:
                         value = self._references(i)
                         # Escaped path separators are not a character
-                        extended.append(value if i.previous() in ('\\', '/') else Sized(value))
+                        extended.append(value if i.previous() in ('\\', '/') else self._sized(value))
                     except DotException:
                         continue
                     except StopIteration:
@@ -1986,13 +1991,13 @@ class WcParse(Generic[AnyStr]):
                 elif c == '[' and (self.bad_sequence == -1 or i.index > self.bad_sequence):
                     subindex = i.index
                     try:
-                        extended.append(Sized(self._sequence(i, extended)))
+                        extended.append(self._sized(self._sequence(i, extended)))
                     except StopIteration:
                         self.bad_sequence = i.index
                         i.rewind(i.index - subindex)
-                        extended.append(Sized(r'\['))
+                        extended.append(self._sized(r'\['))
                 elif c != ')':
-                    extended.append(Sized(re.escape(c)))
+                    extended.append(self._sized(re.escape(c)))
 
                 self.update_dir_state()
 
@@ -2058,8 +2063,10 @@ class WcParse(Generic[AnyStr]):
             elif list_type == '?':
                 self._finish_group(extended, gtoken)
                 group = ExtGroup((_QMARK_CAPTURE_GROUP if self.capture else _QMARK_GROUP).format(''.join(extended)))
-                lens = self._group_lengths(extended)
-                group.lens = None if lens is None else union_lengths(lens, Lengths({0: ''}))
+                # The lengths and whether a group can be empty are only used by an inverse group around the group
+                if self.in_inv:
+                    lens = self._group_lengths(extended)
+                    group.lens = None if lens is None else union_lengths(lens, Lengths({0: ''}))
                 current.append(group)
             elif list_type == '*':
                 self._finish_group(extended, gtoken)
@@ -2069,13 +2076,15 @@ class WcParse(Generic[AnyStr]):
             elif list_type == '+':
                 self._finish_group(extended, gtoken)
                 group = ExtGroup((_PLUS_CAPTURE_GROUP if self.capture else _PLUS_GROUP).format(''.join(extended)))
-                group.non_empty = not self._maybe_empty(extended)
+                if self.in_inv:
+                    group.non_empty = not self._maybe_empty(extended)
                 current.append(group)
             elif list_type == '@':
                 self._finish_group(extended, gtoken)
                 group = ExtGroup((_CAPTURE_GROUP if self.capture else _GROUP).format(''.join(extended)))
-                group.lens = self._group_lengths(extended)
-                group.non_empty = not self._maybe_empty(extended)
+                if self.in_inv:
+                    group.lens = self._group_lengths(extended)
+                    group.non_empty = not self._maybe_empty(extended)
                 current.append(group)
             elif list_type == '!':
                 # The star may land at the start of a name when it is in a group slot or follows a group.
@@ -2106,7 +2115,8 @@ class WcParse(Generic[AnyStr]):
                 exact = self._exact_inverse(self._group_lengths(extended), star, extended)
                 if exact is not None:
                     group = ExtGroup(exact[0])
-                    group.lens = exact[1]
+                    if temp_in_inv:
+                        group.lens = exact[1]
                     current.append(group)
                 else:
                     self._finish_group(extended, gtoken)
