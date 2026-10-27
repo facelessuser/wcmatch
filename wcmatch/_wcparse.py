@@ -351,10 +351,28 @@ class AtomicStar(str):
     """Track `*` as needing to be an atomic `*`."""
 
 
+class Lengths(dict[int, str]):
+    """
+    The lengths of text that a piece can match, with a regular expression for text of each length.
+
+    Most pieces have a longest text they can match, and `open_from` is `None`. An inverse group does not: it matches
+    any text past the longest text its own patterns match. Then `open_from` is the length from which it matches any
+    text, only the lengths below it are listed, and a length below it that is not listed matches nothing.
+    """
+
+    open_from: int | None = None
+
+    @property
+    def empty_only(self) -> bool:
+        """Check if the lengths are just the empty string."""
+
+        return self.open_from is None and self == {0: ''}
+
+
 class ExtGroup(str):
     """Track a top level extended glob group, and the lengths of text it can match when they are known."""
 
-    lens: dict[int, str] | None = None
+    lens: Lengths | None = None
     # The group always matches at least a character, as far as we can tell. This is only set for `+` and `@` groups.
     non_empty = False
 
@@ -362,20 +380,21 @@ class ExtGroup(str):
 class Sized(str):
     """A piece of pattern that matches exactly one character."""
 
-    lens: dict[int, str]
+    lens: Lengths
 
     def __new__(cls, value: str) -> Sized:
         """Create the piece, its lengths are a single length of one that maps to itself."""
 
         sized = super().__new__(cls, value)
-        sized.lens = {1: str(value)}
+        sized.lens = Lengths({1: str(value)})
         return sized
 
 
-def join_lengths(table: dict[int, list[str]]) -> dict[int, str] | None:
+def join_lengths(table: dict[int, list[str]], open_from: int | None = None) -> Lengths | None:
     """Turn the ways of matching each length into one regular expression, or give up if there are too many."""
 
-    result = {}
+    result = Lengths()
+    result.open_from = open_from
     size = 0
     for length, ways in table.items():
         unique = list(dict.fromkeys(ways))
@@ -384,8 +403,20 @@ def join_lengths(table: dict[int, list[str]]) -> dict[int, str] | None:
     return result if size <= MAX_LENGTH_TABLE else None
 
 
-def concat_lengths(first: dict[int, str], second: dict[int, str]) -> dict[int, str] | None:
-    """Get the lengths that can be matched by `first` followed by `second`."""
+def concat_lengths(first: Lengths, second: Lengths) -> Lengths | None:
+    """
+    Get the lengths that can be matched by `first` followed by `second`.
+
+    If either side matches any text from some length on, the other side must only match empty text, as we cannot track
+    any other result.
+    """
+
+    if first.open_from is not None or second.open_from is not None:
+        if first.empty_only:
+            return second
+        if second.empty_only:
+            return first
+        return None
 
     table = {}  # type: dict[int, list[str]]
     for length1, regex1 in first.items():
@@ -394,14 +425,17 @@ def concat_lengths(first: dict[int, str], second: dict[int, str]) -> dict[int, s
     return join_lengths(table)
 
 
-def union_lengths(first: dict[int, str], second: dict[int, str]) -> dict[int, str] | None:
+def union_lengths(first: Lengths, second: Lengths) -> Lengths | None:
     """Get the lengths that can be matched by `first` or `second`."""
 
+    starts = [lens.open_from for lens in (first, second) if lens.open_from is not None]
+    open_from = min(starts) if starts else None
     table = {}  # type: dict[int, list[str]]
     for lengths in (first, second):
         for length, regex in lengths.items():
-            table.setdefault(length, []).append(regex)
-    return join_lengths(table)
+            if open_from is None or length < open_from:
+                table.setdefault(length, []).append(regex)
+    return join_lengths(table, open_from)
 
 
 def iter_patterns(patterns: AnyStr | Sequence[AnyStr]) -> Iterable[AnyStr]:
@@ -1159,21 +1193,22 @@ class WcParse(Generic[AnyStr]):
         return False
 
     @staticmethod
-    def _group_lengths(extended: list[str]) -> dict[int, str] | None:
+    def _group_lengths(extended: list[str]) -> Lengths | None:
         """
-        Get the lengths of text that the patterns of a group can match, along with the regular expression for each.
+        Get the lengths of text that the patterns of a group can match, with a regular expression for each length.
 
-        This is only known if every piece in every pattern is, and there is a limit to how much we track.
+        The result is `None` if the lengths of any piece in any pattern are not known, or if tracking them would take
+        too much space.
         """
 
-        result = None  # type: dict[int, str] | None
-        slot = {0: ''}
+        result = None  # type: Lengths | None
+        slot = Lengths({0: ''})
         for item in [*extended, '|']:
             if item == '|':
                 result = slot if result is None else union_lengths(result, slot)
                 if result is None:
                     return None
-                slot = {0: ''}
+                slot = Lengths({0: ''})
                 continue
             lens = getattr(item, 'lens', None)
             if lens is None:
@@ -1184,13 +1219,28 @@ class WcParse(Generic[AnyStr]):
             slot = new_slot
         return result
 
-    def _exact_inverse(self, lens: dict[int, str] | None, star: str, extended: list[str]) -> str | None:
+    def _exact_inverse(
+        self,
+        lens: Lengths | None,
+        star: str,
+        extended: list[str]
+    ) -> tuple[str, Lengths] | None:
         """
-        Build an inverse group whose patterns only match text of known lengths.
+        Build an inverse group that does not depend on what follows it, or return `None` if that is not possible.
 
-        What such a group can match does not depend on what follows it. It matches any text, as long as the text is not
-        one of the lengths that its patterns can match, or it is, but the patterns do not match it. Text with the
-        right length is checked with the regular expression for that length, and the lengths are tried shortest first.
+        This needs the lengths of text that the group's patterns can match. The patterns either have a longest text
+        they can match, or they match any text from some length on, as an inverse group does. The group is decided one
+        length at a time, shortest first:
+
+        - If the patterns cannot match text of a length, the group matches any text of that length.
+        - If they can, the group matches text of that length only if the patterns' regular expression for that length
+          does not match it.
+        - For text longer than any length listed, the group matches any text if the patterns have a longest text they
+          can match, and no text if they match any text from some length on.
+
+        The lengths that the group itself can match are returned with its regular expression, so an inverse group
+        around this one can use them. If the patterns have a longest text they can match, this group matches any text
+        from some length on. If they match any text from some length on, this group has a longest text it can match.
         """
 
         base = self.path_star if self.pathname else _STAR
@@ -1198,10 +1248,17 @@ class WcParse(Generic[AnyStr]):
             return None
 
         char = self.path_star[:-2] if self.pathname else '.'
+        # The length from which the patterns match all text, if they do
+        all_from = lens.open_from
+        limit = max(lens) + 1 if all_from is None else all_from
         pieces = []
+        table = {}  # type: dict[int, list[str]]
         run = None  # type: list[int] | None
-        for length in range(max(lens) + 1):
+        for length in range(limit):
+            exact = self._length_range(char, length, length)
             if length not in lens:
+                # Any text of this length, and adjacent lengths like it can share one piece
+                table[length] = [exact]
                 if run is None:
                     run = [length, length]
                 run[1] = length
@@ -1209,23 +1266,33 @@ class WcParse(Generic[AnyStr]):
             if run is not None:
                 pieces.append(self._length_range(char, run[0], run[1]))
                 run = None
-            # Patterns that can match nothing always match it, so there is no length of zero to add
+            # If the patterns can match nothing, the group cannot, and there is no piece to add for a length of zero
             if length:
                 regex = lens[length].replace('(?#)', '?:') if self.capture else lens[length]
-                pieces.append(f'(?!(?:{regex})){self._length_range(char, length, length)}')
+                pieces.append(f'(?!(?:{regex})){exact}')
+                table[length] = [f'(?!(?:{lens[length]})){exact}']
         if run is not None:
             pieces.append(self._length_range(char, run[0], run[1]))
-        pieces.append(f'{char}{{{max(lens) + 1},}}?')
+        if all_from is None:
+            pieces.append(f'{char}{{{limit},}}?')
+        elif not pieces:
+            # The patterns match all text, so the group can match nothing
+            pieces.append('(?!)')
+
+        # If the patterns have a longest text they can match, the group matches all text longer than that
+        group_lens = join_lengths(table, limit if all_from is None else None)
+        if group_lens is None:
+            return None
 
         body = star[:-len(base)] + f'(?:{"|".join(pieces)})'
         if not self.capture:
-            return f'(?:{body})'
+            return f'(?:{body})', group_lens
 
-        # Every extended group must still be a capturing group, in order. The ones in the patterns are copied, so
-        # they are only in the copy that can never match.
+        # With `CAPTURE`, every extended group must still be a capturing group, in the order of the pattern. The
+        # patterns above were copied as non-capturing groups, so keep the originals in a branch that can never match.
         original = ''.join(extended)
         unused = f'(?:(?!)(?:{original})|)' if '(?#)' in original else ''
-        return f'((?#){unused}{body})'
+        return f'((?#){unused}{body})', group_lens
 
     @staticmethod
     def _length_range(char: str, low: int, high: int) -> str:
@@ -1992,7 +2059,7 @@ class WcParse(Generic[AnyStr]):
                 self._finish_group(extended, gtoken)
                 group = ExtGroup((_QMARK_CAPTURE_GROUP if self.capture else _QMARK_GROUP).format(''.join(extended)))
                 lens = self._group_lengths(extended)
-                group.lens = None if lens is None else union_lengths(lens, {0: ''})
+                group.lens = None if lens is None else union_lengths(lens, Lengths({0: ''}))
                 current.append(group)
             elif list_type == '*':
                 self._finish_group(extended, gtoken)
@@ -2035,10 +2102,12 @@ class WcParse(Generic[AnyStr]):
                     star = self.need_char + star
 
                 # If the text that the patterns can match is of known lengths, what the group matches does not depend on
-                # what follows it. Inverse groups in inverse groups still need to know what follows.
-                exact = None if temp_in_inv else self._exact_inverse(self._group_lengths(extended), star, extended)
+                # what follows it.
+                exact = self._exact_inverse(self._group_lengths(extended), star, extended)
                 if exact is not None:
-                    current.append(ExtGroup(exact))
+                    group = ExtGroup(exact[0])
+                    group.lens = exact[1]
+                    current.append(group)
                 else:
                     self._finish_group(extended, gtoken)
                     self.inv_ext += 1

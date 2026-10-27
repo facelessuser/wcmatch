@@ -32,7 +32,8 @@
     e.g. `!(foo)`, `!(a|bc)`, or `!(?(a)b)`, now matches any other text, whatever follows it, as it does in Bash. For
     instance, `!(foo)*.txt` now matches `foo.txt` and `foobar.txt`, `!(a)*` matches `a`, and `+(!(foo))` matches `foo`.
     Inverse groups with patterns that can match text of any length, e.g. `!(*.js)`, still need to know what follows them
-    and behave as before.
+    and behave as before. Inverse groups inside other inverse groups follow the same rules, e.g. `!(!(a)|b)*` matches
+    `a` and `ab`, `!(!(a)*)` matches nothing, and `!(a!(b)*)` no longer matches `ab`.
 -   **BREAK**: An `EXTGLOB`/`EXTMATCH` inverse group, `!(...)`, whose patterns cannot match nothing can now match nothing
     whenever the rest of the pattern matches, as it does in Bash, even when its patterns can match text of any length.
     For instance, `!(*.js)*` and `!(a*)*` now match any name that does not start with a dot, where `!(*.js)*` rejected

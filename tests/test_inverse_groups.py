@@ -3,23 +3,26 @@ Test inverse extended groups, `!(...)`.
 
 If the patterns in an inverse group can only match text up to some length, the group matches any other text, whatever
 follows it. `!(a)*` matches `a`, as the group can match nothing and `*` can match `a`. This is the case when the
-patterns are made of characters, `?`, `[...]`, and groups such as `@(...)` and `?(...)` of those.
+patterns are made of characters, `?`, `[...]`, and groups such as `@(...)` and `?(...)` of those. Inverse groups in the
+patterns are fine too: an inverse group matches any text from some length on, so an inverse group around it can only
+match shorter text. `!(!(a)|b)` matches `a` and nothing else, even when something follows it. Text that is matched from
+some length on cannot be followed by other text in the same pattern though, `!(!(a)b)` is not known.
 
-Patterns that can match text of any length, with `*`, `+(...)`, `*(...)`, or inverse groups, must be translated with
-what follows them. If the patterns cannot match nothing, the group can match nothing whenever the rest of the pattern
-matches, so `!(*.js)*` matches everything. Otherwise, an inverse group that consumes some text is only valid if the
-rest of the pattern can match what is left, and if none of the ways the rest could match would make the consumed text
-match one of the group's own patterns. The rest of the pattern includes what follows the group inside its slot, and
-what follows the enclosing group.
+Patterns that can match text of any length, with `*`, `+(...)`, `*(...)`, or lengths that are not known, must be
+translated with what follows them. If the patterns cannot match nothing, the group can match nothing whenever the rest
+of the pattern matches, so `!(*.js)*` matches any name that does not start with a dot. Otherwise, an inverse group that
+consumes some text is only valid if the rest of the pattern can match what is left, and if none of the ways the rest
+could match would make the consumed text match one of the group's own patterns. The rest of the pattern includes what
+follows the group inside its slot, and what follows the enclosing group.
 
 Inside `+(...)` and `*(...)` groups, the rest only includes the remainder of the group's slot and whatever follows the
 loop, it does not consider further iterations. Each iteration is judged as though it were the last one. This means
 `+(!(a*b))` does not match `axb`, even though `ax` and `b` each match `!(a*b)`.
 
-An inverse group inside the patterns of another inverse group follows the same rule, the text it can consume has to end
-where the text consumed by the outer group ends. This is exact when what follows the outer group has a fixed length,
-as only one place is left for it to end. Such a group does not get to match nothing just because the rest matches, as
-that could make the patterns of the outer group match nothing too.
+An inverse group inside the patterns of another inverse group follows the same rules, and its patterns are matched
+against the text it consumes, which has to end where the text consumed by the outer group ends. This is exact when what
+follows the outer group has a fixed length, as only one place is left for it to end. Such a group does not get to match
+nothing just because the rest matches, as that could make the patterns of the outer group match nothing too.
 
 The reference model below implements these rules directly with a simple backtracking matcher. It is used to check
 that the regular expressions produced by the parser follow them.
@@ -56,14 +59,69 @@ def parse(pattern, i=0, stop=''):
     return nodes, i
 
 
-def bounded(alts):
-    """Check if the patterns can only match text up to some length."""
+def lengths(alts):
+    """
+    Get what lengths of text the patterns can match.
 
-    for alt in alts:
-        for node in alt:
-            if node[0] in ('*', 'inv') or (node[0] == 'grp' and (node[1] in '*+' or not bounded(node[2]))):
-                return False
-    return True
+    This is 'empty' if the patterns only match empty text, 'bounded' if there is a longest text they can match, 'open'
+    if they match any text from some length on, and `None` if it is not known.
+    """
+
+    kinds = [sequence_lengths(alt) for alt in alts]
+    if None in kinds:
+        return None
+    if 'open' in kinds:
+        return 'open'
+    return 'bounded' if 'bounded' in kinds else 'empty'
+
+
+def sequence_lengths(nodes):
+    """Get what lengths of text a sequence of nodes can match."""
+
+    result = 'empty'
+    for node in nodes:
+        kind = node_lengths(node)
+        if kind is None:
+            return None
+        if result == 'empty':
+            result = kind
+        elif kind != 'empty':
+            # Text matched from some length on, next to other text, has lengths we cannot list
+            if result == 'open' or kind == 'open':
+                return None
+    return result
+
+
+def node_lengths(node):
+    """Get what lengths of text a node can match."""
+
+    if node[0] in ('lit', '?'):
+        return 'bounded'
+    if node[0] == '*':
+        return None
+    kind = lengths(node[2] + ([[]] if node[0] == 'grp' and node[1] == '?' else []))
+    if node[0] == 'inv':
+        # What the patterns do not match
+        return None if kind is None else 'bounded' if kind == 'open' else 'open'
+    return kind if node[1] in '@?' else None
+
+
+def matches_nothing(alts):
+    """Check if patterns of known lengths can match nothing."""
+
+    return any(all(node_matches_nothing(node) for node in alt) for alt in alts)
+
+
+def node_matches_nothing(node):
+    """Check if a node of known lengths can match nothing."""
+
+    if node[0] in ('lit', '?'):
+        return False
+    if node[0] == '*':
+        return True
+    if node[0] == 'inv':
+        return not matches_nothing(node[2])
+    return node[1] in '?*' or matches_nothing(node[2])
 
 
 def is_non_empty(node):
@@ -71,7 +129,12 @@ def is_non_empty(node):
 
     if node[0] in ('lit', '?'):
         return True
-    return node[0] == 'grp' and node[1] in '@+' and not maybe_empty(node[2])
+    if node[0] == '*':
+        return False
+    if node[0] == 'inv':
+        # An inverse group of known lengths can only match nothing if its patterns do not
+        return lengths(node[2]) is not None and matches_nothing(node[2])
+    return node[1] in '@+' and not maybe_empty(node[2])
 
 
 def maybe_empty(alts):
@@ -143,8 +206,8 @@ def model_match(nodes, name):
         def ends_at(e):
             return lambda q: q == e
 
-        if not inv and bounded(alts):
-            # Patterns of a limited length: the group can match any text that they do not match
+        if lengths(alts) is not None:
+            # Patterns of known lengths: the group can match any text that they do not match
             return any(cont(e) and not alts_match(pos, ends_at(e), ends_at(e), True) for e in range(pos, end + 1))
 
         if not inv and not maybe_empty(alts):
@@ -329,6 +392,25 @@ CASES = [
     ('!(a!(b)c)d', ['abcd', 'ad', 'xacd'], ['acd']),
     ('!(x|!(a)b)c', ['abc', 'c', 'yc'], ['xc', 'bc', 'aabc']),
     ('@(a|!(b!(c)))d', ['bcd', 'ad', 'xd'], ['bd', 'bxd']),
+    # An inverse group matches any text from some length on, so an inverse group around it can only match shorter text
+    ('!(!(a)|b)*', ['a', 'ab', 'aa'], ['b', 'ba', 'x']),
+    ('!(!(a)|b)c', ['ac'], ['c', 'bc', 'aac', 'xc']),
+    ('!(!(a)*)', [], ['a', 'ab', 'b', 'c']),
+    ('!(?(!(a)))', ['a'], ['b', 'aa', 'ab']),
+    ('!(!(!(a)))', ['b', 'ab', 'aa'], ['a']),
+    ('!(a|b!(c)*)', ['c', 'aa', 'ab', 'ca'], ['a', 'b', 'bc', 'bca']),
+    # What an inverse group inside another one can match does not depend on what follows the outer group
+    ('!(a!(b)*)', ['b', 'xa', 'ba'], ['a', 'ab', 'aab']),
+    ('!(a!(b)*)c', ['bc', 'xac'], ['ac', 'abc']),
+    ('!(!(a)c*)', ['ab', 'a', 'b', 'ac'], ['c', 'acc', 'bc', 'cc']),
+    ('!(!(a)*b)', ['a', 'c', 'ba'], ['b', 'ab', 'cb']),
+    # An inverse group next to a group that matches nothing is still an inverse group
+    ('!(!(a)@())', ['a'], ['b', 'aa', 'ab']),
+    ('!(!(a)?())', ['a'], ['b', 'aa', 'ab']),
+    ('!(!(a)@()|b)*', ['a', 'aa', 'ab'], ['b', 'c', 'ba']),
+    # If the patterns match every text, the group cannot match any, and if they match only nothing, it matches nothing
+    ('!(!()|?(a))', [], ['a', 'b', 'ab']),
+    ('!(!())', [], ['a', 'ab']),
 ]
 
 
@@ -731,6 +813,22 @@ def test_inverse_exact_many_optional_parts():
     assert not fn_match(letters, pattern)
 
 
+@MATCHERS
+def test_inverse_exact_group_too_large(matcher):
+    """Patterns whose lengths can be tracked, but not the lengths of the group around them, still work."""
+
+    pattern = '!(?(aa)?(b)?(c)?(d)?(e)?(f)?(gg)?(hh)?(i))'
+    regex = fnmatch.translate(pattern, flags=fnmatch.EXTMATCH)[0][0]
+
+    assert len(regex) < 1000
+    assert matcher('a', pattern)
+    assert matcher('ba', pattern)
+    assert matcher('x', pattern)
+    assert not matcher('', pattern)
+    assert not matcher('aab', pattern)
+    assert not matcher('aabcdefgghhi', pattern)
+
+
 @pytest.mark.parametrize(
     ('pattern', 'name', 'groups'),
     [
@@ -741,6 +839,9 @@ def test_inverse_exact_many_optional_parts():
         ('@(!(a|b)+(c))d', 'xccd', ('xcc', 'x', 'cc')),
         ('!(a|bc)@(d)', 'xyd', ('xy', 'd')),
         ('+(!(a)b)', 'xbyb', ('xbyb', 'y')),
+        ('!(!(a)|b)*', 'abc', ('a', None)),
+        ('!(?(!(a)))', 'a', ('a', None, None)),
+        ('@(!(!(a)))b', 'ab', ('a', 'a', None)),
     ]
 )
 def test_inverse_exact_capture(pattern, name, groups):
