@@ -366,7 +366,7 @@ def join_lengths(table: dict[int, list[str]]) -> dict[int, str] | None:
     size = 0
     for length, ways in table.items():
         unique = list(dict.fromkeys(ways))
-        result[length] = unique[0] if len(unique) == 1 else '(?:{})'.format('|'.join(unique))
+        result[length] = unique[0] if len(unique) == 1 else f'(?:{"|".join(unique)})'
         size += len(result[length])
     return result if size <= MAX_LENGTH_TABLE else None
 
@@ -498,7 +498,7 @@ def _get_win_drive(
                     break
             if count == complete:
                 if not regex:
-                    drive = '\\\\{}{}'.format('\\'.join(part), '\\' if slash else '')
+                    drive = f'\\\\{"\\".join(part)}{"\\" if slash else ""}'
                 else:
                     drive = r'[\\/]{2}' + r'[\\/]'.join([escape_drive(p, case_sensitive) for p in part])
     elif pattern.startswith(('\\\\', '/')):
@@ -1166,11 +1166,9 @@ class WcParse(Generic[AnyStr]):
         """
 
         result = None  # type: dict[int, str] | None
-        slot = {0: ''}  # type: dict[int, str] | None
+        slot = {0: ''}
         for item in [*extended, '|']:
             if item == '|':
-                if slot is None:
-                    return None
                 result = slot if result is None else union_lengths(result, slot)
                 if result is None:
                     return None
@@ -1179,9 +1177,10 @@ class WcParse(Generic[AnyStr]):
             lens = getattr(item, 'lens', None)
             if lens is None:
                 return None
-            slot = concat_lengths(slot, lens) if slot is not None else None
-            if slot is None:
+            new_slot = concat_lengths(slot, lens)
+            if new_slot is None:
                 return None
+            slot = new_slot
         return result
 
     def _exact_inverse(self, lens: dict[int, str] | None, star: str, extended: list[str]) -> str | None:
@@ -1212,28 +1211,28 @@ class WcParse(Generic[AnyStr]):
             # Patterns that can match nothing always match it, so there is no length of zero to add
             if length:
                 regex = lens[length].replace('(?#)', '?:') if self.capture else lens[length]
-                pieces.append('(?!(?:{})){}'.format(regex, self._length_range(char, length, length)))
+                pieces.append(f'(?!(?:{regex})){self._length_range(char, length, length)}')
         if run is not None:
             pieces.append(self._length_range(char, run[0], run[1]))
-        pieces.append('{}{{{},}}?'.format(char, max(lens) + 1))
+        pieces.append(f'{char}{{{max(lens) + 1},}}?')
 
-        body = star[:-len(base)] + '(?:{})'.format('|'.join(pieces))
+        body = star[:-len(base)] + f'(?:{"|".join(pieces)})'
         if not self.capture:
-            return '(?:{})'.format(body)
+            return f'(?:{body})'
 
         # Every extended group must still be a capturing group, in order. The ones in the patterns are copied, so
         # they are only in the copy that can never match.
         original = ''.join(extended)
-        unused = '(?:(?!)(?:{})|)'.format(original) if '(?#)' in original else ''
-        return '((?#){}{})'.format(unused, body)
+        unused = f'(?:(?!)(?:{original})|)' if '(?#)' in original else ''
+        return f'((?#){unused}{body})'
 
     @staticmethod
     def _length_range(char: str, low: int, high: int) -> str:
         """Match from `low` to `high` characters."""
 
         if low == high:
-            return '' if not low else char if low == 1 else '{}{{{}}}'.format(char, low)
-        return '{}{{{},{}}}?'.format(char, low, high)
+            return '' if not low else char if low == 1 else f'{char}{{{low}}}'
+        return f'{char}{{{low},{high}}}?'
 
     def _restrict_extended_slash(self) -> str:
         """Restrict extended slash."""
