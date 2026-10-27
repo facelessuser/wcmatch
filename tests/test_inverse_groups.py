@@ -693,6 +693,29 @@ def test_inverse_never_matches_hidden_names(seed):
             assert not glob_match('x/' + name, 'x/' + pattern), (pattern, name)
 
 
+@MATCHERS
+def test_inverse_exact_many_optional_parts_in_alternatives(matcher):
+    """Alternatives that can each be tracked, but are too long to track together, still work."""
+
+    first = ''.join('?({})'.format(c) for c in 'abcdefghi')
+    second = ''.join('?({})'.format(c) for c in 'mnopqrstu')
+    flags = fnmatch.EXTMATCH
+    alone = fnmatch.translate('!(' + first + ')', flags=flags)[0][0]
+    pattern = '!(' + first + '|' + second + ')'
+    together = fnmatch.translate(pattern, flags=flags)[0][0]
+
+    # Each is tracked by length, but the lengths of both together take too much room
+    assert len(alone) > 3000
+    assert len(together) < 1000
+    assert not matcher('', pattern)
+    assert not matcher('a', pattern)
+    assert not matcher('abcdefghi', pattern)
+    assert not matcher('mnu', pattern)
+    assert matcher('ca', pattern)
+    assert matcher('x', pattern)
+    assert matcher('abcdefghij', pattern)
+
+
 def test_inverse_exact_many_optional_parts():
     """Patterns that are too long to track the lengths of still work, and do not grow without bound."""
 
