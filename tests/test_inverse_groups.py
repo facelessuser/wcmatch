@@ -718,9 +718,13 @@ def test_inverse_dot_handling_file_system(tmp_path, pattern, default, dotglob):
         path.parent.mkdir(exist_ok=True)
         path.touch()
 
+    def scan(flags):
+        # Windows reports paths with backslashes
+        return sorted(p.replace('\\', '/') for p in glob.glob(pattern, flags=flags, root_dir=tmp_path))
+
     flags = glob.EXTGLOB | glob.GLOBSTAR
-    assert sorted(glob.glob(pattern, flags=flags, root_dir=tmp_path)) == default, pattern
-    assert sorted(glob.glob(pattern, flags=flags | glob.DOTGLOB, root_dir=tmp_path)) == dotglob, pattern
+    assert scan(flags) == default, pattern
+    assert scan(flags | glob.DOTGLOB) == dotglob, pattern
 
 
 DOT_ALPHABET = [''.join(p) for n in range(1, 4) for p in itertools.product('ab.', repeat=n) if set(p) != {'.'}]
@@ -819,8 +823,9 @@ UNTRACKED = [
 def test_groups_without_inverse_groups_translate_the_same(pattern, regex, capture_regex):
     """Groups that are not in an inverse group do not change because lengths are tracked for inverse groups."""
 
-    assert fnmatch.translate(pattern, flags=fnmatch.EXTMATCH)[0][0] == START + regex + ')$'
-    assert fnmatch.translate(pattern, flags=fnmatch.EXTMATCH | fnmatch.CAPTURE)[0][0] == START + capture_regex + ')$'
+    flags = fnmatch.EXTMATCH | fnmatch.FORCEUNIX
+    assert fnmatch.translate(pattern, flags=flags)[0][0] == START + regex + ')$'
+    assert fnmatch.translate(pattern, flags=flags | fnmatch.CAPTURE)[0][0] == START + capture_regex + ')$'
 
 
 @pytest.mark.parametrize(
