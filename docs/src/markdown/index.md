@@ -94,6 +94,10 @@ based issues. Often, the more powerful and expressive the feature, the more susc
     perform on our end. If running in an environment where the risk of sub-optimal performance is not tolerable, this
     behavior is optional and does not need to be enabled.
 
+    Additionally, `!(...)` is a pattern that _mostly_ follows Bash, and it requires complex processing and regular
+    expressions to get as close as we do. Most practical cases, usage should be fine, but overly complex patterns,
+    paired with other bad performing patterns, such as "greedy" ones.
+
 Not all potential performance issues are specifically related to ReDoS.
 
 -   The `BRACES` flag is very powerful and functionally different than extended glob patterns. Instead of using regular

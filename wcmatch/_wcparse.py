@@ -533,7 +533,8 @@ def _get_win_drive(
                     break
             if count == complete:
                 if not regex:
-                    drive = f'\\\\{"\\".join(part)}{"\\" if slash else ""}'
+                    bslash = "\\"
+                    drive = f'\\\\{bslash.join(part)}{bslash if slash else ""}'
                 else:
                     drive = r'[\\/]{2}' + r'[\\/]'.join([escape_drive(p, case_sensitive) for p in part])
     elif pattern.startswith(('\\\\', '/')):

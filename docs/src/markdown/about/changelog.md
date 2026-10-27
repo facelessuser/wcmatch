@@ -1,6 +1,29 @@
 # Changelog
 
-## Unreleased
+## 12.0
+
+-   **BREAK**: Various fixes to `!(...)` patterns to more closely align to Bash. 100% Bash behavior is impossible with
+    regular expression, but behavior in many ways was improved, but there may be some surprising behavior changes.
+
+    -   **FIX**: Fix an `EXTGLOB`/`EXTMATCH` inverse group, `!(...)`, inside another group ignoring the rest of its
+        alternative and the text that follows the group, e.g. `@(!(a)b)` and `@(x|!(a))b` matched `ab`. They now follow
+        the same rule as inverse groups that are not in a group. Inside `+(...)` and `*(...)` groups, the rest is the
+        remainder of the alternative and the text after the loop. The rest of the alternative was ignored since 7.0.1,
+        and the text after the group since 2.2.1.
+    -   **FIX**: Fix an `EXTGLOB`/`EXTMATCH` inverse group, `!(...)`, inside another inverse group not ending where the
+        text consumed by the outer group ends, e.g. `!(!(a)|b)` matched `aa` and `!(a!(b))` matched `aba`. This also
+        caused `translate()` with `CAPTURE` to match differently than without it for these patterns. This was a
+        regression in 7.0.1.
+    -   **FIX**: An `EXTGLOB`/`EXTMATCH` inverse group, `!(...)`, whose patterns can only match text up to some length,
+        e.g. `!(foo)`, `!(a|bc)`, or `!(?(a)b)`, now matches any other text, whatever follows it, as it does in Bash.
+        For instance, `!(foo)*.txt` now matches `foo.txt` and `foobar.txt`, `!(a)*` matches `a`, and `+(!(foo))` matches
+        `foo`. Inverse groups with patterns that can match text of any length, e.g. `!(*.js)`, still need to know what
+        follows them and behave as before. Inverse groups inside other inverse groups follow the same rules, e.g.
+        `!(!(a)|b)*` matches `a` and `ab`, `!(!(a)*)` matches nothing, and `!(a!(b)*)` no longer matches `ab`.
+    -   **FIX**: An `EXTGLOB`/`EXTMATCH` inverse group, `!(...)`, whose patterns cannot match nothing can now match
+        nothing whenever the rest of the pattern matches, as it does in Bash, even when its patterns can match text of
+        any length. For instance, `!(*.js)*` and `!(a*)*` now match any name (following dot rules), where
+        `!(*.js)*` rejected `a.js` and `a.json`.
 
 -   **FIX**: A leading `*` can no longer match nothing so that a literal dot can match the leading dot of a file name,
     e.g. `*.env` no longer matches `.env` unless `DOTGLOB`/`DOTMATCH` is enabled. This agrees with Bash, Python's
@@ -19,26 +42,6 @@
 -   **FIX**: Fix an `EXTGLOB`/`EXTMATCH` group that is simplified to a different group type, e.g. `@(+(b))` or
     `@(!(b))`, losing its meaning when it is then reduced into its parent group. Repeats and negations were dropped,
     e.g. `@(a|@(!(b)))` matched `b` and not `c`, and `!(@(+(a)))` matched `aa`. This was a regression in 11.0.
--   **FIX**: Fix an `EXTGLOB`/`EXTMATCH` inverse group, `!(...)`, inside another group ignoring the rest of its
-    alternative and the text that follows the group, e.g. `@(!(a)b)` and `@(x|!(a))b` matched `ab`. They now follow the
-    same rule as inverse groups that are not in a group. Inside `+(...)` and `*(...)` groups, the rest is the remainder
-    of the alternative and the text after the loop. The rest of the alternative was ignored since 7.0.1, and the text
-    after the group since 2.2.1.
--   **FIX**: Fix an `EXTGLOB`/`EXTMATCH` inverse group, `!(...)`, inside another inverse group not ending where the text
-    consumed by the outer group ends, e.g. `!(!(a)|b)` matched `aa` and `!(a!(b))` matched `aba`. This also caused
-    `translate()` with `CAPTURE` to match differently than without it for these patterns. This was a regression in
-    7.0.1.
--   **FIX**: An `EXTGLOB`/`EXTMATCH` inverse group, `!(...)`, whose patterns can only match text up to some length,
-    e.g. `!(foo)`, `!(a|bc)`, or `!(?(a)b)`, now matches any other text, whatever follows it, as it does in Bash. For
-    instance, `!(foo)*.txt` now matches `foo.txt` and `foobar.txt`, `!(a)*` matches `a`, and `+(!(foo))` matches `foo`.
-    Inverse groups with patterns that can match text of any length, e.g. `!(*.js)`, still need to know what follows them
-    and behave as before. Inverse groups inside other inverse groups follow the same rules, e.g. `!(!(a)|b)*` matches
-    `a` and `ab`, `!(!(a)*)` matches nothing, and `!(a!(b)*)` no longer matches `ab`.
--   **BREAK**: An `EXTGLOB`/`EXTMATCH` inverse group, `!(...)`, whose patterns cannot match nothing can now match nothing
-    whenever the rest of the pattern matches, as it does in Bash, even when its patterns can match text of any length.
-    For instance, `!(*.js)*` and `!(a*)*` now match any name that does not start with a dot, where `!(*.js)*` rejected
-    `a.js` and `a.json`. Names that start with a dot still need `DOTMATCH`/`DOTGLOB`. Inverse groups inside other
-    inverse groups are not affected.
 
 ## 11.2
 

@@ -348,10 +348,9 @@ When `MINUSNEGATE` is used with [`NEGATE`](#negate), exclusion patterns are reco
 
 #### `fnmatch.DOTMATCH, fnmatch.D` {: #dotmatch}
 
-By default, [`fnmatch`](#fnmatch) and related functions will not match file or directory names that start with dot `.`
-unless matched with a literal dot. `DOTMATCH` allows the meta characters (such as `*`) to match dots like any other
-character. Dots will not be matched in `[]`, `*`, or `?`. Additionally, a wildcard at the start of a name cannot match
-nothing to let a literal dot match instead, e.g. `*.env` will not match `.env`.
+By default, [`fnmatch`](#fnmatch) and related functions will not match file or directory names that start with `.`
+unless matched with a literal dot. `DOTMATCH` allows the meta characters (such as  `[]`, `*`, or `?`) to match dots like
+any other character.
 
 #### `fnmatch.NUMRANGE, fnmatch.ZN` {: #numrange}
 
@@ -382,34 +381,29 @@ etc. See the [syntax overview](#syntax) for more information.
 > negate a pattern that starts with a literal `(`, you must escape the bracket: `!\(`.
 
 > [!note] Inverse groups
-> With `EXTMATCH`, an inverse group, `!(...)`, matches any text that none of its patterns match, and what follows it
-> does not matter. `!(a)` matches `ab` but not `a`, `!(a)*` matches `a` and `ab`, and `!(foo)*.txt` matches `foo.txt`
-> and `foobar.txt`. This is the case as long as the patterns can only match text up to some length, which is when they
-> are made of characters, `?`, `[...]`, and groups such as `@(...)` and `?(...)` of those. An inverse group inside
-> another one is fine too: `!(!(a)|b)` only matches `a`, whatever follows it, so `!(!(a)|b)*` matches `a` and `ab`, but
-> not `b` or `c`.
+> Inverse groups, `!(...)`, that align to Bash behaviors are difficult to fully represent in regular expressions,
+> especially when it comes to interaction with some "greedy" patterns. This is not a bug in Wildcard Match per se, but
+> just a limitation of the approach. Inverse groups should be viewed as an approximation of extended inverse groups in
+> Bash.
 >
-> If a pattern can match text of any length, because it uses `*`, `+(...)`, `*(...)`, or an inverse group with other
-> text next to it like `!(a!(b))`, the group has to be translated along with what follows it. If the patterns cannot
-> match nothing, the group may match nothing whenever the rest of the pattern matches, so `!(*.js)*` matches any name
-> that does not start with a dot, including `a.js`. Otherwise, such a group only matches text when the rest of the
-> pattern can match what is left, and none of the ways the rest could match would make that text match one of the
-> group's patterns. `!(a*)b` does not match `ab` or `abb`. If the patterns can match nothing, like `*(a)`, the group
-> never matches when the rest of the pattern could match all of the text, so `!(*(a))*` does not match anything.
+> It should be noted that attempts to align behavior closer to Bash for specific cases can unalign behavior in other
+> areas, so we tried to pick the best balance we can.
 >
-> The rest of the pattern includes what follows the group in its own alternative and what follows the enclosing group,
-> so `@(!(a*)b)` and `@(x|!(a*))b` both reject `ab`. In `+(...)` and `*(...)` groups, only what follows the group in
-> its alternative and what follows the loop are considered, further iterations are not. Each iteration is judged as
-> though it were the last one, so `+(!(a*b))` does not match `axb`, even though `ax` and `b` each match `!(a*b)`. An
-> inverse group inside the patterns of another inverse group is judged the same way, using the text the outer group
-> consumes.
+> Requests for fixes in specific case alignment will be considered, but only after considering how practical the use
+> case is, how it may impact existing cases, and the complexity required to achieve it vs the value gained and
+> performance impact.
 
 > [!warning]
 > When using extended glob patterns, groups are translated from glob groups to regular expression groups: `+(...)` ->
 > `(...)+`, and so they are susceptible to the same kinds of performance based exploits that can occur in normal
-> regular expression. Be thoughtful about the patterns you create with these groups, and if in important, time critical
-> production systems, if the risk is not tolerable, do not enable. Read more about performance based issues in Regular
-> Expressions [here][regular-expression-redos].
+> regular expression.
+>
+> Additionally, `!(...)` are an approximation of Bash's implementation and require some complex handling and patterns.
+> These too can be susceptible to performance issues, especially when paired with bad patterns.
+>
+> Be thoughtful about the patterns you create with these groups, and if in important, time critical production systems,
+> if the risk is not tolerable, do not enable. Read more about performance based issues in Regular Expressions
+> [here][regular-expression-redos].
 
 #### `fnmatch.CAPTURE, glob.TC` {: #capture}
 

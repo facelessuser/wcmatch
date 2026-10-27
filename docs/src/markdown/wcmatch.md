@@ -336,12 +336,30 @@ etc.
 > treated as a `NEGATE` pattern (even if `!(` doesn't yield a valid `EXTMATCH` pattern). To negate a pattern that starts
 > with a literal `(`, you must escape the bracket: `!\(`.
 
+> [!note] Inverse groups
+> Inverse groups, `!(...)`, that align to Bash behaviors are difficult to fully represent in regular expressions,
+> especially when it comes to interaction with some "greedy" patterns. This is not a bug in Wildcard Match per se, but
+> just a limitation of the approach. Inverse groups should be viewed as an approximation of extended inverse groups in
+> Bash.
+>
+> It should be noted that attempts to align behavior closer to Bash for specific cases can unalign behavior in other
+> areas, so we tried to pick the best balance we can.
+>
+> Requests for fixes in specific case alignment will be considered, but only after considering how practical the use
+> case is, how it may impact existing cases, and the complexity required to achieve it vs the value gained and
+> performance impact.
+
 > [!warning]
 > When using extended glob patterns, groups are translated from glob groups to regular expression groups: `+(...)` ->
 > `(...)+`, and so they are susceptible to the same kinds of performance based exploits that can occur in normal
-> regular expression. Be thoughtful about the patterns you create with these groups, and if in important, time critical
-> production systems, if the risk is not tolerable, do not enable. Read more about performance based issues in Regular
-> Expressions [here][regular-expression-redos].
+> regular expression.
+>
+> Additionally, `!(...)` are an approximation of Bash's implementation and require some complex handling and patterns.
+> These too can be susceptible to performance issues, especially when paired with bad patterns.
+>
+> Be thoughtful about the patterns you create with these groups, and if in important, time critical production systems,
+> if the risk is not tolerable, do not enable. Read more about performance based issues in Regular Expressions
+> [here][regular-expression-redos].
 
 #### `wcmatch.BRACE, wcmatch.B` {: #brace}
 
