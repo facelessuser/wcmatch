@@ -2,9 +2,6 @@
 
 ## 12.0
 
--   **FIX**: Preserve a terminal directory separator after `GLOBSTAR` patterns in `globmatch`, `globfilter`, and
-    translated patterns. Patterns such as `**/` and `dir/**/` no longer match regular files.
-
 -   **BREAK**: Various fixes to `!(...)` patterns to more closely align to Bash. 100% Bash behavior is impossible with
     regular expression, but behavior in many ways was improved, but there may be some surprising behavior changes.
 
@@ -48,6 +45,10 @@
 -   **FIX**: Fix an `EXTGLOB`/`EXTMATCH` group that is simplified to a different group type, e.g. `@(+(b))` or
     `@(!(b))`, losing its meaning when it is then reduced into its parent group. Repeats and negations were dropped,
     e.g. `@(a|@(!(b)))` matched `b` and not `c`, and `!(@(+(a)))` matched `aa`. This was a regression in 11.0.
+-   **FIX**: Use the same case-insensitive matching for literal and wildcard path components in `glob` and `iglob`,
+    including Unicode case equivalences.
+-   **FIX**: Preserve a terminal directory separator after `GLOBSTAR` patterns in `globmatch`, `globfilter`, and
+    translated patterns. Patterns such as `**/` and `dir/**/` no longer match regular files.
 
 ## 11.2
 
