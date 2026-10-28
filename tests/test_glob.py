@@ -1446,7 +1446,7 @@ class TestCase(_TestGlob):
 )
 @pytest.mark.parametrize('layout', ['file', 'directory', 'wildcard-parent'])
 def test_case_insensitive_unicode_literals(tmp_path, name, literal, matched, layout):
-    """Literal path parts use the same case rules as wildcard parts and globmatch."""
+    """Literal path parts use the same case rules as wildcard parts and `globmatch`."""
 
     if layout == 'directory':
         relative = os.path.join(name, 'leaf.txt')
