@@ -309,7 +309,7 @@ class _GlobSplit(Generic[AnyStr]):
         magic = self.is_magic(value)
         # `.` and `..` are never subject to case and are resolved as literal directories,
         # so they must stay plain strings even when matching case insensitively.
-        if magic or (not self.case_sensitive and not value in (b'.', b'..', '.', '..')):
+        if magic or (not self.case_sensitive and value not in (b'.', b'..', '.', '..')):
             v = _wcparse._compile(value, self.flags)  # type: Pattern[AnyStr] | AnyStr
         else:
             v = value
