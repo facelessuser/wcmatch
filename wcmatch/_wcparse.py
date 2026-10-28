@@ -123,6 +123,7 @@ TILDE_SYM = (
     b'~'
 )
 
+RE_PATTERN_END = re.compile(r'\\?\Z')
 RE_ANCHOR = re.compile(r'^/+')
 RE_WIN_ANCHOR = re.compile(r'^(?:\\\\|/)+')
 RE_POSIX = re.compile(r'\[:(alnum|alpha|ascii|blank|cntrl|digit|graph|lower|print|punct|space|upper|word|xdigit):\]')
@@ -256,11 +257,12 @@ _EOP = r'$'
 _PATH_EOP = r'(?:$|[{sep}])'
 # Divider between `globstar`. Can match start or end of pattern
 # in addition to slashes.
-_GLOBSTAR_DIV = r'(?:^|$|{})+'
+_GLOBSTAR_DIV = r'(?:^|$|[{sep}])+'
 # Lookahead to see there is one character.
 _NEED_CHAR_PATH = r'(?=[^{sep}])'
 _NEED_CHAR = r'(?=.)'
-_NEED_SEP = r'(?={})'
+_NEED_SEP = r'(?=[{sep}])'
+_NEED_DIR = r'(?<=[{sep}])'
 # Group that matches one or none
 _QMARK_GROUP = r'(?:{})?'
 _QMARK_GUARD_GROUP = r'(?:{}(?:{}))?'
@@ -1081,6 +1083,10 @@ class WcParse(Generic[AnyStr]):
             self.char_avoid = (ord('/'), ord('.'))
             self.bslash_abort = False
             sep = {"sep": re.escape('/')}
+
+        self.globstar_div = _GLOBSTAR_DIV.format(**sep)
+        self.need_sep = _NEED_SEP.format(**sep)
+        self.need_dir = _NEED_DIR.format(**sep)
         self.bare_sep = sep['sep']
         self.sep = f'[{self.bare_sep}]'
         self.path_eop = _PATH_EOP.format(**sep)
@@ -1747,6 +1753,7 @@ class WcParse(Generic[AnyStr]):
     def _handle_star(self, i: util.StringIter, current: list[str]) -> None:
         """Handle star."""
 
+        directory = False
         after_ext = bool(current and isinstance(current[-1], ExtGroup))
         check_start = (after_ext or self.in_list) and not self.dot
         # A star that ends its pattern in an extended group can match nothing at the start of a name
@@ -1824,12 +1831,14 @@ class WcParse(Generic[AnyStr]):
                             # Looks like escape was a valid slash
                             # Store pattern accordingly
                             value = globstar
+                            directory = True
                             self.matchbase = False
                         except StopIteration:
                             # Escapes nothing, ignore and assume double star
                             value = globstar
                     elif c == '/':
                         value = globstar
+                        directory = True
                         self.matchbase = False
 
                     if value != globstar:
@@ -1854,19 +1863,22 @@ class WcParse(Generic[AnyStr]):
 
         self.reset_dir_track()
         if value == globstar:
-            sep = _GLOBSTAR_DIV.format(self.sep)
             # Check if the last entry was a `globstar`
             # If so, don't bother adding another.
-            if current[-1] != sep:
+            if current[-1] != self.globstar_div:
                 if current[-1] == '':
                     # At the beginning of the pattern
                     current[-1] = value
                 else:
                     # Replace the last path separator
-                    current[-1] = _NEED_SEP.format(self.sep)
+                    current[-1] = self.need_sep
                     current.append(value)
                 self.consume_path_sep(i)
-                current.append(sep)
+                current.append(self.globstar_div)
+            else:
+                self.consume_path_sep(i)
+            if directory and i.match_next(RE_PATTERN_END):
+                current.append(self.need_dir)
             self.set_start_dir()
         else:
             if not self.in_list:

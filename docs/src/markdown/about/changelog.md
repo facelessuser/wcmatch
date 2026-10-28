@@ -2,6 +2,9 @@
 
 ## 12.0
 
+-   **FIX**: Preserve a terminal directory separator after `GLOBSTAR` patterns in `globmatch`, `globfilter`, and
+    translated patterns. Patterns such as `**/` and `dir/**/` no longer match regular files.
+
 -   **BREAK**: Various fixes to `!(...)` patterns to more closely align to Bash. 100% Bash behavior is impossible with
     regular expression, but behavior in many ways was improved, but there may be some surprising behavior changes.
 
