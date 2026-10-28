@@ -2402,9 +2402,11 @@ def test_realpath_globstar_directory_only(tmp_path, pattern, filename, as_bytes)
     path = os.fsencode(filename) if as_bytes else filename
     pattern = os.fsencode(pattern) if as_bytes else pattern
     slash = b'/' if as_bytes else '/'
+    sep = os.fsencode(os.sep) if as_bytes else os.sep
     flags = glob.GLOBSTAR | glob.REALPATH
     matches = glob.glob(pattern, root_dir=root, flags=glob.GLOBSTAR)
-    expected = path in [name.rstrip(slash) for name in matches]
+    # `glob` returns native separators (`\` on Windows), but `path` always uses `/`
+    expected = path in [name.replace(sep, slash).rstrip(slash) for name in matches]
 
     assert glob.globmatch(path, pattern, root_dir=root, flags=flags) == expected
     assert glob.compile(pattern, flags=flags).match(path, root_dir=root) == expected
