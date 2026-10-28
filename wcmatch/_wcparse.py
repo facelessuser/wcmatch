@@ -1744,8 +1744,8 @@ class WcParse(Generic[AnyStr]):
                 return False
         return True
 
-    def _handle_star(self, i: util.StringIter, current: list[str]) -> None:
-        """Handle star."""
+    def _handle_star(self, i: util.StringIter, current: list[str]) -> bool:
+        """Handle a star and report whether it consumed a directory separator."""
 
         after_ext = bool(current and isinstance(current[-1], ExtGroup))
         check_start = (after_ext or self.in_list) and not self.dot
@@ -1783,6 +1783,7 @@ class WcParse(Generic[AnyStr]):
                 star = _STAR
             globstar = ''
         value = star
+        directory = False
 
         if self.after_start and self.globstar and not self.in_list:
             skip = True
@@ -1824,12 +1825,14 @@ class WcParse(Generic[AnyStr]):
                             # Looks like escape was a valid slash
                             # Store pattern accordingly
                             value = globstar
+                            directory = True
                             self.matchbase = False
                         except StopIteration:
                             # Escapes nothing, ignore and assume double star
                             value = globstar
                     elif c == '/':
                         value = globstar
+                        directory = True
                         self.matchbase = False
 
                     if value != globstar:
@@ -1874,6 +1877,8 @@ class WcParse(Generic[AnyStr]):
                     self.emitted_star = len(current)
                 value = AtomicStar(value)
             current.append(value)
+
+        return directory
 
     def clean_up_inverse(self, current: list[str], token: str | None = None) -> None:
         """
@@ -2293,6 +2298,7 @@ class WcParse(Generic[AnyStr]):
 
         self.set_after_start()
         i = util.StringIter(pattern)
+        trailing_globstar_directory = False
 
         root_specified = False
         if self.win_drive_detect:
@@ -2330,7 +2336,7 @@ class WcParse(Generic[AnyStr]):
             if c == '.':
                 self._handle_dot(i, current)
             elif c == '*':
-                self._handle_star(i, current)
+                trailing_globstar_directory = self._handle_star(i, current)
             elif c == '?':
                 current.append(self._restrict_sequence(current) + _QMARK)
             elif c == '/':
@@ -2377,6 +2383,9 @@ class WcParse(Generic[AnyStr]):
         self._close_root(current)
 
         if self.pathname:
+            if trailing_globstar_directory and current[-1] == _GLOBSTAR_DIV.format(self.sep):
+                # A terminal star may match the end, but an explicit slash still requires a directory.
+                current.append(f'(?<={self.sep})')
             current.append(_PATH_TRAIL.format(self.sep))
 
     def _parse(self, p: str) -> str:
