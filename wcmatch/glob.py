@@ -489,6 +489,7 @@ class Glob(Generic[AnyStr]):
             self.re_pathlib_norm = _RE_WIN_PATHLIB_DOT_NORM[ptype]
             self.re_no_dir = _wcparse.RE_WIN_NO_DIR[ptype]
 
+        self.ptype = ptype  # type: int
         temp = os.fspath(root_dir) if root_dir is not None else self.current
         if not isinstance(temp, bytes if ptype else str):
             raise TypeError(
@@ -668,7 +669,7 @@ class Glob(Generic[AnyStr]):
                     for f in scan:
                         try:
                             # Scanning a file descriptor returns string names, even for byte patterns.
-                            name = os.fsencode(f.name) if isinstance(self.root_dir, bytes) else f.name
+                            name: AnyStr = os.fsencode(f.name) if self.ptype else f.name  # type: ignore[assignment]
                             hidden = self._is_hidden(name)
                             is_dir = f.is_dir()
                             if is_dir:
