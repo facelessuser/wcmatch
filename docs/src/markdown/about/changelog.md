@@ -2,6 +2,8 @@
 
 ## 12.0
 
+-   **FIX**: Use the same case-insensitive matching for literal and wildcard path components in `glob` and `iglob`,
+    including Unicode case equivalences.
 -   **BREAK**: Various fixes to `!(...)` patterns to more closely align to Bash. 100% Bash behavior is impossible with
     regular expression, but behavior in many ways was improved, but there may be some surprising behavior changes.
 

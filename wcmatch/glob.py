@@ -604,7 +604,7 @@ class Glob(Generic[AnyStr]):
     def _match_literal(self, a: AnyStr, b: AnyStr | None = None) -> bool:
         """Match two names."""
 
-        return a.lower() == b if not self.case_sensitive else a == b
+        return a == b
 
     def _get_matcher(self, target: AnyStr | Pattern[AnyStr] | None) -> Callable[..., Any] | None:
         """Get deep match."""
@@ -614,10 +614,10 @@ class Glob(Generic[AnyStr]):
         elif isinstance(target, (str, bytes)):
             # Plain text match
             if not self.case_sensitive:
-                match = target.lower()
+                # Use the same Unicode case equivalences as wildcard patterns.
+                matcher = re.compile(re.escape(target), re.IGNORECASE).fullmatch
             else:
-                match = target
-            matcher = functools.partial(self._match_literal, b=match)
+                matcher = functools.partial(self._match_literal, b=target)
         else:
             # File match pattern
             matcher = target.match

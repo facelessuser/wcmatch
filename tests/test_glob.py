@@ -1431,6 +1431,59 @@ class TestCase(_TestGlob):
             assert sorted(glob.glob(patterns, flags=glob.I, root_dir=self.tempdir)) == ['A', 'a']
 
 
+@pytest.mark.parametrize(
+    ('name', 'literal', 'matched'),
+    [
+        ('\u0131', 'i', True),
+        ('\u0130', 'i', True),
+        ('\u017f', 's', True),
+        ('\u03c2', '\u03c3', True),
+        ('i\u0307', '\u0130', False),
+        ('\u212a', 'k', True),
+        ('Name', 'name', True),
+        ('x', 'i', False)
+    ]
+)
+@pytest.mark.parametrize('layout', ['file', 'directory', 'wildcard-parent'])
+def test_case_insensitive_unicode_literals(tmp_path, name, literal, matched, layout):
+    """Literal path parts use the same case rules as wildcard parts and globmatch."""
+
+    if layout == 'directory':
+        relative = os.path.join(name, 'leaf.txt')
+        pattern = literal + '/leaf.txt'
+    elif layout == 'wildcard-parent':
+        relative = os.path.join('sub', name + '.txt')
+        pattern = '*/' + literal + '.txt'
+    else:
+        relative = name + '.txt'
+        pattern = literal + '.txt'
+
+    path = tmp_path / relative
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.touch()
+    expected = [relative] if matched else []
+
+    assert glob.globmatch(relative, pattern, flags=glob.I) == matched
+    assert glob.glob(pattern, root_dir=tmp_path, flags=glob.I) == expected
+    assert list(glob.iglob(pattern, root_dir=tmp_path, flags=glob.I)) == expected
+    assert [os.path.relpath(p, tmp_path) for p in pathlib.Path(tmp_path).glob(pattern, flags=glob.I)] == expected
+    assert glob.glob(pattern, root_dir=tmp_path, flags=glob.I | glob.C) == []
+
+
+@pytest.mark.parametrize('binary', [False, True])
+def test_case_insensitive_escaped_literals(tmp_path, binary):
+    """Case-insensitive literal matching preserves escaped punctuation and byte patterns."""
+
+    name = 'name[.+].TXT'
+    (tmp_path / name).touch()
+    root = os.fsencode(tmp_path) if binary else str(tmp_path)
+    filename = os.fsencode(name) if binary else name
+    pattern = glob.escape(filename.lower())
+
+    assert glob.glob(pattern, root_dir=root, flags=glob.I) == [filename]
+    assert glob.glob(pattern, root_dir=root, flags=glob.I | glob.C) == []
+
+
 class TestGlobCornerCase(_TestGlob):
     """
     Some tests that need a very specific file set to test against for corner cases.
