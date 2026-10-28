@@ -187,6 +187,7 @@ class _GlobSplit(Generic[AnyStr]):
             flags ^= NEGATE
         self.flags = flags
         self.extend = bool(flags & EXTMATCH)
+        self.case_sensitive = _wcparse.get_case(self.flags)  # type: bool
         if not self.unix:
             self.win_drive_detect = True
             self.bslash_abort = True
@@ -306,7 +307,9 @@ class _GlobSplit(Generic[AnyStr]):
         globstarlong = self.globstarlong and value in (b'***', '***')
         globstar = globstarlong or (self.globstar and value in (b'**', '**'))
         magic = self.is_magic(value)
-        if magic:
+        # `.` and `..` are never subject to case and are resolved as literal directories,
+        # so they must stay plain strings even when matching case insensitively.
+        if magic or (not self.case_sensitive and value not in (b'.', b'..', '.', '..')):
             v = _wcparse._compile(value, self.flags)  # type: Pattern[AnyStr] | AnyStr
         else:
             v = value
@@ -605,7 +608,7 @@ class Glob(Generic[AnyStr]):
     def _match_literal(self, a: AnyStr, b: AnyStr | None = None) -> bool:
         """Match two names."""
 
-        return a.lower() == b if not self.case_sensitive else a == b
+        return a == b
 
     def _get_matcher(self, target: AnyStr | Pattern[AnyStr] | None) -> Callable[..., Any] | None:
         """Get deep match."""
@@ -614,11 +617,7 @@ class Glob(Generic[AnyStr]):
             matcher = None  # type: Callable[..., Any] | None
         elif isinstance(target, (str, bytes)):
             # Plain text match
-            if not self.case_sensitive:
-                match = target.lower()
-            else:
-                match = target
-            matcher = functools.partial(self._match_literal, b=match)
+            matcher = functools.partial(self._match_literal, b=target)
         else:
             # File match pattern
             matcher = target.match

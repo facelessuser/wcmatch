@@ -681,6 +681,59 @@ EVERYWHERE = [
 ]
 
 # What Bash matches in this tree without and with `dotglob`, every segment follows the same rules
+BASH_DOT_NAMES = ['.a', '.b', '..b', '.ab', '.bb', 'a', 'b', 'ab', 'a.b', 'xb']
+
+# What Bash 5.3 expands these patterns to in a directory holding `BASH_DOT_NAMES`, without `dotglob`.
+# A group that has an alternative that starts with a dot, directly or through a group that starts it, lets a `*` that
+# ends its alternative, or any other part that can match nothing, match nothing so a dot after the group is the leading
+# dot. A wildcard never matches the leading dot itself, and a `*` followed by more of its alternative cannot match
+# nothing.
+BASH_DOT_CASES = [
+    ('@(*|.a).b', ['.b', 'a.b']),
+    ('?(x)@(*|.a).b', ['.b', 'a.b']),
+    ('+(*|.a).b', ['.b', 'a.b']),
+    ('*(*|.a).b', ['.b', 'a.b']),
+    ('@(*|@(.a|x)).b', ['.b', 'a.b']),
+    ('@(*|x@(.a)).b', ['a.b']),
+    ('@(|.a).b', ['.b']),
+    ('@(*?(x)|.a).b', ['.b', 'a.b']),
+    ('@(?(x)*|.a).b', ['.b', 'a.b']),
+    ('@(*|.a)b', ['.ab', 'b', 'ab', 'a.b', 'xb']),
+    ('@(*.|.a)b', ['.ab', 'a.b']),
+    ('@(*.b|.a)', ['.a', 'a.b']),
+    ('@(*|.a)*', ['.a', '.ab', 'a', 'b', 'ab', 'a.b', 'xb']),
+    ('@(*|x).b', ['a.b']),
+    ('@(*).b', ['a.b']),
+    ('+(*).b', ['a.b']),
+    ('?(*).b', ['.b', 'a.b']),
+    ('*(*).b', ['.b', 'a.b']),
+    ('?(x).b', ['.b']),
+    ('*(*.a)', []),
+    ('?(*.a)', []),
+    ('*(*.b*(.a*|b))', ['a.b']),
+    ('?(x)@(.b|*)b', ['.bb', 'b', 'ab', 'a.b', 'xb']),
+    ('*(*)', ['a', 'b', 'ab', 'a.b', 'xb']),
+    ('?(*)', ['a', 'b', 'ab', 'a.b', 'xb']),
+    ('*(*a)', ['a']),
+    ('@(.)b', ['.b']),
+    ('?(.)b', ['.b', 'b']),
+    ('@(a|.)b', ['.b', 'ab']),
+    ('*(a|.)b', ['.b', '..b', '.ab', 'b', 'ab', 'a.b']),
+    ('+(a|.)b', ['.b', '..b', '.ab', 'ab', 'a.b']),
+    ('!(*|.a).b', []),
+    ('@(*|!(.a)).b', ['.b', 'a.b']),
+    ('@(!(x)|.a).b', ['a.b']),
+]
+
+
+@pytest.mark.parametrize(('pattern', 'expected'), BASH_DOT_CASES)
+def test_dot_in_groups_follows_bash(pattern, expected):
+    """A dot at the start of an alternative lets wildcards in the group match nothing before the dot."""
+
+    assert [n for n in BASH_DOT_NAMES if fn_match(n, pattern)] == expected, pattern
+    assert [n for n in BASH_DOT_NAMES if glob_match(n, pattern)] == expected, pattern
+
+
 PATH_CASES = [
     ('!(*.js)*', ['a.js', 'd', 'x'], ['.d', '.env', 'a.js', 'd', 'x']),
     ('d/!(*.js)*', VISIBLE, ['d/.env', 'd/.env.txt', 'd/a.js', 'd/b.txt', 'd/x']),
@@ -809,13 +862,13 @@ START = r'^(?s:(?!(?:(?<=[/])|(?<=^))(?:\.{1,2})(?:$|[/]))'
 
 # The lengths of text that groups match are only kept for inverse groups, other groups translate the same without them
 UNTRACKED = [
-    ('@(foo|bar)*.txt', r'(?:foo|bar)(?!(?<=^)\.).*?\.txt', r'(foo|bar)(?!(?<=^)\.).*?\.txt'),
-    ('?(a)b', r'(?:a)?b', r'((?:a)?)b'),
-    ('+(a|b)c', r'(?:a|b)+c', r'((?:a|b)+)c'),
-    ('*(x|y)z', r'(?:x|y)*z', r'((?:x|y)*)z'),
-    ('@(a|?(b))*', r'(?:a|b|)(?!(?<=^)\.).*?', r'(a|((?:b)?))(?!(?<=^)\.).*?'),
-    ('+(?(a)b)', r'(?:(?:a)?b)+', r'((?:((?:a)?)b)+)'),
-    ('@(a|@(b|c))d', r'(?:a|b|c)d', r'(a|(b|c))d'),
+    ('@(foo|bar)*.txt', r'(?!(?<=^)\.)(?:foo|bar)(?!(?<=^)\.).*?\.txt', r'(?!(?<=^)\.)(foo|bar)(?!(?<=^)\.).*?\.txt'),
+    ('?(a)b', r'(?:(?!(?<=^)\.)(?:a))?b', r'((?:(?!(?<=^)\.)(?:a))?)b'),
+    ('+(a|b)c', r'(?!(?<=^)\.)(?:a|b)+c', r'((?!(?<=^)\.)(?:a|b)+)c'),
+    ('*(x|y)z', r'(?:(?!(?<=^)\.)(?:x|y))*z', r'((?:(?!(?<=^)\.)(?:x|y))*)z'),
+    ('@(a|?(b))*', r'(?!(?<=^)\.)(?:a|b|)(?!(?<=^)\.).*?', r'(?!(?<=^)\.)(a|((?:b)?))(?!(?<=^)\.).*?'),
+    ('+(?(a)b)', r'(?!(?<=^)\.)(?:(?:a)?b)+', r'((?!(?<=^)\.)(?:((?:a)?)b)+)'),
+    ('@(a|@(b|c))d', r'(?!(?<=^)\.)(?:a|b|c)d', r'(?!(?<=^)\.)(a|(b|c))d'),
 ]
 
 

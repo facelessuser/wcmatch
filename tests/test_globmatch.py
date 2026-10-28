@@ -2387,3 +2387,99 @@ def test_filter_iterable_without_truth_value(precompiled, names, expected):
     else:
         actual = glob.globfilter(values, '*.txt', exclude='skip.txt')
     assert actual == expected
+
+
+@pytest.mark.parametrize('pattern', ['**/', 'dir/**/', '**/**/', '**//'])
+@pytest.mark.parametrize('filename', ['file.txt', 'dir/file.txt', 'dir', 'dir/sub'])
+@pytest.mark.parametrize('as_bytes', [False, True])
+def test_realpath_globstar_directory_only(tmp_path, pattern, filename, as_bytes):
+    """Keep terminal directory separators when matching a real path with `GLOBSTAR`."""
+
+    (tmp_path / 'dir' / 'sub').mkdir(parents=True)
+    (tmp_path / 'file.txt').touch()
+    (tmp_path / 'dir' / 'file.txt').touch()
+    root = os.fsencode(tmp_path) if as_bytes else str(tmp_path)
+    path = os.fsencode(filename) if as_bytes else filename
+    pattern = os.fsencode(pattern) if as_bytes else pattern
+    slash = b'/' if as_bytes else '/'
+    sep = os.fsencode(os.sep) if as_bytes else os.sep
+    flags = glob.GLOBSTAR | glob.REALPATH
+    matches = glob.glob(pattern, root_dir=root, flags=glob.GLOBSTAR)
+    # `glob` returns native separators (`\` on Windows), but `path` always uses `/`
+    expected = path in [name.replace(sep, slash).rstrip(slash) for name in matches]
+
+    assert glob.globmatch(path, pattern, root_dir=root, flags=flags) == expected
+    assert glob.compile(pattern, flags=flags).match(path, root_dir=root) == expected
+    assert glob.globfilter([path], pattern, root_dir=root, flags=flags) == ([path] if expected else [])
+
+
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('pattern', ['**/', '**/**/', 'dir/**/', '**\\/'])
+def test_globstar_directory_separator_translation(pattern, as_bytes):
+    """Require a directory separator in string matching and translated patterns."""
+
+    flags = glob.GLOBSTAR | glob.FORCEUNIX
+    if as_bytes:
+        pattern = pattern.encode('ascii')
+    for filename, expected in [('dir/file.txt', False), ('dir/sub/', True)]:
+        path = filename.encode('ascii') if as_bytes else filename
+        assert glob.globmatch(path, pattern, flags=flags) == expected
+        include, exclude = glob.translate(pattern, flags=flags)
+        assert not exclude
+        assert bool(re.fullmatch(include[0], path)) == expected
+
+
+@pytest.mark.parametrize('as_bytes', [False, True])
+def test_terminal_globstar_still_matches_files(as_bytes):
+    """Keep the existing file behavior when no directory separator is requested."""
+
+    for pattern in ['**', 'dir/**', '**/**']:
+        pattern = pattern.encode('ascii') if as_bytes else pattern
+        path = b'dir/file.txt' if as_bytes else 'dir/file.txt'
+        assert glob.globmatch(path, pattern, flags=glob.GLOBSTAR | glob.FORCEUNIX)
+
+
+@pytest.mark.parametrize('pattern', ['**/', 'dir/**/', '**/**/'])
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('long_globstar', [False, True])
+def test_globstar_directory_separator_windows(pattern, as_bytes, long_globstar):
+    """Preserve terminal separators in Windows-style pattern translation."""
+
+    flags = glob.FORCEWIN | (glob.GLOBSTARLONG if long_globstar else glob.GLOBSTAR)
+    if long_globstar:
+        pattern = pattern.replace('**', '***')
+    pattern = pattern.replace('/', '\\\\')
+    if as_bytes:
+        pattern = pattern.encode('ascii')
+    for filename, expected in [('dir\\file.txt', False), ('dir\\sub\\', True)]:
+        path = filename.encode('ascii') if as_bytes else filename
+        assert glob.globmatch(path, pattern, flags=flags) == expected
+        for capture in [0, glob.CAPTURE]:
+            include, exclude = glob.translate(pattern, flags=flags | capture)
+            assert not exclude
+            assert bool(re.fullmatch(include[0], path)) == expected
+
+
+@pytest.mark.parametrize('windows', [False, True])
+@pytest.mark.parametrize('as_bytes', [False, True])
+def test_globstar_ignored_trailing_escape(windows, as_bytes):
+    """Do not treat a dangling escape as a requested directory separator."""
+
+    flags = glob.GLOBSTAR | (glob.FORCEWIN if windows else glob.FORCEUNIX)
+    path = 'dir/file.txt'
+    for pattern in ['**\\', 'dir/**\\', '**/**\\']:
+        value = pattern.encode('ascii') if as_bytes else pattern
+        filename = path.encode('ascii') if as_bytes else path
+        assert glob.globmatch(filename, value, flags=flags)
+
+
+@pytest.mark.parametrize('windows', [False, True])
+@pytest.mark.parametrize('as_bytes', [False, True])
+def test_globstar_directory_separator_before_ignored_escape(windows, as_bytes):
+    """Keep a directory separator before an ignored trailing escape."""
+
+    flags = glob.GLOBSTAR | (glob.FORCEWIN if windows else glob.FORCEUNIX)
+    pattern = b'**/\\' if as_bytes else '**/\\'
+    for filename, expected in [('dir/file.txt', False), ('dir/sub/', True)]:
+        value = filename.encode('ascii') if as_bytes else filename
+        assert glob.globmatch(value, pattern, flags=flags) == expected

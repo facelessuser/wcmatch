@@ -123,11 +123,14 @@ TILDE_SYM = (
     b'~'
 )
 
+RE_PATTERN_END = re.compile(r'\\?\Z')
 RE_ANCHOR = re.compile(r'^/+')
 RE_WIN_ANCHOR = re.compile(r'^(?:\\\\|/)+')
 RE_POSIX = re.compile(r'\[:(alnum|alpha|ascii|blank|cntrl|digit|graph|lower|print|punct|space|upper|word|xdigit):\]')
 RE_NUM_RANGE = re.compile(r'([0-9]*-[0-9]*)>')
 RE_EMPTY_EXT_SLOTS = re.compile(r'[|]+')
+# Stars that are only followed by the end of an extended group's pattern, or by groups that can match nothing
+RE_ALT_END = re.compile(r'\**(?:[?*]\([^()]*\))*[|)]')
 RE_EXT_GROUP = re.compile(r'[@*+?!]\(')
 # Marks the spot in an inverse group's lookahead where the text following its enclosing group goes. It is a regular
 # expression comment, and `re.escape()` always escapes `(`, `?`, and `#`, so it can never be confused with pattern
@@ -223,6 +226,8 @@ _PATH_TRAIL = r'{}*?'
 _NO_DIR = r'(?!(?:(?<=[{sep}])|(?<=^))(?:\.{{1,2}})(?:$|[{sep}]))'
 # Star for `PATHNAME`
 _PATH_STAR = r'[^{sep}]*?'
+# Extended pattern start that will not capture dots or path separators.
+_EXT_PATH_NO_DOT_STAR = r'(?:(?!(?:(?<=[{sep}])|(?<=^))\.)[^{sep}]*?|)'
 # Star when at start of filename during `DOTMATCH`
 # (allow dot, but don't allow directory match /./ or /../)
 _PATH_STAR_DOTMATCH = _NO_DIR + _PATH_STAR
@@ -235,6 +240,8 @@ _PATH_GSTAR_DOTMATCH = r'(?:(?!(?:[{sep}]|^)(?:\.{{1,2}})($|[{sep}])).)*?'
 _PATH_GSTAR_NO_DOTMATCH = r'(?:(?!(?:[{sep}]|^)\.).)*?'
 # Next char cannot be a dot
 _NO_DOT = r'(?![.])'
+# Extended pattern start that will not capture dots.
+_EXT_NO_DOT_STAR = r'(?:(?!(?<=^)\.).*?|)'
 # Restrict dot in an extended group
 _GROUP_NO_DOT = r'(?!(?<=^)\.)'
 # Restrict dot in an extended path group
@@ -250,23 +257,28 @@ _EOP = r'$'
 _PATH_EOP = r'(?:$|[{sep}])'
 # Divider between `globstar`. Can match start or end of pattern
 # in addition to slashes.
-_GLOBSTAR_DIV = r'(?:^|$|{})+'
+_GLOBSTAR_DIV = r'(?:^|$|[{sep}])+'
 # Lookahead to see there is one character.
 _NEED_CHAR_PATH = r'(?=[^{sep}])'
 _NEED_CHAR = r'(?=.)'
-_NEED_SEP = r'(?={})'
+_NEED_SEP = r'(?=[{sep}])'
+_NEED_DIR = r'(?<=[{sep}])'
 # Group that matches one or none
 _QMARK_GROUP = r'(?:{})?'
+_QMARK_GUARD_GROUP = r'(?:{}(?:{}))?'
 _QMARK_CAPTURE_GROUP = r'((?#)(?:{})?)'
+_QMARK_GUARD_CAPTURE_GROUP = r'((?#)(?:{}(?:{}))?)'
 # Group that matches Zero or more
 _STAR_GROUP = r'(?:{})*'
+_STAR_GUARD_GROUP = r'(?:{}(?:{}))*'
 _STAR_CAPTURE_GROUP = r'((?#)(?:{})*)'
+_STAR_GUARD_CAPTURE_GROUP = r'((?#)(?:{}(?:{}))*)'
 # Group that matches one or more
-_PLUS_GROUP = r'(?:{})+'
-_PLUS_CAPTURE_GROUP = r'((?#)(?:{})+)'
+_PLUS_GROUP = r'{}(?:{})+'
+_PLUS_CAPTURE_GROUP = r'((?#){}(?:{})+)'
 # Group that matches exactly one
-_GROUP = r'(?:{})'
-_CAPTURE_GROUP = r'((?#){})'
+_GROUP = r'{}(?:{})'
+_CAPTURE_GROUP = r'{}((?#){})'
 # Inverse group that matches none
 # This is the start. Since Python can't
 # do variable look behinds, we have stuff
@@ -375,6 +387,8 @@ class ExtGroup(str):
     lens: Lengths | None = None
     # The group always matches at least a character, as far as we can tell. This is only set for `+` and `@` groups.
     non_empty = False
+    # The group can match nothing, such as `?(...)` and `*(...)`
+    optional = False
 
 
 class Sized(str):
@@ -1055,6 +1069,7 @@ class WcParse(Generic[AnyStr]):
         self.tail_id = 0
         self.tails_open = False
         self.in_inv = 0
+        self.group_has_dot = False
         self.unix = is_unix_style(self.flags)
         self.bad_sequence = -1
         self.ext_empty = False
@@ -1068,6 +1083,10 @@ class WcParse(Generic[AnyStr]):
             self.char_avoid = (ord('/'), ord('.'))
             self.bslash_abort = False
             sep = {"sep": re.escape('/')}
+
+        self.globstar_div = _GLOBSTAR_DIV.format(**sep)
+        self.need_sep = _NEED_SEP.format(**sep)
+        self.need_dir = _NEED_DIR.format(**sep)
         self.bare_sep = sep['sep']
         self.sep = f'[{self.bare_sep}]'
         self.path_eop = _PATH_EOP.format(**sep)
@@ -1076,6 +1095,7 @@ class WcParse(Generic[AnyStr]):
         self.seq_path_dot = _PATH_NO_SLASH_DOT.format(**sep)
         self.seq_path_group_dot = _PATH_GROUP_NO_DOT.format(**sep)
         self.path_star = _PATH_STAR.format(**sep)
+        self.path_ext_star = _EXT_PATH_NO_DOT_STAR.format(**sep)
         self.path_star_dot1 = _PATH_STAR_DOTMATCH.format(**sep)
         self.path_star_dot2 = _PATH_STAR_NO_DOTMATCH.format(**sep)
         self.path_gstar_dot1 = _PATH_GSTAR_DOTMATCH.format(**sep)
@@ -1708,15 +1728,40 @@ class WcParse(Generic[AnyStr]):
         else:
             current.append(re.escape('.'))
 
+    def _group_start(self, in_list: bool, has_dot: bool) -> str:
+        """
+        Get what keeps a group from starting on a leading dot.
+
+        A group that has an alternative that starts with a dot can start on one.
+        """
+
+        if in_list or has_dot or self.dot:
+            return ''
+        return self.seq_path_group_dot if self.pathname else _GROUP_NO_DOT
+
+    @staticmethod
+    def _alt_start(extended: list[str]) -> bool:
+        """Check if only groups that can match nothing come before this point in the alternative."""
+
+        for item in reversed(extended):
+            if item == '|':
+                break
+            if not (isinstance(item, ExtGroup) and item.optional):
+                return False
+        return True
+
     def _handle_star(self, i: util.StringIter, current: list[str]) -> None:
         """Handle star."""
 
+        directory = False
         after_ext = bool(current and isinstance(current[-1], ExtGroup))
         check_start = (after_ext or self.in_list) and not self.dot
+        # A star that ends its pattern in an extended group can match nothing at the start of a name
+        alt_end = self.in_list and i.match_next(RE_ALT_END, False) is not None
         if self.pathname:
             if self.after_start and not self.dot:
                 if self.in_list:
-                    star = self.no_dir + self.seq_path_group_dot + self.path_star
+                    star = self.no_dir + (self.path_ext_star if alt_end else self.seq_path_group_dot + self.path_star)
                 else:
                     star = self.path_star_dot2
                 globstar = self.path_gstar_dot2
@@ -1726,15 +1771,21 @@ class WcParse(Generic[AnyStr]):
             else:
                 star = self.path_star
                 if check_start:
-                    current.append(self.seq_path_group_dot)
+                    if alt_end and self.in_list:
+                        star = self.path_ext_star
+                    else:
+                        current.append(self.seq_path_group_dot)
                 globstar = self.path_gstar_dot1
             capture = self.globstar_capture
         else:
             if self.after_start and not self.dot:
-                star = (_NO_DOT if not self.in_list else _GROUP_NO_DOT) + _STAR
+                star = _NO_DOT + _STAR if not self.in_list else _EXT_NO_DOT_STAR if alt_end else _GROUP_NO_DOT + _STAR
             elif check_start:
-                current.append(_GROUP_NO_DOT)
-                star = _STAR
+                if alt_end and self.in_list:
+                    star = _EXT_NO_DOT_STAR
+                else:
+                    current.append(_GROUP_NO_DOT)
+                    star = _STAR
             else:
                 star = _STAR
             globstar = ''
@@ -1780,12 +1831,14 @@ class WcParse(Generic[AnyStr]):
                             # Looks like escape was a valid slash
                             # Store pattern accordingly
                             value = globstar
+                            directory = True
                             self.matchbase = False
                         except StopIteration:
                             # Escapes nothing, ignore and assume double star
                             value = globstar
                     elif c == '/':
                         value = globstar
+                        directory = True
                         self.matchbase = False
 
                     if value != globstar:
@@ -1810,19 +1863,22 @@ class WcParse(Generic[AnyStr]):
 
         self.reset_dir_track()
         if value == globstar:
-            sep = _GLOBSTAR_DIV.format(self.sep)
             # Check if the last entry was a `globstar`
             # If so, don't bother adding another.
-            if current[-1] != sep:
+            if current[-1] != self.globstar_div:
                 if current[-1] == '':
                     # At the beginning of the pattern
                     current[-1] = value
                 else:
                     # Replace the last path separator
-                    current[-1] = _NEED_SEP.format(self.sep)
+                    current[-1] = self.need_sep
                     current.append(value)
                 self.consume_path_sep(i)
-                current.append(sep)
+                current.append(self.globstar_div)
+            else:
+                self.consume_path_sep(i)
+            if directory and i.match_next(RE_PATTERN_END):
+                current.append(self.need_dir)
             self.set_start_dir()
         else:
             if not self.in_list:
@@ -1926,6 +1982,9 @@ class WcParse(Generic[AnyStr]):
         if list_type == '!':
             self.in_inv += 1
 
+        # Whether an alternative of this group starts with a dot, directly or through a nested group that starts it
+        has_dot = False
+
         if reset_dot:
             self.match_dot_dir = False
 
@@ -1942,12 +2001,17 @@ class WcParse(Generic[AnyStr]):
 
                 # See if we should parse a nested extended pattern.
                 if c in EXT_TYPES:
+                    alt_start = self._alt_start(extended)
                     if self.parse_extend(c, i, extended, parent=list_type, parent_token=gtoken):
+                        if alt_start and self.group_has_dot:
+                            has_dot = True
                         continue
 
                 if c == '*':
                     self._handle_star(i, extended)
                 elif c == '.':
+                    if self._alt_start(extended):
+                        has_dot = True
                     size = len(extended)
                     self._handle_dot(i, extended)
                     if len(extended) == size + 1:
@@ -2063,26 +2127,40 @@ class WcParse(Generic[AnyStr]):
             # Groups at the top level are tracked so atomic `*` segments can avoid them.
             elif list_type == '?':
                 self._finish_group(extended, gtoken)
-                group = ExtGroup((_QMARK_CAPTURE_GROUP if self.capture else _QMARK_GROUP).format(''.join(extended)))
+                prefix = self._group_start(temp_in_list, has_dot)
+                if prefix:
+                    template = _QMARK_GUARD_CAPTURE_GROUP if self.capture else _QMARK_GUARD_GROUP
+                    group = ExtGroup(template.format(prefix, ''.join(extended)))
+                else:
+                    group = ExtGroup((_QMARK_CAPTURE_GROUP if self.capture else _QMARK_GROUP).format(''.join(extended)))
                 # The lengths and whether a group can be empty are only used by an inverse group around the group
                 if self.in_inv:
                     lens = self._group_lengths(extended)
                     group.lens = None if lens is None else union_lengths(lens, Lengths({0: ''}))
+                group.optional = True
                 current.append(group)
             elif list_type == '*':
                 self._finish_group(extended, gtoken)
-                current.append(
-                    ExtGroup((_STAR_CAPTURE_GROUP if self.capture else _STAR_GROUP).format(''.join(extended)))
-                )
+                prefix = self._group_start(temp_in_list, has_dot)
+                if prefix:
+                    template = _STAR_GUARD_CAPTURE_GROUP if self.capture else _STAR_GUARD_GROUP
+                    group = ExtGroup(template.format(prefix, ''.join(extended)))
+                else:
+                    group = ExtGroup((_STAR_CAPTURE_GROUP if self.capture else _STAR_GROUP).format(''.join(extended)))
+                group.optional = True
+                current.append(group)
             elif list_type == '+':
                 self._finish_group(extended, gtoken)
-                group = ExtGroup((_PLUS_CAPTURE_GROUP if self.capture else _PLUS_GROUP).format(''.join(extended)))
+                prefix = self._group_start(temp_in_list, has_dot)
+                template = _PLUS_CAPTURE_GROUP if self.capture else _PLUS_GROUP
+                group = ExtGroup(template.format(prefix, ''.join(extended)))
                 if self.in_inv:
                     group.non_empty = not self._maybe_empty(extended)
                 current.append(group)
             elif list_type == '@':
                 self._finish_group(extended, gtoken)
-                group = ExtGroup((_CAPTURE_GROUP if self.capture else _GROUP).format(''.join(extended)))
+                prefix = self._group_start(temp_in_list, has_dot)
+                group = ExtGroup((_CAPTURE_GROUP if self.capture else _GROUP).format(prefix, ''.join(extended)))
                 if self.in_inv:
                     group.lens = self._group_lengths(extended)
                     group.non_empty = not self._maybe_empty(extended)
@@ -2147,6 +2225,7 @@ class WcParse(Generic[AnyStr]):
         self.in_inv = temp_in_inv
         self.ext_empty = temp_ext_empty
 
+        self.group_has_dot = has_dot
         if success:
             self.reset_dir_track()
 
