@@ -2,6 +2,8 @@
 
 ## 12.0
 
+-   **FIX**: Preserve byte file names when globbing with `dir_fd`, including names requiring surrogate escaping.
+
 -   **BREAK**: Various fixes to `!(...)` patterns to more closely align to Bash. 100% Bash behavior is impossible with
     regular expression, but behavior in many ways was improved, but there may be some surprising behavior changes.
 

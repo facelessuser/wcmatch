@@ -667,7 +667,9 @@ class Glob(Generic[AnyStr]):
                 with os.scandir(scandir) as scan:
                     for f in scan:
                         try:
-                            hidden = self._is_hidden(f.name)  # type: ignore[arg-type]
+                            # Scanning a file descriptor returns string names, even for byte patterns.
+                            name = os.fsencode(f.name) if isinstance(self.root_dir, bytes) else f.name
+                            hidden = self._is_hidden(name)
                             is_dir = f.is_dir()
                             if is_dir:
                                 is_link = f.is_symlink()
@@ -675,7 +677,7 @@ class Glob(Generic[AnyStr]):
                                 # We don't care if a file is a link
                                 is_link = False
                             if (not dir_only or is_dir):
-                                yield f.name, is_dir, hidden, is_link  # type: ignore[misc]
+                                yield name, is_dir, hidden, is_link
                         except OSError:  # pragma: no cover # noqa: PERF203
                             pass
             finally:
