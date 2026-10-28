@@ -25,6 +25,9 @@
         any length. For instance, `!(*.js)*` and `!(a*)*` now match any name (following dot rules), where
         `!(*.js)*` rejected `a.js` and `a.json`.
 
+-   **BREAK**: Match Bash logic such that `@(*|.a).b` can match `.b` in an extended pattern if the pattern contains an
+    explicit leading `.` in one of the alternatives exists. In this scenario, `*` is allowed to match nothing before
+    `.b`, but `*` won't physically match the `.`.
 -   **FIX**: A leading `*` can no longer match nothing so that a literal dot can match the leading dot of a file name,
     e.g. `*.env` no longer matches `.env` unless `DOTGLOB`/`DOTMATCH` is enabled. This agrees with Bash, Python's
     `glob`, and `fnmatch`, which already behaved this way. Use `.*env` to explicitly match hidden names.
