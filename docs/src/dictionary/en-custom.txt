@@ -96,6 +96,7 @@ tuple
 un
 unalign
 unclosed
+undecodable
 unfound
 unintuitive
 unoptimized

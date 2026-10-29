@@ -1328,6 +1328,42 @@ class TestCWD(_TestGlob):
         os.close(dir_fd)
 
     @pytest.mark.skipif(not glob.SUPPORT_DIR_FD, reason="dir_fd is not supported on this system")
+    @pytest.mark.parametrize("pattern, root_dir, expected", [
+        (b'EF', None, [b'EF']),
+        (b'E*', None, [b'EF']),
+        (b'a/bcd/E*', None, [b'a/bcd/EF']),
+        (b'**/EF', None, [b'EF', b'a/bcd/EF']),
+        (b'E*', b'a/bcd', [b'EF']),
+        ('**/EF', None, ['EF', 'a/bcd/EF']),
+    ])
+    def test_cwd_fd_dir_name_type(self, pattern, root_dir, expected):
+        """Keep descriptor-based directory entries in the pattern's string type."""
+
+        dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            self.assert_equal(
+                sorted(glob.glob(pattern, root_dir=root_dir, dir_fd=dir_fd, flags=glob.G)),
+                sorted(expected)
+            )
+        finally:
+            os.close(dir_fd)
+
+    @pytest.mark.skipif(not glob.SUPPORT_DIR_FD, reason="dir_fd is not supported on this system")
+    def test_cwd_fd_dir_bytes_surrogateescape(self):
+        """Preserve undecodable bytes when scanning through a directory descriptor."""
+
+        name = b'raw-\xff'
+        path = os.path.join(os.fsencode(self.tempdir), name)
+        with open(path, 'wb'):
+            pass
+        dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            self.assert_equal(glob.glob(b'raw-*', dir_fd=dir_fd), [name])
+        finally:
+            os.close(dir_fd)
+            os.unlink(path)
+
+    @pytest.mark.skipif(not glob.SUPPORT_DIR_FD, reason="dir_fd is not supported on this system")
     def test_cwd_fd_dir_zero(self):
         """Test file descriptor `0`, which is a valid directory descriptor when standard input was closed."""
 
