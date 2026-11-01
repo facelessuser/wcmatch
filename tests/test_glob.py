@@ -1384,6 +1384,7 @@ class TestCWD(_TestGlob):
             os.close(dir_fd)
 
     @pytest.mark.skipif(not glob.SUPPORT_DIR_FD, reason="dir_fd is not supported on this system")
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS cannot create file names with undecodable bytes")
     def test_cwd_fd_dir_bytes_surrogateescape(self):
         """Preserve undecodable bytes when scanning through a directory descriptor."""
 
