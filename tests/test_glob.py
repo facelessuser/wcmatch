@@ -1317,10 +1317,10 @@ class TestCWD(_TestGlob):
     @pytest.mark.parametrize("pattern, root_dir, expected", [
         ('EF', '', ['EF']),
         ('E*', '', ['EF']),
-        ('**/EF', '', ['EF', 'a/bcd/EF']),
+        ('**/EF', '', ['EF', os.path.join('a', 'bcd', 'EF')]),
         (b'EF', b'', [b'EF']),
         (b'E*', b'', [b'EF']),
-        (b'**/EF', b'', [b'EF', b'a/bcd/EF']),
+        (b'**/EF', b'', [b'EF', os.path.join(b'a', b'bcd', b'EF')]),
     ])
     def test_cwd_empty_root_dir(self, pattern, root_dir, expected):
         """Treat an empty root directory as the current directory."""
@@ -1332,10 +1332,10 @@ class TestCWD(_TestGlob):
     @pytest.mark.parametrize("pattern, root_dir, expected", [
         ('EF', '', ['EF']),
         ('E*', '', ['EF']),
-        ('**/EF', '', ['EF', 'a/bcd/EF']),
+        ('**/EF', '', ['EF', os.path.join('a', 'bcd', 'EF')]),
         (b'EF', b'', [b'EF']),
         (b'E*', b'', [b'EF']),
-        (b'**/EF', b'', [b'EF', b'a/bcd/EF']),
+        (b'**/EF', b'', [b'EF', os.path.join(b'a', b'bcd', b'EF')]),
     ])
     def test_cwd_fd_empty_root_dir(self, pattern, root_dir, expected):
         """Resolve an empty root directory relative to the supplied descriptor."""
