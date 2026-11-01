@@ -43,6 +43,7 @@ centric
 configurability
 deMorgan
 deduping
+deduplicated
 deprecations
 dev
 falsy
