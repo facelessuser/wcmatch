@@ -42,7 +42,7 @@ def test_duplicate_exclusions_consume_pattern_limit(module, api, binary, exclude
 @pytest.mark.parametrize('parse', [_wcparse.compile_pattern, _wcparse.translate])
 @pytest.mark.parametrize('binary', [False, True])
 def test_duplicate_exclusions_boundary_filters(parse, binary):
-    """Count duplicates without charging the implicit NODIR filter or requiring includes."""
+    """Count duplicates without charging the implicit `NODIR` filter or requiring includes."""
 
     keep, skip = (b'keep', b'skip') if binary else ('keep', 'skip')
     positive, negative = parse(keep, _wcparse.NODIR, 3, exclude=[skip, skip])
