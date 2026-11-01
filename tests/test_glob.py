@@ -1314,6 +1314,41 @@ class TestCWD(_TestGlob):
 
         self.assert_equal(glob.glob('EF', root_dir=self.tempdir), ['EF'])
 
+    @pytest.mark.parametrize("pattern, root_dir, expected", [
+        ('EF', '', ['EF']),
+        ('E*', '', ['EF']),
+        ('**/EF', '', ['EF', os.path.join('a', 'bcd', 'EF')]),
+        (b'EF', b'', [b'EF']),
+        (b'E*', b'', [b'EF']),
+        (b'**/EF', b'', [b'EF', os.path.join(b'a', b'bcd', b'EF')]),
+    ])
+    def test_cwd_empty_root_dir(self, pattern, root_dir, expected):
+        """Treat an empty root directory as the current directory."""
+
+        with change_cwd(self.tempdir):
+            self.assert_equal(sorted(glob.glob(pattern, root_dir=root_dir, flags=glob.G)), sorted(expected))
+
+    @pytest.mark.skipif(not glob.SUPPORT_DIR_FD, reason="dir_fd is not supported on this system")
+    @pytest.mark.parametrize("pattern, root_dir, expected", [
+        ('EF', '', ['EF']),
+        ('E*', '', ['EF']),
+        ('**/EF', '', ['EF', os.path.join('a', 'bcd', 'EF')]),
+        (b'EF', b'', [b'EF']),
+        (b'E*', b'', [b'EF']),
+        (b'**/EF', b'', [b'EF', os.path.join(b'a', b'bcd', b'EF')]),
+    ])
+    def test_cwd_fd_empty_root_dir(self, pattern, root_dir, expected):
+        """Resolve an empty root directory relative to the supplied descriptor."""
+
+        dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            self.assert_equal(
+                sorted(glob.glob(pattern, root_dir=root_dir, dir_fd=dir_fd, flags=glob.G)),
+                sorted(expected)
+            )
+        finally:
+            os.close(dir_fd)
+
     def test_cwd_root_dir_pathlike(self):
         """Test root level glob when we switch directory via `root_dir` with a path-like object."""
 

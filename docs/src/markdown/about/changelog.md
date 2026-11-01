@@ -51,6 +51,8 @@
 -   **FIX**: Preserve a terminal directory separator after `GLOBSTAR` patterns in `globmatch`, `globfilter`, and
     translated patterns. Patterns such as `**/` and `dir/**/` no longer match regular files.
 -   **FIX**: Count duplicate exclusion expansions toward the shared pattern limit in compiled matchers and translation.
+-   **FIX**: Treat an empty `root_dir` (`''` or `b''`) as the current directory in `glob` and `iglob`, including when
+    the directory is selected with `dir_fd`.
 
 ## 11.2
 
