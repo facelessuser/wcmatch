@@ -7,6 +7,54 @@ import pytest
 import wcmatch._wcparse as _wcparse
 
 
+@pytest.mark.parametrize('module', ['fnmatch', 'glob'])
+@pytest.mark.parametrize('api', ['compile', 'translate'])
+@pytest.mark.parametrize('binary', [False, True])
+@pytest.mark.parametrize(
+    'exclude, flag',
+    [(['skip', 'skip'], 0), ('{skip,skip}', _wcparse.BRACE), ('skip|skip', _wcparse.SPLIT)]
+)
+@pytest.mark.parametrize('limit', [2, 3, 0, -1])
+def test_duplicate_exclusions_consume_pattern_limit(module, api, binary, exclude, flag, limit):
+    """Charge raw exclusions to the shared budget while keeping outputs deduplicated."""
+
+    from wcmatch import fnmatch, glob
+
+    matcher = fnmatch if module == 'fnmatch' else glob
+    parse = getattr(matcher, api)
+    pattern = b'keep' if binary else 'keep'
+    if binary:
+        exclude = [p.encode() for p in exclude] if isinstance(exclude, list) else exclude.encode()
+    if limit == 2:
+        with pytest.raises(_wcparse.PatternLimitException, match='Pattern limit exceeded the limit of 2'):
+            parse(pattern, flags=flag, limit=limit, exclude=exclude)
+    else:
+        result = parse(pattern, flags=flag, limit=limit, exclude=exclude)
+        if api == 'translate':
+            positive, negative = result
+            assert len(positive) == len(negative) == 1
+        else:
+            assert result.match(pattern)
+            assert not result.match(b'skip' if binary else 'skip')
+            assert len(result._matcher._include) == len(result._matcher._exclude) == 1
+
+
+@pytest.mark.parametrize('parse', [_wcparse.compile_pattern, _wcparse.translate])
+@pytest.mark.parametrize('binary', [False, True])
+def test_duplicate_exclusions_boundary_filters(parse, binary):
+    """Count duplicates without charging the implicit `NODIR` filter or requiring includes."""
+
+    keep, skip = (b'keep', b'skip') if binary else ('keep', 'skip')
+    positive, negative = parse(keep, _wcparse.NODIR, 3, exclude=[skip, skip])
+    assert len(positive) == 1
+    assert len(negative) == 2
+    positive, negative = parse([], 0, 2, exclude=[skip, skip])
+    assert positive == []
+    assert len(negative) == 1
+    with pytest.raises(_wcparse.PatternLimitException):
+        parse([], 0, 1, exclude=[skip, skip])
+
+
 @pytest.mark.parametrize('parse', [_wcparse.compile_pattern, _wcparse.translate])
 @pytest.mark.parametrize('limit', [0, -1])
 @pytest.mark.parametrize('binary', [False, True])

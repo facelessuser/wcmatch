@@ -748,6 +748,42 @@ def no_negate_flags(flags: int) -> int:
     return flags
 
 
+def expand_patterns(
+    patterns: AnyStr | Sequence[AnyStr],
+    flags: int,
+    limit: int,
+    exclude: AnyStr | Sequence[AnyStr] | None = None,
+    exclude_flags: int = 0
+) -> Iterator[tuple[bool, AnyStr]]:
+    """
+    Expand exclusion and then regular patterns, returning unique expansions along with whether they are exclusions.
+
+    Every expansion, duplicates included, counts towards a single limit shared by the exclusions and patterns.
+    """
+
+    total = 0
+    sources = [(False, patterns, flags)]  # type: list[tuple[bool, AnyStr | Sequence[AnyStr], int]]
+    if exclude is not None:
+        sources.insert(0, (True, exclude, exclude_flags))
+
+    try:
+        for is_exclude, source, source_flags in sources:
+            seen = set()
+            is_unix = is_unix_style(source_flags)
+            for pattern in iter_patterns(source):
+                pattern = util.norm_pattern(pattern, not is_unix, bool(source_flags & RAWCHARS))
+                current_limit = max(1, limit - total) if limit > 0 else limit
+                for expanded in expand(pattern, source_flags, current_limit):
+                    total += 1
+                    if 0 < limit < total:
+                        raise PatternLimitException(f"Pattern limit exceeded the limit of {limit:d}")
+                    if expanded not in seen:
+                        seen.add(expanded)
+                        yield is_exclude, expanded
+    except bracex.ExpansionLimitException as e:
+        raise PatternLimitException(f"Pattern limit exceeded the limit of {limit:d}") from e
+
+
 def translate(
     patterns: AnyStr | Sequence[AnyStr],
     flags: int,
@@ -761,39 +797,17 @@ def translate(
 
     if exclude is not None:
         flags = no_negate_flags(flags)
-        negative = translate(
-            exclude,
-            flags=flags | DOTMATCH | _NO_GLOBSTAR_CAPTURE,
-            limit=limit
-        )[0]
-
+    exclude_flags = (flags | DOTMATCH | _NO_GLOBSTAR_CAPTURE | _TRANSLATE) & FLAG_MASK
     flags = (flags | _TRANSLATE) & FLAG_MASK
     is_unix = is_unix_style(flags)
-    seen = set()
 
-    try:
-        total = len(negative)
-        current_limit = max(1, limit - total) if limit > 0 else limit
-        for pattern in iter_patterns(patterns):
-            pattern = util.norm_pattern(pattern, not is_unix, bool(flags & RAWCHARS))
-            count = 0
-            for expanded in expand(pattern, flags, current_limit):
-                count += 1
-                total += 1
-                if 0 < limit < total:
-                    raise PatternLimitException(f"Pattern limit exceeded the limit of {limit:d}")
-                if expanded not in seen:
-                    seen.add(expanded)
-                    if is_negative(expanded, flags):
-                        negative.append(WcParse(expanded[1:], flags | _NO_GLOBSTAR_CAPTURE | DOTMATCH).parse())
-                    else:
-                        positive.append(WcParse(expanded, flags).parse())
-            if limit > 0:
-                current_limit -= count
-                if current_limit < 1:
-                    current_limit = 1
-    except bracex.ExpansionLimitException as e:
-        raise PatternLimitException(f"Pattern limit exceeded the limit of {limit:d}") from e
+    for is_exclude, expanded in expand_patterns(patterns, flags, limit, exclude, exclude_flags):
+        if is_exclude:
+            negative.append(WcParse(expanded, exclude_flags).parse())
+        elif is_negative(expanded, flags):
+            negative.append(WcParse(expanded[1:], flags | _NO_GLOBSTAR_CAPTURE | DOTMATCH).parse())
+        else:
+            positive.append(WcParse(expanded, flags).parse())
 
     if negative and not positive:
         if flags & NEGATEALL:
@@ -829,34 +843,16 @@ def compile_pattern(
 
     if exclude is not None:
         flags = no_negate_flags(flags)
-        negative = compile_pattern(exclude, flags=flags | DOTMATCH | _NO_GLOBSTAR_CAPTURE, limit=limit)[0]
-
+    exclude_flags = flags | DOTMATCH | _NO_GLOBSTAR_CAPTURE
     is_unix = is_unix_style(flags)
-    seen = set()
 
-    try:
-        total = len(negative)
-        current_limit = max(1, limit - total) if limit > 0 else limit
-        for pattern in iter_patterns(patterns):
-            pattern = util.norm_pattern(pattern, not is_unix, bool(flags & RAWCHARS))
-            count = 0
-            for expanded in expand(pattern, flags, current_limit):
-                count += 1
-                total += 1
-                if 0 < limit < total:
-                    raise PatternLimitException(f"Pattern limit exceeded the limit of {limit:d}")
-                if expanded not in seen:
-                    seen.add(expanded)
-                    if is_negative(expanded, flags):
-                        negative.append(_compile(expanded[1:], flags | _NO_GLOBSTAR_CAPTURE | DOTMATCH))
-                    else:
-                        positive.append(_compile(expanded, flags))
-            if limit > 0:
-                current_limit -= count
-                if current_limit < 1:
-                    current_limit = 1
-    except bracex.ExpansionLimitException as e:
-        raise PatternLimitException(f"Pattern limit exceeded the limit of {limit:d}") from e
+    for is_exclude, expanded in expand_patterns(patterns, flags, limit, exclude, exclude_flags):
+        if is_exclude:
+            negative.append(_compile(expanded, exclude_flags))
+        elif is_negative(expanded, flags):
+            negative.append(_compile(expanded[1:], flags | _NO_GLOBSTAR_CAPTURE | DOTMATCH))
+        else:
+            positive.append(_compile(expanded, flags))
 
     if negative and not positive:
         if flags & NEGATEALL:

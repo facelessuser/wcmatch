@@ -50,6 +50,7 @@
     including Unicode case equivalences.
 -   **FIX**: Preserve a terminal directory separator after `GLOBSTAR` patterns in `globmatch`, `globfilter`, and
     translated patterns. Patterns such as `**/` and `dir/**/` no longer match regular files.
+-   **FIX**: Count duplicate exclusion expansions toward the shared pattern limit in compiled matchers and translation.
 
 ## 11.2
 
