@@ -752,19 +752,25 @@ def translate(
     patterns: AnyStr | Sequence[AnyStr],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: AnyStr | Sequence[AnyStr] | None = None
+    exclude: AnyStr | Sequence[AnyStr] | None = None,
+    *,
+    _pattern_count: list[int] | None = None
 ) -> tuple[list[AnyStr], list[AnyStr]]:
     """Translate patterns."""
 
     positive = []  # type: list[AnyStr]
     negative = []  # type: list[AnyStr]
 
+    if _pattern_count is None:
+        _pattern_count = [0]
+
     if exclude is not None:
         flags = no_negate_flags(flags)
         negative = translate(
             exclude,
             flags=flags | DOTMATCH | _NO_GLOBSTAR_CAPTURE,
-            limit=limit
+            limit=limit,
+            _pattern_count=_pattern_count
         )[0]
 
     flags = (flags | _TRANSLATE) & FLAG_MASK
@@ -772,7 +778,7 @@ def translate(
     seen = set()
 
     try:
-        total = len(negative)
+        total = _pattern_count[0]
         current_limit = max(1, limit - total) if limit > 0 else limit
         for pattern in iter_patterns(patterns):
             pattern = util.norm_pattern(pattern, not is_unix, bool(flags & RAWCHARS))
@@ -804,6 +810,7 @@ def translate(
         index = util.BYTES if isinstance(positive[0], bytes) else util.UNICODE
         negative.append(_NO_NIX_DIR[index] if is_unix else _NO_WIN_DIR[index])
 
+    _pattern_count[0] = total
     return positive, negative
 
 
@@ -820,22 +827,32 @@ def compile_pattern(
     patterns: AnyStr | Sequence[AnyStr],
     flags: int,
     limit: int = PATTERN_LIMIT,
-    exclude: AnyStr | Sequence[AnyStr] | None = None
+    exclude: AnyStr | Sequence[AnyStr] | None = None,
+    *,
+    _pattern_count: list[int] | None = None
 ) -> tuple[list[Pattern[AnyStr]], list[Pattern[AnyStr]]]:
     """Compile the patterns."""
 
     positive = []  # type: list[Pattern[AnyStr]]
     negative = []  # type: list[Pattern[AnyStr]]
 
+    if _pattern_count is None:
+        _pattern_count = [0]
+
     if exclude is not None:
         flags = no_negate_flags(flags)
-        negative = compile_pattern(exclude, flags=flags | DOTMATCH | _NO_GLOBSTAR_CAPTURE, limit=limit)[0]
+        negative = compile_pattern(
+            exclude,
+            flags=flags | DOTMATCH | _NO_GLOBSTAR_CAPTURE,
+            limit=limit,
+            _pattern_count=_pattern_count
+        )[0]
 
     is_unix = is_unix_style(flags)
     seen = set()
 
     try:
-        total = len(negative)
+        total = _pattern_count[0]
         current_limit = max(1, limit - total) if limit > 0 else limit
         for pattern in iter_patterns(patterns):
             pattern = util.norm_pattern(pattern, not is_unix, bool(flags & RAWCHARS))
@@ -867,6 +884,7 @@ def compile_pattern(
         ptype = util.BYTES if isinstance(positive[0].pattern, bytes) else util.UNICODE
         negative.append(RE_NO_DIR[ptype] if is_unix else RE_WIN_NO_DIR[ptype])
 
+    _pattern_count[0] = total
     return positive, negative
 
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+-   **FIX**: Count duplicate exclusion expansions toward the shared pattern limit in compiled matchers and translation.
+
 ## 12.0
 
 -   **BREAK**: Various fixes to `!(...)` patterns to more closely align to Bash. 100% Bash behavior is impossible with
