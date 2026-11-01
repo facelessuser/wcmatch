@@ -499,7 +499,7 @@ class Glob(Generic[AnyStr]):
                 f'Pattern and root_dir should be of the same type, not {type(pats[0])} and {type(temp)}'
             )
 
-        self.root_dir = temp  # type: AnyStr
+        self.root_dir = temp or self.current  # type: AnyStr
         self.current_limit = self.limit
         self._expanded_patterns = 0
         self._parse_patterns(pats)
