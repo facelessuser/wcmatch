@@ -659,12 +659,12 @@ class Glob(Generic[AnyStr]):
             else:
                 scandir = os.path.join(self.root_dir, curdir) if curdir else self.root_dir
 
-            # Python will never return . or .., so fake it.
-            for special in self.specials:
-                yield special, True, True, False
-
             try:
                 with os.scandir(scandir) as scan:
+                    # Python never returns . or ..; add them only after opening the directory.
+                    for special in self.specials:
+                        yield special, True, True, False
+
                     for f in scan:
                         try:
                             # Scanning a file descriptor returns string names, even for byte patterns.

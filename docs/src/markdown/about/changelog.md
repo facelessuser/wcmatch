@@ -28,6 +28,7 @@
 -   **BREAK**: Match Bash logic such that `@(*|.a).b` can match `.b` in an extended pattern if the pattern contains an
     explicit leading `.` in one of the alternatives exists. In this scenario, `*` is allowed to match nothing before
     `.b`, but `*` won't physically match the `.`.
+-   **NEW**: Generate tighter regular expressions with the same behavior.
 -   **FIX**: A leading `*` can no longer match nothing so that a literal dot can match the leading dot of a file name,
     e.g. `*.env` no longer matches `.env` unless `DOTGLOB`/`DOTMATCH` is enabled. This agrees with Bash, Python's
     `glob`, and `fnmatch`, which already behaved this way. Use `.*env` to explicitly match hidden names.
@@ -54,6 +55,8 @@
 -   **FIX**: Count duplicate exclusion expansions toward the shared pattern limit in compiled matchers and translation.
 -   **FIX**: Treat an empty `root_dir` (`''` or `b''`) as the current directory in `glob` and `iglob`, including when
     the directory is selected with `dir_fd`.
+-   **FIX**: Fix `glob` and `iglob` returning synthetic `.` and `..` matches with `SCANDOTDIR` when a directory
+    cannot be opened for scanning.
 
 ## 11.2
 

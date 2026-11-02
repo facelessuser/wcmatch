@@ -224,18 +224,25 @@ _STAR = r'.*?'
 _PATH_TRAIL = r'{}*?'
 # Disallow . and .. (usually applied right after path separator when needed)
 _NO_DIR = r'(?!(?:(?<=[{sep}])|(?<=^))(?:\.{{1,2}})(?:$|[{sep}]))'
+# Disallow . and .. when it is known we are at the start of a name
+_NO_DIR_START = r'(?!\.{{1,2}}(?:$|[{sep}]))'
 # Star for `PATHNAME`
 _PATH_STAR = r'[^{sep}]*?'
+# There must be a next character and it cannot be a dot
+_NEED_NO_DOT = r'(?=[^.])'
+_NEED_NO_DOT_PATH = r'(?=[^{sep}.])'
 # Extended pattern start that will not capture dots or path separators.
 _EXT_PATH_NO_DOT_STAR = r'(?:(?!(?:(?<=[{sep}])|(?<=^))\.)[^{sep}]*?|)'
 # Star when at start of filename during `DOTMATCH`
 # (allow dot, but don't allow directory match /./ or /../)
 _PATH_STAR_DOTMATCH = _NO_DIR + _PATH_STAR
+# Same, but not in an extended group, where a group that repeats can start the star in the middle of a name
+_PATH_STAR_DOTMATCH_START = _NO_DIR_START + _PATH_STAR
 # Star for `PATHNAME` when `DOTMATCH` is disabled and start is at start of file.
-# Disallow . and .. and don't allow match to start with a dot.
-_PATH_STAR_NO_DOTMATCH = _NO_DIR + fr'(?!\.){_PATH_STAR}'
+# Needs a character that is not a dot, which also disallows . and ..
+_PATH_STAR_NO_DOTMATCH = _NEED_NO_DOT_PATH + _PATH_STAR
 # `GLOBSTAR` during `DOTMATCH`. Avoid directory match /./ or /../
-_PATH_GSTAR_DOTMATCH = r'(?:(?!(?:[{sep}]|^)(?:\.{{1,2}})($|[{sep}])).)*?'
+_PATH_GSTAR_DOTMATCH = r'(?:(?!(?:[{sep}]|^)(?:\.{{1,2}})(?:$|[{sep}])).)*?'
 # `GLOBSTAR` with `DOTMATCH` disabled. Don't allow a dot to follow /
 _PATH_GSTAR_NO_DOTMATCH = r'(?:(?!(?:[{sep}]|^)\.).)*?'
 # Next char cannot be a dot
@@ -257,7 +264,7 @@ _EOP = r'$'
 _PATH_EOP = r'(?:$|[{sep}])'
 # Divider between `globstar`. Can match start or end of pattern
 # in addition to slashes.
-_GLOBSTAR_DIV = r'(?:^|$|[{sep}])+'
+_GLOBSTAR_DIV = r'(?:^|$|[{sep}]+)'
 # Lookahead to see there is one character.
 _NEED_CHAR_PATH = r'(?=[^{sep}])'
 _NEED_CHAR = r'(?=.)'
@@ -1093,13 +1100,16 @@ class WcParse(Generic[AnyStr]):
         self.path_star = _PATH_STAR.format(**sep)
         self.path_ext_star = _EXT_PATH_NO_DOT_STAR.format(**sep)
         self.path_star_dot1 = _PATH_STAR_DOTMATCH.format(**sep)
+        self.path_star_dot1_start = _PATH_STAR_DOTMATCH_START.format(**sep)
         self.path_star_dot2 = _PATH_STAR_NO_DOTMATCH.format(**sep)
         self.path_gstar_dot1 = _PATH_GSTAR_DOTMATCH.format(**sep)
         self.path_gstar_dot2 = _PATH_GSTAR_NO_DOTMATCH.format(**sep)
         if self.pathname:
             self.need_char = _NEED_CHAR_PATH.format(**sep)
+            self.need_no_dot = _NEED_NO_DOT_PATH.format(**sep)
         else:
             self.need_char = _NEED_CHAR
+            self.need_no_dot = _NEED_NO_DOT
 
     def set_after_start(self) -> None:
         """Set tracker for character after the start of a directory."""
@@ -1324,6 +1334,11 @@ class WcParse(Generic[AnyStr]):
 
         return self.seq_path if self.pathname else ''
 
+    def _need_char(self, star: str) -> str:
+        """Require a character at the start of a name, unless the star already requires a non-dot one."""
+
+        return star if star.startswith(self.need_no_dot) else self.need_char + star
+
     def _restrict_sequence(self, current: list[str]) -> str:
         """Restrict sequence."""
 
@@ -1338,7 +1353,7 @@ class WcParse(Generic[AnyStr]):
                 value = self.seq_path_group_dot + self.seq_path
             else:
                 value = self.seq_path
-            if self.after_start and not after_ext:
+            if self.after_start and not after_ext and self.dot:
                 value = self.no_dir + value
         else:
             value = (_NO_DOT if not self.in_list else _GROUP_NO_DOT) if self.after_start and not self.dot else ""
@@ -1757,12 +1772,12 @@ class WcParse(Generic[AnyStr]):
         if self.pathname:
             if self.after_start and not self.dot:
                 if self.in_list:
-                    star = self.no_dir + (self.path_ext_star if alt_end else self.seq_path_group_dot + self.path_star)
+                    star = self.no_dir + self.path_ext_star if alt_end else self.seq_path_group_dot + self.path_star
                 else:
                     star = self.path_star_dot2
                 globstar = self.path_gstar_dot2
             elif self.after_start:
-                star = self.path_star_dot1
+                star = self.path_star_dot1 if self.in_list else self.path_star_dot1_start
                 globstar = self.path_gstar_dot1
             else:
                 star = self.path_star
@@ -1775,7 +1790,10 @@ class WcParse(Generic[AnyStr]):
             capture = self.globstar_capture
         else:
             if self.after_start and not self.dot:
-                star = _NO_DOT + _STAR if not self.in_list else _EXT_NO_DOT_STAR if alt_end else _GROUP_NO_DOT + _STAR
+                if not self.in_list:
+                    star = _NEED_NO_DOT + _STAR
+                else:
+                    star = _EXT_NO_DOT_STAR if alt_end else _GROUP_NO_DOT + _STAR
             elif check_start:
                 if alt_end and self.in_list:
                     star = _EXT_NO_DOT_STAR
@@ -1846,7 +1864,7 @@ class WcParse(Generic[AnyStr]):
 
         if value != globstar:
             if self.after_start:
-                value = self.need_char + value
+                value = self._need_char(value)
 
             # Consume duplicate starts, but leave a star that opens an extended group
             try:
@@ -2093,7 +2111,10 @@ class WcParse(Generic[AnyStr]):
             ext_reduce = EXT_REDUCE[list_type]
 
             # Extended groups cannot match `.` or `..` ever.
-            if not temp_in_list and temp_after_start:
+            # A group that must match something and cannot start on a dot already guarantees it.
+            if not temp_in_list and temp_after_start and not (
+                list_type in ('@', '+') and self._group_start(temp_in_list, has_dot)
+            ):
                 current.append(self.no_dir)
 
             # Reduce child group into the parent and notify the parent type should change.
@@ -2169,21 +2190,21 @@ class WcParse(Generic[AnyStr]):
                         star = (self.seq_path_group_dot if check_start else '') + self.path_star
                     elif temp_after_start and not self.dot:
                         if temp_in_list:
-                            star = self.no_dir + self.seq_path_group_dot + self.path_star
+                            star = self.seq_path_group_dot + self.path_star
                         else:
                             star = self.path_star_dot2
                     else:
-                        star = self.path_star_dot1
+                        star = self.path_star_dot1 if temp_in_list else self.path_star_dot1_start
                 else:
                     if self.dot:
                         star = _STAR
                     elif not temp_after_start:
                         star = (_GROUP_NO_DOT if check_start else '') + _STAR
                     else:
-                        star = (_NO_DOT if not temp_in_list else _GROUP_NO_DOT) + _STAR
+                        star = (_NEED_NO_DOT if not temp_in_list else _GROUP_NO_DOT) + _STAR
 
                 if temp_after_start:
-                    star = self.need_char + star
+                    star = self._need_char(star)
 
                 # If the text that the patterns can match is of known lengths, what the group matches does not depend on
                 # what follows it.
@@ -2384,7 +2405,8 @@ class WcParse(Generic[AnyStr]):
         self.atomic_stars(current)
         self._close_root(current)
 
-        if self.pathname:
+        # A trailing `globstar` divider or path separator already matches any trailing separators
+        if self.pathname and current[-1] not in (self.globstar_div, self.sep + _ONE_OR_MORE):
             current.append(_PATH_TRAIL.format(self.sep))
 
     def _parse(self, p: str) -> str:
