@@ -54,6 +54,8 @@
 -   **FIX**: Count duplicate exclusion expansions toward the shared pattern limit in compiled matchers and translation.
 -   **FIX**: Treat an empty `root_dir` (`''` or `b''`) as the current directory in `glob` and `iglob`, including when
     the directory is selected with `dir_fd`.
+-   **FIX**: Fix `glob` and `iglob` returning synthetic `.` and `..` matches with `SCANDOTDIR` when a directory
+    cannot be opened for scanning.
 
 ## 11.2
 
