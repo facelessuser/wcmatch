@@ -876,9 +876,15 @@ UNTRACKED = [
 def test_groups_without_inverse_groups_translate_the_same(pattern, regex, capture_regex):
     """Groups that are not in an inverse group do not change because lengths are tracked for inverse groups."""
 
+    def start_for(pattern):
+        """A group that must match something and cannot start on a dot has no need to check for `.` and `..`."""
+
+        return '^(?s:' if pattern.startswith(('@(', '+(')) else START
+
     flags = fnmatch.EXTMATCH | fnmatch.FORCEUNIX
-    assert fnmatch.translate(pattern, flags=flags)[0][0] == START + regex + ')$'
-    assert fnmatch.translate(pattern, flags=flags | fnmatch.CAPTURE)[0][0] == START + capture_regex + ')$'
+    start = start_for(pattern)
+    assert fnmatch.translate(pattern, flags=flags)[0][0] == start + regex + ')$'
+    assert fnmatch.translate(pattern, flags=flags | fnmatch.CAPTURE)[0][0] == start + capture_regex + ')$'
 
 
 @pytest.mark.parametrize(
