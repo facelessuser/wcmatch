@@ -2039,6 +2039,26 @@ def test_wildcard_start_glob_directory(tmp_path, as_bytes, dotmatch, pattern):
     assert sorted(glob.glob(pattern, root_dir=root_dir, flags=flags)) == expected
 
 
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('root_kind', ['missing', 'file', 'directory'])
+@pytest.mark.parametrize('globber', [glob.glob, glob.iglob])
+def test_scandotdir_requires_directory_scan(tmp_path, as_bytes, root_kind, globber):
+    """Synthetic dot entries are only returned for directories that can be scanned."""
+
+    root = tmp_path / 'root'
+    if root_kind == 'file':
+        root.touch()
+    elif root_kind == 'directory':
+        root.mkdir()
+    pattern, root_dir = '.*', str(root)
+    expected = ['.', '..'] if root_kind == 'directory' else []
+    if as_bytes:
+        pattern, root_dir = pattern.encode(), os.fsencode(root_dir)
+        expected = [name.encode() for name in expected]
+
+    assert sorted(globber(pattern, root_dir=root_dir, flags=glob.SCANDOTDIR)) == expected
+
+
 class TestInputTypes(unittest.TestCase):
     """Test input types."""
 
