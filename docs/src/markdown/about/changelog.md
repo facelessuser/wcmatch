@@ -46,6 +46,8 @@
 -   **FIX**: Fix an `EXTGLOB`/`EXTMATCH` group that is simplified to a different group type, e.g. `@(+(b))` or
     `@(!(b))`, losing its meaning when it is then reduced into its parent group. Repeats and negations were dropped,
     e.g. `@(a|@(!(b)))` matched `b` and not `c`, and `!(@(+(a)))` matched `aa`. This was a regression in 11.0.
+-   **FIX**: Preserve empty matches of nested optional groups in `translate()` with `CAPTURE`, e.g.
+    `@(?(a)).hidden` now matches `.hidden` as it does without `CAPTURE`, while keeping the nested capturing groups.
 -   **FIX**: Preserve byte file names when globbing with `dir_fd`, including names requiring surrogate escaping.
 -   **FIX**: Use the same case-insensitive matching for literal and wildcard path components in `glob` and `iglob`,
     including Unicode case equivalences.
