@@ -2,9 +2,6 @@
 
 ## 12.0
 
--   **FIX**: Fix `glob` and `iglob` returning synthetic `.` and `..` matches with `SCANDOTDIR` when a directory
-    cannot be opened for scanning.
-
 -   **BREAK**: Various fixes to `!(...)` patterns to more closely align to Bash. 100% Bash behavior is impossible with
     regular expression, but behavior in many ways was improved, but there may be some surprising behavior changes.
 
@@ -56,6 +53,8 @@
 -   **FIX**: Count duplicate exclusion expansions toward the shared pattern limit in compiled matchers and translation.
 -   **FIX**: Treat an empty `root_dir` (`''` or `b''`) as the current directory in `glob` and `iglob`, including when
     the directory is selected with `dir_fd`.
+-   **FIX**: Fix `glob` and `iglob` returning synthetic `.` and `..` matches with `SCANDOTDIR` when a directory
+    cannot be opened for scanning.
 
 ## 11.2
 
