@@ -2,6 +2,9 @@
 
 ## 12.0
 
+-   **FIX**: Fix `glob` and `iglob` returning synthetic `.` and `..` matches with `SCANDOTDIR` when a directory
+    cannot be opened for scanning.
+
 -   **BREAK**: Various fixes to `!(...)` patterns to more closely align to Bash. 100% Bash behavior is impossible with
     regular expression, but behavior in many ways was improved, but there may be some surprising behavior changes.
 
