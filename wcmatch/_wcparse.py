@@ -2106,7 +2106,15 @@ class WcParse(Generic[AnyStr]):
             # Child content has already been reduced into this parent.
             if not self.capture and extended and isinstance(extended[-1], ExtPromote):
                 t = str(extended.pop(-1))
-                list_type = t
+                # A group that cannot start on a leading dot cannot be skipped there, which `?` and `*` groups can do.
+                # Keep it a group that must match, and let it match nothing with an empty slot.
+                if list_type in ('@', '+') and t in ('?', '*') and self._group_start(temp_in_list, has_dot):
+                    list_type = '+' if list_type == '+' or t == '*' else '@'
+                    if not extended or extended[-1] != '|':
+                        self.clean_up_inverse(extended, gtoken)
+                        extended.append('|')
+                else:
+                    list_type = t
 
             ext_reduce = EXT_REDUCE[list_type]
 

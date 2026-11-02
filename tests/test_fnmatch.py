@@ -1009,10 +1009,11 @@ class TestExtendedCases(unittest.TestCase):
         self.assert_group_equal('!(a|?(b|c)|d)', '!(a|b|c||d)')
         self.assert_group_equal('!(a|b|?(c|d))', '!(a|b|c|d|)')
 
-        self.assert_group_equal('@(?(a|b|c))', '?(a|b|c)')
+        # An optional group can be skipped on a leading dot, but a group that must match something cannot.
+        self.assert_group_equal('@(?(a|b|c))', '@(a|b|c|)')
         self.assert_group_equal('?(?(a|b|c))', '?(a|b|c)')
         self.assert_group_equal('*(?(a|b|c))', '*(a|b|c)')
-        self.assert_group_equal('+(?(a|b|c))', '*(a|b|c)')
+        self.assert_group_equal('+(?(a|b|c))', '+(a|b|c|)')
 
     def test_more_or_none(self):
         """Test reduction of the `*` group and other groups."""
@@ -1025,7 +1026,7 @@ class TestExtendedCases(unittest.TestCase):
         self.assert_group_equal('+(a|*(b|c)|d)', '+(a|b|c||d)')
         self.assert_group_equal('+(a|b|*(c|d))', '+(a|b|c|d|)')
 
-        self.assert_group_equal('@(*(a|b|c))', '*(a|b|c)')
+        self.assert_group_equal('@(*(a|b|c))', '+(a|b|c|)')
 
     def test_one_or_more(self):
         """Test reduction of the `+` group and other groups."""

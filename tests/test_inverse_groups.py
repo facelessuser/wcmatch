@@ -723,6 +723,18 @@ BASH_DOT_CASES = [
     ('!(*|.a).b', []),
     ('@(*|!(.a)).b', ['.b', 'a.b']),
     ('@(!(x)|.a).b', ['a.b']),
+    ('@(?(a)).b', ['a.b']),
+    ('+(?(a)).b', ['a.b']),
+    ('@(*(a)).b', ['a.b']),
+    ('@(@(?(a))).b', ['a.b']),
+    ('+(*(a)).b', ['a.b']),
+    ('+(+(?(a))).b', ['a.b']),
+    ('@(?(a)|c).b', ['a.b']),
+    ('@(?(.a)).b', ['.b']),
+    ('?(a).b', ['.b', 'a.b']),
+    ('*(?(a)).b', ['.b', 'a.b']),
+    ('?(?(a)).b', ['.b', 'a.b']),
+    ('@(?(a))b', ['b', 'ab']),
 ]
 
 
@@ -732,6 +744,16 @@ def test_dot_in_groups_follows_bash(pattern, expected):
 
     assert [n for n in BASH_DOT_NAMES if fn_match(n, pattern)] == expected, pattern
     assert [n for n in BASH_DOT_NAMES if glob_match(n, pattern)] == expected, pattern
+
+
+@pytest.mark.parametrize('matcher', [fn_match, glob_match])
+@pytest.mark.parametrize('pattern', ['@(?(a)).hidden', '+(?(a)).hidden', '@(*(a)).hidden', '@(@(?(a))).hidden'])
+def test_required_groups_that_can_be_empty_do_not_start_on_a_dot(matcher, pattern):
+    """A group that must match something cannot be skipped to let a literal dot be the leading dot."""
+
+    names = ['.hidden', 'hidden', 'a.hidden']
+    assert [n for n in names if matcher(n, pattern)] == ['a.hidden'], pattern
+    assert [n for n in names if matcher(n, pattern, flags=fnmatch.DOTMATCH)] == ['.hidden', 'a.hidden'], pattern
 
 
 PATH_CASES = [
