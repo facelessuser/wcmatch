@@ -2168,16 +2168,21 @@ class WcParse(Generic[AnyStr]):
                 current.append(group)
             elif list_type == '+':
                 self._finish_group(extended, gtoken)
-                prefix = self._group_start(temp_in_list, has_dot)
+                # Capturing prevents promotion of an optional child, which can still consume nothing.
+                optional = len(extended) == 1 and isinstance(extended[0], ExtGroup) and extended[0].optional
+                prefix = self._group_start(temp_in_list, has_dot or optional)
                 template = _PLUS_CAPTURE_GROUP if self.capture else _PLUS_GROUP
                 group = ExtGroup(template.format(prefix, ''.join(extended)))
+                group.optional = optional
                 if self.in_inv:
                     group.non_empty = not self._maybe_empty(extended)
                 current.append(group)
             elif list_type == '@':
                 self._finish_group(extended, gtoken)
-                prefix = self._group_start(temp_in_list, has_dot)
+                optional = len(extended) == 1 and isinstance(extended[0], ExtGroup) and extended[0].optional
+                prefix = self._group_start(temp_in_list, has_dot or optional)
                 group = ExtGroup((_CAPTURE_GROUP if self.capture else _GROUP).format(prefix, ''.join(extended)))
+                group.optional = optional
                 if self.in_inv:
                     group.lens = self._group_lengths(extended)
                     group.non_empty = not self._maybe_empty(extended)

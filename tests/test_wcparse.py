@@ -8,6 +8,58 @@ import wcmatch._wcparse as _wcparse
 
 
 @pytest.mark.parametrize('module', ['fnmatch', 'glob'])
+@pytest.mark.parametrize('binary', [False, True])
+@pytest.mark.parametrize('forcewin', [False, True])
+@pytest.mark.parametrize('group', [
+    '@(?(a))', '+(?(a))', '@(*(a))', '+(*(a))', '@(+(*(a)))', '+(@(?(a)))'
+])
+def test_capture_nested_optional_literal_dot(module, binary, forcewin, group):
+    """Nested optional groups can capture empty text before an explicit leading dot."""
+
+    from wcmatch import fnmatch, glob
+
+    matcher = fnmatch if module == 'fnmatch' else glob
+    flags = matcher.EXTMATCH | matcher.CAPTURE | (matcher.FORCEWIN if forcewin else matcher.FORCEUNIX)
+    prefix = 'dir/' if module == 'glob' else ''
+    hidden, visible = prefix + '.hidden', prefix + 'a.hidden'
+    pattern = prefix + group + '.hidden'
+    if binary:
+        pattern, hidden, visible = pattern.encode(), hidden.encode(), visible.encode()
+
+    positive, negative = matcher.translate(pattern, flags=flags)
+    assert not negative
+    regex = re.compile(positive[0])
+    match = regex.fullmatch(hidden)
+    assert match is not None
+    assert match.groups() == (b'' if binary else '',) * group.count('(')
+    assert regex.fullmatch(visible) is not None
+
+    # A wildcard after the empty groups still cannot match a leading dot without DOTMATCH.
+    for tail in ('*.hidden', '[.]hidden'):
+        pattern = prefix + group + tail
+        if binary:
+            pattern = pattern.encode()
+        assert re.fullmatch(matcher.translate(pattern, flags=flags)[0][0], hidden) is None
+        assert re.fullmatch(matcher.translate(pattern, flags=flags | matcher.DOTMATCH)[0][0], hidden) is not None
+
+
+@pytest.mark.parametrize('module', ['fnmatch', 'glob'])
+@pytest.mark.parametrize('binary', [False, True])
+@pytest.mark.parametrize('group', ['@(*)', '+(*)'])
+def test_capture_wildcard_group_literal_dot(module, binary, group):
+    """An ordinary star inside a group still restricts leading dots even if it matches nothing."""
+
+    from wcmatch import fnmatch, glob
+
+    matcher = fnmatch if module == 'fnmatch' else glob
+    pattern, hidden = group + '.hidden', '.hidden'
+    if binary:
+        pattern, hidden = pattern.encode(), hidden.encode()
+    flags = matcher.EXTMATCH | matcher.CAPTURE | matcher.FORCEUNIX
+    assert re.fullmatch(matcher.translate(pattern, flags=flags)[0][0], hidden) is None
+
+
+@pytest.mark.parametrize('module', ['fnmatch', 'glob'])
 @pytest.mark.parametrize('api', ['compile', 'translate'])
 @pytest.mark.parametrize('binary', [False, True])
 @pytest.mark.parametrize(
