@@ -860,7 +860,7 @@ class Glob(Generic[AnyStr]):
                     # Make sure case matches, but running case insensitive
                     # on a case sensitive file system may return more than
                     # one starting location.
-                    results = self._get_starting_paths(curdir, dir_only)
+                    results = self._get_starting_paths(curdir, this.dir_only)
                     if not results:
                         continue
 

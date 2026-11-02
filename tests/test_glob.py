@@ -2039,6 +2039,25 @@ def test_wildcard_start_glob_directory(tmp_path, as_bytes, dotmatch, pattern):
     assert sorted(glob.glob(pattern, root_dir=root_dir, flags=flags)) == expected
 
 
+@pytest.mark.parametrize('globber', [glob.glob, glob.iglob], ids=['glob', 'iglob'])
+@pytest.mark.parametrize('encode', [str, os.fsencode], ids=['str', 'bytes'])
+@pytest.mark.parametrize('target_is_directory', [False, True], ids=['file', 'directory'])
+@pytest.mark.parametrize('suffix, flags', [('**', glob.GLOBSTAR), ('***', glob.GLOBSTARLONG)])
+def test_globstar_requires_directory_prefix(tmp_path, globber, encode, target_is_directory, suffix, flags):
+    """A literal prefix of a recursive glob must name a directory."""
+
+    target = tmp_path / 'target'
+    if target_is_directory:
+        target.mkdir()
+    else:
+        target.touch()
+    expected = [encode(os.path.join('target', ''))] if target_is_directory else []
+
+    assert list(globber(
+        encode('target/' + suffix), root_dir=encode(str(tmp_path)), flags=flags
+    )) == expected
+
+
 @pytest.mark.parametrize('as_bytes', [False, True])
 @pytest.mark.parametrize('root_kind', ['missing', 'file', 'directory'])
 @pytest.mark.parametrize('globber', [glob.glob, glob.iglob])
