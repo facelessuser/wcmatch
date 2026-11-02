@@ -2110,10 +2110,16 @@ class WcParse(Generic[AnyStr]):
 
             ext_reduce = EXT_REDUCE[list_type]
 
+            # Capturing prevents promotion of an optional child, which can still consume nothing.
+            optional = (
+                list_type in ('@', '+') and len(extended) == 1 and
+                isinstance(extended[0], ExtGroup) and extended[0].optional
+            )
+
             # Extended groups cannot match `.` or `..` ever.
             # A group that must match something and cannot start on a dot already guarantees it.
             if not temp_in_list and temp_after_start and not (
-                list_type in ('@', '+') and self._group_start(temp_in_list, has_dot)
+                list_type in ('@', '+') and self._group_start(temp_in_list, has_dot or optional)
             ):
                 current.append(self.no_dir)
 
@@ -2167,8 +2173,6 @@ class WcParse(Generic[AnyStr]):
                 group.optional = True
                 current.append(group)
             elif list_type == '+':
-                # Capturing prevents promotion of an optional child, which can still consume nothing.
-                optional = len(extended) == 1 and isinstance(extended[0], ExtGroup) and extended[0].optional
                 self._finish_group(extended, gtoken)
                 prefix = self._group_start(temp_in_list, has_dot or optional)
                 template = _PLUS_CAPTURE_GROUP if self.capture else _PLUS_GROUP
@@ -2178,7 +2182,6 @@ class WcParse(Generic[AnyStr]):
                     group.non_empty = not self._maybe_empty(extended)
                 current.append(group)
             elif list_type == '@':
-                optional = len(extended) == 1 and isinstance(extended[0], ExtGroup) and extended[0].optional
                 self._finish_group(extended, gtoken)
                 prefix = self._group_start(temp_in_list, has_dot or optional)
                 group = ExtGroup((_CAPTURE_GROUP if self.capture else _GROUP).format(prefix, ''.join(extended)))

@@ -69,6 +69,29 @@ def test_capture_nested_optional_inverse_literal_dot(module, binary, forcewin, g
 
 @pytest.mark.parametrize('module', ['fnmatch', 'glob'])
 @pytest.mark.parametrize('binary', [False, True])
+@pytest.mark.parametrize('forcewin', [False, True])
+@pytest.mark.parametrize('dotmatch', [False, True])
+@pytest.mark.parametrize('group', ['@(?(a))', '+(*(a))', '@(@(?(!(a*))))', '+(@(*(!(a*))))'])
+def test_capture_nested_optional_dot_directories(module, binary, forcewin, dotmatch, group):
+    """Optional wrappers retain the directory guard when their leading-dot guard is omitted."""
+
+    from wcmatch import fnmatch, glob
+
+    matcher = fnmatch if module == 'fnmatch' else glob
+    flags = matcher.EXTMATCH | (matcher.FORCEWIN if forcewin else matcher.FORCEUNIX)
+    if dotmatch:
+        flags |= matcher.DOTMATCH
+    prefix = 'dir/' if module == 'glob' else ''
+    for dot_dir in ('.', '..'):
+        pattern, name = prefix + group + dot_dir, prefix + dot_dir
+        if binary:
+            pattern, name = pattern.encode(), name.encode()
+        assert re.fullmatch(matcher.translate(pattern, flags=flags)[0][0], name) is None
+        assert re.fullmatch(matcher.translate(pattern, flags=flags | matcher.CAPTURE)[0][0], name) is None
+
+
+@pytest.mark.parametrize('module', ['fnmatch', 'glob'])
+@pytest.mark.parametrize('binary', [False, True])
 @pytest.mark.parametrize('group', ['@(*)', '+(*)'])
 def test_capture_wildcard_group_literal_dot(module, binary, group):
     """An ordinary star inside a group still restricts leading dots even if it matches nothing."""
