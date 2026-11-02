@@ -110,6 +110,9 @@ class WcMatch(Generic[AnyStr]):
     def _add_sep(self, path: AnyStr, check: bool = False) -> AnyStr:
         """Add separator."""
 
+        # A bare Windows drive is relative to that drive's current directory.
+        if check and len(path) == 2 and os.path.splitdrive(path)[0] == path:
+            return path
         return (path + self._sep) if not check or not path.endswith(self._sep) else path
 
     def _get_cwd(self) -> AnyStr:

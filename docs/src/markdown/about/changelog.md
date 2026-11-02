@@ -35,6 +35,8 @@
     descriptor `0`, which a directory can get when it is opened while standard input is closed.
 -   **FIX**: Fix `WcMatch` returning a file after `kill` is called from a directory validation hook or its error
     handler.
+-   **FIX**: Preserve bare drive roots such as `D:` in `WcMatch` on Windows, so searches use that drive's current
+    directory instead of its root directory.
 -   **FIX**: Fix a `?` or bracket expression after a leading `*` matching the leading dot of a file name, e.g. `*?a`
     matching `.a`.
 -   **FIX**: Fix a wildcard in an `EXTGLOB`/`EXTMATCH` group, such as `?(old-)@(*)`, matching the leading dot of a file
