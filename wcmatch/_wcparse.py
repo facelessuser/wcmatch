@@ -1890,7 +1890,7 @@ class WcParse(Generic[AnyStr]):
                 self.consume_path_sep(i)
                 current.append(self.globstar_div)
             else:
-                # Consecutive globstars collapse to one. A triple star anywhere
+                # Consecutive `globstar` patterns collapse to one. A triple star anywhere
                 # in the run permits symlink traversal, even after a double star.
                 if not capture and current[-2] == f'({globstar})':
                     current[-2] = current[-2][1:-1]
