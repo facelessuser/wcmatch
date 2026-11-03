@@ -1,4 +1,4 @@
-"""Consecutive globstars retain the symlink traversal allowed by either member."""
+"""Consecutive `globstar` patterns retain the symlink traversal allowed by either member."""
 from wcmatch import glob
 import os
 import pytest
@@ -18,7 +18,7 @@ def test_mixed_consecutive_globstars(tmp_path, pattern, as_bytes, use_fd):
     if use_fd and not glob.SUPPORT_DIR_FD:
         pytest.skip('dir_fd is unavailable')
     root = '.' if use_fd else str(tmp_path)
-    filename = 'link/nested/' if pattern.endswith('/') else 'link/f'
+    filename = os.path.join('link', 'nested', '') if pattern.endswith('/') else os.path.join('link', 'f')
     (target / 'nested').mkdir()
     if as_bytes:
         pattern, root, filename = map(os.fsencode, (pattern, root, filename))
@@ -42,7 +42,7 @@ def test_double_globstars_do_not_follow_symlinks(tmp_path, pattern):
     except (OSError, NotImplementedError):
         pytest.skip('Symlinks are unavailable')
     flags = glob.GLOBSTARLONG
-    assert 'target/f' in glob.glob(pattern, root_dir=tmp_path, flags=flags)
-    assert 'link/f' not in glob.glob(pattern, root_dir=tmp_path, flags=flags)
+    assert os.path.join('target', 'f') in glob.glob(pattern, root_dir=tmp_path, flags=flags)
+    assert os.path.join('link', 'f') not in glob.glob(pattern, root_dir=tmp_path, flags=flags)
     assert glob.globmatch('target/f', pattern, root_dir=tmp_path, flags=flags | glob.REALPATH)
     assert not glob.globmatch('link/f', pattern, root_dir=tmp_path, flags=flags | glob.REALPATH)
