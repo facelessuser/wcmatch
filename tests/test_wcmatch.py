@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for `wcmatch`."""
 import unittest
+import pytest
 import os
 import wcmatch.wcmatch as wcmatch
 import shutil
@@ -645,3 +646,58 @@ class TestExpansionLimit(unittest.TestCase):
 
         with self.assertRaises(_wcparse.PatternLimitException):
             wcmatch.WcMatch('.', '{1..11}', flags=wcmatch.BRACE, limit=10)
+
+
+@pytest.mark.skipif(os.name != 'nt', reason='Windows drive-relative paths')
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('recursive', [False, True])
+@pytest.mark.parametrize('pathname', [False, True])
+@pytest.mark.parametrize('explicit_dot', [False, True])
+def test_drive_relative_root(tmp_path, monkeypatch, as_bytes, recursive, pathname, explicit_dot):
+    """A bare drive must search that drive's current directory, just like an explicit dot."""
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'leaf.txt').touch()
+    (tmp_path / 'sub').mkdir()
+    (tmp_path / 'sub' / 'leaf.txt').touch()
+    root = os.path.splitdrive(str(tmp_path))[0] + ('.' if explicit_dot else '')
+    flags = (wcmatch.RECURSIVE if recursive else 0) | (wcmatch.FILEPATHNAME if pathname else 0)
+    pattern = '**/*.txt' if pathname and recursive else '*.txt'
+    if pathname and recursive:
+        flags |= wcmatch.GLOBSTAR
+    names = ['leaf.txt', os.path.join('sub', 'leaf.txt')] if recursive else ['leaf.txt']
+    if as_bytes:
+        root, pattern = os.fsencode(root), os.fsencode(pattern)
+        names = [os.fsencode(name) for name in names]
+    original_walk = os.walk
+
+    def restricted_walk(top, **kwargs):
+        """Reject accidental drive-root scanning before walking the real fixture."""
+
+        assert os.path.normcase(os.fsdecode(os.path.abspath(top))) == os.path.normcase(str(tmp_path))
+        yield from original_walk(top, **kwargs)
+
+    monkeypatch.setattr(wcmatch.os, 'walk', restricted_walk)
+    assert sorted(wcmatch.WcMatch(root, pattern, flags=flags).match()) == sorted(
+        os.path.join(root, name) for name in names
+    )
+
+
+@pytest.mark.skipif(os.name != 'nt', reason='Windows UNC paths')
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('trailing_separator', [False, True])
+def test_unc_root_filepathname(monkeypatch, as_bytes, trailing_separator):
+    """UNC shares still strip the root separator when matching relative file paths."""
+
+    root, name, pattern = r'\\server\share' + ('\\' if trailing_separator else ''), 'leaf.txt', '*.txt'
+    if as_bytes:
+        root, name, pattern = os.fsencode(root), os.fsencode(name), os.fsencode(pattern)
+
+    def virtual_walk(top, **kwargs):
+        """Return a fixture without accessing a network share."""
+
+        yield top, [], [name]
+
+    monkeypatch.setattr(wcmatch.os, 'walk', virtual_walk)
+    result = wcmatch.WcMatch(root, pattern, flags=wcmatch.FILEPATHNAME | wcmatch.HIDDEN).match()
+    assert result == [os.path.join(root, name)]

@@ -87,7 +87,12 @@ class WcMatch(Generic[AnyStr]):
         self._skipped = 0
         self._parse_flags(flags)
         self._sep = os.fsencode(os.sep) if isinstance(root_dir, bytes) else os.sep  # type: AnyStr
-        self._root_dir = self._add_sep(self._get_cwd(), True)  # type: AnyStr
+        cwd = self._get_cwd()
+        # A bare Windows drive (`D:`) is relative to that drive's current directory, so adding a separator
+        # would change it to the drive root. UNC shares also split to a lone drive, hence the length check.
+        self._root_dir = (
+            cwd if len(cwd) == 2 and os.path.splitdrive(cwd)[0] == cwd else self._add_sep(cwd, True)
+        )  # type: AnyStr
         self.limit = limit
         empty = os.fsencode('') if isinstance(root_dir, bytes) else ''
         self.pattern_file = file_pattern if file_pattern is not None else empty  # type: AnyStr
