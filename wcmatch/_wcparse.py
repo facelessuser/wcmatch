@@ -1890,6 +1890,10 @@ class WcParse(Generic[AnyStr]):
                 self.consume_path_sep(i)
                 current.append(self.globstar_div)
             else:
+                # Consecutive globstars collapse to one. A triple star anywhere
+                # in the run permits symlink traversal, even after a double star.
+                if not capture and current[-2] == f'({globstar})':
+                    current[-2] = current[-2][1:-1]
                 self.consume_path_sep(i)
             if directory and i.match_next(RE_PATTERN_END):
                 current.append(self.need_dir)
