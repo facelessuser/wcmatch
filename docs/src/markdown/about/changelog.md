@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+-   **FIX**: Preserve directory symlink traversal when collapsing adjacent `**` and `***` components with
+    `GLOBSTARLONG`, regardless of their order.
+
 ## 12.0
 
 -   **BREAK**: Various fixes to `!(...)` patterns to more closely align to Bash. 100% Bash behavior is impossible with
