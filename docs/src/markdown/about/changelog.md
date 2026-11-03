@@ -63,6 +63,7 @@
     the directory is selected with `dir_fd`.
 -   **FIX**: Fix `glob` and `iglob` returning synthetic `.` and `..` matches with `SCANDOTDIR` when a directory
     cannot be opened for scanning.
+-   **FIX**: Require `bracex` 3.2.1 which contains a number of brace related bug fixes.
 
 ## 11.2
 
