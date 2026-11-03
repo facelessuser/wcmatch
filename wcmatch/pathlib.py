@@ -10,7 +10,7 @@ from typing import Iterable, Any, Sequence
 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
-    "EXTGLOB", "EXTMATCH", "NEGATE", "MINUSNEGATE", "BRACE",
+    "EXTGLOB", "EXTMATCH", "GLOBSTAR", "NEGATE", "MINUSNEGATE", "BRACE", "SPLIT",
     "REALPATH", "FOLLOW", "MATCHBASE", "NEGATEALL", "NODIR", "NOUNIQUE",
     "NODOTDIR", "SCANDOTDIR", "GLOBSTARLONG", "NUMRANGE",
     "C", "I", "R", "D", "E", "G", "N", "B", "M", "P", "L", "S", "X", "O", "A", "Q", "Z", "SD", "GL", "ZN",
