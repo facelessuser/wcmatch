@@ -1764,6 +1764,7 @@ class WcParse(Generic[AnyStr]):
     def _handle_star(self, i: util.StringIter, current: list[str]) -> None:
         """Handle star."""
 
+        capture = False
         directory = False
         after_ext = bool(current and isinstance(current[-1], ExtGroup))
         check_start = (after_ext or self.in_list) and not self.dot
@@ -1892,7 +1893,7 @@ class WcParse(Generic[AnyStr]):
             else:
                 # Consecutive `globstar` patterns collapse to one. A triple star anywhere
                 # in the run permits symlink traversal, even after a double star.
-                if not capture and current[-2] == f'({globstar})':
+                if not capture:
                     current[-2] = globstar
                 self.consume_path_sep(i)
             if directory and i.match_next(RE_PATTERN_END):
