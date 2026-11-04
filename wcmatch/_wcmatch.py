@@ -100,7 +100,12 @@ class _Match(Generic[AnyStr]):
                 try:
                     for i, star in enumerate(m.groups(), 1):
                         if star:
-                            at_end = m.end(i) == end
+                            # A globstar group that reaches the end of the path either stops just
+                            # before the final separator of a directory, or extends to the end of
+                            # a file's name. Its last component is the matched entry itself, which
+                            # may be a symlink: only symlinks in earlier components mean the
+                            # globstar actually traversed a link.
+                            at_end = m.end(i) == end or m.end(i) == len(filename)
                             parts = split.split(star.strip(strip))
                             base = os.path.join(root, filename[:m.start(i)])
                             last_part = len(parts)
