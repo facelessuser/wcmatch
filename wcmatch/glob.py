@@ -314,7 +314,7 @@ class _GlobSplit(Generic[AnyStr]):
         else:
             v = value
         if globstar and l and l[-1].is_globstar:
-            # Either globstar can consume zero directories, so keep symlink traversal
+            # Either `globstar` can consume zero directories, so keep symlink traversal
             # if any member of the collapsed run permits it.
             globstarlong = globstarlong or l[-1].is_globstarlong
             l[-1] = _GlobPart(v, magic, globstar, globstarlong, dir_only, False)
