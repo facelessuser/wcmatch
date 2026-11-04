@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+-   **FIX**: Fix `globmatch` with `REALPATH` rejecting a symlinked file when it is matched by a trailing `**`
+    (e.g. `**` or `dir/**`), disagreeing with `glob` and Bash, which both return such files.
 -   **FIX**: Preserve directory symlink traversal when collapsing adjacent `**` and `***` components with
     `GLOBSTARLONG`, regardless of their order.
 

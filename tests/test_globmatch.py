@@ -59,6 +59,48 @@ def skip_unless_symlink(test):
 
 
 @pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('pattern', ['**', 'd/**'])
+def test_globstar_symlink_file_at_end(tmp_path, as_bytes, pattern):
+    """A symlinked file at the end of the path should be matched by `**`, just like the walker and Bash."""
+
+    (tmp_path / 'd').mkdir()
+    target = tmp_path / 'd' / 'target.txt'
+    target.write_text('')
+    link = tmp_path / 'd' / 'link.txt'
+    try:
+        link.symlink_to(target)
+    except (OSError, NotImplementedError):
+        pytest.skip('Symlinks are unavailable')
+
+    filename = 'd/link.txt'
+    root = str(tmp_path)
+    if as_bytes:
+        pattern = os.fsencode(pattern)
+        filename = os.fsencode(filename)
+        root = os.fsencode(root)
+
+    flags = glob.GLOBSTAR | glob.REALPATH
+    assert os.path.normpath(filename) in glob.glob(pattern, root_dir=root, flags=glob.GLOBSTAR)
+    assert glob.globmatch(filename, pattern, root_dir=root, flags=flags)
+    assert glob.globmatch(filename, pattern, root_dir=root, flags=flags | glob.FOLLOW)
+    # A path that traverses a symlinked directory is still not matched.
+    link_dir = tmp_path / 'd' / 'linkdir'
+    real_dir = tmp_path / 'd' / 'realdir'
+    real_dir.mkdir()
+    try:
+        link_dir.symlink_to(real_dir, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip('Directory symlinks are unavailable')
+    inner = 'd/linkdir/inner.txt'
+    if as_bytes:
+        inner = os.fsencode(inner)
+        inner_pattern = os.fsencode('**')
+    else:
+        inner_pattern = '**'
+    assert not glob.globmatch(inner, inner_pattern, root_dir=root, flags=flags)
+
+
+@pytest.mark.parametrize('as_bytes', [False, True])
 @pytest.mark.parametrize('pattern', ['**/literal/**/file.txt', '**/literal/**/leaf/**/file.txt'])
 @pytest.mark.parametrize('link', ['outer/literal/link', 'outer/link'])
 def test_globstar_symlink_prefix(tmp_path, monkeypatch, as_bytes, pattern, link):
