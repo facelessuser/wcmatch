@@ -80,7 +80,7 @@ def test_globstar_symlink_file_at_end(tmp_path, as_bytes, pattern):
         root = os.fsencode(root)
 
     flags = glob.GLOBSTAR | glob.REALPATH
-    assert filename in glob.glob(pattern, root_dir=root, flags=glob.GLOBSTAR)
+    assert os.path.normpath(filename) in glob.glob(pattern, root_dir=root, flags=glob.GLOBSTAR)
     assert glob.globmatch(filename, pattern, root_dir=root, flags=flags)
     assert glob.globmatch(filename, pattern, root_dir=root, flags=flags | glob.FOLLOW)
     # A path that traverses a symlinked directory is still not matched.

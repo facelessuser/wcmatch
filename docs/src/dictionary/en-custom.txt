@@ -54,6 +54,7 @@ filesystem
 formatter
 glob
 globbing
+globstar
 initializer
 iterables
 lookahead
