@@ -205,7 +205,8 @@ class Path(pathlib.Path):
         """
         Search the file system.
 
-        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
+        `GLOBSTAR` is not enabled by default. Pass the `GLOBSTAR` flag if `**` should match
+        across directories, just like when using `glob` directly.
 
         """
 
@@ -237,7 +238,8 @@ class Path(pathlib.Path):
         This uses the same recursive logic that the default `pathlib` object uses.
         Folders and files are essentially matched from right to left.
 
-        `GLOBSTAR` is enabled by default in order match the default behavior of `pathlib`.
+        `GLOBSTAR` is not enabled by default. Pass the `GLOBSTAR` flag if `**` should match
+        across directories, just like when using `glob` directly.
 
         """
 
