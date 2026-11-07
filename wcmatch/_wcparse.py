@@ -1883,7 +1883,7 @@ class WcParse(Generic[AnyStr]):
         if value == globstar:
             # Check if the last entry was a `globstar`
             # If so, don't bother adding another.
-            if current[-1] not in (self.globstar_div, self.globstar_div_dir):
+            if current[-1] != self.globstar_div_dir:
                 if current[-1] == '':
                     # At the beginning of the pattern
                     current[-1] = value
