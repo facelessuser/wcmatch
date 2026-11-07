@@ -265,6 +265,8 @@ _PATH_EOP = r'(?:$|[{sep}])'
 # Divider between `globstar`. Can match start or end of pattern
 # in addition to slashes.
 _GLOBSTAR_DIV = r'(?:^|$|[{sep}]+)'
+# A non-terminal globstar must stop at a directory boundary.
+_GLOBSTAR_DIV_DIR = r'(?:^|[{sep}]+)'
 # Lookahead to see there is one character.
 _NEED_CHAR_PATH = r'(?=[^{sep}])'
 _NEED_CHAR = r'(?=.)'
@@ -1088,6 +1090,7 @@ class WcParse(Generic[AnyStr]):
             sep = {"sep": re.escape('/')}
 
         self.globstar_div = _GLOBSTAR_DIV.format(**sep)
+        self.globstar_div_dir = _GLOBSTAR_DIV_DIR.format(**sep)
         self.need_sep = _NEED_SEP.format(**sep)
         self.need_dir = _NEED_DIR.format(**sep)
         self.bare_sep = sep['sep']
@@ -1880,7 +1883,7 @@ class WcParse(Generic[AnyStr]):
         if value == globstar:
             # Check if the last entry was a `globstar`
             # If so, don't bother adding another.
-            if current[-1] != self.globstar_div:
+            if current[-1] != self.globstar_div_dir:
                 if current[-1] == '':
                     # At the beginning of the pattern
                     current[-1] = value
@@ -1896,7 +1899,11 @@ class WcParse(Generic[AnyStr]):
                 if not capture:
                     current[-2] = globstar
                 self.consume_path_sep(i)
-            if directory and i.match_next(RE_PATTERN_END):
+            at_end = i.match_next(RE_PATTERN_END)
+            # Before another component, a globstar may only consume complete directories.
+            # An end-of-path alternative would let a following optional group skip the filename.
+            current[-1] = self.globstar_div_dir if directory and not at_end else self.globstar_div
+            if directory and at_end:
                 current.append(self.need_dir)
             self.set_start_dir()
         else:
@@ -2451,6 +2458,7 @@ class WcParse(Generic[AnyStr]):
             self.root(p, result)
 
         if p and (self.matchbase or self.extmatchbase):
+            prepend[-1] = self.globstar_div_dir
             result = prepend + result
 
         case_flag = 'i' if not self.case_sensitive else ''

@@ -330,6 +330,16 @@ class TestPathlibMatch(TestPathlibGlobmatch):
 
         assert path.match(pattern, flags=flags) == goal, "Expression did not evaluate as %s" % goal
 
+    @pytest.mark.parametrize('path_type', [pathlib.PurePosixPath, pathlib.PureWindowsPath])
+    @pytest.mark.parametrize('pattern', ['?(a)', '*(a)'])
+    def test_optional_filename(self, path_type, pattern):
+        """The implicit globstar must leave the final filename for the optional group."""
+
+        for name in ['a', 'sub/a', 'sub/deep/a']:
+            assert path_type(name).match(pattern, flags=pathlib.EXTMATCH)
+        for name in ['b', 'sub/b', 'sub/deep/b']:
+            assert not path_type(name).match(pattern, flags=pathlib.EXTMATCH)
+
 
 class TestRealpath(unittest.TestCase):
     """Test real path of pure paths."""
