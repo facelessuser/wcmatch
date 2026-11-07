@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+-   **FIX**: Fix a non-terminal globstar consuming the final filename when the following extended group can match
+    nothing, e.g. `**/?(a)` matching `b`. This also affects the implicit globstar used by `MATCHBASE` and `pathlib.match`.
 -   **FIX**: Fix `globmatch` with `REALPATH` rejecting a symlinked file when it is matched by a trailing `**`
     (e.g. `**` or `dir/**`), disagreeing with `glob` and Bash, which both return such files.
 -   **FIX**: Preserve directory symlink traversal when collapsing adjacent `**` and `***` components with

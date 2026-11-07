@@ -58,6 +58,73 @@ def skip_unless_symlink(test):
     return test if ok else unittest.skip(msg)(test)
 
 
+@pytest.mark.parametrize(
+    'pattern, extra_flags',
+    [
+        ('**/?(a)', glob.GLOBSTAR),
+        ('**/*(a)', glob.GLOBSTAR),
+        ('dir/**/?(a)', glob.GLOBSTAR),
+        ('**/**/?(a)', glob.GLOBSTAR),
+        ('**/***/?(a)', glob.GLOBSTARLONG),
+        ('***/**/?(a)', glob.GLOBSTARLONG),
+        ('?(a)', glob.MATCHBASE),
+        ('*(a)', glob.MATCHBASE),
+    ]
+)
+@pytest.mark.parametrize('windows', [False, True])
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('capture', [False, True])
+def test_nonterminal_globstar_optional_filename(pattern, extra_flags, windows, as_bytes, capture):
+    """A globstar before an optional group cannot consume an unrelated final filename."""
+
+    flags = extra_flags | glob.EXTMATCH | (glob.FORCEWIN if windows else glob.FORCEUNIX)
+    if capture:
+        flags |= glob.CAPTURE
+    prefix = 'dir/' if pattern.startswith('dir/') else ''
+    matches = [prefix + name for name in ['a', 'sub/a', 'sub/deep/a']]
+    misses = [prefix + name for name in ['b', 'sub/b', 'sub/deep/b']]
+    if windows:
+        matches = [name.replace('/', '\\') for name in matches]
+        misses = [name.replace('/', '\\') for name in misses]
+    if as_bytes:
+        pattern = pattern.encode()
+        matches = [name.encode() for name in matches]
+        misses = [name.encode() for name in misses]
+
+    matcher = glob.compile(pattern, flags=flags)
+    positive, negative = glob.translate(pattern, flags=flags)
+    assert not negative
+    translated = re.compile(positive[0])
+    for name in matches:
+        assert matcher.match(name)
+        assert translated.fullmatch(name) is not None
+    for name in misses:
+        assert not matcher.match(name)
+        assert translated.fullmatch(name) is None
+    assert glob.globfilter(matches + misses, pattern, flags=flags) == matches
+
+
+@pytest.mark.parametrize('pattern', ['**/?(a)', '**/*(a)'])
+@pytest.mark.parametrize('as_bytes', [False, True])
+def test_nonterminal_globstar_optional_filename_realpath(tmp_path, pattern, as_bytes):
+    """Real-path filtering agrees with globbing when the final group is optional."""
+
+    (tmp_path / 'sub').mkdir()
+    filenames = ['a', 'b', os.path.join('sub', 'a'), os.path.join('sub', 'b')]
+    for name in filenames:
+        (tmp_path / name).touch()
+    root = str(tmp_path)
+    expected = [filenames[0], filenames[2]]
+    if as_bytes:
+        pattern, root = os.fsencode(pattern), os.fsencode(root)
+        filenames = [os.fsencode(name) for name in filenames]
+        expected = [os.fsencode(name) for name in expected]
+
+    flags = glob.GLOBSTAR | glob.EXTMATCH
+    assert sorted(glob.glob(pattern, root_dir=root, flags=flags)) == sorted(expected)
+    assert glob.globfilter(filenames, pattern, root_dir=root, flags=flags | glob.REALPATH) == expected
+
+
 @pytest.mark.parametrize('as_bytes', [False, True])
 @pytest.mark.parametrize('pattern', ['**', 'd/**'])
 def test_globstar_symlink_file_at_end(tmp_path, as_bytes, pattern):
@@ -1248,7 +1315,7 @@ class TestGlobMatchSpecial(unittest.TestCase):
 
         value = (
             [
-                '^(?s:(?:(?!(?:[/]|^)\\.).)*?(?:^|$|[/]+)' +
+                '^(?s:(?:(?!(?:[/]|^)\\.).)*?(?:^|[/]+)' +
                 '(?![/.])[\x00-\x7f][/]+stuff[/]+(?=[^/.])[^/]*?[/]*?)$'
             ],
             []
