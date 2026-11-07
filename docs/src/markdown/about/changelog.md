@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 12.0.1
 
 -   **FIX**: Fix a non-terminal globstar consuming the final filename when the following extended group can match
     nothing, e.g. `**/?(a)` matching `b`. This also affects the implicit globstar used by `MATCHBASE` and `pathlib.match`.
