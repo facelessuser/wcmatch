@@ -238,7 +238,10 @@ def test_symlinks_consistent_between_glob_and_globmatch(tmp_path):
         (tmp_path / f).write_text('')
     try:
         (tmp_path / 'a' / 'linked').symlink_to('real', target_is_directory=True)
-        (tmp_path / 'a' / 'real' / 'sub' / 'back').symlink_to('../../other', target_is_directory=True)
+        # A relative target must use the OS separator, or Windows cannot resolve it
+        (tmp_path / 'a' / 'real' / 'sub' / 'back').symlink_to(
+            os.path.join('..', '..', 'other'), target_is_directory=True
+        )
         (tmp_path / 'top').symlink_to('a', target_is_directory=True)
     except (OSError, NotImplementedError):
         pytest.skip('Directory symlinks are unavailable')
@@ -321,13 +324,13 @@ def test_matchbase_globstar_consistent_with_glob(tmp_path, as_bytes, pattern, do
     expected = {os.path.normpath(p) for p in glob.glob(pattern, root_dir=root, flags=flags)}
     matched = {p for p in paths if glob.globmatch(p, pattern, root_dir=root, flags=flags | glob.REALPATH)}
     assert matched == expected
-    # Spot check that the results are what we think they are
+    # Spot check that the results are what we think they are. The paths come from the OS, so use its separator.
     names = {os.fsdecode(p) for p in matched}
-    assert ('a/real/.d.css' in names) is bool(dotglob)
-    assert '.hid/h.css' not in names or dotglob
+    assert (os.path.join('a', 'real', '.d.css') in names) is bool(dotglob)
+    assert os.path.join('.hid', 'h.css') not in names or dotglob
     # A symlinked directory is traversed by `***`, or by `**` if `FOLLOW` makes the implicit globstar of `MATCHBASE`
     # a `***`, as consecutive globstars collapse to the one that traverses symlinks.
-    assert ('a/linked/app.css' in names) is (pattern in ('***', b'***') or bool(follow))
+    assert (os.path.join('a', 'linked', 'app.css') in names) is (pattern in ('***', b'***') or bool(follow))
 
 
 @pytest.mark.parametrize('pattern,traverses', [('**', True), ('**/**', False), ('**/**/**', False), ('a/**', False)])
