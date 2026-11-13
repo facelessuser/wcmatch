@@ -55,6 +55,8 @@ formatter
 glob
 globbing
 globstar
+globstar
+globstars
 initializer
 iterables
 lookahead

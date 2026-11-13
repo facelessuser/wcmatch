@@ -1062,6 +1062,8 @@ class WcParse(Generic[AnyStr]):
         self.extend = bool(flags & EXTMATCH)
         self.matchbase = bool(flags & MATCHBASE)
         self.extmatchbase = bool(flags & _EXTMATCHBASE)
+        # Where a `globstar` that starts the pattern was stored: its index, how it was stored, and its plain form
+        self.leading_globstar = None  # type: tuple[int, str, str] | None
         self.anchor = bool(flags & _ANCHOR)
         self.nodotdir = bool(flags & NODOTDIR)
         self.numrange = bool(flags & NUMRANGE)
@@ -1816,6 +1818,7 @@ class WcParse(Generic[AnyStr]):
             globstar = ''
         value = star
 
+        globstar_plain = globstar
         if self.after_start and self.globstar and not self.in_list:
             skip = True
             try:
@@ -1894,6 +1897,7 @@ class WcParse(Generic[AnyStr]):
                 if current[-1] == '':
                     # At the beginning of the pattern
                     current[-1] = value
+                    self.leading_globstar = (len(current) - 1, value, globstar_plain)
                 else:
                     # Replace the last path separator
                     current[-1] = self.need_sep
@@ -2462,11 +2466,22 @@ class WcParse(Generic[AnyStr]):
             p = ''
 
         if p:
+            # Forget the implicit `globstar` of the base match, only a `globstar` that starts `p` is interesting
+            self.leading_globstar = None
             self.root(p, result)
 
         if p and (self.matchbase or self.extmatchbase):
-            prepend[-1] = self.globstar_div_dir
-            result = prepend + result
+            if self.leading_globstar is None:
+                prepend[-1] = self.globstar_div_dir
+                result = prepend + result
+            elif self.globstarlong and self.follow:
+                # Consecutive `globstar`s collapse to one, and the one that traverses symlinks wins (`***/**` is
+                # `***`). The pattern's `globstar` already matches anything the implicit one would, so there is no need
+                # to stack them, but the implicit one is `***` here, so the pattern's `globstar` must traverse
+                # symlinks as well: stop it from being checked for them.
+                index, value, plain = self.leading_globstar
+                if result[index] == value:
+                    result[index] = plain
 
         case_flag = 'i' if not self.case_sensitive else ''
         pattern = Rf'^(?s{case_flag}:{"".join(result)})$'

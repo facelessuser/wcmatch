@@ -396,16 +396,23 @@ class _GlobSplit(Generic[AnyStr]):
             )
 
         if (
-            (self.extmatchbase and not parts[0].is_drive and not parts[0].is_globstar) or
-            (self.matchbase and len(parts) == 1 and not parts[0].dir_only)
+            (self.extmatchbase and not parts[0].is_drive) or
+            # Consecutive globstars collapse to one part, but a pattern with a slash in it is not a base name
+            (self.matchbase and len(parts) == 1 and not parts[0].dir_only and not split_index)
         ):
-            if self.globstarlong and self.follow:
-                gstar = b'***' if is_bytes else '***'  # type: Any
-                is_globstarlong = True
+            is_globstarlong = self.globstarlong and self.follow
+            if parts[0].is_globstar:
+                # Consecutive `globstar`s collapse to one, and the one that traverses symlinks wins (`***/**` is `***`).
+                # The pattern's `globstar` already matches anything the implicit one would, so there is no need to
+                # stack them, but it must traverse symlinks if the implicit one does.
+                if is_globstarlong and not parts[0].is_globstarlong:
+                    parts[0] = parts[0]._replace(is_globstarlong=True)
             else:
-                gstar = b'**' if is_bytes else '**'
-                is_globstarlong = False
-            parts.insert(0, _GlobPart(gstar, True, True, is_globstarlong, True, False))
+                if is_globstarlong:
+                    gstar = b'***' if is_bytes else '***'  # type: Any
+                else:
+                    gstar = b'**' if is_bytes else '**'
+                parts.insert(0, _GlobPart(gstar, True, True, is_globstarlong, True, False))
 
         if self.no_abs and parts and parts[0].is_drive:
             raise ValueError('The pattern must be a relative path pattern')

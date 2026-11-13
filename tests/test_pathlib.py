@@ -341,6 +341,32 @@ class TestPathlibMatch(TestPathlibGlobmatch):
             assert not path_type(name).match(pattern, flags=pathlib.EXTMATCH)
 
 
+@pytest.mark.parametrize(
+    'pattern,filename,flags,expected',
+    [
+        # `match` matches what `rglob` returns, which does not include dot files without `DOTGLOB`
+        ('**', 'a/b', pathlib.GLOBSTAR, True),
+        ('**', 'a/.b', pathlib.GLOBSTAR, False),
+        ('**', 'a/.b/c', pathlib.GLOBSTAR, False),
+        ('**', 'a/.b/c', pathlib.GLOBSTAR | pathlib.DOTGLOB, True),
+        ('**/x', 'a/b/x', pathlib.GLOBSTAR, True),
+        ('**/x', 'a/.b/x', pathlib.GLOBSTAR, False),
+        ('**/x', 'a/.b/x', pathlib.GLOBSTAR | pathlib.DOTGLOB, True),
+        ('**/*', 'a/b/x', pathlib.GLOBSTAR, True),
+        ('**/*', 'a/.b/x', pathlib.GLOBSTAR, False),
+        ('***/x', 'a/b/x', pathlib.GLOBSTARLONG, True),
+        ('***/x', 'a/.b/x', pathlib.GLOBSTARLONG, False),
+        ('***/x', 'a/.b/x', pathlib.GLOBSTARLONG | pathlib.DOTGLOB, True),
+    ]
+)
+def test_match_leading_globstar_dot_files(pattern, filename, flags, expected):
+    """A pattern that starts with a globstar should not stack another on top of it and match dot files."""
+
+    assert pathlib.PurePosixPath(filename).match(pattern, flags=flags) is expected
+    # The same pattern with `globmatch` which does not have an implicit globstar
+    assert pathlib.PurePosixPath(filename).globmatch(pattern, flags=flags) is expected
+
+
 class TestRealpath(unittest.TestCase):
     """Test real path of pure paths."""
 
@@ -602,7 +628,12 @@ class TestPathlibSymlink(unittest.TestCase):
         result = pathlib.Path(self.tempdir).rglob('***/a.txt', flags=flags)
         self.assertSequencesEqual_noorder(expected, result)
 
+        # The implicit globstar of `rglob` is a `***` here and collapses with the pattern's `**`
         result = pathlib.Path(self.tempdir).rglob('**/a.txt', flags=flags)
+        self.assertSequencesEqual_noorder(expected, result)
+
+        # Without `FOLLOW`, the implicit globstar is just `**`, so the symlink is not traversed
+        result = pathlib.Path(self.tempdir).rglob('**/a.txt', flags=pathlib.GL)
         self.assertSequencesEqual_noorder(expected[:2], result)
 
     def test_rglob_globstarlong_symlink(self):
@@ -640,3 +671,20 @@ class TestPathlibSymlink(unittest.TestCase):
 
         flags = pathlib.GL | pathlib.L | pathlib.P
         self.assertTrue(pathlib.Path(self.tempdir + '/sym1/a.txt').match('a.txt', flags=flags))
+
+    def test_match_leading_globstarlong_symlink_real_path(self):
+        """Test `match` agrees with `rglob` when the pattern starts with `***` or `**`, `GLOBSTARLONG` and `FOLLOW`."""
+
+        flags = pathlib.GL | pathlib.L | pathlib.P
+        # The implicit globstar is a `***` and collapses with the pattern's, so both traverse the symlink,
+        # like `rglob` in `test_rglob_leading_globstarlong_symlink`.
+        self.assertTrue(pathlib.Path(self.tempdir + '/sym1/a.txt').match('***/a.txt', flags=flags))
+        self.assertTrue(pathlib.Path(self.tempdir + '/sym1/a.txt').match('**/a.txt', flags=flags))
+        self.assertTrue(pathlib.Path(self.tempdir + '/subfolder/a.txt').match('**/a.txt', flags=flags))
+        # Consecutive globstars at the start of the pattern collapse to the one that traverses symlinks, in any order
+        self.assertTrue(pathlib.Path(self.tempdir + '/sym1/a.txt').match('**/***/a.txt', flags=flags))
+        self.assertTrue(pathlib.Path(self.tempdir + '/sym1/a.txt').match('***/**/a.txt', flags=flags))
+        # Without `FOLLOW`, the implicit globstar is just `**`, so an explicit `**` does not traverse the symlink
+        flags = pathlib.GL | pathlib.P
+        self.assertFalse(pathlib.Path(self.tempdir + '/sym1/a.txt').match('**/a.txt', flags=flags))
+        self.assertTrue(pathlib.Path(self.tempdir + '/sym1/a.txt').match('***/a.txt', flags=flags))

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+-   **FIX**: Fix the implicit `**` added by `MATCHBASE` (or by `pathlib`'s `match`) being stacked on top of a pattern
+    that already starts with `**` or `***`. `globmatch` and `match` would match dot files and directories without
+    `DOTGLOB`, e.g. `**` with `MATCHBASE` matched `a/.hidden/file`, and `match('**/x')` matched `a/.hidden/x`, which is
+    not what `glob` and `rglob` return. In `glob`, `***` with `MATCHBASE` and `GLOBSTARLONG` stopped traversing
+    symlinks as `***` was treated as a plain name pattern.
+-   **FIX**: When `MATCHBASE` or `pathlib`'s `match` and `rglob` add an implicit `**`, and `GLOBSTARLONG` and `FOLLOW`
+    are enabled, the implicit `**` acts as `***`. As with any consecutive globstars, when it collapses with a `**` that
+    starts the pattern, the result must still traverse symlinks, e.g. `rglob('**/a.txt')` traverses symlinks, just like
+    `rglob('***/a.txt')`, and `glob('**')` with `MATCHBASE` does too. `glob` also no longer treats a pattern
+    with a slash, like `**/**`, as having no slash just because its consecutive globstars collapse to one, which
+    disagreed with `globmatch`.
 -   **FIX**: Fix `globmatch` with `REALPATH` rejecting a path that `glob` returns when a directory symlink can be
     matched by a non-globstar component, e.g. `**/*/**/*.css` matching `assets/linked/app.css` where `linked` is a
     symlink. The matcher now considers other ways of splitting the path between the `**`s and the rest of the pattern,

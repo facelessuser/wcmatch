@@ -262,6 +262,94 @@ def test_symlinks_consistent_between_glob_and_globmatch(tmp_path):
             assert matched == expected, (pattern, flags)
 
 
+@pytest.mark.parametrize('pattern', ['**', '***'])
+@pytest.mark.parametrize(
+    'filename,dot,expected',
+    [
+        ('a', False, True),
+        ('a/b/c', False, True),
+        ('.a', False, False),
+        ('.a/b', False, False),
+        ('a/.b', False, False),
+        ('a/b/.c', False, False),
+        ('a/.b/c', False, False),
+        ('a/b/.c/d', False, False),
+        ('.a', True, True),
+        ('a/.b', True, True),
+        ('a/.b/c', True, True),
+    ]
+)
+def test_matchbase_globstar_dot_files(pattern, filename, dot, expected):
+    """`MATCHBASE` must not let a pattern that is just a globstar match dot files, just like `glob` would not."""
+
+    flags = glob.MATCHBASE | glob.GLOBSTARLONG
+    if dot:
+        flags |= glob.DOTGLOB
+    # The implicit globstar of `MATCHBASE` and the one in the pattern are one and the same
+    assert glob.globmatch(filename, pattern, flags=flags) is expected
+    assert glob.globmatch(filename, pattern, flags=glob.GLOBSTARLONG | (glob.DOTGLOB if dot else 0)) is expected
+
+
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('pattern', ['**', '***'])
+@pytest.mark.parametrize('dotglob', [0, glob.DOTGLOB])
+@pytest.mark.parametrize('follow', [0, glob.FOLLOW])
+def test_matchbase_globstar_consistent_with_glob(tmp_path, as_bytes, pattern, dotglob, follow):
+    """`glob` and `globmatch` with `REALPATH` agree for a `MATCHBASE` pattern that is just a globstar."""
+
+    (tmp_path / 'a' / 'real').mkdir(parents=True)
+    (tmp_path / '.hid').mkdir()
+    for f in ('a/real/app.css', 'a/real/.d.css', '.hid/h.css', '.top.css'):
+        (tmp_path / f).write_text('')
+    try:
+        (tmp_path / 'a' / 'linked').symlink_to('real', target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip('Directory symlinks are unavailable')
+
+    root = str(tmp_path)
+    paths = sorted(
+        os.path.relpath(os.path.join(base, name), root)
+        for base, dirs, files in os.walk(root, followlinks=True)
+        for name in dirs + files
+    )
+    if as_bytes:
+        pattern = os.fsencode(pattern)
+        root = os.fsencode(root)
+        paths = [os.fsencode(p) for p in paths]
+
+    flags = glob.MATCHBASE | glob.GLOBSTARLONG | dotglob | follow
+    expected = {os.path.normpath(p) for p in glob.glob(pattern, root_dir=root, flags=flags)}
+    matched = {p for p in paths if glob.globmatch(p, pattern, root_dir=root, flags=flags | glob.REALPATH)}
+    assert matched == expected
+    # Spot check that the results are what we think they are
+    names = {os.fsdecode(p) for p in matched}
+    assert ('a/real/.d.css' in names) is bool(dotglob)
+    assert '.hid/h.css' not in names or dotglob
+    # A symlinked directory is traversed by `***`, or by `**` if `FOLLOW` makes the implicit globstar of `MATCHBASE`
+    # a `***`, as consecutive globstars collapse to the one that traverses symlinks.
+    assert ('a/linked/app.css' in names) is (pattern in ('***', b'***') or bool(follow))
+
+
+@pytest.mark.parametrize('pattern,traverses', [('**', True), ('**/**', False), ('**/**/**', False), ('a/**', False)])
+def test_matchbase_requires_no_slash(tmp_path, pattern, traverses):
+    """`MATCHBASE` only applies to a pattern with no slash, even if consecutive globstars collapse to one."""
+
+    (tmp_path / 'a' / 'real').mkdir(parents=True)
+    (tmp_path / 'a' / 'real' / 'app.css').write_text('')
+    try:
+        (tmp_path / 'a' / 'linked').symlink_to('real', target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip('Directory symlinks are unavailable')
+
+    root = str(tmp_path)
+    filename = 'a/linked/app.css'
+    flags = glob.MATCHBASE | glob.GLOBSTARLONG | glob.FOLLOW
+
+    # Only with no slash does `FOLLOW` make the implicit globstar of `MATCHBASE` a `***` that traverses symlinks
+    assert (os.path.normpath(filename) in glob.glob(pattern, root_dir=root, flags=flags)) is traverses
+    assert glob.globmatch(filename, pattern, root_dir=root, flags=flags | glob.REALPATH) is traverses
+
+
 @pytest.mark.parametrize('as_bytes', [False, True])
 @pytest.mark.parametrize('pattern', ['**/literal/**/file.txt', '**/literal/**/leaf/**/file.txt'])
 @pytest.mark.parametrize('link', ['outer/literal/link', 'outer/link'])
