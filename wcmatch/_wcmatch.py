@@ -279,12 +279,11 @@ class WcRegexp(util.Immutable, Generic[AnyStr]):
             _follow=follow,
             _hash=hash(
                 (
-                    type(self),
-                    type(include), include,
-                    type(exclude), exclude,
-                    type(real), real,
-                    type(path), path,
-                    type(follow), follow
+                    include,
+                    exclude,
+                    real,
+                    path,
+                    follow
                 )
             )
         )
@@ -383,12 +382,7 @@ class WcMatcher(util.Immutable, Generic[AnyStr]):
 
         super().__init__(
             _matcher=matcher,
-            _hash=hash(
-                (
-                    type(self),
-                    type(matcher), matcher,
-                )
-            )
+            _hash=hash(matcher)
         )
 
     def __hash__(self) -> int:
