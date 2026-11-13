@@ -6,7 +6,7 @@ import bracex
 import os
 from . import util
 from . import posix
-from . _wcmatch import WcRegexp
+from . _wcmatch import WcRegexp, GSTAR_MARK
 from typing import AnyStr, Iterable, Pattern, Generic, Sequence, Iterator
 
 PATTERN_LIMIT = 1000
@@ -242,9 +242,9 @@ _PATH_STAR_DOTMATCH_START = _NO_DIR_START + _PATH_STAR
 # Needs a character that is not a dot, which also disallows . and ..
 _PATH_STAR_NO_DOTMATCH = _NEED_NO_DOT_PATH + _PATH_STAR
 # `GLOBSTAR` during `DOTMATCH`. Avoid directory match /./ or /../
-_PATH_GSTAR_DOTMATCH = r'(?:(?!(?:[{sep}]|^)(?:\.{{1,2}})(?:$|[{sep}])).)*?'
+_PATH_GSTAR_DOTMATCH = r'(?:(?!(?:[{sep}]|^)(?:\.{{1,2}})(?:$|[{sep}])){mark}.)*?'
 # `GLOBSTAR` with `DOTMATCH` disabled. Don't allow a dot to follow /
-_PATH_GSTAR_NO_DOTMATCH = r'(?:(?!(?:[{sep}]|^)\.).)*?'
+_PATH_GSTAR_NO_DOTMATCH = r'(?:(?!(?:[{sep}]|^)\.){mark}.)*?'
 # Next char cannot be a dot
 _NO_DOT = r'(?![.])'
 # Extended pattern start that will not capture dots.
@@ -1105,8 +1105,11 @@ class WcParse(Generic[AnyStr]):
         self.path_star_dot1 = _PATH_STAR_DOTMATCH.format(**sep)
         self.path_star_dot1_start = _PATH_STAR_DOTMATCH_START.format(**sep)
         self.path_star_dot2 = _PATH_STAR_NO_DOTMATCH.format(**sep)
-        self.path_gstar_dot1 = _PATH_GSTAR_DOTMATCH.format(**sep)
-        self.path_gstar_dot2 = _PATH_GSTAR_NO_DOTMATCH.format(**sep)
+        self.path_gstar_dot1 = _PATH_GSTAR_DOTMATCH.format(mark='', **sep)
+        self.path_gstar_dot2 = _PATH_GSTAR_NO_DOTMATCH.format(mark='', **sep)
+        # Captured `globstar`s carry a marker, so a matcher can later forbid them from consuming specific symlinks
+        self.path_gstar_dot1_capture = _PATH_GSTAR_DOTMATCH.format(mark=GSTAR_MARK, **sep)
+        self.path_gstar_dot2_capture = _PATH_GSTAR_NO_DOTMATCH.format(mark=GSTAR_MARK, **sep)
         if self.pathname:
             self.need_char = _NEED_CHAR_PATH.format(**sep)
             self.need_no_dot = _NEED_NO_DOT_PATH.format(**sep)
@@ -1769,6 +1772,7 @@ class WcParse(Generic[AnyStr]):
 
         capture = False
         directory = False
+        globstar_capture = ''
         after_ext = bool(current and isinstance(current[-1], ExtGroup))
         check_start = (after_ext or self.in_list) and not self.dot
         # A star that ends its pattern in an extended group can match nothing at the start of a name
@@ -1780,9 +1784,11 @@ class WcParse(Generic[AnyStr]):
                 else:
                     star = self.path_star_dot2
                 globstar = self.path_gstar_dot2
+                globstar_capture = self.path_gstar_dot2_capture
             elif self.after_start:
                 star = self.path_star_dot1 if self.in_list else self.path_star_dot1_start
                 globstar = self.path_gstar_dot1
+                globstar_capture = self.path_gstar_dot1_capture
             else:
                 star = self.path_star
                 if check_start:
@@ -1791,6 +1797,7 @@ class WcParse(Generic[AnyStr]):
                     else:
                         current.append(self.seq_path_group_dot)
                 globstar = self.path_gstar_dot1
+                globstar_capture = self.path_gstar_dot1_capture
             capture = self.globstar_capture
         else:
             if self.after_start and not self.dot:
@@ -1832,7 +1839,7 @@ class WcParse(Generic[AnyStr]):
                 pass
 
             if capture:
-                globstar = f'({globstar})'
+                globstar = f'({globstar_capture})'
 
             if not skip:
                 try:

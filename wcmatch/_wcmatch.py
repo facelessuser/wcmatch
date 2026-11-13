@@ -4,8 +4,9 @@ import re
 import os
 import stat
 import copyreg
+import functools
 from . import util
-from typing import Pattern, AnyStr, Generic, Iterable, Any, Literal
+from typing import Pattern, Match, AnyStr, Generic, Iterable, Any, Literal
 
 # `O_DIRECTORY` may not always be defined
 DIR_FLAGS = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
@@ -38,6 +39,29 @@ RE_STRIP = (
 )
 
 
+# Marks where a captured `globstar` consumes each character, which is where specific symlinks can be forbidden.
+# It is a regular expression comment, so it does not change what a pattern matches.
+GSTAR_MARK = '(?#gs)'
+
+
+@functools.lru_cache(maxsize=256, typed=True)
+def _forbid_globstar_links(pattern: Pattern[AnyStr], prefixes: tuple[AnyStr, ...]) -> Pattern[AnyStr]:
+    """
+    Create a pattern that does not let captured `globstar`s consume the given symlinks.
+
+    Each prefix is the text before the name of a symlink in the file name. A `globstar` is not allowed to consume a
+    character that follows exactly that text, which keeps it from consuming that symlink.
+    """
+
+    if isinstance(pattern.pattern, bytes):
+        mark = GSTAR_MARK.encode('latin-1')  # type: Any
+        forbid = b''.join(b'(?<!\\A' + re.escape(p) + b')' for p in prefixes)  # type: Any
+    else:
+        mark = GSTAR_MARK
+        forbid = ''.join(r'(?<!\A' + re.escape(p) + ')' for p in prefixes)
+    return re.compile(pattern.pattern.replace(mark, forbid), pattern.flags)
+
+
 class _Match(Generic[AnyStr]):
     """Match the given pattern."""
 
@@ -59,6 +83,60 @@ class _Match(Generic[AnyStr]):
         self.path = path
         self.follow = follow
         self.ptype: Literal[0, 1] = util.BYTES if isinstance(self.filename, bytes) else util.UNICODE
+
+    def _find_link(
+        self,
+        m: Match[AnyStr],
+        filename: AnyStr,
+        is_win: bool,
+        symlinks: dict[tuple[int | None, AnyStr], bool],
+        root: AnyStr,
+        dir_fd: int | None
+    ) -> int:
+        """
+        Find the first symlink that a captured `globstar` traversed.
+
+        Return the index in the file name where the symlink's name starts, or `-1` if there are none.
+        """
+
+        split = (RE_WIN_SPLIT if is_win else RE_SPLIT)[self.ptype]  # type: Any
+        strip = (RE_WIN_STRIP if is_win else RE_STRIP)[self.ptype]  # type: Any
+
+        end = len(filename) - 1
+        for i, star in enumerate(m.groups(), 1):
+            if star:
+                # A globstar group that reaches the end of the path either stops just
+                # before the final separator of a directory, or extends to the end of
+                # a file's name. Its last component is the matched entry itself, which
+                # may be a symlink: only symlinks in earlier components mean the
+                # globstar actually traversed a link.
+                at_end = m.end(i) == end or m.end(i) == len(filename)
+                parts = split.split(star.strip(strip))
+                base = os.path.join(root, filename[:m.start(i)])
+                cursor = m.start(i)
+                last_part = len(parts)
+                for j, part in enumerate(parts, 1):
+                    start = filename.index(part, cursor)
+                    cursor = start + len(part)
+                    base = os.path.join(base, part)
+                    if at_end and j == last_part:
+                        continue
+                    key = (dir_fd, base)
+                    is_link = symlinks.get(key, None)
+                    if is_link is None:
+                        if dir_fd is None:
+                            is_link = os.path.islink(base)
+                        else:
+                            try:
+                                st = os.lstat(base, dir_fd=dir_fd)
+                            except (OSError, ValueError):  # pragma: no cover
+                                is_link = False
+                            else:
+                                is_link = stat.S_ISLNK(st.st_mode)
+                        symlinks[key] = is_link
+                    if is_link:
+                        return start
+        return -1
 
     def _fs_match(
         self,
@@ -84,56 +162,31 @@ class _Match(Generic[AnyStr]):
         1. If the match has not reached the end of the path and directory is in `globstar` match.
         2. Or the match is at the end of the path and the directory is not the last part of `globstar` match.
 
+        A regular expression only gives us one way to split the path between the `globstar`s and the rest of the
+        pattern, but a different split may avoid the symlink. For instance, `**/*/**/*.css` can match
+        `assets/linked/app.css` with `*` matching the symlink `linked`, but the regular expression may first choose
+        to have the second `**` consume it. `glob` explores every split, so when a symlink is found, we match
+        again with `globstar`s forbidden from consuming that symlink to find another split.
         """
 
-        matched = False
-        split = (RE_WIN_SPLIT if is_win else RE_SPLIT)[self.ptype]  # type: Any
-        strip = (RE_WIN_STRIP if is_win else RE_STRIP)[self.ptype]  # type: Any
-
-        end = len(filename) - 1
         m = pattern.fullmatch(filename)
-        if m:
-            matched = True
-            # Lets look at the captured `globstar` groups and see if that part of the path
-            # contains symlinks.
-            if not follow:
-                try:
-                    for i, star in enumerate(m.groups(), 1):
-                        if star:
-                            # A globstar group that reaches the end of the path either stops just
-                            # before the final separator of a directory, or extends to the end of
-                            # a file's name. Its last component is the matched entry itself, which
-                            # may be a symlink: only symlinks in earlier components mean the
-                            # globstar actually traversed a link.
-                            at_end = m.end(i) == end or m.end(i) == len(filename)
-                            parts = split.split(star.strip(strip))
-                            base = os.path.join(root, filename[:m.start(i)])
-                            last_part = len(parts)
-                            for j, part in enumerate(parts, 1):
-                                base = os.path.join(base, part)
-                                key = (dir_fd, base)
-                                if not at_end or (at_end and j != last_part):
-                                    is_link = symlinks.get(key, None)
-                                    if is_link is None:
-                                        if dir_fd is None:
-                                            is_link = os.path.islink(base)
-                                            symlinks[key] = is_link
-                                        else:
-                                            try:
-                                                st = os.lstat(base, dir_fd=dir_fd)
-                                            except (OSError, ValueError):  # pragma: no cover
-                                                is_link = False
-                                            else:
-                                                is_link = stat.S_ISLNK(st.st_mode)
-                                            symlinks[key] = is_link
-                                    matched = not is_link
-                                    if not matched:
-                                        break
-                        if not matched:
-                            break
-                except OSError:  # pragma: no cover
-                    matched = False
-        return matched
+        if not m:
+            return False
+        if follow:
+            return True
+
+        prefixes = []  # type: list[AnyStr]
+        while m:
+            try:
+                link = self._find_link(m, filename, is_win, symlinks, root, dir_fd)
+            except OSError:  # pragma: no cover
+                return False
+            if link < 0:
+                return True
+            prefixes.append(filename[:link])
+            m = _forbid_globstar_links(pattern, tuple(prefixes)).fullmatch(filename)
+
+        return False
 
     def _match_real(
         self,

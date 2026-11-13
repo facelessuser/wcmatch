@@ -168,6 +168,101 @@ def test_globstar_symlink_file_at_end(tmp_path, as_bytes, pattern):
 
 
 @pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize(
+    'pattern',
+    ['**/*/**/*.css', '**/??????/**/*.css', '**/[l]*/**/*.css', '**/@(linked)/**/*.css']
+)
+def test_symlink_matched_by_non_globstar(tmp_path, as_bytes, pattern):
+    """A symlink can be matched by a non-globstar component even if the regular expression prefers a globstar."""
+
+    real = tmp_path / 'assets' / 'real'
+    real.mkdir(parents=True)
+    (real / 'app.css').write_text('')
+    try:
+        (tmp_path / 'assets' / 'linked').symlink_to(real, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip('Directory symlinks are unavailable')
+
+    filename = 'assets/linked/app.css'
+    root = str(tmp_path)
+    if as_bytes:
+        pattern = os.fsencode(pattern)
+        filename = os.fsencode(filename)
+        root = os.fsencode(root)
+
+    flags = glob.GLOBSTAR | glob.EXTGLOB
+    # `glob` returns the path as the first `**` consumes `assets`, and a single directory matches the symlink.
+    assert os.path.normpath(filename) in glob.glob(pattern, root_dir=root, flags=flags)
+    assert glob.globmatch(filename, pattern, root_dir=root, flags=flags | glob.REALPATH)
+    assert glob.globfilter([filename], pattern, root_dir=root, flags=flags | glob.REALPATH) == [filename]
+    assert glob.globmatch(filename, pattern, root_dir=root, flags=flags | glob.REALPATH | glob.FOLLOW)
+
+
+@pytest.mark.parametrize('as_bytes', [False, True])
+def test_symlink_not_matched_when_globstar_must_traverse(tmp_path, as_bytes):
+    """Trying other ways to split the path must not match a symlink that only a globstar could consume."""
+
+    real = tmp_path / 'assets' / 'real'
+    real.mkdir(parents=True)
+    (real / 'app.css').write_text('')
+    try:
+        (tmp_path / 'assets' / 'linked').symlink_to(real, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip('Directory symlinks are unavailable')
+
+    # Nothing but a globstar can consume `linked` in these patterns, so `glob` does not return the path.
+    patterns = ['**/*.css', 'assets/**/*.css', 'assets/**', '**/real/*.css', '*/**/*.css/']
+    filename = 'assets/linked/app.css'
+    root = str(tmp_path)
+    if as_bytes:
+        patterns = [os.fsencode(p) for p in patterns]
+        filename = os.fsencode(filename)
+        root = os.fsencode(root)
+
+    flags = glob.GLOBSTAR
+    for pattern in patterns:
+        if os.path.normpath(filename) in glob.glob(pattern, root_dir=root, flags=flags):
+            continue
+        assert not glob.globmatch(filename, pattern, root_dir=root, flags=flags | glob.REALPATH)
+        assert glob.globmatch(filename, pattern, root_dir=root, flags=flags | glob.REALPATH | glob.FOLLOW) == (
+            os.path.normpath(filename) in glob.glob(pattern, root_dir=root, flags=flags | glob.FOLLOW)
+        )
+
+
+def test_symlinks_consistent_between_glob_and_globmatch(tmp_path):
+    """`glob` and `globmatch` with `REALPATH` should agree on every path under symlinked directories."""
+
+    for d in ('a/real/sub', 'a/other'):
+        (tmp_path / d).mkdir(parents=True)
+    for f in ('a/real/app.css', 'a/real/sub/x.css', 'a/other/y.css'):
+        (tmp_path / f).write_text('')
+    try:
+        (tmp_path / 'a' / 'linked').symlink_to('real', target_is_directory=True)
+        (tmp_path / 'a' / 'real' / 'sub' / 'back').symlink_to('../../other', target_is_directory=True)
+        (tmp_path / 'top').symlink_to('a', target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip('Directory symlinks are unavailable')
+
+    root = str(tmp_path)
+    paths = sorted(
+        os.path.relpath(os.path.join(base, name), root)
+        for base, dirs, files in os.walk(root, followlinks=True)
+        for name in dirs + files
+    )
+    patterns = [
+        '**/*/**', '**/*/**/*.css', '**/*/*/**', '*/**/*/**', '?/**/*/**/*.css', 'a/**/*/**', '**/[lt]*/**',
+        '**/*/**/back', '**/**/*/**', 'a/**/*/**/*.css'
+    ]
+    for flags in (glob.GLOBSTAR, glob.GLOBSTAR | glob.FOLLOW, glob.GLOBSTAR | glob.GLOBSTARLONG | glob.FOLLOW):
+        for pattern in patterns:
+            expected = {os.path.normpath(p) for p in glob.glob(pattern, root_dir=root, flags=flags)}
+            matched = {
+                p for p in paths if glob.globmatch(p, pattern, root_dir=root, flags=flags | glob.REALPATH)
+            }
+            assert matched == expected, (pattern, flags)
+
+
+@pytest.mark.parametrize('as_bytes', [False, True])
 @pytest.mark.parametrize('pattern', ['**/literal/**/file.txt', '**/literal/**/leaf/**/file.txt'])
 @pytest.mark.parametrize('link', ['outer/literal/link', 'outer/link'])
 def test_globstar_symlink_prefix(tmp_path, monkeypatch, as_bytes, pattern, link):

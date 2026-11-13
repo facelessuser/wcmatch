@@ -774,6 +774,19 @@ implicit leading `**` that [`MATCHBASE`](#matchbase) applies to act as an implic
 a symlink. `FOLLOW` will have an affect if enabled with [`GLOBSTARLONG`](#globstarlong) and [`MATCHBASE`](#matchbase)
 and will cause the implicit leading `**` that `MATCHBASE` applies to act as an implicit `***`.
 
+> [!note] Differences from Bash
+> Wildcard Match applies the same symlink rule to every `**` in a pattern: it will not traverse a symlink directory
+> unless [`FOLLOW`](#follow) (or `***` with [`GLOBSTARLONG`](#globstarlong)) is used. Bash (as of 5.3) is not
+> consistent about this. A leading `**` does not traverse symlinks, but a `**` that follows another path component
+> does, so `a/**/*.css` will descend into a symlink directory in Bash, but not in Wildcard Match without
+> [`FOLLOW`](#follow). Wildcard Match intentionally does not follow this behavior, so patterns like `a/**/*.css` can
+> return fewer results than they do in Bash. The paths it does return are also returned by Bash.
+>
+> A symlink can still be matched when something other than a `**` matches it, such as a literal name or a `*`. For
+> example, `**/*/**/*.css` matches `assets/linked/app.css` when `linked` is a symlink directory, as `*` can match
+> `linked`. [`glob`](#glob), and [`globmatch`](#globmatch) and [`globfilter`](#globfilter) with
+> [`REALPATH`](#realpath), consider every way a pattern can match a path, so they agree on which paths match.
+
 #### `glob.REALPATH, glob.P` {: #realpath}
 
 In the past, only [`glob`](#glob) and [`iglob`](#iglob) operated on the filesystem, but with `REALPATH`, other

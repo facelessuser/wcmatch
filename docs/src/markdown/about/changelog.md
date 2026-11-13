@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+-   **FIX**: Fix `globmatch` with `REALPATH` rejecting a path that `glob` returns when a directory symlink can be
+    matched by a non-globstar component, e.g. `**/*/**/*.css` matching `assets/linked/app.css` where `linked` is a
+    symlink. The matcher now considers other ways of splitting the path between the `**`s and the rest of the pattern,
+    rather than only the first one the regular expression picks.
+
 ## 12.0.1
 
 -   **FIX**: Require `bracex` 3.2.2 for bug fixes.
