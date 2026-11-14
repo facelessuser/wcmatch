@@ -362,7 +362,7 @@ insensitively, but the rest of the path will have case sensitive logic applied.
 
 `IGNORECASE` forces case insensitivity. [`CASE`](#case) has higher priority than `IGNORECASE`.
 
-#### `glob.RAWCHARS, glob.R` {: #rawchars}
+#### `pathlib.RAWCHARS, pathlib.R` {: #rawchars}
 
 `RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py r'\u0040'` --> `#!py r'@'`. This will
 handle standard string escapes and Unicode including `#!py r'\N{CHAR NAME}'`.
@@ -402,7 +402,7 @@ When `MINUSNEGATE` is used with [`NEGATE`](#negate), exclusion patterns are reco
 
 `GLOBSTAR` enables the feature where `**` matches zero or more directories.
 
-#### `glob.GLOBSTARLONG, glob.GL` {: #globstarlong}
+#### `pathlib.GLOBSTARLONG, pathlib.GL` {: #globstarlong}
 
 > [!new] New 10.0
 
@@ -458,7 +458,7 @@ Alternatively `DOTMATCH` will also be accepted for consistency with the other pr
 the same and are provided as a convenience in case the user finds one more intuitive than the other since `DOTGLOB` is
 often the name used in Bash.
 
-#### `pathlib.NODOTDIR, glob.Z` {: #nodotdir}
+#### `pathlib.NODOTDIR, pathlib.Z` {: #nodotdir}
 
 `NOTDOTDIR` fundamentally changes how glob patterns deal with `.` and `..`. This is great if you'd prefer a more Zsh
 feel when it comes to special directory matching. When `NODOTDIR` is enabled, "magic" patterns, such as `.*`, will not
@@ -504,14 +504,14 @@ change how glob patterns behave, you can use [`NODOTDIR`](#nodotdir).
 
 ```py play
 from wcmatch import pathlib
-list(pathlib.Path('.').glob('**/.*', flags=glob.GLOBSTAR | glob.DOTGLOB))
+list(pathlib.Path('.').glob('**/.*', flags=pathlib.GLOBSTAR | pathlib.DOTGLOB))
 list(pathlib.Path('.').glob('**/.*', flags=pathlib.GLOBSTAR | pathlib.DOTGLOB | pathlib.SCANDOTDIR))
 ```
 
 > [!new] New 7.0
 > `SCANDOTDIR` was added in 7.0.
 
-#### `fnmatch.NUMRANGE, fnmatch.ZN` {: #numrange}
+#### `pathlib.NUMRANGE, pathlib.ZN` {: #numrange}
 
 `NUMRANGE` enables ZSH style numerical ranges. This can be more preferable in some ways than using [`BRACE`](#brace) as
 `NUMRANGE` generates an inline regular expression that captures the range of numbers, while [`BRACE`](#brace) will
@@ -639,9 +639,9 @@ list(pathlib.Path('.').glob('README.md|LICENSE.md', flags=pathlib.SPLIT))
 desired.
 
 ```py play
-from wcmatch import glob
-glob.glob('{*,README}.md', flags=glob.BRACE | glob.NOUNIQUE)
-glob.glob('{*,README}.md', flags=glob.BRACE )
+from wcmatch import pathlib
+list(pathlib.Path('.').glob('{*,README}.md', flags=pathlib.BRACE | pathlib.NOUNIQUE))
+list(pathlib.Path('.').glob('{*,README}.md', flags=pathlib.BRACE ))
 ```
 
 By default, only unique paths are returned in [`glob`](#glob) and [`rglob`](#rglob). Normally this is what a

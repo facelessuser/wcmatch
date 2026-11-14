@@ -874,7 +874,7 @@ glob.glob('.*', flags=glob.SCANDOTDIR)
 > [!new] New 7.0
 > `SCANDOTDIR` was added in 7.0.
 
-#### `fnmatch.NUMRANGE, fnmatch.ZN` {: #numrange}
+#### `glob.NUMRANGE, glob.ZN` {: #numrange}
 
 `NUMRANGE` enables ZSH style numerical ranges. This can be more preferable in some ways than using [`BRACE`](#brace) as
 `NUMRANGE` generates an inline regular expression that captures the range of numbers, while [`BRACE`](#brace) will
@@ -932,7 +932,7 @@ often the name used in Bash.
 > if the risk is not tolerable, do not enable. Read more about performance based issues in Regular Expressions
 > [here][regular-expression-redos].
 
-#### `fnmatch.CAPTURE, glob.TC` {: #capture}
+#### `glob.CAPTURE, glob.TC` {: #capture}
 
 > [!new] New 11.0
 > Added in 11.0 and only applies when passed to [`translate()`](#translate).
@@ -1006,8 +1006,8 @@ related to pairing it with `SPLIT`.
 
 ```py play
 from wcmatch import glob
-glob.globmatch('test.txt', '*.txt|*.py', flags=fnmatch.SPLIT)
-glob.globmatch('test.py', '*.txt|*.py', flags=fnmatch.SPLIT)
+glob.globmatch('test.txt', '*.txt|*.py', flags=glob.SPLIT)
+glob.globmatch('test.py', '*.txt|*.py', flags=glob.SPLIT)
 ```
 
 #### `glob.NOUNIQUE, glob.Q` {: #nounique}

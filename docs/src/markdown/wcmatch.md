@@ -308,7 +308,7 @@ crawl.
 `RAWCHARS` causes string character syntax to be parsed in raw strings: `#!py r'\u0040'` --> `#!py r'@'`. This will
 handle standard string escapes and Unicode (including `#!py r'\N{CHAR NAME}'`).
 
-#### `fnmatch.NUMRANGE, fnmatch.ZN` {: #numrange}
+#### `wcmatch.NUMRANGE, wcmatch.ZN` {: #numrange}
 
 `NUMRANGE` enables ZSH style numerical ranges. This can be more preferable in some ways than using [`BRACE`](#brace) as
 `NUMRANGE` generates an inline regular expression that captures the range of numbers, while [`BRACE`](#brace) will

@@ -405,7 +405,7 @@ etc. See the [syntax overview](#syntax) for more information.
 > if the risk is not tolerable, do not enable. Read more about performance based issues in Regular Expressions
 > [here][regular-expression-redos].
 
-#### `fnmatch.CAPTURE, glob.TC` {: #capture}
+#### `fnmatch.CAPTURE, fnmatch.TC` {: #capture}
 
 > [!new] New 11.0
 > Added in 11.0 and only applies when passed to [`translate()`](#translate).
