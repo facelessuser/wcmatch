@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 12.0.3
 
 -   **FIX**: Fix `GLOBTILDE` not expanding `~` in an exclusion pattern when `MINUSNEGATE` is enabled, e.g. `-~/*.py`.
 
