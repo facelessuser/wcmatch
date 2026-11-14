@@ -653,7 +653,7 @@ def tilde_pos(pattern: AnyStr, flags: int) -> int:
         if flags & NEGATE:
             if pattern[0:1] in TILDE_SYM:
                 pos = 0
-            elif pattern[0:1] in NEGATIVE_SYM and pattern[1:2] in TILDE_SYM:
+            elif is_negative(pattern, flags) and pattern[1:2] in TILDE_SYM:
                 pos = 1
         elif pattern[0:1] in TILDE_SYM:
             pos = 0

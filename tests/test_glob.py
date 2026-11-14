@@ -1878,6 +1878,11 @@ class TestTilde(unittest.TestCase):
             files = os.listdir(userpath)
             self.assertEqual(len(glob.glob('~{}/*'.format(user), flags=glob.T | glob.D)), len(files))
 
+    def test_tilde_minusnegate(self):
+        """Test tilde in an exclusion pattern with `MINUSNEGATE`."""
+
+        self.assertEqual(len(glob.glob(['~/*', '-~/*'], flags=glob.T | glob.D | glob.N | glob.M)), 0)
+
     def test_tilde_disabled(self):
         """Test when tilde is disabled."""
 
