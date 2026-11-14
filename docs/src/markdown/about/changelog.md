@@ -2,6 +2,7 @@
 
 ## 12.0.2
 
+-   **FIX**: Require `bracex` 3.2.3 for a minor slash handling fix.
 -   **FIX**: Fix the implicit `**` added by `MATCHBASE` (or by `pathlib`'s `match`) being stacked on top of a pattern
     that already starts with `**` or `***`. `globmatch` and `match` would match dot files and directories without
     `DOTGLOB`, e.g. `**` with `MATCHBASE` matched `a/.hidden/file`, and `match('**/x')` matched `a/.hidden/x`, which is
