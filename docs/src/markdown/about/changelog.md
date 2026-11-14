@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+-   **FIX**: Fix `GLOBTILDE` not expanding `~` in an exclusion pattern when `MINUSNEGATE` is enabled, e.g. `-~/*.py`.
+
 ## 12.0.2
 
 -   **FIX**: Require `bracex` 3.2.3 for a minor slash handling fix.
