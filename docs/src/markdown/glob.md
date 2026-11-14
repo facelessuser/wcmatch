@@ -1006,8 +1006,8 @@ related to pairing it with `SPLIT`.
 
 ```py play
 from wcmatch import glob
-glob.globmatch('test.txt', '*.txt|*.py', flags=fnmatch.SPLIT)
-glob.globmatch('test.py', '*.txt|*.py', flags=fnmatch.SPLIT)
+glob.globmatch('test.txt', '*.txt|*.py', flags=glob.SPLIT)
+glob.globmatch('test.py', '*.txt|*.py', flags=glob.SPLIT)
 ```
 
 #### `glob.NOUNIQUE, glob.Q` {: #nounique}
