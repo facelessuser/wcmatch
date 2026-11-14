@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 12.0.2
 
 -   **FIX**: Fix the implicit `**` added by `MATCHBASE` (or by `pathlib`'s `match`) being stacked on top of a pattern
     that already starts with `**` or `***`. `globmatch` and `match` would match dot files and directories without
