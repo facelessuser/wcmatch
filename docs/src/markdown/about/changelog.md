@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+-   **FIX**: Avoid returning nonexistent directories for literal `.` and `..` prefixes when `root_dir` is missing or
+    is not a directory.
+
 ## 12.0.3
 
 -   **FIX**: Fix `GLOBTILDE` not expanding `~` in an exclusion pattern when `MINUSNEGATE` is enabled, e.g. `-~/*.py`.

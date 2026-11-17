@@ -6,6 +6,7 @@ A custom implementation of `glob`.
 """
 from __future__ import annotations
 import os
+import stat
 import sys
 import re
 import functools
@@ -442,6 +443,7 @@ class Glob(Generic[AnyStr]):
             flags = _wcparse.no_negate_flags(flags)
 
         self.pattern = []  # type: list[list[_GlobPart]]
+        self.root_ok = False
 
         if not isinstance(pattern, (str, bytes)) and not pattern:
             return
@@ -510,6 +512,10 @@ class Glob(Generic[AnyStr]):
             )
 
         self.root_dir = temp or self.current  # type: AnyStr
+        try:
+            self.root_ok = stat.S_ISDIR(os.stat(self.root_dir, dir_fd=self.dir_fd).st_mode)
+        except (OSError, ValueError):
+            pass
         self.current_limit = self.limit
         self._expanded_patterns = 0
         self._parse_patterns(pats)
@@ -855,6 +861,10 @@ class Glob(Generic[AnyStr]):
             # If the pattern ends with `/` we return the files ending with `/`.
             dir_only = pattern[-1].dir_only if pattern else False
             self.is_abs_pattern = pattern[0].is_drive if pattern else False
+
+            # A relative pattern can never match anything if the root is not a directory.
+            if not self.root_ok and not self.is_abs_pattern:
+                continue
 
             if pattern:
                 if not pattern[0].is_magic:
