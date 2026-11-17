@@ -2095,7 +2095,7 @@ def test_literal_dot_prefix_requires_directory_root(tmp_path, encode, root_kind)
         root.mkdir()
     root_dir = encode(str(root))
     for pattern in ['./', '../', './**', './***']:
-        expected = [encode('../' if pattern == '../' else './')] if root_kind == 'directory' else []
+        expected = [encode(os.path.join('..' if pattern == '../' else '.', ''))] if root_kind == 'directory' else []
         for globber in (glob.glob, glob.iglob):
             assert list(globber(encode(pattern), root_dir=root_dir, flags=glob.GLOBSTARLONG)) == expected
         assert glob.globfilter(
@@ -2113,7 +2113,7 @@ def test_literal_dot_prefix_respects_dir_fd(tmp_path, encode):
     dir_fd = os.open(tmp_path, os.O_RDONLY)
     try:
         for name in ['missing', 'file', 'directory']:
-            expected = [encode('./')] if name == 'directory' else []
+            expected = [encode(os.path.join('.', ''))] if name == 'directory' else []
             for globber in (glob.glob, glob.iglob):
                 assert list(globber(encode('./**'), root_dir=encode(name), dir_fd=dir_fd, flags=glob.G)) == expected
     finally:

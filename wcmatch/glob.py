@@ -6,6 +6,7 @@ A custom implementation of `glob`.
 """
 from __future__ import annotations
 import os
+import stat
 import sys
 import re
 import functools
@@ -815,9 +816,16 @@ class Glob(Generic[AnyStr]):
             for file, is_dir, _hidden, _is_link in files:
                 if file not in self.specials and (matcher is None or matcher(file)):
                     results.append((file, is_dir))
+        elif self.is_abs_pattern:
+            results = [(curdir, True)]
         else:
-            # Special directories must still exist relative to the selected root.
-            results = [(curdir, True)] if self.is_abs_pattern or self._lexists(curdir) else []
+            # Windows can normalize away . and .. before checking the path.
+            # Validate the root itself before accepting a special directory.
+            try:
+                root_is_dir = stat.S_ISDIR(os.stat(self.root_dir, dir_fd=self.dir_fd).st_mode)
+            except (OSError, ValueError):
+                root_is_dir = False
+            results = [(curdir, True)] if root_is_dir and self._lexists(curdir) else []
         return results
 
     def _is_unique(self, path: AnyStr) -> bool:
