@@ -816,7 +816,8 @@ class Glob(Generic[AnyStr]):
                 if file not in self.specials and (matcher is None or matcher(file)):
                     results.append((file, is_dir))
         else:
-            results = [(curdir, True)]
+            # Special directories must still exist relative to the selected root.
+            results = [(curdir, True)] if self.is_abs_pattern or self._lexists(curdir) else []
         return results
 
     def _is_unique(self, path: AnyStr) -> bool:
