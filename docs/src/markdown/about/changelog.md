@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## 12.0.4
 
+-   **FIX**: Include `bracex` 3.2.4 for minor bug fix.
 -   **FIX**: Avoid returning nonexistent directories for literal `.` and `..` prefixes when `root_dir` is missing or
     is not a directory.
 
