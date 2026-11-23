@@ -12,6 +12,78 @@ import wcmatch.util as util
 import shutil
 import pathlib
 
+
+@pytest.mark.parametrize('root_kind', ['missing', 'file', 'directory'])
+@pytest.mark.parametrize('filename', ['.', '..', '../target.txt'])
+@pytest.mark.parametrize('as_bytes', [False, True])
+def test_realpath_invalid_root(tmp_path, root_kind, filename, as_bytes):
+    """Relative real-path matches require a directory root before resolving dot components."""
+
+    (tmp_path / 'target.txt').touch()
+    root = tmp_path / 'root'
+    if root_kind == 'directory':
+        root.mkdir()
+    elif root_kind == 'file':
+        root.touch()
+    root = os.fsencode(root) if as_bytes else str(root)
+    filename = filename.encode('ascii') if as_bytes else filename
+    expected = root_kind == 'directory'
+
+    assert bool(glob.glob(filename, root_dir=root)) == expected
+    assert glob.globmatch(filename, filename, root_dir=root, flags=glob.REALPATH) == expected
+    assert glob.globfilter([filename], filename, root_dir=root, flags=glob.REALPATH) == (
+        [filename] if expected else []
+    )
+    matcher = glob.compile(filename, flags=glob.REALPATH)
+    assert matcher.match(filename, root_dir=root) == expected
+    assert matcher.filter([filename], root_dir=root) == ([filename] if expected else [])
+
+
+@pytest.mark.parametrize('root_kind', ['missing', 'file'])
+@pytest.mark.parametrize('as_bytes', [False, True])
+def test_realpath_absolute_path_ignores_invalid_root(tmp_path, root_kind, as_bytes):
+    """An absolute filename does not depend on the supplied root directory."""
+
+    target = tmp_path / 'target.txt'
+    target.touch()
+    root = tmp_path / 'root'
+    if root_kind == 'file':
+        root.touch()
+    root = os.fsencode(root) if as_bytes else str(root)
+    filename = os.fsencode(target) if as_bytes else str(target)
+    assert glob.globmatch(filename, glob.escape(filename), root_dir=root, flags=glob.REALPATH)
+
+
+@pytest.mark.parametrize('as_bytes', [False, True])
+def test_realpath_empty_root(tmp_path, monkeypatch, as_bytes):
+    """An empty root continues to mean the current directory."""
+
+    (tmp_path / 'target.txt').touch()
+    monkeypatch.chdir(tmp_path)
+    filename = b'target.txt' if as_bytes else 'target.txt'
+    root = b'' if as_bytes else ''
+    assert glob.globmatch(filename, filename, root_dir=root, flags=glob.REALPATH)
+
+
+@pytest.mark.skipif(not glob.SUPPORT_DIR_FD, reason='Requires directory descriptor support')
+@pytest.mark.parametrize('root_kind', ['missing', 'file', 'directory'])
+def test_realpath_root_relative_to_dir_fd(tmp_path, root_kind):
+    """Resolve the root relative to the descriptor, not the working directory."""
+
+    root = tmp_path / 'root'
+    if root_kind == 'directory':
+        root.mkdir()
+    elif root_kind == 'file':
+        root.touch()
+    dir_fd = os.open(tmp_path, os.O_RDONLY)
+    try:
+        assert glob.globmatch(
+            '..', '..', root_dir='root', dir_fd=dir_fd, flags=glob.REALPATH
+        ) == (root_kind == 'directory')
+    finally:
+        os.close(dir_fd)
+
+
 # Below is general helper stuff that Python uses in `unittests`.  As these
 # not meant for users, and could change without notice, include them
 # ourselves so we aren't surprised later.

@@ -271,14 +271,14 @@ class _Match(Generic[AnyStr]):
             if is_abs:
                 exists = os.path.lexists(self.filename)
             elif dir_fd is None:
-                exists = os.path.lexists(os.path.join(root, self.filename))
+                exists = os.path.isdir(root or os.curdir) and os.path.lexists(os.path.join(root, self.filename))
             else:
                 try:
-                    os.lstat(os.path.join(root, self.filename), dir_fd=dir_fd)
+                    exists = stat.S_ISDIR(os.stat(root or os.curdir, dir_fd=dir_fd).st_mode)
+                    if exists:
+                        os.lstat(os.path.join(root, self.filename), dir_fd=dir_fd)
                 except (OSError, ValueError):  # pragma: no cover
                     exists = False
-                else:
-                    exists = True
 
             if exists:
                 symlinks = {}  # type: dict[tuple[int | None, AnyStr], bool]
