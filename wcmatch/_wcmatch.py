@@ -70,10 +70,8 @@ def root_is_dir(root: AnyStr | None, dir_fd: int | None = None) -> bool:
     can appear to exist. Validating the root itself first avoids that.
     """
 
-    if dir_fd is not None and not SUPPORT_DIR_FD:
-        dir_fd = None
     try:
-        return stat.S_ISDIR(os.stat(root or os.curdir, dir_fd=dir_fd).st_mode)
+        return stat.S_ISDIR(os.stat(root or os.curdir, dir_fd=dir_fd if SUPPORT_DIR_FD else None).st_mode)
     except (OSError, ValueError):
         return False
 
