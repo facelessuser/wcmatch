@@ -8,6 +8,7 @@ import os
 import sys
 import wcmatch.glob as glob
 import wcmatch._wcparse as _wcparse
+import wcmatch._wcmatch as _wcmatch
 import wcmatch.util as util
 import shutil
 import pathlib
@@ -82,6 +83,31 @@ def test_realpath_root_relative_to_dir_fd(tmp_path, root_kind):
         ) == (root_kind == 'directory')
     finally:
         os.close(dir_fd)
+
+
+def test_realpath_filter_checks_root_once(tmp_path, monkeypatch):
+    """The root is the same for every file name, so filtering should only validate it once."""
+
+    for name in ('a.txt', 'b.txt', 'c.txt'):
+        (tmp_path / name).touch()
+
+    calls = []
+    original = _wcmatch.root_is_dir
+
+    def counting_root_is_dir(*args, **kwargs):
+        calls.append(args)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(_wcmatch, 'root_is_dir', counting_root_is_dir)
+
+    names = ['a.txt', 'b.txt', 'c.txt', 'missing.txt']
+    assert glob.globfilter(names, '*.txt', root_dir=str(tmp_path), flags=glob.REALPATH) == names[:3]
+    assert len(calls) == 1
+
+    # A single match still validates the root itself.
+    del calls[:]
+    assert glob.globmatch('a.txt', '*.txt', root_dir=str(tmp_path), flags=glob.REALPATH)
+    assert len(calls) == 1
 
 
 # Below is general helper stuff that Python uses in `unittests`.  As these
