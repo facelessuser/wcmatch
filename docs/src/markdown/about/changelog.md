@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+-   **FIX**: Reject relative `REALPATH` matches when `root_dir` is missing or is not a directory, including Windows
+    paths whose `.` or `..` components would otherwise hide the invalid root.
+
 ## 12.0.4
 
 -   **FIX**: Include `bracex` 3.2.4 for minor bug fix.

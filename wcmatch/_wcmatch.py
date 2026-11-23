@@ -62,6 +62,20 @@ def _forbid_globstar_links(pattern: Pattern[AnyStr], prefixes: tuple[AnyStr, ...
     return re.compile(pattern.pattern.replace(mark, forbid), pattern.flags)
 
 
+def root_is_dir(root: AnyStr | None, dir_fd: int | None = None) -> bool:
+    """
+    Check that the root directory exists and is a directory.
+
+    Windows normalizes `.` and `..` away before checking a path exists, so a relative path under a bad root
+    can appear to exist. Validating the root itself first avoids that.
+    """
+
+    try:
+        return stat.S_ISDIR(os.stat(root or os.curdir, dir_fd=dir_fd if SUPPORT_DIR_FD else None).st_mode)
+    except (OSError, ValueError):
+        return False
+
+
 class _Match(Generic[AnyStr]):
     """Match the given pattern."""
 
@@ -239,8 +253,18 @@ class _Match(Generic[AnyStr]):
 
         return matched
 
-    def match(self, root_dir: AnyStr | None = None, dir_fd: int | None = None) -> bool:
-        """Match."""
+    def match(
+        self,
+        root_dir: AnyStr | None = None,
+        dir_fd: int | None = None,
+        root_ok: bool | None = None
+    ) -> bool:
+        """
+        Match.
+
+        `root_ok` can be provided if the caller has already verified the root is a directory,
+        which saves checking it again for every file name.
+        """
 
         if self.real:
             if isinstance(self.filename, bytes):
@@ -270,15 +294,21 @@ class _Match(Generic[AnyStr]):
 
             if is_abs:
                 exists = os.path.lexists(self.filename)
-            elif dir_fd is None:
-                exists = os.path.lexists(os.path.join(root, self.filename))
             else:
-                try:
-                    os.lstat(os.path.join(root, self.filename), dir_fd=dir_fd)
-                except (OSError, ValueError):  # pragma: no cover
+                if root_ok is None:
+                    root_ok = root_is_dir(root, dir_fd)
+
+                if not root_ok:
                     exists = False
+                elif dir_fd is None:
+                    exists = os.path.lexists(os.path.join(root, self.filename))
                 else:
-                    exists = True
+                    try:
+                        os.lstat(os.path.join(root, self.filename), dir_fd=dir_fd)
+                    except (OSError, ValueError):  # pragma: no cover
+                        exists = False
+                    else:
+                        exists = True
 
             if exists:
                 symlinks = {}  # type: dict[tuple[int | None, AnyStr], bool]
@@ -405,6 +435,8 @@ class WcRegexp(util.Immutable, Generic[AnyStr]):
         """Filter filenames."""
 
         rdir = os.fspath(root_dir) if root_dir is not None else None
+        # The root is the same for every file name, so only check it once.
+        root_ok = root_is_dir(rdir, dir_fd) if self._real else None
         matches = [
             filename
             for filename in filenames
@@ -417,7 +449,8 @@ class WcRegexp(util.Immutable, Generic[AnyStr]):
                 self._follow
             ).match(
                 root_dir=rdir,
-                dir_fd=dir_fd
+                dir_fd=dir_fd,
+                root_ok=root_ok
             )
         ]
         return matches
