@@ -400,7 +400,7 @@ class TestFnMatchTranslate(unittest.TestCase):
         flags = self.flags | fnmatch.FORCEUNIX
 
         p1, p2 = self.split_translate('*test[a-z]?|*test2[a-z]?|!test[!a-z]|!test[!-|a-z]', flags | fnmatch.N)
-        self.assertEqual(p1, [r'^(?s:(?=.).*?test[a-z].)$', r'^(?s:(?=.).*?test2[a-z].)$'])
+        self.assertEqual(p1, [r'^(?s:(?=.|(?<=^)$).*?test[a-z].)$', r'^(?s:(?=.|(?<=^)$).*?test2[a-z].)$'])
         self.assertEqual(p2, [r'^(?s:test[^a-z])$', r'^(?s:test[^\-\|a-z])$'])
 
         p1, p2 = self.split_translate('test[]][!][][]', flags | fnmatch.U | fnmatch.C)
@@ -1332,3 +1332,82 @@ def test_filter_iterable_without_truth_value(precompiled, names, expected):
     else:
         actual = fnmatch.filter(values, '*.txt', exclude='skip.txt')
     assert actual == expected
+
+
+# What Bash matches against an empty path
+EMPTY_PATH_CASES = [
+    ('*', True),
+    ('**', True),
+    ('***', True),
+    ('*****', True),
+    ('', True),
+    ('*(a)', True),
+    ('?(a)', True),
+    ('@(a|)', True),
+    ('@(|a)', True),
+    ('!(a)', True),
+    ('!(*)', False),
+    ('*(a|b)', True),
+    ('?(a)?(b)', True),
+    ('*(*)', True),
+    ('?(*)', True),
+    ('+(?(a))', True),
+    ('@(?(a))', True),
+    ('*?(a)', True),
+    ('*(a)*', True),
+    ('!(a*)', True),
+    ('!(?*)', True),
+    ('!(*a)', True),
+    ('!(*|a)', False),
+    ('!(+(a))', True),
+    ('!(*(a))', False),
+    ('!(?(a))', False),
+    ('@(*)', True),
+    ('+(*)', True),
+    ('@(a|*)', True),
+    ('+(a|*)', True),
+    ('@(*|a)', True),
+    ('@(@(*))', True),
+    ('@(*)*', True),
+    ('!(*)*', False),
+    ('!(a)*', True),
+    ('?', False),
+    ('+(a)', False),
+    ('@(a)', False),
+    ('*.py', False),
+    ('a*', False),
+    ('*a', False),
+    ('?(a)b', False),
+    ('[ab]', False),
+    ('*[ab]', False),
+    ('[!a]*', False),
+    ('.*', False),
+    ('*.', False),
+    ('*(.)', True),
+]
+
+
+@pytest.mark.parametrize(('pattern', 'expected'), EMPTY_PATH_CASES)
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('dotmatch', [False, True])
+def test_empty_path(pattern, expected, as_bytes, dotmatch):
+    """An empty path matches a pattern the way it does for Bash and Python's `fnmatch`."""
+
+    flags = fnmatch.EXTMATCH
+    if dotmatch:
+        flags |= fnmatch.DOTMATCH
+    path = ''
+    if as_bytes:
+        pattern, path = pattern.encode(), path.encode()
+
+    assert fnmatch.fnmatch(path, pattern, flags=flags) is expected
+    assert (path in fnmatch.filter([path], pattern, flags=flags)) is expected
+
+
+@pytest.mark.parametrize('pattern', ['*', '**', '*****', '', '?', 'a*', '*a', '[a]*'])
+def test_empty_path_like_python_fnmatch(pattern):
+    """An empty path matches a pattern like it does for the `fnmatch` of Python."""
+
+    import fnmatch as python_fnmatch
+
+    assert fnmatch.fnmatch('', pattern) is python_fnmatch.fnmatchcase('', pattern)

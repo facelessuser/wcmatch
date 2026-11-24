@@ -231,6 +231,8 @@ _PATH_STAR = r'[^{sep}]*?'
 # There must be a next character and it cannot be a dot
 _NEED_NO_DOT = r'(?=[^.])'
 _NEED_NO_DOT_PATH = r'(?=[^{sep}.])'
+_NEED_NO_DOT_OR_EMPTY = r'(?=[^.]|(?<=^)$)'
+_NEED_NO_DOT_OR_EMPTY_PATH = r'(?=[^{sep}.]|(?<=^)$)'
 # Extended pattern start that will not capture dots or path separators.
 _EXT_PATH_NO_DOT_STAR = r'(?:(?!(?:(?<=[{sep}])|(?<=^))\.)[^{sep}]*?|)'
 # Star when at start of filename during `DOTMATCH`
@@ -270,6 +272,9 @@ _GLOBSTAR_DIV_DIR = r'(?:^|[{sep}]+)'
 # Lookahead to see there is one character.
 _NEED_CHAR_PATH = r'(?=[^{sep}])'
 _NEED_CHAR = r'(?=.)'
+# The same, unless the path is empty
+_NEED_CHAR_OR_EMPTY_PATH = r'(?=[^{sep}]|(?<=^)$)'
+_NEED_CHAR_OR_EMPTY = r'(?=.|(?<=^)$)'
 _NEED_SEP = r'(?=[{sep}])'
 _NEED_DIR = r'(?<=[{sep}])'
 # Group that matches one or none
@@ -1070,6 +1075,8 @@ class WcParse(Generic[AnyStr]):
         self.capture = self.translate and bool(flags & CAPTURE)
         self.case_sensitive = get_case(flags)
         self.in_list = False
+        # No path component comes before the one being parsed, so an empty path can still match, as for Bash
+        self.first_component = False
         self.emitted_star = -1
         self.flags = flags
         self.inv_ext = 0
@@ -1114,10 +1121,14 @@ class WcParse(Generic[AnyStr]):
         self.path_gstar_dot2_capture = _PATH_GSTAR_NO_DOTMATCH.format(mark=GSTAR_MARK, **sep)
         if self.pathname:
             self.need_char = _NEED_CHAR_PATH.format(**sep)
+            self.need_char_or_empty = _NEED_CHAR_OR_EMPTY_PATH.format(**sep)
             self.need_no_dot = _NEED_NO_DOT_PATH.format(**sep)
+            self.need_no_dot_or_empty = _NEED_NO_DOT_OR_EMPTY_PATH.format(**sep)
         else:
             self.need_char = _NEED_CHAR
+            self.need_char_or_empty = _NEED_CHAR_OR_EMPTY
             self.need_no_dot = _NEED_NO_DOT
+            self.need_no_dot_or_empty = _NEED_NO_DOT_OR_EMPTY
 
     def set_after_start(self) -> None:
         """Set tracker for character after the start of a directory."""
@@ -1342,10 +1353,16 @@ class WcParse(Generic[AnyStr]):
 
         return self.seq_path if self.pathname else ''
 
-    def _need_char(self, star: str) -> str:
-        """Require a character at the start of a name, unless the star already requires a non-dot one."""
+    def _need_char(self, star: str, empty_ok: bool = False) -> str:
+        """
+        Require a character at the start of a name, unless the star already requires a non-dot one.
 
-        return star if star.startswith(self.need_no_dot) else self.need_char + star
+        A path that is empty can also match when the name is the first path component.
+        """
+
+        if star.startswith(self.need_no_dot):
+            return self.need_no_dot_or_empty + star[len(self.need_no_dot):] if empty_ok else star
+        return (self.need_char_or_empty if empty_ok else self.need_char) + star
 
     def _restrict_sequence(self, current: list[str]) -> str:
         """Restrict sequence."""
@@ -1878,7 +1895,7 @@ class WcParse(Generic[AnyStr]):
 
         if value != globstar:
             if self.after_start:
-                value = self._need_char(value)
+                value = self._need_char(value, self.first_component)
 
             # Consume duplicate starts, but leave a star that opens an extended group
             try:
@@ -1891,6 +1908,7 @@ class WcParse(Generic[AnyStr]):
 
         self.reset_dir_track()
         if value == globstar:
+            self.first_component = False
             # Check if the last entry was a `globstar`
             # If so, don't bother adding another.
             if current[-1] != self.globstar_div_dir:
@@ -2141,6 +2159,11 @@ class WcParse(Generic[AnyStr]):
 
             ext_reduce = EXT_REDUCE[list_type]
 
+            # A path component is not empty, as it is for a star, but an empty path can still match a group that can
+            # match nothing if the group is in the first component. An inverse group does the same as a star.
+            if self.pathname and not temp_in_list and temp_after_start and list_type != '!':
+                current.append(self.need_char_or_empty if self.first_component else self.need_char)
+
             # Extended groups cannot match `.` or `..` ever.
             # A group that must match something and cannot start on a dot already guarantees it.
             if not temp_in_list and temp_after_start and not (
@@ -2235,7 +2258,7 @@ class WcParse(Generic[AnyStr]):
                         star = (_NEED_NO_DOT if not temp_in_list else _GROUP_NO_DOT) + _STAR
 
                 if temp_after_start:
-                    star = self._need_char(star)
+                    star = self._need_char(star, self.first_component and not temp_in_list)
 
                 # If the text that the patterns can match is of known lengths, what the group matches does not depend on
                 # what follows it.
@@ -2355,9 +2378,11 @@ class WcParse(Generic[AnyStr]):
         i = util.StringIter(pattern)
 
         root_specified = False
+        has_drive = False
         if self.win_drive_detect:
             root_specified, drive, slash, end = _get_win_drive(pattern, True, self.case_sensitive)
             if drive is not None:
+                has_drive = True
                 current.append(drive)
                 if slash:
                     current.append(self.sep + _ONE_OR_MORE)
@@ -2379,6 +2404,11 @@ class WcParse(Generic[AnyStr]):
             current.append(_NO_WIN_ROOT if self.win_drive_detect else _NO_ROOT)
             current.append('')
 
+        # An implied `globstar` of a base match is before the first component, and so is a root or a drive
+        self.first_component = not (
+            root_specified or has_drive or (self.pathname and (self.matchbase or self.extmatchbase))
+        )
+
         for c in i:
 
             index = i.index
@@ -2395,6 +2425,7 @@ class WcParse(Generic[AnyStr]):
                 current.append(self._restrict_sequence(current) + _QMARK)
             elif c == '/':
                 if self.pathname:
+                    self.first_component = False
                     self.set_start_dir()
                     self.atomic_stars(current)
                     self._close_root(current)
@@ -2410,6 +2441,7 @@ class WcParse(Generic[AnyStr]):
                 try:
                     value = self._references(i)
                     if self.dir_start:
+                        self.first_component = False
                         self.atomic_stars(current)
                         self._close_root(current)
                         self.consume_path_sep(i)

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+-   **FIX**: Fix an `EXTGLOB` group that can match nothing, e.g. `*(a)`, `?(a)`, or `@(a|)`, matching an empty path
+    component, which a `*` does not. For instance, `src/*(a)` matched `src/` and `src/*(a)/x` matched `src//x`, so
+    `globmatch` with `REALPATH` matched a directory like `src` for `*/*(a)` where `glob` did not.
+-   **FIX**: Match an empty path as Bash and Python's `fnmatch` do. A pattern that is a single path component that can
+    match nothing now matches it, e.g. `*`, `!(a)`, and `@(*)`, which `fnmatch` and `globmatch` rejected, and a pattern
+    that follows a `**`, or that has more than one path component, does not, e.g. `**/*(a)`, which matched it. With
+    `MATCHBASE`, a `**` is implied before the pattern, so only `''` and `**` match it.
 -   **FIX**: Reject relative `REALPATH` matches when `root_dir` is missing or is not a directory, including Windows
     paths whose `.` or `..` components would otherwise hide the invalid root.
 

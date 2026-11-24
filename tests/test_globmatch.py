@@ -363,6 +363,217 @@ def test_symlinks_consistent_between_glob_and_globmatch(tmp_path):
             assert matched == expected, (pattern, flags)
 
 
+EMPTY_COMPONENT_CASES = [
+    # A group that can match nothing cannot match an empty path component, as a star does not
+    ('src/*', 'src/', False),
+    ('src/!(a)', 'src/', False),
+    ('src/*(a)', 'src/', False),
+    ('src/?(a)', 'src/', False),
+    ('src/@(a|)', 'src/', False),
+    ('src/@(|a)', 'src/', False),
+    ('src/*(a|b)', 'src/', False),
+    ('src/+(?(a))', 'src/', False),
+    ('src/@(?(a))', 'src/', False),
+    ('src/?(a)?(b)', 'src/', False),
+    ('src/*(*)', 'src/', False),
+    ('src/?(*)', 'src/', False),
+    ('src/*(a)', 'src', False),
+    ('src/*(a)', 'src/a', True),
+    ('src/*(a)', 'src/aa', True),
+    ('src/*(a)', 'src/b', False),
+    ('src/?(a)b', 'src/b', True),
+    ('src/?(a)b', 'src/', False),
+    ('src/a?(b)', 'src/a', True),
+    ('src/*(a)/x', 'src//x', False),
+    ('src/*(a)/x', 'src/x', False),
+    ('src/*(a)/x', 'src/a/x', True),
+    ('src/*(a)/x', 'src/aa/x', True),
+    ('a/?(b)/x', 'a//x', False),
+    ('a/?(b)/x', 'a/b/x', True),
+    ('a/@(b|)/x', 'a//x', False),
+    ('*(a)/x', '/x', False),
+    ('*(a)/x', 'a/x', True),
+    ('?(a)/x', '/x', False),
+    ('?(a)/x', 'x', False),
+    ('*(a)', '/', False),
+    ('**/*(a)', 'ab/', False),
+    ('**/*(a)', 'a/', True),
+    ('**/*(a)', 'x/y/a', True),
+    ('**/*(a)', 'x/y/', False),
+    ('**/?(a)/x', 'q//x', False),
+    ('**/?(a)/x', 'q/a/x', True),
+    ('*/*(a)', 'src/', False),
+    ('*/*(a)', 'src/a', True),
+    # An empty path can still match a group that can match nothing, as it can for Bash
+    ('*(a|b|c)', '', True),
+    ('*(a)', '', True),
+    ('?(a)', '', True),
+    ('@(a|)', '', True),
+    ('+(a)', '', False),
+    ('?(a)b', '', False)
+]
+
+
+@pytest.mark.parametrize(('pattern', 'path', 'expected'), EMPTY_COMPONENT_CASES)
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('forcewin', [False, True])
+@pytest.mark.parametrize('dotmatch', [False, True])
+def test_group_that_can_match_nothing_empty_component(pattern, path, expected, as_bytes, forcewin, dotmatch):
+    """A group that can match nothing does not match an empty path component, but an empty path can match it."""
+
+    flags = glob.EXTGLOB | glob.GLOBSTAR | (glob.FORCEWIN if forcewin else glob.FORCEUNIX)
+    if dotmatch:
+        flags |= glob.DOTMATCH
+    if forcewin:
+        path = path.replace('/', '\\')
+    if as_bytes:
+        pattern, path = pattern.encode(), path.encode()
+
+    assert glob.globmatch(path, pattern, flags=flags) is expected
+
+
+@pytest.mark.parametrize(('pattern', 'path', 'expected'), EMPTY_COMPONENT_CASES)
+def test_group_that_can_match_nothing_empty_component_translate(pattern, path, expected):
+    """Translated patterns agree, including when the groups are captured."""
+
+    flags = glob.EXTGLOB | glob.GLOBSTAR | glob.FORCEUNIX
+    for extra in (0, glob.CAPTURE):
+        regex = glob.translate(pattern, flags=flags | extra)[0][0]
+        assert bool(re.fullmatch(regex, path)) is expected, (pattern, path, extra)
+
+
+# What Bash matches against an empty path: only a pattern that is a single path component that can match nothing
+EMPTY_PATH_CASES = [
+    ('*', True),
+    ('**', True),
+    ('***', True),
+    ('*****', True),
+    ('', True),
+    ('*(a)', True),
+    ('?(a)', True),
+    ('@(a|)', True),
+    ('@(|a)', True),
+    ('!(a)', True),
+    ('!(*)', False),
+    ('*(a|b)', True),
+    ('?(a)?(b)', True),
+    ('*(*)', True),
+    ('?(*)', True),
+    ('+(?(a))', True),
+    ('@(?(a))', True),
+    ('*?(a)', True),
+    ('*(a)*', True),
+    ('!(a*)', True),
+    ('!(?*)', True),
+    ('!(*a)', True),
+    ('!(*|a)', False),
+    ('!(+(a))', True),
+    ('!(*(a))', False),
+    ('!(?(a))', False),
+    ('@(*)', True),
+    ('+(*)', True),
+    ('@(a|*)', True),
+    ('+(a|*)', True),
+    ('@(*|a)', True),
+    ('@(@(*))', True),
+    ('@(*)*', True),
+    ('!(*)*', False),
+    ('!(a)*', True),
+    ('?', False),
+    ('+(a)', False),
+    ('@(a)', False),
+    ('*.py', False),
+    ('a*', False),
+    ('*a', False),
+    ('?(a)b', False),
+    ('[ab]', False),
+    ('*[ab]', False),
+    ('[!a]*', False),
+    ('.*', False),
+    ('*.', False),
+    ('*(.)', True),
+]
+
+EMPTY_PATH_PATHNAME_CASES = [
+    ('**/*', False),
+    ('**/*(a)', False),
+    ('**/!(a)', False),
+    ('*/x', False),
+    ('x/*', False),
+    ('src/*(a)', False),
+    ('*/*', False),
+    ('*(a)/*(a)', False),
+    ('!(a)/x', False),
+    ('@(*)/x', False),
+    ('/*', False),
+    ('*/', False),
+    ('**/', False),
+    ('**/x', False),
+    ('*/**', False),
+]
+
+
+@pytest.mark.parametrize(('pattern', 'expected'), EMPTY_PATH_CASES + EMPTY_PATH_PATHNAME_CASES)
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('dotmatch', [False, True])
+def test_empty_path(pattern, expected, as_bytes, dotmatch):
+    """An empty path matches a pattern the way it does for Bash, which is not true of a path component after a `/`."""
+
+    flags = glob.EXTGLOB | glob.GLOBSTAR | glob.FORCEUNIX
+    if dotmatch:
+        flags |= glob.DOTMATCH
+    path = ''
+    if as_bytes:
+        pattern, path = pattern.encode(), path.encode()
+
+    assert glob.globmatch(path, pattern, flags=flags) is expected
+
+
+@pytest.mark.parametrize(('pattern', 'expected'), EMPTY_PATH_CASES)
+def test_empty_path_matchbase(pattern, expected):
+    """With `MATCHBASE`, an implied `globstar` is before the pattern, so few patterns match an empty path."""
+
+    flags = glob.EXTGLOB | glob.GLOBSTAR | glob.FORCEUNIX | glob.MATCHBASE
+    assert glob.globmatch('', pattern, flags=flags) is (expected and pattern in ('', '**'))
+
+
+@pytest.mark.parametrize(('pattern', 'expected'), EMPTY_PATH_CASES)
+def test_empty_path_translate(pattern, expected):
+    """Translated patterns agree about an empty path, including when the groups are captured."""
+
+    flags = glob.EXTGLOB | glob.GLOBSTAR | glob.FORCEUNIX
+    for extra in (0, glob.CAPTURE):
+        regex = glob.translate(pattern, flags=flags | extra)[0][0]
+        assert bool(re.fullmatch(regex, '')) is expected, (pattern, extra)
+
+
+def test_empty_component_consistent_between_glob_and_globmatch(tmp_path):
+    """`glob` and `globmatch` with `REALPATH` agree when a group that can match nothing ends a pattern."""
+
+    for d in ('src/a', 'src/b', 'src/aa/x', 'ab/a/ab', 'a/a', '.h/a'):
+        (tmp_path / d).mkdir(parents=True)
+    for f in ('src/a/x', 'src/aa/x/y', 'ab/a/ab/z', 'x', 'a/x', 'src/.hid'):
+        (tmp_path / f).write_text('')
+
+    root = str(tmp_path)
+    paths = sorted(
+        os.path.relpath(os.path.join(base, name), root)
+        for base, dirs, files in os.walk(root)
+        for name in dirs + files
+    )
+    patterns = [
+        '**/*(a)', '**/?(a)', '**/@(a|)', '*/*(a)', 'src/*(a)', 'src/?(a)', 'src/@(a|)', '*/?(a)b', '**/*(a|b)',
+        'src/*(a)/x', '?(src)/*(a)', '**/*(a)/x', '*(a)/**/x', '**/+(?(a))', '@(src|ab)/*(a)', '**/*(*)'
+    ]
+    for flags in (glob.GLOBSTAR | glob.EXTGLOB, glob.GLOBSTAR | glob.EXTGLOB | glob.DOTMATCH):
+        for pattern in patterns:
+            expected = {os.path.normpath(p) for p in glob.glob(pattern, root_dir=root, flags=flags)}
+            matched = {
+                p for p in paths if glob.globmatch(p, pattern, root_dir=root, flags=flags | glob.REALPATH)
+            }
+            assert matched == expected, (pattern, flags)
+
+
 @pytest.mark.parametrize('pattern', ['**', '***'])
 @pytest.mark.parametrize(
     'filename,dot,expected',
@@ -1617,7 +1828,7 @@ class TestGlobMatchSpecial(unittest.TestCase):
         flags |= glob.FORCEUNIX
 
         value = (
-            ['^(?s:(?>(?=[^/.])[^/]*?test)[^/]*?[/]*?)$'],
+            ['^(?s:(?>(?=[^/.]|(?<=^)$)[^/]*?test)[^/]*?[/]*?)$'],
             []
         )
         self.assertEqual(
@@ -1703,6 +1914,56 @@ class TestGlobMatchSpecial(unittest.TestCase):
         ):
             with self.subTest(pattern=pattern, path=path):
                 self.assertEqual(glob.globmatch(path, pattern, flags=flags), expected)
+
+    def test_empty_component_guard_translate(self):
+        """Test that a name at the start of a path component requires a character, unless the path is empty."""
+
+        flags = self.flags | glob.FORCEUNIX | glob.EXTGLOB
+        first = '(?=[^/]|(?<=^)$)'
+        other = '(?=[^/])'
+
+        def translate(pattern, extra=0):
+            return glob.translate(pattern, flags=flags | extra)[0][0]
+
+        # The group that starts the first path component can match an empty path
+        for pattern in ('*(a)', '?(a)', '@(a|)', '+(a)', '*(a)/x', '@(a|?(b))', '?(a)?(b)', '+(a)*(b)'):
+            with self.subTest(pattern=pattern):
+                for extra in (0, glob.CAPTURE, glob.DOTMATCH):
+                    regex = translate(pattern, extra)
+                    self.assertEqual(regex.count(first), 1)
+                    self.assertEqual(regex.count(other), 0)
+                win = glob.translate(pattern, flags=self.flags | glob.EXTGLOB | glob.FORCEWIN)[0][0]
+                self.assertEqual(win.count(r'(?=[^\\/]|(?<=^)$)'), 1)
+
+        # A group that starts a later path component cannot, as there is at least a separator before it, and neither
+        # can one after a `globstar`, or one when the pattern is matched against the base name of a path
+        for pattern in ('src/*(a)', 'src/*(a)/x', '**/?(a)', 'a/@(b|)', '**/*(a)/x', '/*(a)'):
+            with self.subTest(pattern=pattern):
+                regex = translate(pattern)
+                self.assertEqual(regex.count(first), 0)
+                self.assertEqual(regex.count(other), 1)
+        regex = translate('*(a)', glob.MATCHBASE)
+        self.assertEqual((regex.count(first), regex.count(other)), (0, 1))
+        regex = translate('*(a)/*(a)')
+        self.assertEqual((regex.count(first), regex.count(other)), (1, 1))
+
+        # Not at the start of a path component, or an inverse group, which is a star
+        for pattern in ('a*(b)', 'src/a?(b)', 'src/!(a)', '**/!(a)'):
+            with self.subTest(pattern=pattern):
+                self.assertNotIn(first, translate(pattern))
+        self.assertIn('(?=[^/.]|(?<=^)$)', translate('!(a)'))
+        self.assertNotIn('(?<=^)$', translate('src/!(a)'))
+
+        # Stars follow the same rules
+        for pattern in ('*', '*.py', '*a*b'):
+            with self.subTest(pattern=pattern):
+                self.assertIn('(?=[^/.]|(?<=^)$)', translate(pattern))
+                self.assertIn('(?=[^/]|(?<=^)$)', translate(pattern, glob.DOTMATCH))
+        for pattern in ('src/*', '**/*', '/*'):
+            with self.subTest(pattern=pattern):
+                self.assertNotIn('(?<=^)$', translate(pattern))
+        self.assertNotIn('(?<=^)$', translate('*', glob.MATCHBASE))
+        self.assertEqual(translate('*/*.py').count('(?<=^)$'), 1)
 
     def test_glob_parsing_nix(self):
         """Test wildcard parsing."""
