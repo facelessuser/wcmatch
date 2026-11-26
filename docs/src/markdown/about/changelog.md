@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+-   **FIX**: Fix a pattern with several `*` failing to match when a number range (`NUMRANGE`) with no upper bound
+    follows one of them, e.g. `*<5->*0` did not match `100`. This was a regression introduced in 11.2. Such a range now
+    tries the shortest number first, so with `CAPTURE`, the text may be divided differently between a group that holds
+    the range and what follows it.
 -   **FIX**: Fix an `EXTGLOB` group that can match nothing, e.g. `*(a)`, `?(a)`, or `@(a|)`, matching an empty path
     component, which a `*` does not. For instance, `src/*(a)` matched `src/` and `src/*(a)/x` matched `src//x`, so
     `globmatch` with `REALPATH` matched a directory like `src` for `*/*(a)` where `glob` did not.

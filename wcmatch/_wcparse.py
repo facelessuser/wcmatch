@@ -1503,6 +1503,9 @@ class WcParse(Generic[AnyStr]):
         A minimum that is greater than the maximum will return an impossible match.
 
         Explicit values with greater than 19 digits will be truncated.
+
+        Shorter numbers must always be tried before longer ones, as an atomic `*` segment keeps the first number
+        that lets the segment match, and only a following `*` can take up the digits that are left over.
         """
 
         # If no start, zero is the start
@@ -1524,7 +1527,7 @@ class WcParse(Generic[AnyStr]):
                 lo_len = limit
 
             parts = [part for part in self._digit_range_parts(lo, "9" * lo_len)]
-            parts.append(f"[1-9][0-9]{{{lo_len},}}")
+            parts.append(f"[1-9][0-9]{{{lo_len},}}?")
 
         # Bounded minimum and maximum
         else:
@@ -2339,6 +2342,9 @@ class WcParse(Generic[AnyStr]):
 
         Extended glob patterns are variable by nature, so if the segments contains
         extended glob groups, the star is left as is.
+
+        A number range can match text of different lengths, but it is allowed as it
+        tries the shortest number first (see `range_to_regex`).
         """
 
         # No stars were emitted; nothing to do.

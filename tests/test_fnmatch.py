@@ -957,6 +957,26 @@ class TestExtendedCases(unittest.TestCase):
 
         self.assertFalse(fnmatch.fnmatch('abcd', '*@(abcd|b)*e*', flags=flags))
 
+    def test_atomic_stars_with_number_ranges(self):
+        """Test that atomic stars do not cause lost matches with number ranges."""
+
+        flags = fnmatch.NUMRANGE
+
+        for pattern, name in (
+            ('*<5->*0', '100'),
+            ('*<5->*0*', '100'),
+            ('a*<5->*0*b', 'a100b'),
+            ('*<->0*0', '1100'),
+            ('*<->1*1', '1011'),
+            ('*a<10->1*1', 'a95500151'),
+            ('*<5->*<5->*0', '5100'),
+            ('*<5-100>*0', '100')
+        ):
+            with self.subTest(pattern=pattern, name=name):
+                self.assertTrue(fnmatch.fnmatch(name, pattern, flags=flags))
+
+        self.assertFalse(fnmatch.fnmatch('40', '*<5->*0', flags=flags))
+
     def test_and(self):
         """Test reduction of the `@` group and other groups."""
 

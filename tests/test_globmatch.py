@@ -3,9 +3,11 @@
 import unittest
 import pytest
 import copy
+import itertools
 import re
 import os
 import sys
+import time
 import wcmatch.glob as glob
 import wcmatch._wcparse as _wcparse
 import wcmatch._wcmatch as _wcmatch
@@ -1915,6 +1917,54 @@ class TestGlobMatchSpecial(unittest.TestCase):
             with self.subTest(pattern=pattern, path=path):
                 self.assertEqual(glob.globmatch(path, pattern, flags=flags), expected)
 
+    def test_atomic_stars_number_ranges(self):
+        """Test that atomic stars do not cause lost matches with number ranges in paths."""
+
+        flags = self.flags | glob.FORCEUNIX | glob.NUMRANGE
+
+        for pattern, path, expected in (
+            ('*<5->*0', '100', True),
+            ('x/*<5->*0/y', 'x/100/y', True),
+            ('**/*<5->*0', 'a/b/100', True),
+            ('*<5->*0/*<5->*0', '100/100', True),
+            ('*<5->*0', '40', False),
+            ('*<5->*0', '10/0', False)
+        ):
+            with self.subTest(pattern=pattern, path=path):
+                self.assertEqual(glob.globmatch(path, pattern, flags=flags), expected)
+
+    def test_atomic_stars_translate_with_number_ranges(self):
+        """Test that segments with number ranges are atomic, which needs the shortest number to be tried first."""
+
+        flags = self.flags | glob.FORCEUNIX | glob.NUMRANGE
+
+        for pattern in ('*<5->*a*b', '*<->*a*b', '*a<5->*b*c', '*<5-20>*a*b', '*<-20>*a*b'):
+            with self.subTest(pattern=pattern):
+                self.assertEqual(glob.translate(pattern, flags=flags)[0][0].count('(?>'), 2)
+
+        # A range with no upper bound must not be greedy
+        self.assertIn('[1-9][0-9]{1,}?', glob.translate('<5->', flags=flags)[0][0])
+
+    def test_atomic_stars_number_ranges_equivalence(self):
+        """Test patterns with number ranges produce the same results as the unoptimized expression."""
+
+        flags = self.flags | glob.FORCEUNIX | glob.NUMRANGE
+        paths = [''.join(p) for n in range(7) for p in itertools.product('015a', repeat=n)]
+
+        for pattern in (
+            '*<5->*0',
+            '*<->0*0*',
+            '*a<10->1*1',
+            '*<1->?*<->*1',
+            '*0*<5->*0*<5-10>*a',
+            '*<5-100>*0*<-10>?*1'
+        ):
+            with self.subTest(pattern=pattern):
+                regex = glob.translate(pattern, flags=flags)[0][0]
+                atomic = re.compile(regex)
+                plain = re.compile(regex.replace('(?>', '(?:'))
+                self.assertEqual([p for p in paths if bool(atomic.match(p)) != bool(plain.match(p))], [])
+
     def test_empty_component_guard_translate(self):
         """Test that a name at the start of a path component requires a character, unless the path is empty."""
 
@@ -2830,6 +2880,18 @@ class TestPerformance(unittest.TestCase):
         """Test performance of multiple stars separated by literals."""
 
         self.assertTrue(glob.globmatch('_' * 1000 + '.csv', '*_*_*_*_*.csv', flags=glob.FORCEUNIX))
+
+    def test_performance_consecutive_stars_with_number_ranges(self):
+        """Test performance of multiple stars separated by number ranges with no upper bound."""
+
+        flags = glob.FORCEUNIX | glob.NUMRANGE
+        pattern = '*_<1->*_<1->*_<1->*_<1->*.csv'
+
+        # This takes many seconds if the stars can backtrack into each other
+        start = time.perf_counter()
+        self.assertFalse(glob.globmatch('_1' * 500 + '.log', pattern, flags=flags))
+        self.assertLess(time.perf_counter() - start, 2)
+        self.assertTrue(glob.globmatch('_1' * 500 + '.csv', pattern, flags=flags))
 
 
 @pytest.mark.parametrize('pattern', ['?(a)*', '*(a)?hidden', '@(a|)[.]hidden', '+(a|)*'])
