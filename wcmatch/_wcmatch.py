@@ -6,7 +6,7 @@ import stat
 import copyreg
 import functools
 from . import util
-from typing import Pattern, Match, AnyStr, Generic, Iterable, Any, Literal
+from typing import Pattern, Match, AnyStr, Generic, Iterable, Any, Literal, overload
 
 # `O_DIRECTORY` may not always be defined
 DIR_FLAGS = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
@@ -426,12 +426,39 @@ class WcRegexp(util.Immutable, Generic[AnyStr]):
             dir_fd=dir_fd
         )
 
+    @overload
+    def filter(
+        self,
+        filenames: Iterable[AnyStr],
+        root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+        dir_fd: int | None = None
+    ) ->  list[AnyStr]:
+        ...
+
+    @overload
+    def filter(
+        self,
+        filenames: Iterable[os.PathLike[AnyStr]],
+        root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+        dir_fd: int | None = None
+    ) ->  list[os.PathLike[AnyStr]]:
+        ...
+
+    @overload
     def filter(
         self,
         filenames: Iterable[AnyStr | os.PathLike[AnyStr]],
         root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
         dir_fd: int | None = None
     ) ->  list[AnyStr | os.PathLike[AnyStr]]:
+        ...
+
+    def filter(
+        self,
+        filenames: Iterable[AnyStr] | Iterable[os.PathLike[AnyStr]] | Iterable[AnyStr | os.PathLike[AnyStr]],
+        root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+        dir_fd: int | None = None
+    ) ->  list[AnyStr] | list[os.PathLike[AnyStr]] | list[AnyStr | os.PathLike[AnyStr]]:
         """Filter filenames."""
 
         rdir = os.fspath(root_dir) if root_dir is not None else None

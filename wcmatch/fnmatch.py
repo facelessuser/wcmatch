@@ -7,8 +7,9 @@ A custom implementation of `fnmatch`.
 from __future__ import annotations
 from . import _wcmatch
 from . import _wcparse
+import os
 import copyreg
-from typing import AnyStr, Iterable, Sequence
+from typing import AnyStr, Iterable, Sequence, cast, overload
 
 __all__ = (
     "CASE", "EXTMATCH", "IGNORECASE", "RAWCHARS",
@@ -55,15 +56,30 @@ FLAG_MASK = (
 class WcMatcher(_wcmatch.WcMatcher[AnyStr]):
     """Pre-compiled matcher object."""
 
-    def match(self, filename: AnyStr) -> bool:
+    def match(self, filename: AnyStr | os.PathLike[AnyStr]) -> bool:
         """Match filename."""
 
         return self._matcher.match(filename)
 
+    @overload
     def filter(self, filenames: Iterable[AnyStr]) -> list[AnyStr]:
+        ...
+
+    @overload
+    def filter(self, filenames: Iterable[os.PathLike[AnyStr]]) -> list[os.PathLike[AnyStr]]:
+        ...
+
+    @overload
+    def filter(self, filenames: Iterable[AnyStr | os.PathLike[AnyStr]]) -> list[AnyStr | os.PathLike[AnyStr]]:
+        ...
+
+    def filter(
+        self,
+        filenames: Iterable[AnyStr | os.PathLike[AnyStr]]
+    ) -> list[AnyStr] | list[os.PathLike[AnyStr]] | list[AnyStr | os.PathLike[AnyStr]]:
         """Match filename."""
 
-        return self._matcher.filter(filenames)  # type: ignore[return-value]
+        return self._matcher.filter(filenames)
 
 
 copyreg.pickle(WcMatcher, lambda p: (WcMatcher, (p._matcher,)))
@@ -108,7 +124,7 @@ def translate(
 
 
 def fnmatch(
-    filename: AnyStr,
+    filename: AnyStr | os.PathLike[AnyStr],
     patterns: AnyStr | Sequence[AnyStr],
     *,
     flags: int = 0,
@@ -130,6 +146,7 @@ def fnmatch(
     ).match(filename)
 
 
+@overload
 def filter(  # noqa A001
     filenames: Iterable[AnyStr],
     patterns: AnyStr | Sequence[AnyStr],
@@ -138,6 +155,41 @@ def filter(  # noqa A001
     limit: int = _wcparse.PATTERN_LIMIT,
     exclude: AnyStr | Sequence[AnyStr] | None = None
 ) -> list[AnyStr]:
+    ...
+
+
+@overload
+def filter(  # noqa A001
+    filenames: Iterable[os.PathLike[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
+    *,
+    flags: int = 0,
+    limit: int = _wcparse.PATTERN_LIMIT,
+    exclude: AnyStr | Sequence[AnyStr] | None = None
+) -> list[os.PathLike[AnyStr]]:
+    ...
+
+
+@overload
+def filter(  # noqa A001
+    filenames: Iterable[AnyStr | os.PathLike[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
+    *,
+    flags: int = 0,
+    limit: int = _wcparse.PATTERN_LIMIT,
+    exclude: AnyStr | Sequence[AnyStr] | None = None
+) -> list[AnyStr | os.PathLike[AnyStr]]:
+    ...
+
+
+def filter(  # noqa A001
+    filenames: Iterable[str | bytes | os.PathLike[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
+    *,
+    flags: int = 0,
+    limit: int = _wcparse.PATTERN_LIMIT,
+    exclude: AnyStr | Sequence[AnyStr] | None = None
+) -> list[AnyStr] | list[os.PathLike[AnyStr]] | list[AnyStr | os.PathLike[AnyStr]]:
     """Filter names using pattern."""
 
     return _wcparse.compile(
@@ -145,7 +197,7 @@ def filter(  # noqa A001
         _flag_transform(flags),
         limit,
         exclude=exclude
-    ).filter(filenames)  # type: ignore[return-value]
+    ).filter(cast('Iterable[AnyStr | os.PathLike[AnyStr]]', filenames))
 
 
 def escape(pattern: AnyStr) -> AnyStr:

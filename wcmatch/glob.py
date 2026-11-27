@@ -16,7 +16,7 @@ import copyreg
 from . import _wcparse
 from . import _wcmatch
 from . import util
-from typing import Iterator, Iterable, AnyStr, Generic, Pattern, Callable, Any, Sequence
+from typing import Iterator, Iterable, AnyStr, Generic, Pattern, Callable, Any, Sequence, cast, overload
 
 __all__ = (
     "CASE", "IGNORECASE", "RAWCHARS", "DOTGLOB", "DOTMATCH",
@@ -958,6 +958,27 @@ class WcMatcher(_wcmatch.WcMatcher[AnyStr]):
 
         return self._matcher.match(filename, root_dir, dir_fd)
 
+    @overload
+    def filter(
+        self,
+        filenames: Iterable[AnyStr],
+        *,
+        root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+        dir_fd: int | None = None
+    ) -> list[AnyStr]:
+        ...
+
+    @overload
+    def filter(
+        self,
+        filenames: Iterable[os.PathLike[AnyStr]],
+        *,
+        root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+        dir_fd: int | None = None
+    ) -> list[os.PathLike[AnyStr]]:
+        ...
+
+    @overload
     def filter(
         self,
         filenames: Iterable[AnyStr | os.PathLike[AnyStr]],
@@ -965,6 +986,15 @@ class WcMatcher(_wcmatch.WcMatcher[AnyStr]):
         root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
         dir_fd: int | None = None
     ) -> list[AnyStr | os.PathLike[AnyStr]]:
+        ...
+
+    def filter(
+        self,
+        filenames: Iterable[AnyStr | os.PathLike[AnyStr]],
+        *,
+        root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+        dir_fd: int | None = None
+    ) -> list[AnyStr] | list[os.PathLike[AnyStr]] | list[AnyStr | os.PathLike[AnyStr]]:
         """Match filename."""
 
         return self._matcher.filter(filenames, root_dir, dir_fd)
@@ -1034,6 +1064,35 @@ def globmatch(
     ).match(filename, root_dir, dir_fd)
 
 
+@overload
+def globfilter(
+    filenames: Iterable[AnyStr],
+    patterns: AnyStr | Sequence[AnyStr],
+    *,
+    flags: int = 0,
+    root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+    dir_fd: int | None = None,
+    limit: int = _wcparse.PATTERN_LIMIT,
+    exclude: AnyStr | Sequence[AnyStr] | None = None
+) -> list[AnyStr]:
+    ...
+
+
+@overload
+def globfilter(
+    filenames: Iterable[os.PathLike[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
+    *,
+    flags: int = 0,
+    root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+    dir_fd: int | None = None,
+    limit: int = _wcparse.PATTERN_LIMIT,
+    exclude: AnyStr | Sequence[AnyStr] | None = None
+) -> list[os.PathLike[AnyStr]]:
+    ...
+
+
+@overload
 def globfilter(
     filenames: Iterable[AnyStr | os.PathLike[AnyStr]],
     patterns: AnyStr | Sequence[AnyStr],
@@ -1044,6 +1103,19 @@ def globfilter(
     limit: int = _wcparse.PATTERN_LIMIT,
     exclude: AnyStr | Sequence[AnyStr] | None = None
 ) -> list[AnyStr | os.PathLike[AnyStr]]:
+    ...
+
+
+def globfilter(
+    filenames: Iterable[str | bytes | os.PathLike[AnyStr]],
+    patterns: AnyStr | Sequence[AnyStr],
+    *,
+    flags: int = 0,
+    root_dir: AnyStr | os.PathLike[AnyStr] | None = None,
+    dir_fd: int | None = None,
+    limit: int = _wcparse.PATTERN_LIMIT,
+    exclude: AnyStr | Sequence[AnyStr] | None = None
+) -> list[AnyStr] | list[os.PathLike[AnyStr]] | list[AnyStr | os.PathLike[AnyStr]]:
     """Filter names using pattern."""
 
     return _wcparse.compile(
@@ -1051,7 +1123,7 @@ def globfilter(
         _flag_transform(flags),
         limit,
         exclude
-    ).filter(filenames, root_dir, dir_fd)
+    ).filter(cast('Iterable[AnyStr | os.PathLike[AnyStr]]', filenames), root_dir, dir_fd)
 
 
 def escape(pattern: AnyStr, unix: bool | None = None) -> AnyStr:

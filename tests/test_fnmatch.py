@@ -4,6 +4,7 @@ import unittest
 import re
 import sys
 import os
+import pathlib
 import pytest
 import copy
 import wcmatch.fnmatch as fnmatch
@@ -1431,3 +1432,114 @@ def test_empty_path_like_python_fnmatch(pattern):
     import fnmatch as python_fnmatch
 
     assert fnmatch.fnmatch('', pattern) is python_fnmatch.fnmatchcase('', pattern)
+
+
+# Pattern, path, flags, and whether it matches a POSIX path and a Windows path
+PATHLIB_CASES = [
+    ('file.txt', 'file.txt', 0, True, True),
+    ('*.txt', 'file.txt', 0, True, True),
+    ('*.md', 'file.txt', 0, False, False),
+    # A file name has no concept of directories, so wildcards cross separators
+    ('*.txt', 'some/path/file.txt', 0, True, True),
+    ('some?path*', 'some/path/file.txt', 0, True, True),
+    # The separators are those of the object's string form
+    ('some/path/*', 'some/path/file.txt', fnmatch.FORCEUNIX, True, False),
+    (R'some\\path\\*', 'some/path/file.txt', fnmatch.FORCEUNIX, False, True),
+    ('some/path/*', 'some/path/file.txt', fnmatch.FORCEWIN, True, True),
+    # The type of the object does not affect case sensitivity
+    ('*.TXT', 'file.txt', fnmatch.FORCEUNIX, False, False),
+    ('*.TXT', 'file.txt', fnmatch.FORCEWIN, True, True),
+    # Only a dot at the very start of the file name is special
+    ('*', '.hidden', 0, False, False),
+    ('*', '.hidden', fnmatch.DOTMATCH, True, True),
+    ('*', 'some/.hidden', 0, True, True),
+    # An empty `pathlib` object has the string form of `.`
+    ('*', '', 0, False, False),
+    ('.', '', 0, True, True)
+]
+
+
+@pytest.mark.parametrize(('pattern', 'path', 'flags', 'posix', 'windows'), PATHLIB_CASES)
+@pytest.mark.parametrize('cls', [pathlib.PurePosixPath, pathlib.PureWindowsPath])
+def test_pathlib(pattern, path, flags, posix, windows, cls):
+    """A `pathlib` object is matched and filtered the same as its string form."""
+
+    filename = cls(path)
+    expected = posix if cls is pathlib.PurePosixPath else windows
+    matcher = fnmatch.compile(pattern, flags=flags)
+
+    assert fnmatch.fnmatch(str(filename), pattern, flags=flags) is expected
+    assert fnmatch.fnmatch(filename, pattern, flags=flags) is expected
+    assert matcher.match(filename) is expected
+    assert fnmatch.filter([filename], pattern, flags=flags) == ([filename] if expected else [])
+    assert matcher.filter([filename]) == ([filename] if expected else [])
+
+
+@pytest.mark.parametrize('precompiled', [False, True], ids=['direct', 'compiled'])
+@pytest.mark.parametrize('cls', [pathlib.Path, pathlib.PurePath, pathlib.PurePosixPath, pathlib.PureWindowsPath])
+def test_pathlib_filter_returns_original_objects(precompiled, cls):
+    """Filtering returns the objects that were given, not their string forms."""
+
+    names = [cls('keep.txt'), 'also.txt', cls('skip.txt'), cls('readme.md')]
+    if precompiled:
+        actual = fnmatch.compile('*.txt', exclude='skip.*').filter(names)
+    else:
+        actual = fnmatch.filter(names, '*.txt', exclude='skip.*')
+
+    assert len(actual) == 2
+    assert actual[0] is names[0]
+    assert actual[1] is names[1]
+
+
+@pytest.mark.parametrize(
+    ('patterns', 'flags', 'exclude'),
+    [
+        (['*.txt', '*.md'], 0, 'skip*'),
+        (['*.txt', '*.md', '!skip*'], fnmatch.NEGATE, None),
+        ('*.txt|*.md|!skip*', fnmatch.NEGATE | fnmatch.SPLIT, None),
+        ('{keep,read}*', fnmatch.BRACE, None),
+        ('!skip*', fnmatch.NEGATE | fnmatch.NEGATEALL, None),
+        ('@(keep|read)*', fnmatch.EXTMATCH, None)
+    ]
+)
+def test_pathlib_pattern_features(patterns, flags, exclude):
+    """Pattern features and exclusions apply to `pathlib` objects."""
+
+    keep = [pathlib.PurePath('keep.txt'), pathlib.PurePath('readme.md')]
+    skip = pathlib.PurePath('skip.txt')
+
+    for filename in keep:
+        assert fnmatch.fnmatch(filename, patterns, flags=flags, exclude=exclude)
+    assert not fnmatch.fnmatch(skip, patterns, flags=flags, exclude=exclude)
+    assert fnmatch.filter([*keep, skip], patterns, flags=flags, exclude=exclude) == keep
+
+
+@pytest.mark.parametrize('exists', [False, True], ids=['missing', 'directory'])
+def test_pathlib_file_system_not_consulted(tmp_path, exists):
+    """A `pathlib` object is only a file name, whether or not it exists or is a directory."""
+
+    filename = tmp_path / 'folder'
+    if exists:
+        filename.mkdir()
+
+    assert fnmatch.fnmatch(filename, '*folder')
+    # No trailing separator is added to a directory
+    assert not fnmatch.fnmatch(filename, R'*folder[/\\]')
+
+
+def test_pathlib_bytes_pattern():
+    """A `pathlib` object is a Unicode file name, so it cannot be used with a bytes pattern."""
+
+    filename = pathlib.PurePath('file.txt')
+
+    with pytest.raises(TypeError):
+        fnmatch.fnmatch(filename, b'*.txt')
+
+    with pytest.raises(TypeError):
+        fnmatch.filter([filename], b'*.txt')
+
+    with pytest.raises(TypeError):
+        fnmatch.compile(b'*.txt').match(filename)
+
+    with pytest.raises(TypeError):
+        fnmatch.compile(b'*.txt').filter([filename])

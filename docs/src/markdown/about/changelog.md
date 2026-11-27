@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+-   **FIX**: `fnmatch` allows inputs of `pathlib` objects, so fix typing to reflect that.
+-   **FIX**: Improve typing for filter functions.
 -   **FIX**: Fix a pattern with several `*` failing to match when a number range (`NUMRANGE`) with no upper bound
     follows one of them, e.g. `*<5->*0` did not match `100`. This was a regression introduced in 11.2. Such a range now
     tries the shortest number first, so with `CAPTURE`, the text may be divided differently between a group that holds
